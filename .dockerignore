@@ -1,0 +1,5 @@
+README.md
+.git/
+.gitignore
+.gitattributes
+*_test.go
