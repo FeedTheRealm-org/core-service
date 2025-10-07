@@ -37,3 +37,11 @@ COPY --from=builder /usr/local/bin/app /usr/src/app/app
 RUN chmod +x run_tests.sh
 
 CMD ["app"]
+
+# **Image for Dev things**
+FROM deps AS dev
+
+WORKDIR /usr/src/app
+
+COPY --from=deps /go/pkg /go/pkg
+COPY . .
