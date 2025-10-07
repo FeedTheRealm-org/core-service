@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
 	"github.com/stretchr/testify/assert"
@@ -12,12 +13,22 @@ import (
 var service services.ExampleService
 
 func TestMain(m *testing.M) {
-	repo := repositories.NewExampleRepository(nil)
-	service = services.NewExampleService(nil, repo)
+	conf := config.CreateConfig()
+	repo, err := repositories.NewExampleRepository(conf)
+	if err != nil {
+		panic(err)
+	}
+
+	service = services.NewExampleService(conf, repo)
 	os.Exit(m.Run())
 }
 
 func TestExample(t *testing.T) {
 	data := service.GetExampleData()
 	assert.Equal(t, "IM AUTH", data)
+}
+
+func TestSumQuery(t *testing.T) {
+	data := service.GetSumQuery()
+	assert.Equal(t, "The sum is 2", data)
 }
