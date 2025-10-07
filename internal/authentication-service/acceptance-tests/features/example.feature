@@ -6,4 +6,4 @@ Feature: Example
 
   Scenario: Sum 1 + 1
     When I go to query page
-    Then I get the sum of 1 + 1
+    Then I get the sum

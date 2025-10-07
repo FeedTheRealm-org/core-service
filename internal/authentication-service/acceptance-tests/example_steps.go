@@ -1,4 +1,4 @@
-package main
+package acceptance_tests
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"testing"
 
 	"github.com/cucumber/godog"
 )
@@ -89,24 +88,9 @@ func iGetSumResult(ctx context.Context) error {
 	return nil
 }
 
-func InitializeScenario(sc *godog.ScenarioContext) {
-	sc.Step(`^I go to example page$`, iGoToExamplePage)
+func InitializeScenarioForExample(sc *godog.ScenarioContext) {
 	sc.Step(`^I get example message$`, iGetExampleMessage)
+	sc.Step(`^I get the sum$`, iGetSumResult)
+	sc.Step(`^I go to example page$`, iGoToExamplePage)
 	sc.Step(`^I go to query page$`, iGoToQueryPage)
-	sc.Step(`^I get the sum of 1 \+ 1$`, iGetSumResult)
-}
-
-func TestFeatures(t *testing.T) {
-	suite := godog.TestSuite{
-		ScenarioInitializer: InitializeScenario,
-		Options: &godog.Options{
-			Format:   "pretty",
-			Paths:    []string{"features"},
-			TestingT: t,
-		},
-	}
-
-	if suite.Run() != 0 {
-		t.Fatal("non-zero status returned, failed to run feature tests")
-	}
 }

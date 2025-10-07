@@ -7,7 +7,7 @@ run_unit_tests() {
 run_acceptance_tests() {
   for test_file in $PATTERN_FOR_ACCEPTANCE_TESTS; do
     if [ -f "$test_file" ]; then
-      cd "$(dirname "$test_file")" && go test -v "$(basename "$test_file")"
+      cd "$(dirname "$test_file")" && go test -v ./...
     fi
   done
 }
