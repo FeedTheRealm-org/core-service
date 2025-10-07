@@ -7,7 +7,7 @@ run_unit_tests() {
 run_acceptance_tests() {
   for test_file in $PATTERN_FOR_ACCEPTANCE_TESTS; do
     if [ -f "$test_file" ]; then
-      cd "$(dirname "$test_file")" && go test -v ./...
+      cd "$(dirname "$test_file")" && go test -v --godog.tags=~wip
     fi
   done
 }

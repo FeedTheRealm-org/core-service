@@ -1,26 +1,38 @@
 package acceptance_tests
 
 import (
+	"os"
 	"testing"
 
 	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/colors"
+	"github.com/spf13/pflag"
 )
 
-func TestFeatures(t *testing.T) {
-	suite := godog.TestSuite{
+var opts = godog.Options{
+	Output: colors.Colored(os.Stdout),
+	Format: "progress",
+}
+
+func init() {
+	godog.BindCommandLineFlags("godog.", &opts)
+}
+
+func TestMain(m *testing.M) {
+	pflag.Parse()
+	opts.Paths = pflag.Args()
+
+	status := godog.TestSuite{
 		ScenarioInitializer: func(sc *godog.ScenarioContext) {
 			InitializeScenarioForAccount(sc)
 			InitializeScenarioForExample(sc)
 		},
-		
-		Options: &godog.Options{
-			Format:   "pretty",
-			Paths:    []string{"features"},
-			TestingT: t,
-		},
+		Options: &opts,
+	}.Run()
+
+	if st := m.Run(); st > status {
+		status = st
 	}
 
-	if suite.Run() != 0 {
-		t.Fatal("non-zero status returned, failed to run feature tests")
-	}
+	os.Exit(status)
 }
