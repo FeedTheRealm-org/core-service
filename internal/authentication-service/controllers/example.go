@@ -21,3 +21,7 @@ func NewExampleController(conf *config.Config, service services.ExampleService) 
 func (ec *exampleController) GetExample(c *gin.Context) {
 	c.JSON(200, gin.H{"message": ec.service.GetExampleData()})
 }
+
+func (ec *exampleController) GetSumQuery(c *gin.Context) {
+	c.JSON(200, gin.H{"message": ec.service.GetSumQuery()})
+}

@@ -19,9 +19,8 @@ func (s *Server) Start() error {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
-	// Routes
 	router.SetupRouter(r, s.conf)
 
-	logger.GetLogger().Info("Starting server on port 8080")
-	return r.Run("0.0.0.0:8080")
+	logger.GetLogger().Info("Starting server on port 8000")
+	return r.Run("0.0.0.0:8000")
 }

@@ -5,14 +5,20 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/controllers"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
+	"github.com/FeedTheRealm-org/core-service/internal/world-browser-service/utils/logger"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config) {
 	g := r.Group("/auth")
-	repo := repositories.NewExampleRepository(conf)
+	repo, err := repositories.NewExampleRepository(conf)
+	if err != nil {
+		logger.GetLogger().Errorf("Failed to connect to DB: %v", err)
+	}
+
 	service := services.NewExampleService(conf, repo)
 	controller := controllers.NewExampleController(conf, service)
 
-	g.GET("", controller.GetExample)
+	g.GET("/example-msg", controller.GetExample)
+	g.GET("/example-query", controller.GetSumQuery)
 }
