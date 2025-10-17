@@ -5,14 +5,13 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAccountRepository_CreateAccount(t *testing.T) {
 	conf := config.CreateConfig()
 	repo, err := repositories.NewAccountRepository(conf)
-	if err != nil {
-		t.Errorf("Failed to connect: %v", err)
-	}
+	assert.Nil(t, err, "failed to connect to database")
 
 	email := "john.doe@example.com"
 	passwordHash := "hashed_password"
@@ -23,18 +22,23 @@ func TestAccountRepository_CreateAccount(t *testing.T) {
 	}
 
 	err = repo.CreateAccount(user)
+	assert.Nil(t, err, "failed to create account")
+
 	result, err := repo.GetAccountByEmail(email)
+	assert.Nil(t, err, "failed to get account by email")
+	assert.NotNil(t, result, "expected user, got nil")
+	assert.Equal(t, email, result.Email, "unexpected email")
+	assert.Equal(t, passwordHash, result.PasswordHash, "unexpected password hash")
+}
 
-	if result == nil {
-		t.Errorf("expected user, got nil")
-	}
+func TestAccountRepository_GetAccountByEmail_NotFound(t *testing.T) {
+	conf := config.CreateConfig()
+	repo, err := repositories.NewAccountRepository(conf)
+	assert.Nil(t, err, "failed to connect to database")
 
-	if result.Email != email || result.PasswordHash != passwordHash {
-		t.Errorf("expected user with email %s and password hash %s, got email %s and password hash %s",
-			email,
-			passwordHash,
-			result.Email,
-			result.PasswordHash,
-		)
-	}
+	email := "notfound@example.com"
+	user, err := repo.GetAccountByEmail(email)
+	assert.NotNil(t, err, "expected error on getting non-existing user")
+	assert.Error(t, err, "Account not found")
+	assert.Nil(t, user, "expected no user to be found")
 }

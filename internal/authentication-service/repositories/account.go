@@ -7,6 +7,12 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+type AccountNotFoundError struct{}
+
+func (e *AccountNotFoundError) Error() string {
+	return "Account not found"
+}
+
 type accountRepository struct {
 	conf *config.Config
 	conn *pgx.Conn
@@ -35,10 +41,7 @@ func (ar *accountRepository) GetAccountByEmail(email string) (*User, error) {
 		 WHERE email = $1`, email)
 
 	if err := row.Scan(&id, &u.Email, &u.PasswordHash, &createdAt); err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
-		}
-		return nil, err
+		return nil, &AccountNotFoundError{}
 	}
 
 	return &u, nil
