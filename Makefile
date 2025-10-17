@@ -1,5 +1,4 @@
 
-
 docker-down-dev:
 	docker compose -f docker-compose.dev.yml down
 .PHONY: docker-down-dev
@@ -13,5 +12,6 @@ docker-up-dev: docker-build-dev
 .PHONY: docker-up-dev
 
 docker-exec-app-dev: docker-up-dev
+	docker compose -f docker-compose.dev.yml exec -T app go run ./cmd/migrate/main.go up
 	docker compose -f docker-compose.dev.yml exec -it app /bin/bash
 .PHONY: docker-exec-app-dev

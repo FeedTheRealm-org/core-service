@@ -25,8 +25,18 @@ func NewDatabaseConfig(username string, password string, host string, port int, 
 	}
 }
 
+func (dbc *DatabaseConfig) GenerateURL() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		dbc.username,
+		dbc.password,
+		dbc.host,
+		dbc.port,
+		dbc.database,
+	)
+}
+
 func (dbc *DatabaseConfig) GetConnectionToDatabase() (*pgx.Conn, error) {
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s", dbc.username, dbc.password, dbc.host, dbc.port, dbc.database)
+	connStr := dbc.GenerateURL()
 	conn, err := pgx.Connect(context.Background(), connStr)
 	if err != nil {
 		return nil, err
