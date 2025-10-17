@@ -16,7 +16,7 @@ docker-exec-app-dev: docker-up-dev
 	docker compose -f docker-compose.dev.yml exec -it app /bin/bash
 .PHONY: docker-exec-app-dev
 
-docker-exec-test:
+exec-test:
 	docker compose -f docker-compose.test.yml build
 	docker compose -f docker-compose.test.yml up -d
 	docker compose -f docker-compose.test.yml exec -T app sh run_tests.sh
