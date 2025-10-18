@@ -1,6 +1,7 @@
 package acceptance_tests
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -12,10 +13,32 @@ import (
 
 type response struct {
 	Message string `json:"message"`
+	Email   string `json:"email,omitempty"`
+}
+
+type responseError struct {
+	Error string `json:"error"`
 }
 
 func aSignUpRequestIsMadeWithEmailAndPassword(ctx context.Context, email, password string) (context.Context, error) {
-	resp, err := http.Get("http://0.0.0.0:8000/auth/example-query")
+	payload := map[string]string{
+		"email":    email,
+		"password": password,
+	}
+
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return ctx, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/signup", bytes.NewReader(b))
+	if err != nil {
+		return ctx, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return ctx, err
 	}
@@ -49,7 +72,7 @@ func theResponseShouldIndicateSuccess(ctx context.Context) error {
 		return fmt.Errorf("failed to parse response: %v", err)
 	}
 
-	if res.Message != "User created successfully" {
+	if res.Message != "Account created successfully" {
 		return fmt.Errorf("unexpected result: %s", res.Message)
 	}
 
@@ -63,37 +86,20 @@ func theResponseShouldIncludeAnErrorMessage(ctx context.Context, expectedMsg str
 		return fmt.Errorf("no result found in context")
 	}
 
-	var res response
+	var res responseError
 	if err := json.Unmarshal(body, &res); err != nil {
 		return fmt.Errorf("failed to parse response: %v", err)
 	}
 
-	if res.Message != expectedMsg {
-		return fmt.Errorf("unexpected result: %s", res.Message)
+	if res.Error != expectedMsg {
+		return fmt.Errorf("unexpected result: %s", res.Error)
 	}
 
 	return nil
 }
 
-func anAccountAlreadyExistsWithTheEmail(ctx context.Context, email string) error {
-	val := ctx.Value(testContextKey{})
-	body, ok := val.([]byte)
-	if !ok {
-		return fmt.Errorf("no result found in context")
-	}
-
-	var res response
-	if err := json.Unmarshal(body, &res); err != nil {
-		return fmt.Errorf("failed to parse response: %v", err)
-	}
-
-	expectedMsg := fmt.Sprintf("Account with email %s already exists", email)
-
-	if res.Message != expectedMsg {
-		return fmt.Errorf("unexpected result: %s", res.Message)
-	}
-
-	return nil
+func anAccountAlreadyExistsWithTheEmail(ctx context.Context, email string) (context.Context, error) {
+	return aSignUpRequestIsMadeWithEmailAndPassword(ctx, email, "somepassword")
 }
 
 func InitializeScenarioForAccount(sc *godog.ScenarioContext) {

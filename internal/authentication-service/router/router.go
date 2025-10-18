@@ -21,4 +21,14 @@ func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config) {
 
 	g.GET("/example-msg", controller.GetExample)
 	g.GET("/example-query", controller.GetSumQuery)
+
+	accountRepo, err := repositories.NewAccountRepository(conf)
+	if err != nil {
+		logger.GetLogger().Errorf("Failed to connect to DB: %v", err)
+	}
+
+	accountService := services.NewAccountService(conf, accountRepo)
+	accountController := controllers.NewAccountController(conf, accountService)
+
+	g.POST("/signup", accountController.CreateAccount)
 }
