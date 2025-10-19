@@ -11,6 +11,8 @@ import (
 	"github.com/cucumber/godog"
 )
 
+type testContextKey struct{}
+
 type response struct {
 	Message string `json:"message"`
 	Email   string `json:"email,omitempty"`
