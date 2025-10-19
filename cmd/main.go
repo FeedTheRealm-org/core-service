@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	conf := &config.Config{}
+	conf := config.CreateConfig()
 	s := server.NewServer(conf)
 	err := s.Start()
 	if err != nil {
