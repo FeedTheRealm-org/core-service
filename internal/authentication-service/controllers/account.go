@@ -53,7 +53,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 			return
 		}
 		logger.GetLogger().Errorf("CreateAccount: service error for email=%s: %v", req.Email, err)
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(500, gin.H{"error": "Internal server error"})
 		return
 	}
 
