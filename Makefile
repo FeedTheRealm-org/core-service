@@ -21,4 +21,4 @@ exec-test:
 	docker compose -f docker-compose.test.yml up -d
 	docker compose -f docker-compose.test.yml exec -T app sh run_tests.sh
 	docker compose -f docker-compose.test.yml down -v
-.PHONY: docker-exec-test
+.PHONY: exec-test
