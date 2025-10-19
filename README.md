@@ -49,9 +49,51 @@ docker rmi join-travel-back:latest
 Tests should be written in the same package of the tested object, and the package name should be the same but appending `_test`.
 
 ```bash
-# Run all tests in subdirectories and show coverage
-go test ./... -cover
+# Run tests in Docker (includes acceptance tests)
+make exec-test
 ```
+
+## Makefile Commands
+
+The project includes a Makefile with convenient commands for development and testing:
+
+```bash
+# Show all available commands with descriptions
+make help
+
+# Development commands
+make docker-up-dev          # Build and start development containers
+make docker-build-dev       # Build development containers
+make docker-down-dev        # Stop and remove development containers
+make docker-exec-app-dev    # Run migrations and open bash shell in app container
+
+# Testing commands
+make exec-test              # Build, run, and execute tests in Docker containers
+```
+
+## Database Migrations
+
+The project uses `golang-migrate` for database migrations. Migration files are located in the `migrations/` directory.
+
+```bash
+# Run migrations manually (from project root)
+go run cmd/migrate/main.go up
+
+# Rollback migrations
+go run cmd/migrate/main.go down
+
+# Check migration version
+go run cmd/migrate/main.go version
+```
+
+**Environment Variables for Database:**
+
+- `DB_USER` - Database username
+- `DB_PASSWORD` - Database password
+- `DB_HOST`     - Database host
+- `DB_PORT` - Database port (default: 5432)
+- `DB_NAME` - Database name
+
 
 ## Structure
 
@@ -64,36 +106,36 @@ en cada uno los controladores, servicios y repositorios se ponen en sus correspo
 ```bash
 .
 ├── cmd
-│   └── main.go # Binary entrypoint
+│   └── migrate
 ├── config
-│   └── config.go # Server/Global config
-├── Dockerfile
-├── go.mod
-├── go.sum
-├── internal # Server logic separated by service and packaged by layer
-│   ├── authentication-service # Auth Microservice
+├── docs
+├── internal
+│   ├── authentication-service
+│   │   ├── acceptance-tests
+│   │   │   └── features
 │   │   ├── controllers
 │   │   ├── repositories
 │   │   ├── router
 │   │   ├── services
 │   │   └── utils
-│   ├── conversion-service # Conversions Microservice
+│   │       └── logger
+│   ├── conversion-service
 │   │   ├── controllers
 │   │   ├── repositories
 │   │   ├── router
 │   │   ├── services
 │   │   └── utils
+│   │       └── logger
 │   ├── router
-│   │   └── router.go
 │   ├── server
-│   │   └── server.go
 │   ├── utils
 │   │   └── logger
-│   └── world-browser-service # World Browser Microservice
+│   └── world-browser-service
 │       ├── controllers
 │       ├── repositories
 │       ├── router
 │       ├── services
 │       └── utils
-
+│           └── logger
+└── migrations
 ```
