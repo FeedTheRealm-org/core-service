@@ -3,6 +3,7 @@ package services
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
+	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
 )
 
 type accountService struct {
@@ -50,9 +51,14 @@ func (s *accountService) CreateAccount(email string, password string) (*reposito
 		return nil, &AccountAlreadyExistsError{}
 	}
 
+	hashedPassword, err := hashing.HashPassword(password)
+	if err != nil {
+		return nil, &AccountFailedToCreateError{}
+	}
+
 	user := &repositories.User{
 		Email:        email,
-		PasswordHash: password,
+		PasswordHash: string(hashedPassword),
 	}
 
 	err = s.repo.CreateAccount(user)
