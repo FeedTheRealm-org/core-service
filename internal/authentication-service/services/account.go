@@ -1,6 +1,8 @@
 package services
 
 import (
+	"time"
+
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
@@ -35,6 +37,18 @@ type AccountFailedToCreateTokenError struct{}
 
 func (e *AccountFailedToCreateTokenError) Error() string {
 	return "Failed to create session token"
+}
+
+type AccountSessionExpired struct{}
+
+func (e *AccountSessionExpired) Error() string {
+	return "Session has expired"
+}
+
+type AccountSessionInvalid struct{}
+
+func (e *AccountSessionInvalid) Error() string {
+	return "Session is invalid"
 }
 
 func NewAccountService(conf *config.Config, repo repositories.AccountRepository) AccountService {
@@ -95,4 +109,15 @@ func (s *accountService) LoginAccount(email string, password string) (string, er
 	}
 
 	return token, nil
+}
+
+func (s *accountService) ValidateSessionToken(token string) error {
+	if err := s.jwt.IsValidateToken(token, time.Now()); err != nil {
+		if _, ok := err.(*jwt.JWTExpiredTokenError); ok {
+			return &AccountSessionExpired{}
+		}
+		return &AccountSessionInvalid{}
+	}
+
+	return nil
 }
