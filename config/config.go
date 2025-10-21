@@ -3,10 +3,13 @@ package config
 import (
 	"os"
 	"strconv"
+	"time"
 )
 
 type Config struct {
-	Dbc *DatabaseConfig
+	SessionTokenSecretKey string
+	SessionTokenDuration  time.Duration
+	Dbc                   *DatabaseConfig
 }
 
 func CreateConfig() *Config {
@@ -14,6 +17,8 @@ func CreateConfig() *Config {
 	if err != nil {
 		port = 5432
 	}
+
+	SessionTokenDuration, err := time.ParseDuration(os.Getenv("SESSION_TOKEN_DURATION"))
 
 	dbc := NewDatabaseConfig(
 		os.Getenv("DB_USER"),
@@ -24,6 +29,8 @@ func CreateConfig() *Config {
 	)
 
 	return &Config{
-		Dbc: dbc,
+		SessionTokenSecretKey: os.Getenv("SESSION_TOKEN_SECRET_KEY"),
+		SessionTokenDuration:  SessionTokenDuration,
+		Dbc:                   dbc,
 	}
 }

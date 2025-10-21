@@ -4,11 +4,13 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
+	jwt "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session-token"
 )
 
 type accountService struct {
 	conf *config.Config
 	repo repositories.AccountRepository
+	jwt  *jwt.JWTManager
 }
 
 type AccountNotFoundError struct{}
@@ -33,6 +35,7 @@ func NewAccountService(conf *config.Config, repo repositories.AccountRepository)
 	return &accountService{
 		conf: conf,
 		repo: repo,
+		jwt:  jwt.NewJWTManager(conf.SessionTokenSecretKey, conf.SessionTokenDuration),
 	}
 }
 
@@ -67,4 +70,23 @@ func (s *accountService) CreateAccount(email string, password string) (*reposito
 	}
 
 	return user, nil
+}
+
+func (s *accountService) LoginAccount(email string, password string) (string, error) {
+	user, err := s.repo.GetAccountByEmail(email)
+	if err != nil {
+		return "", &AccountNotFoundError{}
+	}
+
+	isPasswordValid := hashing.VerifyPassword(user.PasswordHash, password)
+	if !isPasswordValid {
+		return "", &AccountNotFoundError{}
+	}
+
+	token, err := s.jwt.GenerateToken(user.Email)
+	if err != nil {
+		return "", &AccountNotFoundError{}
+	}
+
+	return token, nil
 }
