@@ -31,6 +31,12 @@ func (e *AccountAlreadyExistsError) Error() string {
 	return "Account already exists"
 }
 
+type AccountFailedToCreateTokenError struct{}
+
+func (e *AccountFailedToCreateTokenError) Error() string {
+	return "Failed to create session token"
+}
+
 func NewAccountService(conf *config.Config, repo repositories.AccountRepository) AccountService {
 	return &accountService{
 		conf: conf,
@@ -85,7 +91,7 @@ func (s *accountService) LoginAccount(email string, password string) (string, er
 
 	token, err := s.jwt.GenerateToken(user.Email)
 	if err != nil {
-		return "", &AccountNotFoundError{}
+		return "", &AccountFailedToCreateTokenError{}
 	}
 
 	return token, nil

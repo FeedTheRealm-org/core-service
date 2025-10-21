@@ -20,4 +20,5 @@ func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config) {
 	accountController := controllers.NewAccountController(conf, accountService)
 
 	g.POST("/signup", accountController.CreateAccount)
+	g.POST("/login", accountController.LoginAccount)
 }

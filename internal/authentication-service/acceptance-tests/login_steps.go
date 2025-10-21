@@ -187,6 +187,35 @@ func furtherRequestsShouldRequireAuthentication(ctx context.Context) error {
 	return nil
 }
 
+func theResponseShouldIndicateASuccessfulLogin(ctx context.Context) error {
+	val := ctx.Value(testContextKey{})
+	bodyBytes, ok := val.([]byte)
+	if !ok {
+		return fmt.Errorf("no response body found in context")
+	}
+
+	// Check if it's an error response first
+	var errorResp responseError
+	if err := json.Unmarshal(bodyBytes, &errorResp); err == nil && errorResp.Error != "" {
+		return fmt.Errorf("received error response instead of success: %s (body: %s)", errorResp.Error, string(bodyBytes))
+	}
+
+	var loginResp loginResponse
+	if err := json.Unmarshal(bodyBytes, &loginResp); err != nil {
+		return fmt.Errorf("failed to parse login response: %v (body: %s)", err, string(bodyBytes))
+	}
+
+	if loginResp.Message != "Login successful" {
+		return fmt.Errorf("unexpected login message: %s (body: %s)", loginResp.Message, string(bodyBytes))
+	}
+
+	if loginResp.Token == "" {
+		return fmt.Errorf("expected a token in the login response, but got none")
+	}
+
+	return nil
+}
+
 func InitializeScenarioForLogin(sc *godog.ScenarioContext) {
 	sc.Step(`^a login request is made with email "([^"]*)" and password "([^"]*)"$`, aLoginRequestIsMadeWithEmailAndPassword)
 	sc.Step(`^a login request is made with an empty email and password "([^"]*)"$`, aLoginRequestIsMadeWithAnEmptyEmailAndPassword)
@@ -196,4 +225,6 @@ func InitializeScenarioForLogin(sc *godog.ScenarioContext) {
 	sc.Step(`^the session should still be active$`, theSessionShouldStillBeActive)
 	sc.Step(`^the session should be closed$`, theSessionShouldBeClosed)
 	sc.Step(`^further requests should require authentication$`, furtherRequestsShouldRequireAuthentication)
+	sc.Step(`^the response should indicate a successful login$`, theResponseShouldIndicateASuccessfulLogin)
+	sc.Step(`^an account already exists with the email "([^"]*)" and password "([^"]*)"$`, aSignUpRequestIsMadeWithEmailAndPassword)
 }
