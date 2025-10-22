@@ -1,13 +1,18 @@
 package services
 
 import (
+	"time"
+
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
+	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
+	jwt "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session-token"
 )
 
 type accountService struct {
 	conf *config.Config
 	repo repositories.AccountRepository
+	jwt  *jwt.JWTManager
 }
 
 type AccountNotFoundError struct{}
@@ -28,10 +33,29 @@ func (e *AccountAlreadyExistsError) Error() string {
 	return "Account already exists"
 }
 
+type AccountFailedToCreateTokenError struct{}
+
+func (e *AccountFailedToCreateTokenError) Error() string {
+	return "Failed to create session token"
+}
+
+type AccountSessionExpired struct{}
+
+func (e *AccountSessionExpired) Error() string {
+	return "Session has expired"
+}
+
+type AccountSessionInvalid struct{}
+
+func (e *AccountSessionInvalid) Error() string {
+	return "Session is invalid"
+}
+
 func NewAccountService(conf *config.Config, repo repositories.AccountRepository) AccountService {
 	return &accountService{
 		conf: conf,
 		repo: repo,
+		jwt:  jwt.NewJWTManager(conf.SessionTokenSecretKey, conf.SessionTokenDuration),
 	}
 }
 
@@ -50,9 +74,14 @@ func (s *accountService) CreateAccount(email string, password string) (*reposito
 		return nil, &AccountAlreadyExistsError{}
 	}
 
+	hashedPassword, err := hashing.HashPassword(password)
+	if err != nil {
+		return nil, &AccountFailedToCreateError{}
+	}
+
 	user := &repositories.User{
 		Email:        email,
-		PasswordHash: password,
+		PasswordHash: string(hashedPassword),
 	}
 
 	err = s.repo.CreateAccount(user)
@@ -61,4 +90,34 @@ func (s *accountService) CreateAccount(email string, password string) (*reposito
 	}
 
 	return user, nil
+}
+
+func (s *accountService) LoginAccount(email string, password string) (string, error) {
+	user, err := s.repo.GetAccountByEmail(email)
+	if err != nil {
+		return "", &AccountNotFoundError{}
+	}
+
+	isPasswordValid := hashing.VerifyPassword(user.PasswordHash, password)
+	if !isPasswordValid {
+		return "", &AccountNotFoundError{}
+	}
+
+	token, err := s.jwt.GenerateToken(user.Email)
+	if err != nil {
+		return "", &AccountFailedToCreateTokenError{}
+	}
+
+	return token, nil
+}
+
+func (s *accountService) ValidateSessionToken(token string) error {
+	if err := s.jwt.IsValidateToken(token, time.Now()); err != nil {
+		if _, ok := err.(*jwt.JWTExpiredTokenError); ok {
+			return &AccountSessionExpired{}
+		}
+		return &AccountSessionInvalid{}
+	}
+
+	return nil
 }

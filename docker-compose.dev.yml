@@ -12,6 +12,8 @@ services:
       - DB_HOST=dev_db
       - DB_PORT=5432
       - DB_NAME=postgres
+      - SESSION_TOKEN_SECRET_KEY=dev_secret_key
+      - SESSION_TOKEN_DURATION=1h
     depends_on:
       dev_db:
         condition: service_healthy

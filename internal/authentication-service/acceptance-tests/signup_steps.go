@@ -101,7 +101,8 @@ func theResponseShouldIncludeAnErrorMessage(ctx context.Context, expectedMsg str
 }
 
 func anAccountAlreadyExistsWithTheEmail(ctx context.Context, email string) (context.Context, error) {
-	return aSignUpRequestIsMadeWithEmailAndPassword(ctx, email, "somepassword")
+	_, err := aSignUpRequestIsMadeWithEmailAndPassword(ctx, email, "somepassword")
+	return ctx, err
 }
 
 func InitializeScenarioForAccount(sc *godog.ScenarioContext) {
