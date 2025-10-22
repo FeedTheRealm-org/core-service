@@ -107,3 +107,39 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 	logger.GetLogger().Infof("LoginAccount: login successful for email=%s", req.Email)
 	c.JSON(200, gin.H{"message": "Login successful", "token": token})
 }
+
+func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		logger.GetLogger().Info("CheckSessionExpiration: missing Authorization header")
+		c.JSON(400, gin.H{"error": "Authorization header required"})
+		return
+	}
+
+	token := authHeader
+	if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+		token = authHeader[7:]
+	}
+
+	if token == "" {
+		logger.GetLogger().Info("CheckSessionExpiration: missing token in Authorization header")
+		c.JSON(400, gin.H{"error": "Token is required"})
+		return
+	}
+
+	logger.GetLogger().Info("CheckSessionExpiration: received request to check session token from header")
+	err := ec.service.ValidateSessionToken(token)
+	if err != nil {
+		if _, ok := err.(*services.AccountSessionExpired); ok {
+			logger.GetLogger().Info("CheckSessionExpiration: session token has expired")
+			c.JSON(401, gin.H{"error": "Session has expired"})
+			return
+		}
+		logger.GetLogger().Errorf("CheckSessionExpiration: service error: %v", err)
+		c.JSON(500, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	logger.GetLogger().Info("CheckSessionExpiration: session token is valid")
+	c.JSON(200, gin.H{"message": "Session is valid"})
+}

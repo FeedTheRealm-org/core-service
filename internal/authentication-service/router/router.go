@@ -21,4 +21,5 @@ func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config) {
 
 	g.POST("/signup", accountController.CreateAccount)
 	g.POST("/login", accountController.LoginAccount)
+	g.GET("/check-session", accountController.CheckSessionExpiration)
 }

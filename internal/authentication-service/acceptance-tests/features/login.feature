@@ -31,7 +31,6 @@ Feature: User Login
     When "30" minutes have passed since login
     Then the session should still be active
   
-  @wip
   Scenario: AC-4b Session expires after timeout
     Given the user has logged in successfully
     When "60" minutes have passed since login

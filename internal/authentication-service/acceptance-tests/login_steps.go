@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cucumber/godog"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type loginResponse struct {
@@ -168,10 +169,23 @@ func theSessionShouldBeClosed(ctx context.Context) error {
 }
 
 func furtherRequestsShouldRequireAuthentication(ctx context.Context) error {
-	req, err := http.NewRequest(http.MethodGet, "http://0.0.0.0:8000/auth/protected", nil)
+	expiredToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"email":      "sessionuser@example.com",
+		"expires_at": time.Now().Add(-time.Hour).Unix(),
+		"issued_at":  time.Now().Unix(),
+	})
+
+	expiredTokenString, err := expiredToken.SignedString([]byte("test_secret_key"))
+	if err != nil {
+		return fmt.Errorf("failed to sign expired token: %v", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, "http://0.0.0.0:8000/auth/check-session", nil)
 	if err != nil {
 		return err
 	}
+
+	req.Header.Set("Authorization", "Bearer "+expiredTokenString)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -180,8 +194,17 @@ func furtherRequestsShouldRequireAuthentication(ctx context.Context) error {
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
 	if resp.StatusCode != http.StatusUnauthorized {
-		return fmt.Errorf("expected 401 status code, got %d", resp.StatusCode)
+		return fmt.Errorf("expected 401 status code for expired token, got %d (body: %s)", resp.StatusCode, string(body))
+	}
+
+	if !bytes.Contains(bytes.ToLower(body), []byte("expired")) {
+		return fmt.Errorf("expected response to indicate an expired token, got body: %s", string(body))
 	}
 
 	return nil
