@@ -7,34 +7,65 @@ import (
 )
 
 func TestIsValidEmail_ValidEmail(t *testing.T) {
-	assert.True(t, IsValidEmail("user@example.com"))
+	err := IsValidEmail("user@example.com")
+	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
-func TestIsValidEmail_NoDomain(t *testing.T) {
-	assert.False(t, IsValidEmail("user@"))
-	assert.False(t, IsValidEmail("userexample.com"))
-	assert.False(t, IsValidEmail("user@example"))
-}
+func TestIsValidEmail_InvalidEmails(t *testing.T) {
+	err := IsValidEmail("")
+	assert.NotNil(t, err)
+	assert.Error(t, err, "Empty email")
 
-func TestIsValidEmail_InvalidDomain(t *testing.T) {
-	assert.False(t, IsValidEmail("user@example.c"))
-	assert.False(t, IsValidEmail("user@exa_mple.com"))
+	err = IsValidEmail("user@")
+	assert.NotNil(t, err)
+	assert.Error(t, err, "Invalid email")
+
+	err = IsValidEmail("userexample.com")
+	assert.NotNil(t, err)
+	assert.Error(t, err, "Invalid email")
+
+	err = IsValidEmail("user@example")
+	assert.NotNil(t, err)
+	assert.Error(t, err, "Invalid email")
+
+	err = IsValidEmail("user@example.c")
+	assert.NotNil(t, err)
+	assert.Error(t, err, "Invalid email")
+
+	err = IsValidEmail("user@exa_mple.com")
+	assert.NotNil(t, err)
+	assert.Error(t, err, "Invalid email")
 }
 
 func TestIsValidPassword_ValidPassword(t *testing.T) {
-	assert.True(t, IsValidPassword("Password1"))
-	assert.True(t, IsValidPassword("abcDEF123"))
+	err := IsValidPassword("Password1")
+	assert.Nil(t, err)
+	assert.NoError(t, err)
+
+	err = IsValidPassword("Abcdefg1")
+	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestIsValidPassword_TooShort(t *testing.T) {
-	assert.False(t, IsValidPassword("Pwd1"))
-	assert.False(t, IsValidPassword("1234567"))
+	err := IsValidPassword("Pwd1")
+	assert.NotNil(t, err)
+	assert.Error(t, err, "Password too short")
+
+	err = IsValidPassword("1234567")
+	assert.NotNil(t, err)
+	assert.Error(t, err, "Password too short")
 }
 
 func TestIsValidPassword_NoLetter(t *testing.T) {
-	assert.False(t, IsValidPassword("12345678"))
+	err := IsValidPassword("12345678")
+	assert.NotNil(t, err)
+	assert.Error(t, err, "Password must contain at least one letter")
 }
 
 func TestIsValidPassword_NoNumber(t *testing.T) {
-	assert.False(t, IsValidPassword("Password"))
+	err := IsValidPassword("Password")
+	assert.NotNil(t, err)
+	assert.Error(t, err, "Password must contain at least one number")
 }
