@@ -5,6 +5,7 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
+	validator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/credential-validation"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
 	jwt "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session-token"
 )
@@ -51,6 +52,14 @@ func (e *AccountSessionInvalid) Error() string {
 	return "Session is invalid"
 }
 
+type AccountInvalidFormat struct{
+	Msg string
+}
+
+func (e *AccountInvalidFormat) Error() string {
+	return "Account format is invalid"
+}
+
 func NewAccountService(conf *config.Config, repo repositories.AccountRepository) AccountService {
 	return &accountService{
 		conf: conf,
@@ -72,6 +81,50 @@ func (s *accountService) CreateAccount(email string, password string) (*reposito
 	existingUser, err := s.repo.GetAccountByEmail(email)
 	if err == nil && existingUser != nil {
 		return nil, &AccountAlreadyExistsError{}
+	}
+
+	err = validator.IsValidEmail(email)
+	if err != nil {
+		if _, ok := err.(*validator.EmptyEmailError); ok {
+			return nil, &AccountInvalidFormat{
+				Msg: "Empty email",
+			}
+		}
+
+		return nil, &AccountInvalidFormat{
+			Msg: "Invalid email",
+		}
+	}
+
+	err = validator.IsValidPassword(password)
+	if err != nil {
+		if _, ok := err.(*validator.EmptyPasswordError); ok {
+			return nil, &AccountInvalidFormat{
+				Msg: "Empty password",
+			}
+		}
+
+		if _, ok := err.(*validator.PasswordTooShortError); ok {
+			return nil, &AccountInvalidFormat{
+				Msg: "Password is too short",
+			}
+		}
+
+		if _, ok := err.(*validator.PasswordNoLetterError); ok {
+			return nil, &AccountInvalidFormat{
+				Msg: "Password must contain at least one letter",
+			}
+		}
+
+		if _, ok := err.(*validator.PasswordNoNumberError); ok {
+			return nil, &AccountInvalidFormat{
+				Msg: "Password must contain at least one number",
+			}
+		}
+
+		return nil, &AccountInvalidFormat{
+			Msg: "Invalid password",
+		}
 	}
 
 	hashedPassword, err := hashing.HashPassword(password)
