@@ -52,6 +52,13 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 			c.JSON(400, gin.H{"error": "Email is already in use"})
 			return
 		}
+
+		if _, ok := err.(*services.AccountInvalidFormat); ok {
+			logger.GetLogger().Infof("CreateAccount: invalid account format for email=%s: %v", req.Email, err)
+			c.JSON(400, gin.H{"error": err.(*services.AccountInvalidFormat).Msg})
+			return
+		}
+
 		logger.GetLogger().Errorf("CreateAccount: service error for email=%s: %v", req.Email, err)
 		c.JSON(500, gin.H{"error": "Internal server error"})
 		return

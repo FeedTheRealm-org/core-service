@@ -4,10 +4,10 @@ Feature: User Login
   So that I can access my account in the application
 
   Background:
-    Given an account already exists with the email "login@example.com" and password "somepassword"
+    Given an account already exists with the email "login@example.com" and password "somepassword1"
 
   Scenario: AC-1 Successful login with valid credentials
-    When a login request is made with email "login@example.com" and password "somepassword"
+    When a login request is made with email "login@example.com" and password "somepassword1"
     Then the response should indicate a successful login
 
   Scenario: AC-2a Show error when password is incorrect
