@@ -14,6 +14,9 @@ WORKDIR /usr/src/app
 COPY --from=deps /go/pkg /go/pkg
 COPY . .
 
+RUN go install github.com/swaggo/swag/cmd/swag@latest && \
+    swag init --generalInfo cmd/main.go
+
 RUN go build -v -o /usr/local/bin/app cmd/main.go
 
 # **Run Compiled App**

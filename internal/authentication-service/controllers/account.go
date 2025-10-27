@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
@@ -19,13 +20,19 @@ func NewAccountController(conf *config.Config, service services.AccountService) 
 	}
 }
 
+// @Summary Sign up
+// @Description Create a new user account
+// @Tags authentication-service
+// @Accept   json
+// @Produce  json
+// @Param   request body dtos.CreateAccountRequestDTO true "Signup data"
+// @Success 200  {object}  dtos.CreateAccountRequestDTO "Successful login (Wrapped in data envelope)"
+// @Failure 400  {object}  dtos.CreateAccountRequestDTO "Bad request body"
+// @Failure 401  {object}  dtos.CreateAccountRequestDTO "Invalid credentials or invalid JWT token"
+// @Router /auth/signup [post]
 func (ec *accountController) CreateAccount(c *gin.Context) {
-	var req struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
+	req := &dtos.CreateAccountRequestDTO{}
+	if err := c.ShouldBindJSON(req); err != nil {
 		logger.GetLogger().Errorf("CreateAccount: failed to bind JSON: %v", err)
 		c.JSON(400, gin.H{"error": err.Error()})
 		return

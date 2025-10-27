@@ -19,6 +19,9 @@ func CreateConfig() *Config {
 	}
 
 	SessionTokenDuration, err := time.ParseDuration(os.Getenv("SESSION_TOKEN_DURATION"))
+	if err != nil {
+		SessionTokenDuration = time.Hour * 24
+	}
 
 	dbc := NewDatabaseConfig(
 		os.Getenv("DB_USER"),

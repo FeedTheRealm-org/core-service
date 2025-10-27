@@ -13,7 +13,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=postgres
       - SESSION_TOKEN_SECRET_KEY=dev_secret_key
-      - SESSION_TOKEN_DURATION=1h
+      - SESSION_TOKEN_DURATION=24h
     depends_on:
       dev_db:
         condition: service_healthy
@@ -22,7 +22,7 @@ services:
     volumes:
       - .:/usr/src/app
   dev_db:
-    image: postgres:18
+    image: postgres:17-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
