@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/auth/signup": {
             "post": {
-                "description": "Create a new user account",
+                "description": "Log in an existing user",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,15 +27,15 @@ const docTemplate = `{
                 "tags": [
                     "authentication-service"
                 ],
-                "summary": "Sign up",
+                "summary": "Login",
                 "parameters": [
                     {
-                        "description": "Signup data",
+                        "description": "Login data",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dtos.CreateAccountRequestDTO"
+                            "$ref": "#/definitions/dtos.LoginAccountRequestDTO"
                         }
                     }
                 ],
@@ -43,19 +43,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Successful login (Wrapped in data envelope)",
                         "schema": {
-                            "$ref": "#/definitions/dtos.CreateAccountRequestDTO"
+                            "$ref": "#/definitions/dtos.LoginAccountResponseDTO"
                         }
                     },
                     "400": {
                         "description": "Bad request body",
                         "schema": {
-                            "$ref": "#/definitions/dtos.CreateAccountRequestDTO"
+                            "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Invalid credentials or invalid JWT token",
                         "schema": {
-                            "$ref": "#/definitions/dtos.CreateAccountRequestDTO"
+                            "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     }
                 }
@@ -70,6 +70,53 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.CreateAccountResponseDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "detail": {
+                    "type": "string"
+                },
+                "instance": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.LoginAccountRequestDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.LoginAccountResponseDTO": {
+            "type": "object",
+            "properties": {
+                "token": {
                     "type": "string"
                 }
             }
