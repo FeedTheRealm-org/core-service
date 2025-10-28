@@ -19,3 +19,23 @@ Feature: User Sign-Up
     Given an account already exists with the email "existing@example.com"
     When a sign-up request is made with email "existing@example.com" and password "WonderPass123!"
     Then the response should include an error message "Email is already in use"
+
+  Scenario: AC-4a Show error when the email format is invalid
+    When a sign-up request is made with email "invalid-email" and password "StrongPass123!"
+    Then the response should include an error message "Invalid email"
+
+  Scenario: AC-4b Show error when the email domain is invalid
+    When a sign-up request is made with email "user@invalid" and password "StrongPass123!"
+    Then the response should include an error message "Invalid email"
+
+  Scenario: AC-5a Show error when the password is too short
+    When a sign-up request is made with email "shortpass@example.com" and password "Ab12"
+    Then the response should include an error message "Password is too short"
+
+  Scenario: AC-5b Show error when the password has no numbers
+    When a sign-up request is made with email "nonumeric@example.com" and password "PasswordOnly"
+    Then the response should include an error message "Password must contain at least one number"
+
+  Scenario: AC-5c Show error when the password has no letters
+    When a sign-up request is made with email "noletters@example.com" and password "12345678"
+    Then the response should include an error message "Password must contain at least one letter"
