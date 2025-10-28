@@ -7,7 +7,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # **Build App**
-FROM golang:1.24.6 AS builder
+FROM deps AS builder
 
 WORKDIR /usr/src/app
 
@@ -17,7 +17,7 @@ COPY . .
 RUN go build -v -o /usr/local/bin/app cmd/main.go
 
 # **Run Compiled App**
-FROM golang:1.24.6 AS base
+FROM builder AS prod
 
 WORKDIR /usr/src/app
 
@@ -26,3 +26,22 @@ COPY --from=builder /usr/local/bin/app /usr/local/bin/app
 EXPOSE 8080
 
 CMD ["app"]
+
+# **Run test for Compiled App**
+FROM builder AS test
+
+WORKDIR /usr/src/app
+
+COPY --from=builder /usr/local/bin/app /usr/src/app/app
+
+RUN chmod +x run_tests.sh
+
+CMD ["app"]
+
+# **Image for Dev things**
+FROM deps AS dev
+
+WORKDIR /usr/src/app
+
+COPY --from=deps /go/pkg /go/pkg
+COPY . .
