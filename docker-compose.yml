@@ -2,31 +2,30 @@ services:
   app:
     build:
       context: .
-      target: dev
-    tty: true
+      target: prod
     ports:
       - "8000:8000"
     environment:
       - DB_USER=postgres
       - DB_PASSWORD=postgres
-      - DB_HOST=dev_db
+      - DB_HOST=prod_db
       - DB_PORT=5432
       - DB_NAME=postgres
-      - SESSION_TOKEN_SECRET_KEY=dev_secret_key
+      - SESSION_TOKEN_SECRET_KEY=prod_secret_key
       - SESSION_TOKEN_DURATION=1h
     depends_on:
-      dev_db:
+      prod_db:
         condition: service_healthy
     networks:
-      - dev-app-network
-  dev_db:
+      - prod-app-network
+  prod_db:
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     networks:
-      - dev-app-network
+      - prod-app-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -37,7 +36,7 @@ services:
     ports:
       - "5432:5432"
 networks:
-  dev-app-network:
+  prod-app-network:
     driver: bridge
 volumes:
   db-data:
