@@ -7,7 +7,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	validator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/credential-validation"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
-	jwt "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session-token"
+	jwt "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session"
 )
 
 type accountService struct {
