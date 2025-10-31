@@ -1,5 +1,8 @@
 README.md
 .git/
+.github/
+docs/
 .gitignore
 .gitattributes
 *_test.go
+*.md

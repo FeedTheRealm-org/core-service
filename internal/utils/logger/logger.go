@@ -16,6 +16,6 @@ func GetLogger() *zap.SugaredLogger {
 
 func Sync() {
 	if Sugar != nil {
-		Sugar.Sync()
+		_ = Sugar.Sync()
 	}
 }

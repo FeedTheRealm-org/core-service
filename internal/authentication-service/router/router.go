@@ -5,7 +5,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/controllers"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
-	"github.com/FeedTheRealm-org/core-service/internal/world-browser-service/utils/logger"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
 )
 

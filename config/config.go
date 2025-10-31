@@ -6,9 +6,15 @@ import (
 	"time"
 )
 
+type ServerConfig struct {
+	Port            int
+	ShutdownTimeout time.Duration
+}
+
 type Config struct {
 	SessionTokenSecretKey string
 	SessionTokenDuration  time.Duration
+	Server                *ServerConfig
 	Dbc                   *DatabaseConfig
 }
 
@@ -19,6 +25,14 @@ func CreateConfig() *Config {
 	}
 
 	SessionTokenDuration, err := time.ParseDuration(os.Getenv("SESSION_TOKEN_DURATION"))
+	if err != nil {
+		SessionTokenDuration = time.Hour * 24
+	}
+
+	ShutdownTimeout, err := time.ParseDuration(os.Getenv("SERVER_SHUTDOWN_TIMEOUT"))
+	if err != nil {
+		ShutdownTimeout = time.Second * 30
+	}
 
 	dbc := NewDatabaseConfig(
 		os.Getenv("DB_USER"),
@@ -31,6 +45,10 @@ func CreateConfig() *Config {
 	return &Config{
 		SessionTokenSecretKey: os.Getenv("SESSION_TOKEN_SECRET_KEY"),
 		SessionTokenDuration:  SessionTokenDuration,
-		Dbc:                   dbc,
+		Server: &ServerConfig{
+			Port:            8000,
+			ShutdownTimeout: ShutdownTimeout,
+		},
+		Dbc: dbc,
 	}
 }

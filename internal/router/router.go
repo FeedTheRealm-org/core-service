@@ -12,4 +12,5 @@ func SetupRouter(r *gin.Engine, conf *config.Config) {
 	authRouter.SetupAuthenticationServiceRouter(r, conf)
 	conversionRouter.SetupConversionServiceRouter(r, conf)
 	worldBrowserRouter.SetupWorldBrowserServiceRouter(r, conf)
+	SetupSwaggerRouter(r)
 }
