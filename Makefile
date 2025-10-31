@@ -9,19 +9,14 @@ help: # Show this help message
 	}' Makefile
 .PHONY: help
 
-update-tree-structure: # Update the project tree structure file
-	@awk '/## Structure/{exit} {print}' $(README) > $(README_TMP)
-	@cat $(README_TMP) > $(README)
-	@rm $(README_TMP)
-	@printf '\n## Structure\n\n' >> $(README)
-	@printf 'Se tiene la siguiente estructura base, donde cada microservicio que forma parte del monolith se separa del resto para eventualmente escalar la arquitectura,\n' >> $(README)
-	@printf 'en cada uno los controladores, servicios y repositorios se ponen en sus correspontientes carpetas.\n\n' >> $(README)
-	@printf '%s\n' '- **Crear su archivo separado para la interfaz y otro para la implementacion**.' >> $(README)
-	@printf '%s\n\n' '- **No utilizar dependencias de un servicio en otro (no cross-imports)**.' >> $(README)
-	@echo '```bash' >> $(README)
-	@tree -d --noreport >> $(README)
-	@echo '```' >> $(README)
-.PHONY: update-tree-structure
+down: # Stop and remove containers
+	docker compose -f docker-compose.yml down
+.PHONY: down
+
+up: down # Build and start containers
+	docker compose -f docker-compose.yml build
+	docker compose -f docker-compose.yml up -d
+.PHONY: up
 
 docker-down-dev: # Stop and remove development containers
 	docker compose -f docker-compose.dev.yml down
