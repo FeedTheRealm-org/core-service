@@ -22,10 +22,13 @@ func TestAccount_GetUserByEmail(t *testing.T) {
 	email := "existing@example.com"
 	password := "password123"
 
-	_, err := service.CreateAccount(email, password)
+	user, err := service.CreateAccount(email, password)
 	assert.Nil(t, err, "expected no error on account creation")
 
-	user, err := service.GetUserByEmail(email)
+	_, err = service.VerifyAccount(email, user.VerifyCode)
+	assert.Nil(t, err, "expected no error on account verification")
+
+	user, err = service.GetUserByEmail(email)
 	assert.Nil(t, err, "expected no error on getting user by email")
 	assert.NotNil(t, user, "expected user to be found")
 	assert.Equal(t, email, user.Email, "expected email to match")
@@ -186,4 +189,29 @@ func TestAccount_ValidateSessionToken_ExpiredToken(t *testing.T) {
 
 	err = service.ValidateSessionToken(expiredTokenString)
 	assert.NotNil(t, err, "expected error on validating expired session token")
+}
+
+func TestAccount_VerifyAccount(t *testing.T) {
+	email := "user@example.com"
+	password := "verification_code1"
+
+	user, err := service.CreateAccount(email, password)
+	assert.Nil(t, err, "expected no error on account creation")
+
+	isVerified, err := service.VerifyAccount(email, user.VerifyCode)
+	assert.Nil(t, err, "expected no error on account verification")
+	assert.True(t, isVerified, "expected account to be verified")
+}
+
+func TestAccount_CannotLoginWithoutVerifacation(t *testing.T) {
+	email := "not_verified@example.com"
+	password := "password123"
+
+	_, err := service.CreateAccount(email, password)
+	assert.Nil(t, err, "expected no error on account creation")
+
+	token, err := service.LoginAccount(email, password)
+	assert.NotNil(t, err, "expected error on login without verification")
+	assert.Error(t, err, "Account not verified")
+	assert.Empty(t, token, "expected no token to be returned without verification")
 }
