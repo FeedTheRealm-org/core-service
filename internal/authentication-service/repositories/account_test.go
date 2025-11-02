@@ -42,3 +42,51 @@ func TestAccountRepository_GetAccountByEmail_NotFound(t *testing.T) {
 	assert.Error(t, err, "Account not found")
 	assert.Nil(t, user, "expected no user to be found")
 }
+
+func TestAccountRepository_IsAccountVerified(t *testing.T) {
+	conf := config.CreateConfig()
+	repo, err := repositories.NewAccountRepository(conf)
+	assert.Nil(t, err, "failed to connect to database")
+
+	email := "johndoe@example.com"
+	passwordHash := "hashed_password"
+
+	user := &repositories.User{
+		Email:        email,
+		PasswordHash: passwordHash,
+		VerifyCode:   "verification_code",
+	}
+
+	err = repo.CreateAccount(user)
+	assert.Nil(t, err, "failed to create account")
+
+	isVerified, err := repo.IsAccountVerified(email)
+	assert.Nil(t, err, "failed to check if account is verified")
+	assert.False(t, isVerified, "expected account to be unverified")
+}
+
+func TestAccountRepository_VerifyAccount(t *testing.T) {
+	conf := config.CreateConfig()
+	repo, err := repositories.NewAccountRepository(conf)
+	assert.Nil(t, err, "failed to connect to database")
+
+	email := "johndoe@example.com"
+	// passwordHash := "hashed_password"
+	code := "verification_code"
+
+	// user := &repositories.User{
+	// 	Email:        email,
+	// 	PasswordHash: passwordHash,
+	// 	VerifyCode:   code,
+	// }
+
+	// err = repo.CreateAccount(user)
+	// assert.Nil(t, err, "failed to create account")
+
+	err = repo.VerifyAccount(email, code)
+	assert.Nil(t, err, "failed to verify account")
+
+	isVerified, err := repo.IsAccountVerified(email)
+	assert.Nil(t, err, "failed to check if account is verified")
+	assert.True(t, isVerified, "expected account to be verified")
+}
