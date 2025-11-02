@@ -135,6 +135,8 @@ func (s *accountService) CreateAccount(email string, password string) (*reposito
 	user := &repositories.User{
 		Email:        email,
 		PasswordHash: string(hashedPassword),
+		VerifyCode:   "",
+		Expiration:   time.Now().Add(24 * time.Hour),
 	}
 
 	err = s.repo.CreateAccount(user)
