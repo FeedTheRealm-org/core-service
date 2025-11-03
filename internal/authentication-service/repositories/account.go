@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/FeedTheRealm-org/core-service/config"
-	"github.com/jackc/pgx/v5"
 )
 
 type AccountNotFoundError struct{}
@@ -15,18 +14,13 @@ func (e *AccountNotFoundError) Error() string {
 
 type accountRepository struct {
 	conf *config.Config
-	conn *pgx.Conn
+	db   *config.DB
 }
 
-func NewAccountRepository(conf *config.Config) (AccountRepository, error) {
-	conn, err := conf.Dbc.GetConnectionToDatabase()
-	if err != nil {
-		return nil, err
-	}
-
+func NewAccountRepository(conf *config.Config, db *config.DB) (AccountRepository, error) {
 	return &accountRepository{
 		conf: conf,
-		conn: conn,
+		db:   db,
 	}, nil
 }
 
@@ -35,7 +29,7 @@ func (ar *accountRepository) GetAccountByEmail(email string) (*User, error) {
 	var id interface{}
 	var createdAt interface{}
 
-	row := ar.conn.QueryRow(context.Background(),
+	row := ar.db.Conn.QueryRow(context.Background(),
 		`SELECT id, email, password_hash, created_at
 		 FROM accounts
 		 WHERE email = $1`, email)
@@ -51,7 +45,7 @@ func (ar *accountRepository) CreateAccount(u *User) error {
 	var id interface{}
 	var createdAt interface{}
 
-	row := ar.conn.QueryRow(context.Background(),
+	row := ar.db.Conn.QueryRow(context.Background(),
 		`INSERT INTO accounts (email, password_hash)
 		 VALUES ($1, $2)
 		 RETURNING id, created_at`, u.Email, u.PasswordHash)

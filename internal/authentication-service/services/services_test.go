@@ -13,7 +13,8 @@ var service services.AccountService
 
 func CreateStartAccountService() {
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	if err != nil {
 		panic(err)
 	}

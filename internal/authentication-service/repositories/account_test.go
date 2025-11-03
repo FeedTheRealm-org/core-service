@@ -10,7 +10,8 @@ import (
 
 func TestAccountRepository_CreateAccount(t *testing.T) {
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "john.doe@example.com"
@@ -33,7 +34,8 @@ func TestAccountRepository_CreateAccount(t *testing.T) {
 
 func TestAccountRepository_GetAccountByEmail_NotFound(t *testing.T) {
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "notfound@example.com"

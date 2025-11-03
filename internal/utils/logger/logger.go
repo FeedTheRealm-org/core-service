@@ -6,10 +6,21 @@ import (
 
 var Sugar *zap.SugaredLogger
 
+func InitLogger(production bool) *zap.SugaredLogger {
+	var logger *zap.Logger
+	if production {
+		logger, _ = zap.NewProduction()
+	} else {
+		logger, _ = zap.NewDevelopment()
+	}
+
+	Sugar = logger.Sugar() // This might be expensive for performance-critical endpoints
+	return Sugar
+}
+
 func GetLogger() *zap.SugaredLogger {
 	if Sugar == nil {
-		logger, _ := zap.NewProduction()
-		Sugar = logger.Sugar()
+		InitLogger(true)
 	}
 	return Sugar
 }
