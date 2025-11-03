@@ -15,7 +15,7 @@ WORKDIR /usr/src/app
 COPY --from=deps /go/pkg /go/pkg
 COPY . .
 
-RUN swag init --generalInfo cmd/main.go
+RUN swag init --generalInfo cmd/main.go --output ./swagger
 
 RUN go build -v -o /usr/local/bin/app cmd/main.go
 

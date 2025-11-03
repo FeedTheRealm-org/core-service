@@ -4,6 +4,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
+	common_dtos "github.com/FeedTheRealm-org/core-service/internal/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +21,16 @@ func NewAccountController(conf *config.Config, service services.AccountService) 
 	}
 }
 
+// @Summary Sign up
+// @Description Create a new user account
+// @Tags authentication-service
+// @Accept   json
+// @Produce  json
+// @Param   request body dtos.CreateAccountRequestDTO true "Signup data"
+// @Success 200  {object}  dtos.CreateAccountResponseDTO "Successful login"
+// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
+// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
+// @Router /auth/signup [post]
 func (ec *accountController) CreateAccount(c *gin.Context) {
 	req := &dtos.CreateAccountRequestDTO{}
 	if err := c.ShouldBindJSON(req); err != nil {
@@ -32,7 +43,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 
 	if req.Email == "" {
 		logger.GetLogger().Info("CreateAccount: missing email")
-		c.JSON(400, dtos.ErrorResponse{
+		c.JSON(400, common_dtos.ErrorResponse{
 			Type:     "validation",
 			Title:    "Email is required",
 			Status:   400,
@@ -44,7 +55,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 
 	if req.Password == "" {
 		logger.GetLogger().Info("CreateAccount: missing password for email=%s", req.Email)
-		c.JSON(400, dtos.ErrorResponse{
+		c.JSON(400, common_dtos.ErrorResponse{
 			Type:     "validation",
 			Title:    "Password is required",
 			Status:   400,
@@ -58,7 +69,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 	if err != nil {
 		if _, ok := err.(*services.AccountAlreadyExistsError); ok {
 			logger.GetLogger().Infof("CreateAccount: account already exists for email=%s", req.Email)
-			c.JSON(400, dtos.ErrorResponse{
+			c.JSON(400, common_dtos.ErrorResponse{
 				Type:     "validation",
 				Title:    "Email is already in use",
 				Status:   400,
@@ -70,7 +81,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 
 		if _, ok := err.(*services.AccountInvalidFormat); ok {
 			logger.GetLogger().Infof("CreateAccount: invalid account format for email=%s: %v", req.Email, err)
-			c.JSON(400, dtos.ErrorResponse{
+			c.JSON(400, common_dtos.ErrorResponse{
 				Type:     "validation",
 				Title:    err.(*services.AccountInvalidFormat).Msg,
 				Status:   400,
@@ -81,7 +92,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 		}
 
 		logger.GetLogger().Errorf("CreateAccount: service error for email=%s: %v", req.Email, err)
-		c.JSON(500, dtos.ErrorResponse{
+		c.JSON(500, common_dtos.ErrorResponse{
 			Type:     "server",
 			Title:    "Internal server error",
 			Status:   500,
@@ -92,7 +103,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 	}
 
 	logger.GetLogger().Infof("CreateAccount: account created for email=%s", result.Email)
-	c.JSON(201, dtos.DataEnvelope[dtos.CreateAccountResponseDTO]{
+	c.JSON(201, common_dtos.DataEnvelope[dtos.CreateAccountResponseDTO]{
 		Data: dtos.CreateAccountResponseDTO{
 			Email: result.Email,
 		},
@@ -100,12 +111,22 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 
 }
 
+// @Summary Login
+// @Description Log in an existing user
+// @Tags authentication-service
+// @Accept   json
+// @Produce  json
+// @Param   request body dtos.LoginAccountRequestDTO true "Login data"
+// @Success 200  {object}  dtos.LoginAccountResponseDTO "Successful login"
+// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
+// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
+// @Router /auth/signup [post]
 func (ec *accountController) LoginAccount(c *gin.Context) {
 	req := dtos.LoginAccountRequestDTO{}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.GetLogger().Errorf("LoginAccount: failed to bind JSON: %v", err)
-		c.JSON(400, dtos.ErrorResponse{
+		c.JSON(400, common_dtos.ErrorResponse{
 			Type:     "validation",
 			Title:    "Invalid request body",
 			Status:   400,
@@ -119,7 +140,7 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 
 	if req.Email == "" {
 		logger.GetLogger().Info("LoginAccount: missing email")
-		c.JSON(400, dtos.ErrorResponse{
+		c.JSON(400, common_dtos.ErrorResponse{
 			Type:     "validation",
 			Title:    "Email is required",
 			Status:   400,
@@ -131,7 +152,7 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 
 	if req.Password == "" {
 		logger.GetLogger().Info("LoginAccount: missing password for email=%s", req.Email)
-		c.JSON(400, dtos.ErrorResponse{
+		c.JSON(400, common_dtos.ErrorResponse{
 			Type:     "validation",
 			Title:    "Password is required",
 			Status:   400,
@@ -145,7 +166,7 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 	if err != nil {
 		if _, ok := err.(*services.AccountNotFoundError); ok {
 			logger.GetLogger().Infof("LoginAccount: account not found for email=%s", req.Email)
-			c.JSON(404, dtos.ErrorResponse{
+			c.JSON(404, common_dtos.ErrorResponse{
 				Type:     "validation",
 				Title:    "Invalid email or password",
 				Status:   404,
@@ -160,7 +181,7 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 		}
 
 		logger.GetLogger().Errorf("LoginAccount: service error for email=%s: %v", req.Email, err)
-		c.JSON(500, dtos.ErrorResponse{
+		c.JSON(500, common_dtos.ErrorResponse{
 			Type:     "server",
 			Title:    "Internal server error",
 			Status:   500,
@@ -171,7 +192,7 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 	}
 
 	logger.GetLogger().Infof("LoginAccount: login successful for email=%s", req.Email)
-	c.JSON(200, dtos.DataEnvelope[dtos.LoginAccountResponseDTO]{
+	c.JSON(200, common_dtos.DataEnvelope[dtos.LoginAccountResponseDTO]{
 		Data: dtos.LoginAccountResponseDTO{
 			Token: token,
 		},

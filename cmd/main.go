@@ -1,3 +1,10 @@
+// @title FeedTheRealm Core Service API
+// @version 0.1.0
+// @description This service manages all backend interactions for the feed the realm clients.
+// @description
+// @description ⚠️ NOTE: All 2xx responses are wrapped in a 'Data envelope'.
+// @description Example: { "data": { "id": "123", "name": "Alice" } }
+// @BasePath /
 package main
 
 import (

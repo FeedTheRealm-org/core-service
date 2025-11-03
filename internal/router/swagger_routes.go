@@ -1,7 +1,7 @@
 package router
 
 import (
-	_ "github.com/FeedTheRealm-org/core-service/docs"
+	_ "github.com/FeedTheRealm-org/core-service/swagger"
 
 	"github.com/swaggo/files"
 
