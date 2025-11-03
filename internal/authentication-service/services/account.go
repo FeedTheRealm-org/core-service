@@ -8,8 +8,8 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	validator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/credential-validation"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
-	jwt "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session/jwt"
 	codeGenerator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session/code-generator"
+	jwt "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session/jwt"
 )
 
 type accountService struct {
@@ -58,6 +58,18 @@ type AccountNotVerifiedError struct{}
 
 func (e *AccountNotVerifiedError) Error() string {
 	return "Account not verified"
+}
+
+type InvalidVerificationCodeError struct{}
+
+func (e *InvalidVerificationCodeError) Error() string {
+	return "Invalid verification code"
+}
+
+type VerificationCodeExpiredError struct{}
+
+func (e *VerificationCodeExpiredError) Error() string {
+	return "Verification code has expired"
 }
 
 type AccountInvalidFormat struct {
@@ -194,6 +206,15 @@ func (s *accountService) VerifyAccount(email string, code string) (bool, error) 
 	currentTime := time.Now()
 	err := s.repo.VerifyAccount(email, code, currentTime)
 	if err != nil {
+		if _, ok := err.(*repositories.AccountNotFoundError); ok {
+			return false, &AccountNotFoundError{}
+		}
+		if _, ok := err.(*repositories.AccountNotVerifiedError); ok {
+			return false, &InvalidVerificationCodeError{}
+		}
+		if _, ok := err.(*repositories.AccountVerificationExpired); ok {
+			return false, &VerificationCodeExpiredError{}
+		}
 		return false, err
 	}
 

@@ -14,6 +14,7 @@ type ServerConfig struct {
 type Config struct {
 	SessionTokenSecretKey string
 	SessionTokenDuration  time.Duration
+	ResendAPIKey          string
 	Server                *ServerConfig
 	Dbc                   *DatabaseConfig
 }
@@ -45,6 +46,7 @@ func CreateConfig() *Config {
 	return &Config{
 		SessionTokenSecretKey: os.Getenv("SESSION_TOKEN_SECRET_KEY"),
 		SessionTokenDuration:  SessionTokenDuration,
+		ResendAPIKey:          os.Getenv("RESEND_API_KEY"),
 		Server: &ServerConfig{
 			Port:            8000,
 			ShutdownTimeout: ShutdownTimeout,

@@ -9,7 +9,8 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
 )
 
-var service services.AccountService
+var account_service services.AccountService
+var email_sender_service services.EmailSenderService
 
 func CreateStartAccountService() {
 	conf := config.CreateConfig()
@@ -18,11 +19,16 @@ func CreateStartAccountService() {
 		panic(err)
 	}
 
-	service = services.NewAccountService(conf, repo)
+	account_service = services.NewAccountService(conf, repo)
 }
 
+func CreateStartEmailSenderService() {
+	conf := config.CreateConfig()
+	email_sender_service = services.NewEmailSenderService(conf)
+}
 
 func TestMain(m *testing.M) {
 	CreateStartAccountService()
+	CreateStartEmailSenderService()
 	os.Exit(m.Run())
 }
