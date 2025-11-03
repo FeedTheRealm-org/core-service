@@ -1,13 +1,15 @@
 package services
 
 import (
+	"math/rand"
 	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	validator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/credential-validation"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
-	jwt "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session"
+	jwt "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session/jwt"
+	codeGenerator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session/code-generator"
 )
 
 type accountService struct {
@@ -52,7 +54,13 @@ func (e *AccountSessionInvalid) Error() string {
 	return "Session is invalid"
 }
 
-type AccountInvalidFormat struct{
+type AccountNotVerifiedError struct{}
+
+func (e *AccountNotVerifiedError) Error() string {
+	return "Account not verified"
+}
+
+type AccountInvalidFormat struct {
 	Msg string
 }
 
@@ -135,6 +143,8 @@ func (s *accountService) CreateAccount(email string, password string) (*reposito
 	user := &repositories.User{
 		Email:        email,
 		PasswordHash: string(hashedPassword),
+		VerifyCode:   codeGenerator.GenerateCode(rand.Int),
+		Expiration:   time.Now().Add(24 * time.Hour),
 	}
 
 	err = s.repo.CreateAccount(user)
@@ -156,6 +166,11 @@ func (s *accountService) LoginAccount(email string, password string) (string, er
 		return "", &AccountNotFoundError{}
 	}
 
+	isAccountValidate, err := s.repo.IsAccountVerified(email)
+	if err != nil || !isAccountValidate {
+		return "", &AccountNotVerifiedError{}
+	}
+
 	token, err := s.jwt.GenerateToken(user.Email)
 	if err != nil {
 		return "", &AccountFailedToCreateTokenError{}
@@ -173,4 +188,14 @@ func (s *accountService) ValidateSessionToken(token string) error {
 	}
 
 	return nil
+}
+
+func (s *accountService) VerifyAccount(email string, code string) (bool, error) {
+	currentTime := time.Now()
+	err := s.repo.VerifyAccount(email, code, currentTime)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

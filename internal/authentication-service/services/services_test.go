@@ -24,6 +24,7 @@ func CreateStartAccountService() {
 	service = services.NewAccountService(conf, repo)
 }
 
+
 func TestMain(m *testing.M) {
 	CreateStartAccountService()
 	os.Exit(m.Run())
