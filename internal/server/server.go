@@ -37,7 +37,7 @@ func (s *Server) Start() error {
 		gin.SetMode(gin.TestMode)
 		err := seed_database.SeedDatabase(s.db)
 		if err != nil {
-			logger.GetLogger().Errorf("Failed to seed database: %v", err)
+			logger.Logger.Errorf("Failed to seed database: %v", err)
 			return err
 		}
 	case config.Production:
@@ -52,7 +52,7 @@ func (s *Server) Start() error {
 		Handler: r,
 	}
 
-	logger.GetLogger().Info("Starting server on port " + strconv.Itoa(s.conf.Server.Port))
+	logger.Logger.Info("Starting server on port " + strconv.Itoa(s.conf.Server.Port))
 	if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err
 	}
@@ -61,13 +61,13 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Shutdown() {
-	logger.GetLogger().Info("Shutting down server")
+	logger.Logger.Info("Shutting down server")
 	ctx, cancel := context.WithTimeout(context.Background(), s.conf.Server.ShutdownTimeout)
 	defer cancel()
 
 	if err := s.srv.Shutdown(ctx); err != nil {
-		logger.GetLogger().Errorf("Server forced to shutdown: %v", err)
+		logger.Logger.Errorf("Server forced to shutdown: %v", err)
 	} else {
-		logger.GetLogger().Info("Server exited properly")
+		logger.Logger.Info("Server exited properly")
 	}
 }

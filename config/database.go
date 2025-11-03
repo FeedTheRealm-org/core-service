@@ -14,8 +14,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var log = logger.GetLogger()
-
 type DB struct {
 	dsn  string
 	Conn *pgxpool.Pool
@@ -38,7 +36,7 @@ func NewDB(conf *Config) (*DB, error) {
 			}
 		}
 
-		log.Warnf("Failed to connect to the database: %v. Retrying in 1 second...", err)
+		logger.Logger.Warnf("Failed to connect to the database: %v. Retrying in 1 second...", err)
 		time.Sleep(1 * time.Second)
 	}
 
@@ -51,7 +49,7 @@ func NewDB(conf *Config) (*DB, error) {
 		}
 	}
 
-	log.Infoln("Connected to the database & migrations applied")
+	logger.Logger.Infoln("Connected to the database & migrations applied")
 	return db, nil
 }
 

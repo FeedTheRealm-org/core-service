@@ -4,7 +4,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var Sugar *zap.SugaredLogger
+var Logger *zap.SugaredLogger
 
 func InitLogger(production bool) *zap.SugaredLogger {
 	var logger *zap.Logger
@@ -14,19 +14,12 @@ func InitLogger(production bool) *zap.SugaredLogger {
 		logger, _ = zap.NewDevelopment()
 	}
 
-	Sugar = logger.Sugar() // This might be expensive for performance-critical endpoints
-	return Sugar
-}
-
-func GetLogger() *zap.SugaredLogger {
-	if Sugar == nil {
-		InitLogger(true)
-	}
-	return Sugar
+	Logger = logger.Sugar() // This might be expensive for performance-critical endpoints
+	return Logger
 }
 
 func Sync() {
-	if Sugar != nil {
-		_ = Sugar.Sync()
+	if Logger != nil {
+		_ = Logger.Sync()
 	}
 }

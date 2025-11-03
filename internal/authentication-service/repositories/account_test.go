@@ -5,11 +5,13 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAccountRepository_CreateAccount(t *testing.T) {
 	conf := config.CreateConfig()
+	logger.InitLogger(false)
 	db, _ := config.NewDB(conf)
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
