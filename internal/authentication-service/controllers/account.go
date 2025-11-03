@@ -20,16 +20,6 @@ func NewAccountController(conf *config.Config, service services.AccountService) 
 	}
 }
 
-// @Summary Sign up
-// @Description Create a new user account
-// @Tags authentication-service
-// @Accept   json
-// @Produce  json
-// @Param   request body dtos.CreateAccountRequestDTO true "Signup data"
-// @Success 200  {object}  dtos.CreateAccountResponseDTO "Successful login (Wrapped in data envelope)"
-// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /auth/signup [post]
 func (ec *accountController) CreateAccount(c *gin.Context) {
 	req := &dtos.CreateAccountRequestDTO{}
 	if err := c.ShouldBindJSON(req); err != nil {
@@ -110,16 +100,6 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 
 }
 
-// @Summary Login
-// @Description Log in an existing user
-// @Tags authentication-service
-// @Accept   json
-// @Produce  json
-// @Param   request body dtos.LoginAccountRequestDTO true "Login data"
-// @Success 200  {object}  dtos.LoginAccountResponseDTO "Successful login (Wrapped in data envelope)"
-// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /auth/signup [post]
 func (ec *accountController) LoginAccount(c *gin.Context) {
 	req := dtos.LoginAccountRequestDTO{}
 
