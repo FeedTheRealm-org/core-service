@@ -52,7 +52,8 @@ func TestAccountRepository_GetAccountByEmail_NotFound(t *testing.T) {
 
 func TestAccountRepository_IsAccountVerified(t *testing.T) {
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "johndoe@example.com"
@@ -75,7 +76,8 @@ func TestAccountRepository_IsAccountVerified(t *testing.T) {
 
 func TestAccountRepository_VerifyAccount(t *testing.T) {
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "johndoe@example.com"
@@ -102,7 +104,8 @@ func TestAccountRepository_VerifyAccount(t *testing.T) {
 
 func TestAccountRepository_VerifyAccount_Expired(t *testing.T) {
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "johndoe_expired@example.com"

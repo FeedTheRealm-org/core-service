@@ -1,8 +1,8 @@
 package repositories
 
 import (
-	"time"
 	"context"
+	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 )
@@ -73,7 +73,7 @@ func (ar *accountRepository) CreateAccount(u *User) error {
 func (ar *accountRepository) IsAccountVerified(email string) (bool, error) {
 	var verifyCode interface{}
 
-	row := ar.conn.QueryRow(context.Background(),
+	row := ar.db.Conn.QueryRow(context.Background(),
 		`SELECT verify_code
 		 FROM accounts
 		 WHERE email = $1`, email)
@@ -89,7 +89,7 @@ func (ar *accountRepository) VerifyAccount(email string, code string, currentTim
 	var verifyCode interface{}
 	var expiration interface{}
 
-	row := ar.conn.QueryRow(context.Background(),
+	row := ar.db.Conn.QueryRow(context.Background(),
 		`SELECT verify_code, expiration_verify_code
 		 FROM accounts
 		 WHERE email = $1`, email)
@@ -106,7 +106,7 @@ func (ar *accountRepository) VerifyAccount(email string, code string, currentTim
 		return &AccountVerificationExpired{}
 	}
 
-	_, err := ar.conn.Exec(context.Background(),
+	_, err := ar.db.Conn.Exec(context.Background(),
 		`UPDATE accounts
 		 SET verify_code = NULL
 		 WHERE email = $1`, email)
