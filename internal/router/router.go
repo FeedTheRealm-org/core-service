@@ -9,13 +9,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(r *gin.Engine, conf *config.Config) {
+func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 	// Setup global middleware
 	r.Use(middleware.ErrorHandlerMiddleware())
 
 	// Setup service routers
 	r.NoRoute(middleware.NotFoundController)
-	authRouter.SetupAuthenticationServiceRouter(r, conf)
+	authRouter.SetupAuthenticationServiceRouter(r, conf, db)
 	conversionRouter.SetupConversionServiceRouter(r, conf)
 	worldBrowserRouter.SetupWorldBrowserServiceRouter(r, conf)
 	SetupSwaggerRouter(r)

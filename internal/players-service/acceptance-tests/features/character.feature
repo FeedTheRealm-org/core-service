@@ -4,21 +4,17 @@ Feature: Player character info
   So that other players can see it
 
   Background:
-    Given an account already exists with the email "login@example.com" and password "somepassword1"
-    And I have logged in with email "login@example.com" and password "somepassword1"
-    And I am on the character profile page
+    Given I have logged in with email "test1@email.com" and password "Password123"
 
   @wip
   Scenario: AC-1 Successfully update character name
     When I change my character name to "StormRider"
-    And I save the character profile
     Then my character name should be updated
     And other players should see the updated name
 
   @wip
   Scenario: AC-2 Name length validation error
     When I change my character name to "S" # less than 4 or more than 24 chars
-    And I save the character profile
     Then I should see an error message "Name must be between 4 and 24 characters"
 
   @wip

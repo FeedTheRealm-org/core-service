@@ -6,12 +6,15 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAccountRepository_CreateAccount(t *testing.T) {
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	logger.InitLogger(false)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "john.doe@example.com"
@@ -36,7 +39,8 @@ func TestAccountRepository_CreateAccount(t *testing.T) {
 
 func TestAccountRepository_GetAccountByEmail_NotFound(t *testing.T) {
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "notfound@example.com"
@@ -48,7 +52,8 @@ func TestAccountRepository_GetAccountByEmail_NotFound(t *testing.T) {
 
 func TestAccountRepository_IsAccountVerified(t *testing.T) {
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "johndoe@example.com"
@@ -71,7 +76,8 @@ func TestAccountRepository_IsAccountVerified(t *testing.T) {
 
 func TestAccountRepository_VerifyAccount(t *testing.T) {
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "johndoe@example.com"
@@ -98,7 +104,8 @@ func TestAccountRepository_VerifyAccount(t *testing.T) {
 
 func TestAccountRepository_VerifyAccount_Expired(t *testing.T) {
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "johndoe_expired@example.com"
