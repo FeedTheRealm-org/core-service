@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -13,8 +13,8 @@ import (
 
 func main() {
 	cfg := config.CreateConfig()
-	db := cfg.Dbc
-	dbURL := db.GenerateURL()
+	log := logger.InitLogger(true)
+	dbURL := generateURL(cfg.DB)
 
 	m, err := migrate.New(
 		"file://migrations",
@@ -51,4 +51,14 @@ func main() {
 	default:
 		log.Fatalf("Unknown command: %s. Use 'up', 'down', or 'version'", command)
 	}
+}
+
+func generateURL(dbc *config.DatabaseConfig) string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		dbc.Username,
+		dbc.Password,
+		dbc.Host,
+		dbc.Port,
+		dbc.Database,
+	)
 }

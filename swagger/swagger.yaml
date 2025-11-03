@@ -1,0 +1,80 @@
+basePath: /
+definitions:
+  dtos.CreateAccountRequestDTO:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  dtos.CreateAccountResponseDTO:
+    properties:
+      email:
+        type: string
+    type: object
+  dtos.ErrorResponse:
+    properties:
+      detail:
+        type: string
+      instance:
+        type: string
+      status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  dtos.LoginAccountRequestDTO:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  dtos.LoginAccountResponseDTO:
+    properties:
+      token:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: |-
+    This service manages all backend interactions for the feed the realm clients.
+
+    ⚠️ NOTE: All 2xx responses are wrapped in a 'Data envelope'.
+    Example: { "data": { "id": "123", "name": "Alice" } }
+  title: FeedTheRealm Core Service API
+  version: 0.1.0
+paths:
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Log in an existing user
+      parameters:
+      - description: Login data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.LoginAccountRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful login
+          schema:
+            $ref: '#/definitions/dtos.LoginAccountResponseDTO'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Login
+      tags:
+      - authentication-service
+swagger: "2.0"

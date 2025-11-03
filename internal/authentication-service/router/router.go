@@ -9,11 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config) {
+func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 	g := r.Group("/auth")
-	accountRepo, err := repositories.NewAccountRepository(conf)
+	accountRepo, err := repositories.NewAccountRepository(conf, db)
 	if err != nil {
-		logger.GetLogger().Errorf("Failed to connect to DB: %v", err)
+		logger.Logger.Errorf("Failed to connect to DB: %v", err)
 	}
 
 	accountService := services.NewAccountService(conf, accountRepo)
