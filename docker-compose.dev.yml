@@ -12,8 +12,10 @@ services:
       - DB_HOST=dev_db
       - DB_PORT=5432
       - DB_NAME=postgres
+      - DB_SHOULD_MIGRATE=true
       - SESSION_TOKEN_SECRET_KEY=dev_secret_key
       - SESSION_TOKEN_DURATION=24h
+      - RESEND_API_KEY=re_QenPmFbn_DrQAJhTXr8P9hKPuDpENWtm6
     depends_on:
       dev_db:
         condition: service_healthy
