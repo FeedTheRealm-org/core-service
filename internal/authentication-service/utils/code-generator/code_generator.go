@@ -1,4 +1,4 @@
-package session
+package code_generator
 
 import "fmt"
 

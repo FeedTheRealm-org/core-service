@@ -6,17 +6,18 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
 	"github.com/gin-gonic/gin"
 )
 
-func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
+func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB, jwtManager *session.JWTManager) {
 	g := r.Group("/auth")
 	accountRepo, err := repositories.NewAccountRepository(conf, db)
 	if err != nil {
 		logger.Logger.Errorf("Failed to connect to DB: %v", err)
 	}
 
-	accountService := services.NewAccountService(conf, accountRepo)
+	accountService := services.NewAccountService(conf, accountRepo, jwtManager)
 	accountController := controllers.NewAccountController(conf, accountService)
 
 	g.POST("/signup", accountController.CreateAccount)

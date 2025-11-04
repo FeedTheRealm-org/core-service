@@ -1,6 +1,7 @@
 package session
 
 import (
+	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -17,13 +18,16 @@ func (e *JWTFailedToGenerateError) Error() string {
 	return "failed to generate JWT token"
 }
 
-type JWTInvalidTokenError struct{}
-
-func (e *JWTInvalidTokenError) Error() string {
-	return "invalid token"
+type JWTInvalidTokenError struct {
+	message string
 }
 
-type JWTExpiredTokenError struct{}
+func (e *JWTInvalidTokenError) Error() string {
+	return "invalid token: " + e.message
+}
+
+type JWTExpiredTokenError struct {
+}
 
 func (e *JWTExpiredTokenError) Error() string {
 	return "token expired"
@@ -38,9 +42,9 @@ func NewJWTManager(secretKey string, tokenDuration time.Duration) *JWTManager {
 
 func (m *JWTManager) GenerateToken(email string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.MapClaims{
-		"email":      email,
-		"expires_at": time.Now().Add(m.tokenDuration).Unix(),
-		"issued_at":  time.Now().Unix(),
+		"email": email,
+		"exp":   time.Now().Add(m.tokenDuration).Unix(),
+		"iss":   time.Now().Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(m.secretKey))
@@ -51,31 +55,33 @@ func (m *JWTManager) GenerateToken(email string) (string, error) {
 	return tokenString, nil
 }
 
-func (m *JWTManager) IsValidateToken(tokenString string, now time.Time) error {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+func (m *JWTManager) IsValidateToken(tokenString string, now time.Time) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, &JWTInvalidTokenError{}
 		}
 		return []byte(m.secretKey), nil
 	})
-
 	if err != nil {
-		return err
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, &JWTExpiredTokenError{}
+		}
+		return nil, &JWTInvalidTokenError{message: err.Error()}
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return &JWTInvalidTokenError{}
+		return nil, &JWTInvalidTokenError{message: "invalid claims"}
 	}
 
-	expiresAtFloat, ok := claims["expires_at"].(float64)
+	expiresAtFloat, ok := claims["exp"].(float64)
 	if !ok {
-		return &JWTInvalidTokenError{}
+		return nil, &JWTInvalidTokenError{message: "expires_at claim missing or invalid"}
 	}
 
 	if int64(expiresAtFloat) < now.Unix() {
-		return &JWTExpiredTokenError{}
+		return nil, &JWTExpiredTokenError{}
 	}
 
-	return nil
+	return claims, nil
 }

@@ -6,16 +6,16 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
+	code_generator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/code-generator"
 	validator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/credential-validation"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
-	jwt "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session/jwt"
-	codeGenerator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session/code-generator"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
 )
 
 type accountService struct {
 	conf *config.Config
 	repo repositories.AccountRepository
-	jwt  *jwt.JWTManager
+	jwt  *session.JWTManager
 }
 
 type AccountNotFoundError struct{}
@@ -68,11 +68,11 @@ func (e *AccountInvalidFormat) Error() string {
 	return "Account format is invalid"
 }
 
-func NewAccountService(conf *config.Config, repo repositories.AccountRepository) AccountService {
+func NewAccountService(conf *config.Config, repo repositories.AccountRepository, jwtManager *session.JWTManager) AccountService {
 	return &accountService{
 		conf: conf,
 		repo: repo,
-		jwt:  jwt.NewJWTManager(conf.SessionTokenSecretKey, conf.SessionTokenDuration),
+		jwt:  jwtManager,
 	}
 }
 
@@ -143,7 +143,7 @@ func (s *accountService) CreateAccount(email string, password string) (*reposito
 	user := &repositories.User{
 		Email:        email,
 		PasswordHash: string(hashedPassword),
-		VerifyCode:   codeGenerator.GenerateCode(rand.Int),
+		VerifyCode:   code_generator.GenerateCode(rand.Int),
 		Expiration:   time.Now().Add(24 * time.Hour),
 	}
 
@@ -180,8 +180,8 @@ func (s *accountService) LoginAccount(email string, password string) (string, er
 }
 
 func (s *accountService) ValidateSessionToken(token string) error {
-	if err := s.jwt.IsValidateToken(token, time.Now()); err != nil {
-		if _, ok := err.(*jwt.JWTExpiredTokenError); ok {
+	if _, err := s.jwt.IsValidateToken(token, time.Now()); err != nil {
+		if _, ok := err.(*session.JWTExpiredTokenError); ok {
 			return &AccountSessionExpired{}
 		}
 		return &AccountSessionInvalid{}
