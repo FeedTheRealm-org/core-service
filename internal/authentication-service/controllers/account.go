@@ -74,7 +74,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 			c.JSON(400, common_dtos.ErrorResponse{
 				Type:     "validation",
 				Title:    "Email is already in use",
-				Status:   400,
+				Status:   409,
 				Detail:   "The email address is already in use by another account.",
 				Instance: c.Request.RequestURI,
 			})
@@ -326,7 +326,7 @@ func (ec *accountController) VerifyAccount(c *gin.Context) {
 			c.JSON(400, common_dtos.ErrorResponse{
 				Type:     "validation",
 				Title:    "Invalid verification code",
-				Status:   400,
+				Status:   401,
 				Detail:   "The verification code is incorrect.",
 				Instance: c.Request.RequestURI,
 			})
