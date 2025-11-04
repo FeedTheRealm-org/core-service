@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"errors"
 	"strings"
 	"time"
 
@@ -15,9 +14,10 @@ import (
 // cant decode the token it passes to the next middleware without setting anything.
 func JWTAuthMiddleware(jwtManager *session.JWTManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		defer c.Next()
+
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.Next()
 			return
 		}
 		c.Set("includedJWT", true)
@@ -26,12 +26,13 @@ func JWTAuthMiddleware(jwtManager *session.JWTManager) gin.HandlerFunc {
 
 		claims, err := jwtManager.IsValidateToken(tokenString, time.Now())
 		if err != nil {
-			if errors.Is(err, &session.JWTExpiredTokenError{}) {
+			if _, ok := err.(*session.JWTExpiredTokenError); ok {
 				logger.Logger.Infoln("JWT token has expired")
 				c.Set("expiredJWT", true)
 			}
 			logger.Logger.Infoln("JWT token is invalid")
 			c.Set("invalidJWT", true)
+			return
 		}
 
 		if userID, ok := claims["userID"].(string); ok {
@@ -40,7 +41,5 @@ func JWTAuthMiddleware(jwtManager *session.JWTManager) gin.HandlerFunc {
 			logger.Logger.Warnln("Missing userID in JWT claims")
 			c.Set("invalidJWT", true)
 		}
-
-		c.Next()
 	}
 }

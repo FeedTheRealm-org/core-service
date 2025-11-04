@@ -42,6 +42,22 @@ func TestJWTAuth_ValidToken(t *testing.T) {
 	assert.Equal(t, "12345", w.Body.String())
 }
 
+// TestJWTAuth_ExpiredToken tests the JWT authentication middleware
+// when an expired token is provided in the Authorization header.
+func TestJWTAuth_ExpiredToken(t *testing.T) {
+	secret := "testsecret"
+	token := createTestToken(secret, "expired", time.Now().Add(-time.Hour))
+	r := setupRouterJWT(secret)
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, 401, w.Code)
+	assert.Equal(t, "expired", w.Body.String())
+}
+
 /* UTILS */
 
 // createTestToken creates a JWT token with the given secret, userID, and expiration time.
@@ -67,10 +83,10 @@ func setupRouterJWT(secret string) *gin.Engine {
 		userID := c.GetString("userID")
 		invalidJWT := c.GetBool("invalidJWT")
 		expiredJWT := c.GetBool("expiredJWT")
-		if invalidJWT {
-			c.String(401, "invalid")
-		} else if expiredJWT {
+		if expiredJWT {
 			c.String(401, "expired")
+		} else if invalidJWT {
+			c.String(401, "invalid")
 		} else {
 			c.String(200, userID)
 		}
