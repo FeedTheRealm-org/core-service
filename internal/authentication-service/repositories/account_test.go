@@ -11,8 +11,9 @@ import (
 )
 
 func TestAccountRepository_CreateAccount(t *testing.T) {
-	conf := config.CreateConfig()
 	logger.InitLogger(false)
+
+	conf := config.CreateConfig()
 	db, _ := config.NewDB(conf)
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
@@ -81,18 +82,7 @@ func TestAccountRepository_VerifyAccount(t *testing.T) {
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "johndoe@example.com"
-	passwordHash := "hashed_password"
 	code := "verification_code"
-
-	user := &repositories.User{
-		Email:        email,
-		PasswordHash: passwordHash,
-		VerifyCode:   code,
-		Expiration:   time.Now().Add(24 * time.Hour),
-	}
-
-	err = repo.CreateAccount(user)
-	assert.Nil(t, err, "failed to create account")
 
 	err = repo.VerifyAccount(email, code, time.Now())
 	assert.Nil(t, err, "failed to verify account")
@@ -108,21 +98,10 @@ func TestAccountRepository_VerifyAccount_Expired(t *testing.T) {
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
-	email := "johndoe_expired@example.com"
-	passwordHash := "hashed_password"
+	email := "johndoe@example.com"
 	code := "verification_code"
 
-	user := &repositories.User{
-		Email:        email,
-		PasswordHash: passwordHash,
-		VerifyCode:   code,
-		Expiration:   time.Now().Add(-time.Hour), // Already expired
-	}
-
-	err = repo.CreateAccount(user)
-	assert.Nil(t, err, "failed to create account")
-
-	err = repo.VerifyAccount(email, code, time.Now())
+	err = repo.VerifyAccount(email, code, time.Now().Add(-time.Hour))
 	assert.NotNil(t, err, "expected error on verifying expired account")
 	assert.Error(t, err, "Account verification has expired")
 }

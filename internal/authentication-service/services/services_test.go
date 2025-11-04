@@ -10,8 +10,8 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 )
 
-var account_service services.AccountService
-var email_sender_service services.EmailSenderService
+var accountService services.AccountService
+var emailSenderService services.EmailSenderService
 
 func CreateStartAccountService() {
 	conf := config.CreateConfig()
@@ -22,12 +22,12 @@ func CreateStartAccountService() {
 		panic(err)
 	}
 
-	account_service = services.NewAccountService(conf, repo)
+	accountService = services.NewAccountService(conf, repo)
 }
 
 func CreateStartEmailSenderService() {
 	conf := config.CreateConfig()
-	email_sender_service = services.NewEmailSenderService(conf)
+	emailSenderService = services.NewEmailSenderService(conf)
 }
 
 func TestMain(m *testing.M) {
