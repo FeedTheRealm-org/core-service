@@ -1,6 +1,6 @@
 BEGIN;
 
 ALTER TABLE accounts
-ADD COLUMN IF NOT EXISTS expiration_verify_code TIMESTAMPTZ NOT NULL;
+ADD COLUMN IF NOT EXISTS expiration_verify_code TIMESTAMPTZ;
 
 COMMIT;
