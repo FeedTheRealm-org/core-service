@@ -152,10 +152,15 @@ func (s *accountService) CreateAccount(email string, password string) (*reposito
 		return nil, &AccountFailedToCreateError{}
 	}
 
+	functionGenerator := rand.Int
+	if s.conf.Server.Environment == config.Testing {
+		functionGenerator = codeGenerator.StaticGenerateCode
+	}
+
 	user := &repositories.User{
 		Email:        email,
 		PasswordHash: string(hashedPassword),
-		VerifyCode:   codeGenerator.GenerateCode(rand.Int),
+		VerifyCode:   codeGenerator.GenerateCode(functionGenerator),
 		Expiration:   time.Now().Add(24 * time.Hour),
 	}
 
