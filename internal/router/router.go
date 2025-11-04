@@ -22,5 +22,7 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 	authRouter.SetupAuthenticationServiceRouter(r, conf, db, jwtManager)
 	playersRouter.SetupPlayerServiceRouter(r, conf)
 
-	SetupSwaggerRouter(r)
+	if conf.Server.Environment != config.Production {
+		SetupSwaggerRouter(r)
+	}
 }
