@@ -19,7 +19,6 @@ type loginResponse struct {
 	} `json:"data"`
 }
 
-
 type sessionContext struct {
 	token     string
 	loginTime time.Time
@@ -172,9 +171,9 @@ func theSessionShouldBeClosed(ctx context.Context) error {
 
 func furtherRequestsShouldRequireAuthentication(ctx context.Context) error {
 	expiredToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email":      "sessionuser@example.com",
-		"expires_at": time.Now().Add(-time.Hour).Unix(),
-		"issued_at":  time.Now().Unix(),
+		"email": "sessionuser@example.com",
+		"exp":   time.Now().Add(-time.Hour).Unix(),
+		"iss":   time.Now().Unix(),
 	})
 
 	expiredTokenString, err := expiredToken.SignedString([]byte("test_secret_key"))
