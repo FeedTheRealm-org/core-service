@@ -18,4 +18,5 @@ func SetupPlayerServiceRouter(r *gin.Engine, conf *config.Config) {
 	characterGroup := g.Group("/character")
 	characterGroup.POST("", characterController.UpdateCharacterInfo)
 	characterGroup.GET("", characterController.GetCharacterInfo)
+	characterGroup.GET(":id", characterController.GetCharacterInfo)
 }
