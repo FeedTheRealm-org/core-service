@@ -31,7 +31,6 @@ docker-up-dev: docker-build-dev # Start development containers
 .PHONY: docker-up-dev
 
 docker-exec-app-dev: docker-up-dev # Execute a bash shell in the development app container
-	docker compose -f docker-compose.dev.yml exec -T app go run ./cmd/migrate/main.go up
 	docker compose -f docker-compose.dev.yml exec -it app /bin/bash
 .PHONY: docker-exec-app-dev
 

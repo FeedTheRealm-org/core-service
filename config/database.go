@@ -40,7 +40,10 @@ func NewDB(conf *Config) (*DB, error) {
 		time.Sleep(1 * time.Second)
 	}
 
-	db := &DB{Conn: conn}
+	db := &DB{
+		dsn:  dsn,
+		Conn: conn,
+	}
 
 	if conf.DB.ShouldMigrate {
 		err = db.runMigrations()
