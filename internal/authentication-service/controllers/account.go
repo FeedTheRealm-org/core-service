@@ -71,7 +71,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 	if err != nil {
 		if _, ok := err.(*services.AccountAlreadyExistsError); ok {
 			logger.Logger.Infof("CreateAccount: account already exists for email=%s", req.Email)
-			c.JSON(400, common_dtos.ErrorResponse{
+			c.JSON(409, common_dtos.ErrorResponse{
 				Type:     "validation",
 				Title:    "Email is already in use",
 				Status:   409,
@@ -323,7 +323,7 @@ func (ec *accountController) VerifyAccount(c *gin.Context) {
 
 		if _, ok := err.(*services.InvalidVerificationCodeError); ok {
 			logger.Logger.Infof("VerifyAccount: invalid verification code for email=%s", req.Email)
-			c.JSON(400, common_dtos.ErrorResponse{
+			c.JSON(401, common_dtos.ErrorResponse{
 				Type:     "validation",
 				Title:    "Invalid verification code",
 				Status:   401,
