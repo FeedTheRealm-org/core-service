@@ -31,11 +31,12 @@ type DatabaseConfig struct {
 }
 
 type Config struct {
-	Server *ServerConfig
-	DB     *DatabaseConfig
+	Server                *ServerConfig
+	DB                    *DatabaseConfig
 	SessionTokenSecretKey string
 	SessionTokenDuration  time.Duration
-	ResendAPIKey          string
+	BrevoAPIKey           string
+	EmailSenderAddress    string
 }
 
 func CreateConfig() *Config {
@@ -58,7 +59,8 @@ func CreateConfig() *Config {
 		DB:                    dbc,
 		SessionTokenSecretKey: os.Getenv("SESSION_TOKEN_SECRET_KEY"),
 		SessionTokenDuration:  getEnvOrDefaultDuration("SESSION_TOKEN_DURATION", time.Hour*24),
-		ResendAPIKey:          os.Getenv("RESEND_API_KEY"),
+		BrevoAPIKey:           os.Getenv("BREVO_API_KEY"),
+		EmailSenderAddress:    os.Getenv("EMAIL_SENDER_ADDRESS"),
 	}
 }
 

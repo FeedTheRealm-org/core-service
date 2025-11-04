@@ -1,9 +1,14 @@
 package services
 
 import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+
 	"github.com/FeedTheRealm-org/core-service/config"
-	"github.com/resend/resend-go/v2"
 )
+
+const brevoSendEmailURL = "https://api.brevo.com/v3/smtp/email"
 
 type emailSenderService struct {
 	conf *config.Config
@@ -15,17 +20,51 @@ func NewEmailSenderService(conf *config.Config) EmailSenderService {
 	}
 }
 
-func (s *emailSenderService) SendVerificationEmail(toEmail string, verifyCode string) error {
-	client := resend.NewClient(s.conf.ResendAPIKey)
+func createPayloadForSendEmail(fromEmail string, toEmail string, verifyCode string) *bytes.Buffer {
+	data := map[string]interface{}{
+		"sender": map[string]string{
+			"name":  "Feed The Realm",
+			"email": fromEmail,
+		},
+		"to": []map[string]string{
+			{
+				"email": toEmail,
+			},
+		},
+		"subject":     "Verification Code",
+		"htmlContent": "<p>Your verification code is: <strong>" + verifyCode + "</strong>.</p>",
+	}
+	jsonData, _ := json.Marshal(data)
+	return bytes.NewBuffer(jsonData)
+}
 
-	params := &resend.SendEmailRequest{
-		From:    "onboarding@resend.dev",
-		To:      []string{toEmail},
-		Subject: "Verification Code",
-		Html:    "<p>Your verification code is: <strong>" + verifyCode + "</strong>.</p>",
+func createRequestForSendEmail(payload *bytes.Buffer, apiKey string) (*http.Request, error) {
+	req, err := http.NewRequest(http.MethodPost, brevoSendEmailURL, payload)
+	if err != nil {
+		return nil, err
 	}
 
-	_, err := client.Emails.Send(params)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("api-key", apiKey)
+
+	return req, nil
+}
+
+func (s *emailSenderService) SendVerificationEmail(toEmail string, verifyCode string) error {
+	data := createPayloadForSendEmail(s.conf.EmailSenderAddress, toEmail, verifyCode)
+	req, err := createRequestForSendEmail(data, s.conf.BrevoAPIKey)
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		_ = resp.Body.Close()
+		return err
+	}
+
+	err = resp.Body.Close()
 	if err != nil {
 		return err
 	}
