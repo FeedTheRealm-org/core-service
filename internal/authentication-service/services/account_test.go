@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	code_generator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/code-generator"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,7 +26,7 @@ func TestAccount_GetUserByEmail(t *testing.T) {
 	user, err := accountService.CreateAccount(email, password)
 	assert.Nil(t, err, "expected no error on account creation")
 
-	_, err = accountService.VerifyAccount(email, user.VerifyCode)
+	_, err = accountService.VerifyAccount(email, code_generator.GenerateCode(code_generator.StaticGenerateCode))
 	assert.Nil(t, err, "expected no error on account verification")
 
 	user, err = accountService.GetUserByEmail(email)
@@ -195,10 +196,10 @@ func TestAccount_VerifyAccount(t *testing.T) {
 	email := "user@example.com"
 	password := "verification_code1"
 
-	user, err := accountService.CreateAccount(email, password)
+	_, err := accountService.CreateAccount(email, password)
 	assert.Nil(t, err, "expected no error on account creation")
 
-	isVerified, err := accountService.VerifyAccount(email, user.VerifyCode)
+	isVerified, err := accountService.VerifyAccount(email, code_generator.GenerateCode(code_generator.StaticGenerateCode))
 	assert.Nil(t, err, "expected no error on account verification")
 	assert.True(t, isVerified, "expected account to be verified")
 }

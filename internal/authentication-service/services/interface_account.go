@@ -1,10 +1,12 @@
 package services
 
-import "github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
+import (
+	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/models"
+)
 
 type AccountService interface {
-	GetUserByEmail(email string) (*repositories.User, error)
-	CreateAccount(email string, password string) (*repositories.User, error)
+	GetUserByEmail(email string) (*models.User, error)
+	CreateAccount(email string, password string) (*models.User, error)
 	LoginAccount(email string, password string) (string, error)
 	ValidateSessionToken(token string) error
 	VerifyAccount(email string, code string) (bool, error)

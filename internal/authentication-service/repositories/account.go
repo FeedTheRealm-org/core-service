@@ -48,6 +48,19 @@ func NewAccountRepository(conf *config.Config, db *config.DB) (AccountRepository
 	}, nil
 }
 
+func (ar *accountRepository) GetAccountById(id uuid.UUID) (*models.User, error) {
+	var user models.User
+
+	if err := ar.db.Conn.Where("id = ?", id).First(&user).Error; err != nil {
+		if errors.IsRecordNotFound(err) {
+			return nil, errors.NewNotFoundError("user not found")
+		}
+		return nil, &DatabaseError{message: err.Error()}
+	}
+
+	return &user, nil
+}
+
 func (ar *accountRepository) GetAccountByEmail(email string) (*models.User, error) {
 	var user models.User
 
@@ -68,11 +81,11 @@ func (ar *accountRepository) CreateAccount(user *models.User, verificationCode s
 			return &DatabaseError{message: err.Error()}
 		}
 
-		accountActivation := &models.AccountVerification{
+		accountVerfication := &models.AccountVerification{
 			UserId:           user.Id,
 			VerificationCode: verificationCode,
 		}
-		if err := tx.Create(accountActivation).Error; err != nil {
+		if err := tx.Create(accountVerfication).Error; err != nil {
 			return &DatabaseError{message: err.Error()}
 		}
 
@@ -80,9 +93,9 @@ func (ar *accountRepository) CreateAccount(user *models.User, verificationCode s
 	})
 }
 
-func (ar *accountRepository) VerifyAccount(id uuid.UUID, code string, currentTime time.Time) error {
+func (ar *accountRepository) VerifyAccount(user *models.User, code string, currentTime time.Time) error {
 	var accountActivation models.AccountVerification
-	if err := ar.db.Conn.Where("user_id = ?", id).First(&accountActivation).Error; err != nil {
+	if err := ar.db.Conn.Where("user_id = ?", user.Id).First(&accountActivation).Error; err != nil {
 		if errors.IsRecordNotFound(err) {
 			return &AccountNotFoundError{}
 		}
@@ -94,7 +107,7 @@ func (ar *accountRepository) VerifyAccount(id uuid.UUID, code string, currentTim
 	}
 
 	err := ar.db.Conn.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&models.User{}).Where("id = ?", id).Update("verified", true).Error; err != nil {
+		if err := tx.Model(&models.User{}).Where("id = ?", user.Id).Update("verified", true).Error; err != nil {
 			return &DatabaseError{message: err.Error()}
 		}
 
@@ -107,6 +120,8 @@ func (ar *accountRepository) VerifyAccount(id uuid.UUID, code string, currentTim
 	if err != nil {
 		return err
 	}
+
+	user.Verified = true
 
 	return nil
 }

@@ -7,15 +7,9 @@ import (
 	"github.com/google/uuid"
 )
 
-type User struct {
-	Email        string
-	PasswordHash string
-	VerifyCode   string
-	Expiration   time.Time
-}
-
 type AccountRepository interface {
+	GetAccountById(id uuid.UUID) (*models.User, error)
 	GetAccountByEmail(email string) (*models.User, error)
 	CreateAccount(user *models.User, verificationCode string) error
-	VerifyAccount(id uuid.UUID, code string, currentTime time.Time) error
+	VerifyAccount(user *models.User, code string, currentTime time.Time) error
 }

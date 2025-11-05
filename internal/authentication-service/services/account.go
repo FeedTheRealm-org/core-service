@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	code_generator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/code-generator"
 	validator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/credential-validation"
@@ -88,7 +89,7 @@ func NewAccountService(conf *config.Config, repo repositories.AccountRepository,
 	}
 }
 
-func (s *accountService) GetUserByEmail(email string) (*repositories.User, error) {
+func (s *accountService) GetUserByEmail(email string) (*models.User, error) {
 	user, err := s.repo.GetAccountByEmail(email)
 	if err != nil {
 		return nil, &AccountNotFoundError{}
@@ -97,7 +98,7 @@ func (s *accountService) GetUserByEmail(email string) (*repositories.User, error
 	return user, nil
 }
 
-func (s *accountService) CreateAccount(email string, password string) (*repositories.User, error) {
+func (s *accountService) CreateAccount(email string, password string) (*models.User, error) {
 	existingUser, err := s.repo.GetAccountByEmail(email)
 	if err == nil && existingUser != nil {
 		return nil, &AccountAlreadyExistsError{}
@@ -157,14 +158,13 @@ func (s *accountService) CreateAccount(email string, password string) (*reposito
 		functionGenerator = code_generator.StaticGenerateCode
 	}
 
-	user := &repositories.User{
-		Email:        email,
-		PasswordHash: string(hashedPassword),
-		VerifyCode:   code_generator.GenerateCode(functionGenerator),
-		Expiration:   time.Now().Add(24 * time.Hour),
+	user := &models.User{
+		Email:    email,
+		Password: string(hashedPassword),
 	}
 
-	err = s.repo.CreateAccount(user)
+	verificationCode := code_generator.GenerateCode(functionGenerator)
+	err = s.repo.CreateAccount(user, verificationCode)
 	if err != nil {
 		return nil, &AccountFailedToCreateError{}
 	}
@@ -178,13 +178,12 @@ func (s *accountService) LoginAccount(email string, password string) (string, er
 		return "", &AccountNotFoundError{}
 	}
 
-	isPasswordValid := hashing.VerifyPassword(user.PasswordHash, password)
+	isPasswordValid := hashing.VerifyPassword(user.Password, password)
 	if !isPasswordValid {
 		return "", &AccountNotFoundError{}
 	}
 
-	isAccountValidate, err := s.repo.IsAccountVerified(email)
-	if err != nil || !isAccountValidate {
+	if !user.Verified {
 		return "", &AccountNotVerifiedError{}
 	}
 
@@ -208,8 +207,13 @@ func (s *accountService) ValidateSessionToken(token string) error {
 }
 
 func (s *accountService) VerifyAccount(email string, code string) (bool, error) {
+	user, err := s.repo.GetAccountByEmail(email)
+	if err != nil {
+		return false, &AccountNotFoundError{}
+	}
+
 	currentTime := time.Now()
-	err := s.repo.VerifyAccount(email, code, currentTime)
+	err = s.repo.VerifyAccount(user, code, currentTime)
 	if err != nil {
 		if _, ok := err.(*repositories.AccountNotFoundError); ok {
 			return false, &AccountNotFoundError{}
