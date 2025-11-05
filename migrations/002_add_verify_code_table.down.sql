@@ -1,6 +1,0 @@
-BEGIN;
-
-ALTER TABLE accounts
-DROP COLUMN IF EXISTS verify_code;
-
-COMMIT;
