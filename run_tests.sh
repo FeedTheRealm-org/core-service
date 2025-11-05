@@ -1,8 +1,6 @@
 PATTERN_FOR_ACCEPTANCE_TESTS="./internal/*/acceptance-tests/*_test.go"
 
-run_migrations() {
- 	go run ./cmd/migrate/main.go up
-}
+export DB_SHOULD_MIGRATE=false
 
 run_unit_tests() {
   go test ./... -cover
@@ -10,12 +8,12 @@ run_unit_tests() {
 
 run_acceptance_tests() {
   for test_file in $PATTERN_FOR_ACCEPTANCE_TESTS; do
+    echo "Testing $test_file"
     if [ -f "$test_file" ]; then
-      cd "$(dirname "$test_file")" && go test -v --godog.tags=~wip
+      (cd "$(dirname "$test_file")" && go test -v --godog.tags=~wip)
     fi
   done
 }
 
-run_migrations
 run_unit_tests
 run_acceptance_tests

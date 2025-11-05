@@ -1,4 +1,4 @@
-package session_token
+package session
 
 import (
 	"testing"

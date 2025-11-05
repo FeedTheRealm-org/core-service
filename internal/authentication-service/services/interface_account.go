@@ -7,4 +7,5 @@ type AccountService interface {
 	CreateAccount(email string, password string) (*repositories.User, error)
 	LoginAccount(email string, password string) (string, error)
 	ValidateSessionToken(token string) error
+	VerifyAccount(email string, code string) (bool, error)
 }

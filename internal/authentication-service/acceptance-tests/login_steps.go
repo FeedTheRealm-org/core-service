@@ -14,8 +14,9 @@ import (
 )
 
 type loginResponse struct {
-	Message string `json:"message"`
-	Token   string `json:"token,omitempty"`
+	Data struct {
+		Token string `json:"token"`
+	} `json:"data"`
 }
 
 type sessionContext struct {
@@ -27,8 +28,8 @@ type sessionContextKey struct{}
 
 func aLoginRequestIsMadeWithEmailAndPassword(ctx context.Context, email, password string) (context.Context, error) {
 	payload := map[string]string{
-		"email":    email,
-		"password": password,
+		"email": email,
+		"code":  "123456",
 	}
 
 	b, err := json.Marshal(payload)
@@ -36,7 +37,7 @@ func aLoginRequestIsMadeWithEmailAndPassword(ctx context.Context, email, passwor
 		return ctx, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/login", bytes.NewReader(b))
+	req, err := http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/verify", bytes.NewReader(b))
 	if err != nil {
 		return ctx, err
 	}
@@ -44,6 +45,29 @@ func aLoginRequestIsMadeWithEmailAndPassword(ctx context.Context, email, passwor
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	if err != nil {
+		return ctx, err
+	}
+	resp.Body.Close()
+
+	payload = map[string]string{
+		"email":    email,
+		"password": password,
+	}
+
+	b, err = json.Marshal(payload)
+	if err != nil {
+		return ctx, err
+	}
+
+	req, err = http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/login", bytes.NewReader(b))
+	if err != nil {
+		return ctx, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client = &http.Client{}
+	resp, err = client.Do(req)
 	if err != nil {
 		return ctx, err
 	}
@@ -66,16 +90,14 @@ func aLoginRequestIsMadeWithEmailAndAnEmptyPassword(ctx context.Context, email s
 }
 
 func theUserHasLoggedInSuccessfully(ctx context.Context) (context.Context, error) {
-	// First create an account
 	ctx, err := aSignUpRequestIsMadeWithEmailAndPassword(ctx, "sessionuser@example.com", "ValidPass123!")
 	if err != nil {
 		return ctx, err
 	}
 
-	// Then login
 	payload := map[string]string{
-		"email":    "sessionuser@example.com",
-		"password": "ValidPass123!",
+		"email": "sessionuser@example.com",
+		"code":  "123456",
 	}
 
 	b, err := json.Marshal(payload)
@@ -83,7 +105,7 @@ func theUserHasLoggedInSuccessfully(ctx context.Context) (context.Context, error
 		return ctx, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/login", bytes.NewReader(b))
+	req, err := http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/verify", bytes.NewReader(b))
 	if err != nil {
 		return ctx, err
 	}
@@ -91,6 +113,30 @@ func theUserHasLoggedInSuccessfully(ctx context.Context) (context.Context, error
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	if err != nil {
+		return ctx, err
+	}
+	resp.Body.Close()
+
+	// Then login
+	payload = map[string]string{
+		"email":    "sessionuser@example.com",
+		"password": "ValidPass123!",
+	}
+
+	b, err = json.Marshal(payload)
+	if err != nil {
+		return ctx, err
+	}
+
+	req, err = http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/login", bytes.NewReader(b))
+	if err != nil {
+		return ctx, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client = &http.Client{}
+	resp, err = client.Do(req)
 	if err != nil {
 		return ctx, err
 	}
@@ -107,7 +153,7 @@ func theUserHasLoggedInSuccessfully(ctx context.Context) (context.Context, error
 	}
 
 	session := &sessionContext{
-		token:     loginResp.Token,
+		token:     loginResp.Data.Token,
 		loginTime: time.Now(),
 	}
 
@@ -218,9 +264,9 @@ func theResponseShouldIndicateASuccessfulLogin(ctx context.Context) error {
 	}
 
 	// Check if it's an error response first
-	var errorResp responseError
-	if err := json.Unmarshal(bodyBytes, &errorResp); err == nil && errorResp.Error != "" {
-		return fmt.Errorf("received error response instead of success: %s (body: %s)", errorResp.Error, string(bodyBytes))
+	var errorResp ErrorResponse
+	if err := json.Unmarshal(bodyBytes, &errorResp); err == nil && errorResp.Title != "" {
+		return fmt.Errorf("received error response instead of success: %s (body: %s)", errorResp.Title, string(bodyBytes))
 	}
 
 	var loginResp loginResponse
@@ -228,11 +274,7 @@ func theResponseShouldIndicateASuccessfulLogin(ctx context.Context) error {
 		return fmt.Errorf("failed to parse login response: %v (body: %s)", err, string(bodyBytes))
 	}
 
-	if loginResp.Message != "Login successful" {
-		return fmt.Errorf("unexpected login message: %s (body: %s)", loginResp.Message, string(bodyBytes))
-	}
-
-	if loginResp.Token == "" {
+	if loginResp.Data.Token == "" {
 		return fmt.Errorf("expected a token in the login response, but got none")
 	}
 

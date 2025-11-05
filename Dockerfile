@@ -5,6 +5,7 @@ WORKDIR /usr/src/app
 
 COPY go.mod go.sum ./
 RUN go mod download
+RUN go install github.com/swaggo/swag/cmd/swag@latest
 
 # **Build App**
 FROM deps AS builder
@@ -13,6 +14,8 @@ WORKDIR /usr/src/app
 
 COPY --from=deps /go/pkg /go/pkg
 COPY . .
+
+RUN swag init --generalInfo cmd/main.go --output ./swagger
 
 RUN go build -v -o /usr/local/bin/app cmd/main.go
 

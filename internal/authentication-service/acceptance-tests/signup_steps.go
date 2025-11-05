@@ -14,12 +14,17 @@ import (
 type testContextKey struct{}
 
 type response struct {
-	Message string `json:"message"`
-	Email   string `json:"email,omitempty"`
+	Data struct {
+		Email string `json:"email,omitempty"`
+	} `json:"data"`
 }
 
-type responseError struct {
-	Error string `json:"error"`
+type ErrorResponse struct {
+	Type     string `json:"type"`
+	Title    string `json:"title"`
+	Status   int    `json:"status"`
+	Detail   string `json:"detail"`
+	Instance string `json:"instance"`
 }
 
 func aSignUpRequestIsMadeWithEmailAndPassword(ctx context.Context, email, password string) (context.Context, error) {
@@ -74,8 +79,8 @@ func theResponseShouldIndicateSuccess(ctx context.Context) error {
 		return fmt.Errorf("failed to parse response: %v", err)
 	}
 
-	if res.Message != "Account created successfully" {
-		return fmt.Errorf("unexpected result: %s", res.Message)
+	if res.Data.Email == "" {
+		return fmt.Errorf("unexpected result: %s", res.Data.Email)
 	}
 
 	return nil
@@ -88,13 +93,13 @@ func theResponseShouldIncludeAnErrorMessage(ctx context.Context, expectedMsg str
 		return fmt.Errorf("no result found in context")
 	}
 
-	var res responseError
+	var res ErrorResponse
 	if err := json.Unmarshal(body, &res); err != nil {
 		return fmt.Errorf("failed to parse response: %v", err)
 	}
 
-	if res.Error != expectedMsg {
-		return fmt.Errorf("unexpected result: %s", res.Error)
+	if res.Title != expectedMsg {
+		return fmt.Errorf("unexpected result: %s", res.Title)
 	}
 
 	return nil

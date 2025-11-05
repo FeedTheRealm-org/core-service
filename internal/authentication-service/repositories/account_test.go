@@ -2,15 +2,20 @@ package repositories_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAccountRepository_CreateAccount(t *testing.T) {
+	logger.InitLogger(false)
+
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "john.doe@example.com"
@@ -19,6 +24,8 @@ func TestAccountRepository_CreateAccount(t *testing.T) {
 	user := &repositories.User{
 		Email:        email,
 		PasswordHash: passwordHash,
+		VerifyCode:   "verification_code",
+		Expiration:   time.Now().Add(24 * time.Hour),
 	}
 
 	err = repo.CreateAccount(user)
@@ -33,7 +40,8 @@ func TestAccountRepository_CreateAccount(t *testing.T) {
 
 func TestAccountRepository_GetAccountByEmail_NotFound(t *testing.T) {
 	conf := config.CreateConfig()
-	repo, err := repositories.NewAccountRepository(conf)
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
 	email := "notfound@example.com"
@@ -41,4 +49,59 @@ func TestAccountRepository_GetAccountByEmail_NotFound(t *testing.T) {
 	assert.NotNil(t, err, "expected error on getting non-existing user")
 	assert.Error(t, err, "Account not found")
 	assert.Nil(t, user, "expected no user to be found")
+}
+
+func TestAccountRepository_IsAccountVerified(t *testing.T) {
+	conf := config.CreateConfig()
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
+	assert.Nil(t, err, "failed to connect to database")
+
+	email := "johndoe@example.com"
+	passwordHash := "hashed_password"
+
+	user := &repositories.User{
+		Email:        email,
+		PasswordHash: passwordHash,
+		VerifyCode:   "verification_code",
+		Expiration:   time.Now().Add(24 * time.Hour),
+	}
+
+	err = repo.CreateAccount(user)
+	assert.Nil(t, err, "failed to create account")
+
+	isVerified, err := repo.IsAccountVerified(email)
+	assert.Nil(t, err, "failed to check if account is verified")
+	assert.False(t, isVerified, "expected account to be unverified")
+}
+
+func TestAccountRepository_VerifyAccount(t *testing.T) {
+	conf := config.CreateConfig()
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
+	assert.Nil(t, err, "failed to connect to database")
+
+	email := "johndoe@example.com"
+	code := "verification_code"
+
+	err = repo.VerifyAccount(email, code, time.Now())
+	assert.Nil(t, err, "failed to verify account")
+
+	isVerified, err := repo.IsAccountVerified(email)
+	assert.Nil(t, err, "failed to check if account is verified")
+	assert.True(t, isVerified, "expected account to be verified")
+}
+
+func TestAccountRepository_VerifyAccount_Expired(t *testing.T) {
+	conf := config.CreateConfig()
+	db, _ := config.NewDB(conf)
+	repo, err := repositories.NewAccountRepository(conf, db)
+	assert.Nil(t, err, "failed to connect to database")
+
+	email := "johndoe@example.com"
+	code := "verification_code"
+
+	err = repo.VerifyAccount(email, code, time.Now().Add(-time.Hour))
+	assert.NotNil(t, err, "expected error on verifying expired account")
+	assert.Error(t, err, "Account verification has expired")
 }
