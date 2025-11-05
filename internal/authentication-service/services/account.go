@@ -2,6 +2,7 @@ package services
 
 import (
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
@@ -90,6 +91,7 @@ func NewAccountService(conf *config.Config, repo repositories.AccountRepository,
 }
 
 func (s *accountService) GetUserByEmail(email string) (*models.User, error) {
+	email = strings.ToLower(email)
 	user, err := s.repo.GetAccountByEmail(email)
 	if err != nil {
 		return nil, &AccountNotFoundError{}
@@ -98,21 +100,22 @@ func (s *accountService) GetUserByEmail(email string) (*models.User, error) {
 	return user, nil
 }
 
-func (s *accountService) CreateAccount(email string, password string) (*models.User, error) {
+func (s *accountService) CreateAccount(email string, password string) (*models.User, string, error) {
+	email = strings.ToLower(email)
 	existingUser, err := s.repo.GetAccountByEmail(email)
 	if err == nil && existingUser != nil {
-		return nil, &AccountAlreadyExistsError{}
+		return nil, "", &AccountAlreadyExistsError{}
 	}
 
 	err = validator.IsValidEmail(email)
 	if err != nil {
 		if _, ok := err.(*validator.EmptyEmailError); ok {
-			return nil, &AccountInvalidFormat{
+			return nil, "", &AccountInvalidFormat{
 				Msg: "Empty email",
 			}
 		}
 
-		return nil, &AccountInvalidFormat{
+		return nil, "", &AccountInvalidFormat{
 			Msg: "Invalid email",
 		}
 	}
@@ -120,37 +123,37 @@ func (s *accountService) CreateAccount(email string, password string) (*models.U
 	err = validator.IsValidPassword(password)
 	if err != nil {
 		if _, ok := err.(*validator.EmptyPasswordError); ok {
-			return nil, &AccountInvalidFormat{
+			return nil, "", &AccountInvalidFormat{
 				Msg: "Empty password",
 			}
 		}
 
 		if _, ok := err.(*validator.PasswordTooShortError); ok {
-			return nil, &AccountInvalidFormat{
+			return nil, "", &AccountInvalidFormat{
 				Msg: "Password is too short",
 			}
 		}
 
 		if _, ok := err.(*validator.PasswordNoLetterError); ok {
-			return nil, &AccountInvalidFormat{
+			return nil, "", &AccountInvalidFormat{
 				Msg: "Password must contain at least one letter",
 			}
 		}
 
 		if _, ok := err.(*validator.PasswordNoNumberError); ok {
-			return nil, &AccountInvalidFormat{
+			return nil, "", &AccountInvalidFormat{
 				Msg: "Password must contain at least one number",
 			}
 		}
 
-		return nil, &AccountInvalidFormat{
+		return nil, "", &AccountInvalidFormat{
 			Msg: "Invalid password",
 		}
 	}
 
 	hashedPassword, err := hashing.HashPassword(password)
 	if err != nil {
-		return nil, &AccountFailedToCreateError{}
+		return nil, "", &AccountFailedToCreateError{}
 	}
 
 	functionGenerator := rand.Int
@@ -166,13 +169,14 @@ func (s *accountService) CreateAccount(email string, password string) (*models.U
 	verificationCode := code_generator.GenerateCode(functionGenerator)
 	err = s.repo.CreateAccount(user, verificationCode)
 	if err != nil {
-		return nil, &AccountFailedToCreateError{}
+		return nil, "", &AccountFailedToCreateError{}
 	}
 
-	return user, nil
+	return user, verificationCode, nil
 }
 
 func (s *accountService) LoginAccount(email string, password string) (string, error) {
+	email = strings.ToLower(email)
 	user, err := s.repo.GetAccountByEmail(email)
 	if err != nil {
 		return "", &AccountNotFoundError{}
@@ -207,6 +211,7 @@ func (s *accountService) ValidateSessionToken(token string) error {
 }
 
 func (s *accountService) VerifyAccount(email string, code string) (bool, error) {
+	email = strings.ToLower(email)
 	user, err := s.repo.GetAccountByEmail(email)
 	if err != nil {
 		return false, &AccountNotFoundError{}

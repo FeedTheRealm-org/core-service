@@ -67,7 +67,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 		return
 	}
 
-	result, err := ec.accountService.CreateAccount(req.Email, req.Password)
+	result, verificationCode, err := ec.accountService.CreateAccount(req.Email, req.Password)
 	if err != nil {
 		if _, ok := err.(*services.AccountAlreadyExistsError); ok {
 			logger.Logger.Infof("CreateAccount: account already exists for email=%s", req.Email)
@@ -106,7 +106,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 
 	if ec.conf.Server.Environment != config.Testing {
 		logger.Logger.Infof("CreateAccount: account created for email=%s", result.Email)
-		err = ec.emailService.SendVerificationEmail(result.Email, result.VerifyCode)
+		err = ec.emailService.SendVerificationEmail(result.Email, verificationCode)
 		if err != nil {
 			logger.Logger.Errorf("CreateAccount: failed to send verification email to email=%s: %v", result.Email, err)
 		}

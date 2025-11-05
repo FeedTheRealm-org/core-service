@@ -1,28 +1,27 @@
 package seed_database
 
 import (
-	"context"
-
 	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/models"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func seedAccounts(db *config.DB) error {
-	accounts := []struct {
-		Email    string
-		Password string
-	}{
+	accounts := []models.User{
 		{
 			Email:    "test1@email.com",
 			Password: "Password123",
+			Verified: true,
 		},
 		{
 			Email:    "test2@email.com",
 			Password: "Password123",
+			Verified: true,
 		},
 		{
 			Email:    "test3@email.com",
 			Password: "Password123",
+			Verified: true,
 		},
 	}
 
@@ -31,11 +30,9 @@ func seedAccounts(db *config.DB) error {
 		if err != nil {
 			return err
 		}
+		account.Password = string(hashedPassword)
 
-		_, err = db.Conn.Exec(context.Background(),
-			`INSERT INTO accounts (email, password_hash)
-			VALUES ($1, $2)`, account.Email, hashedPassword)
-		if err != nil {
+		if err := db.Conn.Create(account).Error; err != nil {
 			return err
 		}
 	}

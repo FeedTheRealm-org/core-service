@@ -12,6 +12,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	gormLogger "gorm.io/gorm/logger"
 )
 
 type DB struct {
@@ -22,10 +23,18 @@ type DB struct {
 func NewDB(conf *Config) (*DB, error) {
 	dsn := generateURL(conf.DB)
 
+	var dbLogger gormLogger.Interface
+	if conf.Server.Environment == Production {
+		dbLogger = gormLogger.Default.LogMode(gormLogger.Silent)
+	} else {
+		dbLogger = gormLogger.Default.LogMode(gormLogger.Info)
+	}
+
 	var conn *gorm.DB
 	var err error
 	for range conf.DB.ConnectionRetries {
 		if conn, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+			Logger:         dbLogger,
 			TranslateError: true,
 		}); err == nil {
 			break

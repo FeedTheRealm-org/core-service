@@ -102,8 +102,10 @@ func (ar *accountRepository) VerifyAccount(user *models.User, code string, curre
 		return &DatabaseError{message: err.Error()}
 	}
 
-	if accountActivation.VerificationCode != code || accountActivation.ExpiresAt.Before(time.Now()) {
+	if accountActivation.ExpiresAt.Before(time.Now()) {
 		return &AccountVerificationExpired{}
+	} else if accountActivation.VerificationCode != code {
+		return &AccountNotVerifiedError{}
 	}
 
 	err := ar.db.Conn.Transaction(func(tx *gorm.DB) error {
