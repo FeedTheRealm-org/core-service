@@ -28,8 +28,8 @@ type sessionContextKey struct{}
 
 func aLoginRequestIsMadeWithEmailAndPassword(ctx context.Context, email, password string) (context.Context, error) {
 	payload := map[string]string{
-		"email":    email,
-		"password": password,
+		"email": email,
+		"code":  "123456",
 	}
 
 	b, err := json.Marshal(payload)
@@ -37,7 +37,7 @@ func aLoginRequestIsMadeWithEmailAndPassword(ctx context.Context, email, passwor
 		return ctx, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/login", bytes.NewReader(b))
+	req, err := http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/verify", bytes.NewReader(b))
 	if err != nil {
 		return ctx, err
 	}
@@ -45,6 +45,29 @@ func aLoginRequestIsMadeWithEmailAndPassword(ctx context.Context, email, passwor
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	if err != nil {
+		return ctx, err
+	}
+	resp.Body.Close()
+
+	payload = map[string]string{
+		"email":    email,
+		"password": password,
+	}
+
+	b, err = json.Marshal(payload)
+	if err != nil {
+		return ctx, err
+	}
+
+	req, err = http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/login", bytes.NewReader(b))
+	if err != nil {
+		return ctx, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client = &http.Client{}
+	resp, err = client.Do(req)
 	if err != nil {
 		return ctx, err
 	}
@@ -67,16 +90,14 @@ func aLoginRequestIsMadeWithEmailAndAnEmptyPassword(ctx context.Context, email s
 }
 
 func theUserHasLoggedInSuccessfully(ctx context.Context) (context.Context, error) {
-	// First create an account
 	ctx, err := aSignUpRequestIsMadeWithEmailAndPassword(ctx, "sessionuser@example.com", "ValidPass123!")
 	if err != nil {
 		return ctx, err
 	}
 
-	// Then login
 	payload := map[string]string{
-		"email":    "sessionuser@example.com",
-		"password": "ValidPass123!",
+		"email": "sessionuser@example.com",
+		"code":  "123456",
 	}
 
 	b, err := json.Marshal(payload)
@@ -84,7 +105,7 @@ func theUserHasLoggedInSuccessfully(ctx context.Context) (context.Context, error
 		return ctx, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/login", bytes.NewReader(b))
+	req, err := http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/verify", bytes.NewReader(b))
 	if err != nil {
 		return ctx, err
 	}
@@ -92,6 +113,30 @@ func theUserHasLoggedInSuccessfully(ctx context.Context) (context.Context, error
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	if err != nil {
+		return ctx, err
+	}
+	resp.Body.Close()
+
+	// Then login
+	payload = map[string]string{
+		"email":    "sessionuser@example.com",
+		"password": "ValidPass123!",
+	}
+
+	b, err = json.Marshal(payload)
+	if err != nil {
+		return ctx, err
+	}
+
+	req, err = http.NewRequest(http.MethodPost, "http://0.0.0.0:8000/auth/login", bytes.NewReader(b))
+	if err != nil {
+		return ctx, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client = &http.Client{}
+	resp, err = client.Do(req)
 	if err != nil {
 		return ctx, err
 	}

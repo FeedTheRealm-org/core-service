@@ -10,14 +10,16 @@ import (
 )
 
 type accountController struct {
-	conf    *config.Config
-	service services.AccountService
+	conf           *config.Config
+	accountService services.AccountService
+	emailService   services.EmailSenderService
 }
 
-func NewAccountController(conf *config.Config, service services.AccountService) AccountController {
+func NewAccountController(conf *config.Config, accountService services.AccountService, emailService services.EmailSenderService) AccountController {
 	return &accountController{
-		conf:    conf,
-		service: service,
+		conf:           conf,
+		accountService: accountService,
+		emailService:   emailService,
 	}
 }
 
@@ -65,14 +67,14 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 		return
 	}
 
-	result, err := ec.service.CreateAccount(req.Email, req.Password)
+	result, err := ec.accountService.CreateAccount(req.Email, req.Password)
 	if err != nil {
 		if _, ok := err.(*services.AccountAlreadyExistsError); ok {
 			logger.Logger.Infof("CreateAccount: account already exists for email=%s", req.Email)
-			c.JSON(400, common_dtos.ErrorResponse{
+			c.JSON(409, common_dtos.ErrorResponse{
 				Type:     "validation",
 				Title:    "Email is already in use",
-				Status:   400,
+				Status:   409,
 				Detail:   "The email address is already in use by another account.",
 				Instance: c.Request.RequestURI,
 			})
@@ -100,6 +102,14 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 			Instance: c.Request.RequestURI,
 		})
 		return
+	}
+
+	if ec.conf.Server.Environment != config.Testing {
+		logger.Logger.Infof("CreateAccount: account created for email=%s", result.Email)
+		err = ec.emailService.SendVerificationEmail(result.Email, result.VerifyCode)
+		if err != nil {
+			logger.Logger.Errorf("CreateAccount: failed to send verification email to email=%s: %v", result.Email, err)
+		}
 	}
 
 	logger.Logger.Infof("CreateAccount: account created for email=%s", result.Email)
@@ -162,7 +172,7 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 		return
 	}
 
-	token, err := ec.service.LoginAccount(req.Email, req.Password)
+	token, err := ec.accountService.LoginAccount(req.Email, req.Password)
 	if err != nil {
 		if _, ok := err.(*services.AccountNotFoundError); ok {
 			logger.Logger.Infof("LoginAccount: account not found for email=%s", req.Email)
@@ -171,6 +181,18 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 				Title:    "Invalid email or password",
 				Status:   404,
 				Detail:   "The email address or password is incorrect.",
+				Instance: c.Request.RequestURI,
+			})
+			return
+		}
+
+		if _, ok := err.(*services.AccountNotVerifiedError); ok {
+			logger.Logger.Infof("LoginAccount: account not verified for email=%s", req.Email)
+			c.JSON(403, common_dtos.ErrorResponse{
+				Type:     "validation",
+				Title:    "Please verify your account before logging in",
+				Status:   403,
+				Detail:   "You must verify your email address before you can log in.",
 				Instance: c.Request.RequestURI,
 			})
 			return
@@ -219,7 +241,7 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 	}
 
 	logger.Logger.Info("CheckSessionExpiration: received request to check session token from header")
-	err := ec.service.ValidateSessionToken(token)
+	err := ec.accountService.ValidateSessionToken(token)
 	if err != nil {
 		if _, ok := err.(*services.AccountSessionExpired); ok {
 			logger.Logger.Info("CheckSessionExpiration: session token has expired")
@@ -233,4 +255,112 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 
 	logger.Logger.Info("CheckSessionExpiration: session token is valid")
 	c.JSON(200, gin.H{"message": "Session is valid"})
+}
+
+// @Summary Verify Account
+// @Description Verify a user account with email verification code
+// @Tags authentication-service
+// @Accept   json
+// @Produce  json
+// @Param   request body dtos.VerifyAccountRequestDTO true "Verification data"
+// @Success 200  {object}  dtos.VerifyAccountResponseDTO "Successful verification (Wrapped in data envelope)"
+// @Failure 400  {object}  dtos.ErrorResponse "Bad request or invalid code"
+// @Failure 500  {object}  dtos.ErrorResponse "Internal server error"
+// @Router /auth/verify [post]
+func (ec *accountController) VerifyAccount(c *gin.Context) {
+	req := dtos.VerifyAccountRequestDTO{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Logger.Errorf("VerifyAccount: failed to bind JSON: %v", err)
+		c.JSON(400, common_dtos.ErrorResponse{
+			Type:     "validation",
+			Title:    "Invalid request body",
+			Status:   400,
+			Detail:   "The request body is not valid JSON.",
+			Instance: c.Request.RequestURI,
+		})
+		return
+	}
+
+	logger.Logger.Infof("VerifyAccount: received request for email=%s", req.Email)
+
+	if req.Email == "" {
+		logger.Logger.Info("VerifyAccount: missing email")
+		c.JSON(400, common_dtos.ErrorResponse{
+			Type:     "validation",
+			Title:    "Email is required",
+			Status:   400,
+			Detail:   "You must provide an email address to verify an account.",
+			Instance: c.Request.RequestURI,
+		})
+		return
+	}
+
+	if req.Code == "" {
+		logger.Logger.Infof("VerifyAccount: missing verification code for email=%s", req.Email)
+		c.JSON(400, common_dtos.ErrorResponse{
+			Type:     "validation",
+			Title:    "Verification code is required",
+			Status:   400,
+			Detail:   "You must provide a verification code.",
+			Instance: c.Request.RequestURI,
+		})
+		return
+	}
+
+	verified, err := ec.accountService.VerifyAccount(req.Email, req.Code)
+	if err != nil {
+		if _, ok := err.(*services.AccountNotFoundError); ok {
+			logger.Logger.Infof("VerifyAccount: account not found for email=%s", req.Email)
+			c.JSON(404, common_dtos.ErrorResponse{
+				Type:     "not_found",
+				Title:    "Account not found",
+				Status:   404,
+				Detail:   "No account exists with the provided email address.",
+				Instance: c.Request.RequestURI,
+			})
+			return
+		}
+
+		if _, ok := err.(*services.InvalidVerificationCodeError); ok {
+			logger.Logger.Infof("VerifyAccount: invalid verification code for email=%s", req.Email)
+			c.JSON(401, common_dtos.ErrorResponse{
+				Type:     "validation",
+				Title:    "Invalid verification code",
+				Status:   401,
+				Detail:   "The verification code is incorrect.",
+				Instance: c.Request.RequestURI,
+			})
+			return
+		}
+
+		if _, ok := err.(*services.VerificationCodeExpiredError); ok {
+			logger.Logger.Infof("VerifyAccount: verification code expired for email=%s", req.Email)
+			c.JSON(400, common_dtos.ErrorResponse{
+				Type:     "validation",
+				Title:    "Verification code has expired",
+				Status:   400,
+				Detail:   "The verification code has expired. Please request a new one.",
+				Instance: c.Request.RequestURI,
+			})
+			return
+		}
+
+		logger.Logger.Errorf("VerifyAccount: service error for email=%s: %v", req.Email, err)
+		c.JSON(500, common_dtos.ErrorResponse{
+			Type:     "server",
+			Title:    "Internal server error",
+			Status:   500,
+			Detail:   "An unexpected error occurred.",
+			Instance: c.Request.RequestURI,
+		})
+		return
+	}
+
+	logger.Logger.Infof("VerifyAccount: account verified successfully for email=%s", req.Email)
+	c.JSON(200, common_dtos.DataEnvelope[dtos.VerifyAccountResponseDTO]{
+		Data: dtos.VerifyAccountResponseDTO{
+			Email:    req.Email,
+			Verified: verified,
+		},
+	})
 }

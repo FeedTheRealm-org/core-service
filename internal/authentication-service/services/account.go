@@ -60,6 +60,18 @@ func (e *AccountNotVerifiedError) Error() string {
 	return "Account not verified"
 }
 
+type InvalidVerificationCodeError struct{}
+
+func (e *InvalidVerificationCodeError) Error() string {
+	return "Invalid verification code"
+}
+
+type VerificationCodeExpiredError struct{}
+
+func (e *VerificationCodeExpiredError) Error() string {
+	return "Verification code has expired"
+}
+
 type AccountInvalidFormat struct {
 	Msg string
 }
@@ -140,10 +152,15 @@ func (s *accountService) CreateAccount(email string, password string) (*reposito
 		return nil, &AccountFailedToCreateError{}
 	}
 
+	functionGenerator := rand.Int
+	if s.conf.Server.Environment == config.Testing {
+		functionGenerator = code_generator.StaticGenerateCode
+	}
+
 	user := &repositories.User{
 		Email:        email,
 		PasswordHash: string(hashedPassword),
-		VerifyCode:   code_generator.GenerateCode(rand.Int),
+		VerifyCode:   code_generator.GenerateCode(functionGenerator),
 		Expiration:   time.Now().Add(24 * time.Hour),
 	}
 
@@ -194,6 +211,15 @@ func (s *accountService) VerifyAccount(email string, code string) (bool, error) 
 	currentTime := time.Now()
 	err := s.repo.VerifyAccount(email, code, currentTime)
 	if err != nil {
+		if _, ok := err.(*repositories.AccountNotFoundError); ok {
+			return false, &AccountNotFoundError{}
+		}
+		if _, ok := err.(*repositories.AccountNotVerifiedError); ok {
+			return false, &InvalidVerificationCodeError{}
+		}
+		if _, ok := err.(*repositories.AccountVerificationExpired); ok {
+			return false, &VerificationCodeExpiredError{}
+		}
 		return false, err
 	}
 

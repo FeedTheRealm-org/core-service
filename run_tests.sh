@@ -1,8 +1,6 @@
 PATTERN_FOR_ACCEPTANCE_TESTS="./internal/*/acceptance-tests/*_test.go"
 
-run_migrations() {
- 	go run ./cmd/migrate/main.go up
-}
+export DB_SHOULD_MIGRATE=false
 
 run_unit_tests() {
   go test ./... -cover
@@ -17,6 +15,5 @@ run_acceptance_tests() {
   done
 }
 
-run_migrations
 run_unit_tests
 run_acceptance_tests

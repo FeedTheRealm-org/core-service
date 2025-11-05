@@ -6,7 +6,6 @@ Feature: User Login
   Background:
     Given an account already exists with the email "login@example.com" and password "somepassword1"
 
-  @wip
   Scenario: AC-1 Successful login with valid credentials
     When a login request is made with email "login@example.com" and password "somepassword1"
     Then the response should indicate a successful login
@@ -27,7 +26,6 @@ Feature: User Login
     When a login request is made with email "login@example.com" and an empty password
     Then the response should include an error message "Password is required"
 
-  @wip
   Scenario: AC-4a Session remains active before timeout
     Given the user has logged in successfully
     When "30" minutes have passed since login

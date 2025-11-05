@@ -17,3 +17,13 @@ type CreateAccountResponseDTO struct {
 type LoginAccountResponseDTO struct {
 	Token string `json:"token"`
 }
+
+type VerifyAccountRequestDTO struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
+type VerifyAccountResponseDTO struct {
+	Email    string `json:"email"`
+	Verified bool   `json:"verified"`
+}

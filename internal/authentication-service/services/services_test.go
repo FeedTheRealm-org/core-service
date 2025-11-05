@@ -11,7 +11,8 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
 )
 
-var service services.AccountService
+var accountService services.AccountService
+var emailSenderService services.EmailSenderService
 
 func CreateStartAccountService() {
 	conf := config.CreateConfig()
@@ -23,10 +24,16 @@ func CreateStartAccountService() {
 		panic(err)
 	}
 
-	service = services.NewAccountService(conf, repo, jwtManager)
+	accountService = services.NewAccountService(conf, repo, jwtManager)
+}
+
+func CreateStartEmailSenderService() {
+	conf := config.CreateConfig()
+	emailSenderService = services.NewEmailSenderService(conf)
 }
 
 func TestMain(m *testing.M) {
 	CreateStartAccountService()
+	CreateStartEmailSenderService()
 	os.Exit(m.Run())
 }
