@@ -7,12 +7,18 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/golang-jwt/jwt/v5"
 )
+
+type loginResponse struct {
+	Data struct {
+		AccessToken string `json:"access_token"`
+		Id          string `json:"id"`
+	} `json:"data"`
+}
 
 type sessionContext struct {
 	token     string
@@ -137,10 +143,23 @@ func theUserHasLoggedInSuccessfully(ctx context.Context) (context.Context, error
 	}
 	defer resp.Body.Close()
 
-	token := getTokenFromResponse(resp)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ctx, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return ctx, fmt.Errorf("login failed, status=%d, body=%s", resp.StatusCode, string(body))
+	}
+
+	var loginResp loginResponse
+	err = json.Unmarshal(body, &loginResp)
+	if err != nil {
+		return ctx, err
+	}
 
 	session := &sessionContext{
-		token:     token,
+		token:     loginResp.Data.AccessToken,
 		loginTime: time.Now(),
 	}
 
@@ -270,17 +289,4 @@ func InitializeScenarioForLogin(sc *godog.ScenarioContext) {
 	sc.Step(`^further requests should require authentication$`, furtherRequestsShouldRequireAuthentication)
 	sc.Step(`^the response should indicate a successful login$`, theResponseShouldIndicateASuccessfulLogin)
 	sc.Step(`^an account already exists with the email "([^"]*)" and password "([^"]*)"$`, aSignUpRequestIsMadeWithEmailAndPassword)
-}
-
-/* UTILS */
-
-func getTokenFromResponse(resp *http.Response) string {
-	authHeader := resp.Header.Get("Authorization")
-	if authHeader == "" {
-		return ""
-	}
-
-	token := strings.TrimPrefix(authHeader, "Bearer ")
-	token = strings.TrimSpace(token)
-	return token
 }

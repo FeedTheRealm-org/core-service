@@ -218,12 +218,12 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 
 	logger.Logger.Infof("LoginAccount: login successful for email=%s", req.Email)
 
-	c.Header("Authorization", "Bearer "+token)
 	res := &dtos.LoginAccountResponseDTO{
-		Id:        user.Id.String(),
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		AccessToken: token,
+		Id:          user.Id.String(),
+		Email:       user.Email,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
 	}
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }

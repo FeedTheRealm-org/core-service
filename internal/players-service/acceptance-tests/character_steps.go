@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/cucumber/godog"
 )
@@ -20,7 +19,8 @@ type loginRequest struct {
 
 type loginResponse struct {
 	Data struct {
-		Id string `json:"id"`
+		AccessToken string `json:"access_token"`
+		Id          string `json:"id"`
 	} `json:"data"`
 }
 
@@ -182,8 +182,6 @@ func login(email, password string) (string, string, error) {
 		return "", "", err
 	}
 
-	token := getTokenFromResponse(resp)
-
 	body, _ := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
 
@@ -197,7 +195,7 @@ func login(email, password string) (string, string, error) {
 		return "", "", err
 	}
 
-	return loginResp.Data.Id, token, nil
+	return loginResp.Data.Id, loginResp.Data.AccessToken, nil
 }
 
 func httpWithBody(method, url string, body any, auth string) (int, []byte, error) {
@@ -228,15 +226,4 @@ func httpGet(url string, auth string) (int, []byte, error) {
 	defer resp.Body.Close()
 	respBytes, _ := io.ReadAll(resp.Body)
 	return resp.StatusCode, respBytes, nil
-}
-
-func getTokenFromResponse(resp *http.Response) string {
-	authHeader := resp.Header.Get("Authorization")
-	if authHeader == "" {
-		return ""
-	}
-
-	token := strings.TrimPrefix(authHeader, "Bearer ")
-	token = strings.TrimSpace(token)
-	return token
 }
