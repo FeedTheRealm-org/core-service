@@ -50,14 +50,14 @@ func (c *characterController) UpdateCharacterInfo(ctx *gin.Context) {
 		return
 	}
 
-	// Validations
+	// Validations TODO: handle different validations per field (e.g. name cant have spaces but bio can)
 	if len(req.CharacterName) < 3 || len(req.CharacterName) > 24 {
 		_ = ctx.Error(errors.NewBadRequestError("character name must be between 3 and 24 characters"))
 		return
 	} else if len(req.CharacterBio) > 256 {
 		_ = ctx.Error(errors.NewBadRequestError("character bio must be less than 256 characters"))
 		return
-	} else if input_validation.ValidateInvalidCharacters(req.CharacterName) {
+	} else if input_validation.ValidateInvalidCharacters(req.CharacterName) || input_validation.HasSpaces(req.CharacterName) {
 		_ = ctx.Error(errors.NewBadRequestError("character name contains invalid special characters"))
 		return
 	} else if input_validation.ValidateInvalidCharacters(req.CharacterBio) {
