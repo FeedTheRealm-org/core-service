@@ -13,4 +13,3 @@ CREATE TABLE account_verifications (
 );
 
 COMMIT;
-

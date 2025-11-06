@@ -23,13 +23,13 @@ func TestAccount_GetUserByEmail(t *testing.T) {
 	email := "existing@example.com"
 	password := "password123"
 
-	user, _, err := accountService.CreateAccount(email, password)
+	_, _, err := accountService.CreateAccount(email, password)
 	assert.Nil(t, err, "expected no error on account creation")
 
 	_, err = accountService.VerifyAccount(email, code_generator.GenerateCode(code_generator.StaticGenerateCode))
 	assert.Nil(t, err, "expected no error on account verification")
 
-	user, err = accountService.GetUserByEmail(email)
+	user, err := accountService.GetUserByEmail(email)
 	assert.Nil(t, err, "expected no error on getting user by email")
 	assert.NotNil(t, user, "expected user to be found")
 	assert.Equal(t, email, user.Email, "expected email to match")
