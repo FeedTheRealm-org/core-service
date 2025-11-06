@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
+	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	common_dtos "github.com/FeedTheRealm-org/core-service/internal/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
@@ -67,7 +70,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 		return
 	}
 
-	result, err := ec.accountService.CreateAccount(req.Email, req.Password)
+	result, verificationCode, err := ec.accountService.CreateAccount(req.Email, req.Password)
 	if err != nil {
 		if _, ok := err.(*services.AccountAlreadyExistsError); ok {
 			logger.Logger.Infof("CreateAccount: account already exists for email=%s", req.Email)
@@ -106,7 +109,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 
 	if ec.conf.Server.Environment != config.Testing {
 		logger.Logger.Infof("CreateAccount: account created for email=%s", result.Email)
-		err = ec.emailService.SendVerificationEmail(result.Email, result.VerifyCode)
+		err = ec.emailService.SendVerificationEmail(result.Email, verificationCode)
 		if err != nil {
 			logger.Logger.Errorf("CreateAccount: failed to send verification email to email=%s: %v", result.Email, err)
 		}
@@ -172,7 +175,7 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 		return
 	}
 
-	token, err := ec.accountService.LoginAccount(req.Email, req.Password)
+	user, token, err := ec.accountService.LoginAccount(req.Email, req.Password)
 	if err != nil {
 		if _, ok := err.(*services.AccountNotFoundError); ok {
 			logger.Logger.Infof("LoginAccount: account not found for email=%s", req.Email)
@@ -214,11 +217,15 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 	}
 
 	logger.Logger.Infof("LoginAccount: login successful for email=%s", req.Email)
-	c.JSON(200, common_dtos.DataEnvelope[dtos.LoginAccountResponseDTO]{
-		Data: dtos.LoginAccountResponseDTO{
-			Token: token,
-		},
-	})
+
+	res := &dtos.LoginAccountResponseDTO{
+		AccessToken: token,
+		Id:          user.Id.String(),
+		Email:       user.Email,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+	}
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
 func (ec *accountController) CheckSessionExpiration(c *gin.Context) {

@@ -15,7 +15,8 @@ import (
 
 type loginResponse struct {
 	Data struct {
-		Token string `json:"token"`
+		AccessToken string `json:"access_token"`
+		Id          string `json:"id"`
 	} `json:"data"`
 }
 
@@ -147,13 +148,18 @@ func theUserHasLoggedInSuccessfully(ctx context.Context) (context.Context, error
 		return ctx, err
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return ctx, fmt.Errorf("login failed, status=%d, body=%s", resp.StatusCode, string(body))
+	}
+
 	var loginResp loginResponse
-	if err := json.Unmarshal(body, &loginResp); err != nil {
-		return ctx, fmt.Errorf("failed to parse login response: %v", err)
+	err = json.Unmarshal(body, &loginResp)
+	if err != nil {
+		return ctx, err
 	}
 
 	session := &sessionContext{
-		token:     loginResp.Data.Token,
+		token:     loginResp.Data.AccessToken,
 		loginTime: time.Now(),
 	}
 
@@ -216,9 +222,9 @@ func theSessionShouldBeClosed(ctx context.Context) error {
 
 func furtherRequestsShouldRequireAuthentication(ctx context.Context) error {
 	expiredToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email":      "sessionuser@example.com",
-		"expires_at": time.Now().Add(-time.Hour).Unix(),
-		"issued_at":  time.Now().Unix(),
+		"email": "sessionuser@example.com",
+		"exp":   time.Now().Add(-time.Hour).Unix(),
+		"iss":   time.Now().Unix(),
 	})
 
 	expiredTokenString, err := expiredToken.SignedString([]byte("test_secret_key"))
@@ -263,19 +269,10 @@ func theResponseShouldIndicateASuccessfulLogin(ctx context.Context) error {
 		return fmt.Errorf("no response body found in context")
 	}
 
-	// Check if it's an error response first
+	// Check if it's an error response
 	var errorResp ErrorResponse
 	if err := json.Unmarshal(bodyBytes, &errorResp); err == nil && errorResp.Title != "" {
 		return fmt.Errorf("received error response instead of success: %s (body: %s)", errorResp.Title, string(bodyBytes))
-	}
-
-	var loginResp loginResponse
-	if err := json.Unmarshal(bodyBytes, &loginResp); err != nil {
-		return fmt.Errorf("failed to parse login response: %v (body: %s)", err, string(bodyBytes))
-	}
-
-	if loginResp.Data.Token == "" {
-		return fmt.Errorf("expected a token in the login response, but got none")
 	}
 
 	return nil

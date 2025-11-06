@@ -1,7 +1,6 @@
 package config
 
 import (
-	"context"
 	"fmt"
 
 	"time"
@@ -11,33 +10,41 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	gormLogger "gorm.io/gorm/logger"
 )
 
 type DB struct {
 	dsn  string
-	Conn *pgxpool.Pool
+	Conn *gorm.DB
 }
 
 func NewDB(conf *Config) (*DB, error) {
 	dsn := generateURL(conf.DB)
 
-	var conn *pgxpool.Pool
+	var dbLogger gormLogger.Interface
+	if conf.Server.Environment == Production {
+		dbLogger = gormLogger.Default.LogMode(gormLogger.Silent)
+	} else {
+		dbLogger = gormLogger.Default.LogMode(gormLogger.Info)
+	}
+
+	var conn *gorm.DB
 	var err error
 	for range conf.DB.ConnectionRetries {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		conn, err = pgxpool.New(ctx, dsn)
-		if err == nil {
-			err = conn.Ping(ctx)
-			if err == nil {
-				break
-			}
+		if conn, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+			Logger:         dbLogger,
+			TranslateError: true,
+		}); err == nil {
+			break
 		}
 
 		logger.Logger.Warnf("Failed to connect to the database: %v. Retrying in 1 second...", err)
 		time.Sleep(1 * time.Second)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	db := &DB{

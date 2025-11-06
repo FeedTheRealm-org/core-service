@@ -8,14 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupPlayerServiceRouter(r *gin.Engine, conf *config.Config) {
+func SetupPlayerServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 	g := r.Group("/player")
 
-	characterRepo := character_repo.NewCharacterRepository()
-	characterService := character_service.NewCharacterService(characterRepo)
-	characterController := character_controller.NewCharacterController(characterService)
+	characterRepo := character_repo.NewCharacterRepository(conf, db)
+	characterService := character_service.NewCharacterService(conf, characterRepo)
+	characterController := character_controller.NewCharacterController(conf, characterService)
 
 	characterGroup := g.Group("/character")
-	characterGroup.POST("", characterController.UpdateCharacterInfo)
+	characterGroup.PUT("", characterController.UpdateCharacterInfo)
 	characterGroup.GET("", characterController.GetCharacterInfo)
+	characterGroup.GET(":id", characterController.GetCharacterInfo)
 }

@@ -1,6 +1,0 @@
-BEGIN;
-
-ALTER TABLE accounts
-ADD COLUMN IF NOT EXISTS verify_code VARCHAR(64);
-
-COMMIT;
