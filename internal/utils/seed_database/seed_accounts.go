@@ -25,14 +25,14 @@ func seedAccounts(db *config.DB) error {
 		},
 	}
 
-	for _, account := range accounts {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(account.Password), bcrypt.DefaultCost)
+	for i := range accounts {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(accounts[i].Password), bcrypt.DefaultCost)
 		if err != nil {
 			return err
 		}
-		account.Password = string(hashedPassword)
+		accounts[i].Password = string(hashedPassword)
 
-		if err := db.Conn.Create(account).Error; err != nil {
+		if err := db.Conn.Create(&accounts[i]).Error; err != nil {
 			return err
 		}
 	}

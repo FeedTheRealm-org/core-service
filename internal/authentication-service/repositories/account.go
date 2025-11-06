@@ -6,6 +6,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -102,7 +103,7 @@ func (ar *accountRepository) VerifyAccount(user *models.User, code string, curre
 		return &DatabaseError{message: err.Error()}
 	}
 
-	if accountActivation.ExpiresAt.Before(time.Now()) {
+	if accountActivation.ExpiresAt.Before(currentTime) {
 		return &AccountVerificationExpired{}
 	} else if accountActivation.VerificationCode != code {
 		return &AccountNotVerifiedError{}
@@ -122,6 +123,8 @@ func (ar *accountRepository) VerifyAccount(user *models.User, code string, curre
 	if err != nil {
 		return err
 	}
+
+	logger.Logger.Debugf("Current time: %v, Verification expiry time: %v", currentTime, accountActivation.ExpiresAt)
 
 	user.Verified = true
 
