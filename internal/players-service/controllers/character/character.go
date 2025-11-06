@@ -7,6 +7,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/players-service/dtos"
+	player_errors "github.com/FeedTheRealm-org/core-service/internal/players-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/players-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/players-service/services/character"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/input_validation"
@@ -70,6 +71,10 @@ func (c *characterController) UpdateCharacterInfo(ctx *gin.Context) {
 		CharacterBio:  req.CharacterBio,
 	}
 	if err := c.characterService.UpdateCharacterInfo(userId, characterInfo); err != nil {
+		if _, ok := err.(*player_errors.CharacterNameTaken); ok {
+			_ = ctx.Error(errors.NewConflictError("character name is already taken"))
+			return
+		}
 		_ = ctx.Error(err)
 		return
 	}
@@ -112,6 +117,10 @@ func (c *characterController) GetCharacterInfo(ctx *gin.Context) {
 
 	characterInfo, err := c.characterService.GetCharacterInfo(targetUserId)
 	if err != nil {
+		if _, ok := err.(*player_errors.CharacterInfoNotFound); ok {
+			_ = ctx.Error(errors.NewNotFoundError("character info not found"))
+			return
+		}
 		_ = ctx.Error(err)
 		return
 	}
