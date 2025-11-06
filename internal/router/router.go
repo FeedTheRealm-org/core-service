@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	authRouter "github.com/FeedTheRealm-org/core-service/internal/authentication-service/router"
+	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
 	playersRouter "github.com/FeedTheRealm-org/core-service/internal/players-service/router"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
@@ -17,10 +18,10 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 	r.Use(middleware.JWTAuthMiddleware(jwtManager))
 
 	// Setup service routers
-	r.NoRoute(middleware.NotFoundController)
+	r.NoRoute(common_handlers.NotFoundController)
 
 	authRouter.SetupAuthenticationServiceRouter(r, conf, db, jwtManager)
-	playersRouter.SetupPlayerServiceRouter(r, conf)
+	playersRouter.SetupPlayerServiceRouter(r, conf, db)
 
 	if conf.Server.Environment != config.Production {
 		SetupSwaggerRouter(r)

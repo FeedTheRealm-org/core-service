@@ -1,5 +1,7 @@
 package dtos
 
+import "time"
+
 type CreateAccountRequestDTO struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -15,7 +17,10 @@ type CreateAccountResponseDTO struct {
 }
 
 type LoginAccountResponseDTO struct {
-	Token string `json:"token"`
+	Id        string    `json:"id"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type VerifyAccountRequestDTO struct {

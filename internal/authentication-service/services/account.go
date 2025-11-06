@@ -175,28 +175,28 @@ func (s *accountService) CreateAccount(email string, password string) (*models.U
 	return user, verificationCode, nil
 }
 
-func (s *accountService) LoginAccount(email string, password string) (string, error) {
+func (s *accountService) LoginAccount(email string, password string) (*models.User, string, error) {
 	email = strings.ToLower(email)
 	user, err := s.repo.GetAccountByEmail(email)
 	if err != nil {
-		return "", &AccountNotFoundError{}
+		return nil, "", &AccountNotFoundError{}
 	}
 
 	isPasswordValid := hashing.VerifyPassword(user.Password, password)
 	if !isPasswordValid {
-		return "", &AccountNotFoundError{}
+		return nil, "", &AccountNotFoundError{}
 	}
 
 	if !user.Verified {
-		return "", &AccountNotVerifiedError{}
+		return nil, "", &AccountNotVerifiedError{}
 	}
 
-	token, err := s.jwt.GenerateToken(user.Email)
+	token, err := s.jwt.GenerateToken(user.Id.String())
 	if err != nil {
-		return "", &AccountFailedToCreateTokenError{}
+		return nil, "", &AccountFailedToCreateTokenError{}
 	}
 
-	return token, nil
+	return user, token, nil
 }
 
 func (s *accountService) ValidateSessionToken(token string) error {

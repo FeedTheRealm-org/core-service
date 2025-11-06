@@ -127,7 +127,7 @@ func TestAccount_LoginAccount(t *testing.T) {
 	email := "existing@example.com"
 	password := "password123"
 
-	token, err := accountService.LoginAccount(email, password)
+	_, token, err := accountService.LoginAccount(email, password)
 	assert.Nil(t, err, "expected no error on login")
 	assert.NotEmpty(t, token, "expected token to be returned")
 }
@@ -136,7 +136,7 @@ func TestAccount_LoginAccount_InvalidCredentials(t *testing.T) {
 	email := "existing@example.com"
 	wrongPassword := "wrongpassword123"
 
-	token, err := accountService.LoginAccount(email, wrongPassword)
+	_, token, err := accountService.LoginAccount(email, wrongPassword)
 	assert.NotNil(t, err, "expected error on login with invalid credentials")
 	assert.Empty(t, token, "expected no token to be returned")
 }
@@ -145,7 +145,7 @@ func TestAccount_LoginAccount_NonExistentEmail(t *testing.T) {
 	wrongEmail := "nonexistent@example.com"
 	password := "password123"
 
-	token, err := accountService.LoginAccount(wrongEmail, password)
+	_, token, err := accountService.LoginAccount(wrongEmail, password)
 	assert.NotNil(t, err, "expected error on login with non-existent email")
 	assert.Empty(t, token, "expected no token to be returned")
 }
@@ -154,7 +154,7 @@ func TestAccount_ValidateSessionToken(t *testing.T) {
 	email := "existing@example.com"
 	password := "password123"
 
-	token, err := accountService.LoginAccount(email, password)
+	_, token, err := accountService.LoginAccount(email, password)
 	assert.Nil(t, err, "expected no error on login")
 	assert.NotEmpty(t, token, "expected token to be returned")
 
@@ -173,7 +173,7 @@ func TestAccount_ValidateSessionToken_ExpiredToken(t *testing.T) {
 	email := "existing@example.com"
 	password := "password123"
 
-	token, err := accountService.LoginAccount(email, password)
+	_, token, err := accountService.LoginAccount(email, password)
 	assert.Nil(t, err, "expected no error on login")
 	assert.NotEmpty(t, token, "expected token to be returned")
 
@@ -211,7 +211,7 @@ func TestAccount_CannotLoginWithoutVerifacation(t *testing.T) {
 	_, _, err := accountService.CreateAccount(email, password)
 	assert.Nil(t, err, "expected no error on account creation")
 
-	token, err := accountService.LoginAccount(email, password)
+	_, token, err := accountService.LoginAccount(email, password)
 	assert.NotNil(t, err, "expected error on login without verification")
 	assert.Error(t, err, "Account not verified")
 	assert.Empty(t, token, "expected no token to be returned without verification")

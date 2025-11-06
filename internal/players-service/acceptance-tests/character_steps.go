@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/cucumber/godog"
 )
@@ -19,7 +20,7 @@ type loginRequest struct {
 
 type loginResponse struct {
 	Data struct {
-		Token string `json:"token"`
+		Id string `json:"id"`
 	} `json:"data"`
 }
 
@@ -49,21 +50,22 @@ var baseURL = "http://0.0.0.0:8000"
 var ctx sessionContext
 
 func iHaveLoggedInWithEmailAndPassword(email, password string) error {
-	resp, err := login(email, password)
+	id, token, err := login(email, password)
 	if err != nil {
 		return err
 	}
 
-	if resp.Data.Token == "" {
-		return fmt.Errorf("login failed")
-	}
-
-	ctx.token = resp.Data.Token
+	ctx.token = token
+	ctx.id = id
 
 	return nil
 }
 
 func iChangeMyCharacterNameTo(name string) error {
+	if ctx.token == "" {
+		return fmt.Errorf("no logged in user")
+	}
+
 	characterReq := CharacterInfoRequest{
 		CharacterName: name,
 		CharacterBio:  ctx.charInfo.CharacterBio, // keep existing bio
@@ -91,7 +93,10 @@ func myCharacterNameShouldBeUpdated() error {
 		return err
 	}
 	res := &CharacterInfoResponse{}
-	json.Unmarshal(body, res)
+	err = json.Unmarshal(body, res)
+	if err != nil {
+		return err
+	}
 
 	if res.Data.CharacterName != ctx.charInfo.CharacterName {
 		return fmt.Errorf("expected name %q, got %q",
@@ -101,12 +106,12 @@ func myCharacterNameShouldBeUpdated() error {
 }
 
 func otherPlayersShouldSeeTheUpdatedName() error {
-	loginRes, err := login("test2@email.com", "Password123")
+	_, token, err := login("test2@email.com", "Password123")
 	if err != nil {
 		return err
 	}
 
-	_, body, err := httpGet(baseURL+"/player/character/"+ctx.id, loginRes.Data.Token)
+	_, body, err := httpGet(baseURL+"/player/character/"+ctx.id, token)
 	if err != nil {
 		return err
 	}
@@ -166,17 +171,33 @@ func InitializeScenarioForCharacter(sc *godog.ScenarioContext) {
 
 /* HTTP UTILS */
 
-func login(email, password string) (*loginResponse, error) {
-	req := loginRequest{Email: email, Password: password}
+func login(email, password string) (string, string, error) {
+	loginReq := loginRequest{Email: email, Password: password}
+	jsonValue, _ := json.Marshal(loginReq)
 
-	_, body, err := httpWithBody("POST", baseURL+"/auth/login", req, "")
+	req, _ := http.NewRequest("POST", baseURL+"/auth/login", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return "", "", err
 	}
 
-	resp := &loginResponse{}
-	json.Unmarshal(body, resp)
-	return resp, nil
+	token := getTokenFromResponse(resp)
+
+	body, _ := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", "", fmt.Errorf("login failed, status=%d, body=%s", resp.StatusCode, string(body))
+	}
+
+	var loginResp loginResponse
+	err = json.Unmarshal(body, &loginResp)
+	if err != nil {
+		return "", "", err
+	}
+
+	return loginResp.Data.Id, token, nil
 }
 
 func httpWithBody(method, url string, body any, auth string) (int, []byte, error) {
@@ -207,4 +228,15 @@ func httpGet(url string, auth string) (int, []byte, error) {
 	defer resp.Body.Close()
 	respBytes, _ := io.ReadAll(resp.Body)
 	return resp.StatusCode, respBytes, nil
+}
+
+func getTokenFromResponse(resp *http.Response) string {
+	authHeader := resp.Header.Get("Authorization")
+	if authHeader == "" {
+		return ""
+	}
+
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+	token = strings.TrimSpace(token)
+	return token
 }

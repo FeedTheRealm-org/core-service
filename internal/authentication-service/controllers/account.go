@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
+	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	common_dtos "github.com/FeedTheRealm-org/core-service/internal/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
@@ -172,7 +175,7 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 		return
 	}
 
-	token, err := ec.accountService.LoginAccount(req.Email, req.Password)
+	user, token, err := ec.accountService.LoginAccount(req.Email, req.Password)
 	if err != nil {
 		if _, ok := err.(*services.AccountNotFoundError); ok {
 			logger.Logger.Infof("LoginAccount: account not found for email=%s", req.Email)
@@ -214,11 +217,15 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 	}
 
 	logger.Logger.Infof("LoginAccount: login successful for email=%s", req.Email)
-	c.JSON(200, common_dtos.DataEnvelope[dtos.LoginAccountResponseDTO]{
-		Data: dtos.LoginAccountResponseDTO{
-			Token: token,
-		},
-	})
+
+	c.Header("Authorization", "Bearer "+token)
+	res := &dtos.LoginAccountResponseDTO{
+		Id:        user.Id.String(),
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
 func (ec *accountController) CheckSessionExpiration(c *gin.Context) {

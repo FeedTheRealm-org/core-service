@@ -1,4 +1,4 @@
-package middleware
+package common_handlers
 
 import (
 	"github.com/FeedTheRealm-org/core-service/internal/errors"

@@ -6,7 +6,6 @@ Feature: Player character info
   Background:
     Given I have logged in with email "test1@email.com" and password "Password123"
 
-  @wip
   Scenario: AC-1 Successfully update character name
     When I change my character name to "StormRider"
     Then my character name should be updated

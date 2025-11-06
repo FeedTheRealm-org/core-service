@@ -40,11 +40,11 @@ func NewJWTManager(secretKey string, tokenDuration time.Duration) *JWTManager {
 	}
 }
 
-func (m *JWTManager) GenerateToken(email string) (string, error) {
+func (m *JWTManager) GenerateToken(id string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.MapClaims{
-		"email": email,
-		"exp":   time.Now().Add(m.tokenDuration).Unix(),
-		"iss":   time.Now().Unix(),
+		"userID": id,
+		"exp":    time.Now().Add(m.tokenDuration).Unix(),
+		"iss":    time.Now().Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(m.secretKey))
