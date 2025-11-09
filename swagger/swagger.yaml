@@ -236,7 +236,7 @@ paths:
       summary: GetSpritesListByCategory
       tags:
       - assets-service
-  /auth/signup:
+  /auth/login:
     post:
       consumes:
       - application/json
@@ -264,6 +264,36 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: Login
+      tags:
+      - authentication-service
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: Signup data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateAccountRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful login
+          schema:
+            $ref: '#/definitions/dtos.CreateAccountResponseDTO'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Sign up
       tags:
       - authentication-service
   /auth/verify:

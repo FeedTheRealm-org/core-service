@@ -1,6 +1,12 @@
 package sprites
 
 import (
+	"fmt"
+	"io"
+	"mime/multipart"
+	"os"
+	"path/filepath"
+
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/sprites"
@@ -20,12 +26,12 @@ func NewSpritesService(conf *config.Config, spritesRepository sprites.SpritesRep
 	}
 }
 
-func (ss *spritesService) GetCategoriesList() ([]uuid.UUID, error) {
-	return []uuid.UUID{uuid.Nil}, nil
+func (ss *spritesService) GetCategoriesList() ([]*models.Category, error) {
+	return ss.spritesRepository.GetCategoriesList()
 }
 
-func (ss *spritesService) GetSpritesListByCategory(category uuid.UUID) ([]uuid.UUID, error) {
-	return []uuid.UUID{uuid.Nil}, nil
+func (ss *spritesService) GetSpritesListByCategory(category uuid.UUID) ([]*models.Sprite, error) {
+	return ss.spritesRepository.GetSpritesListByCategory(category)
 }
 
 func (ss *spritesService) GetSpriteUrl(spriteId uuid.UUID) (string, error) {
@@ -33,9 +39,36 @@ func (ss *spritesService) GetSpriteUrl(spriteId uuid.UUID) (string, error) {
 }
 
 func (ss *spritesService) AddCategory(category string) (*models.Category, error) {
-	return &models.Category{}, nil
+	return ss.spritesRepository.AddCategory(category)
 }
 
-func (ss *spritesService) UploadSpriteData(category string, spriteData []byte) (*models.Sprite, error) {
-	return &models.Sprite{}, nil
+func (ss *spritesService) UploadSpriteData(category uuid.UUID, spriteData multipart.File, ext string) (*models.Sprite, error) {
+	spriteUniqueUrl := uuid.New().String()
+
+	filename := fmt.Sprintf("%s%s", spriteUniqueUrl, ext)
+	dirPath := "./bucket/sprites"
+	filePath := filepath.Join(dirPath, filename)
+
+	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
+		return nil, err
+	}
+
+	destFile, err := os.Create(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer destFile.Close()
+
+	if _, err := io.Copy(destFile, spriteData); err != nil {
+		return nil, err
+	}
+
+	sprite := &models.Sprite{
+		Url: filePath,
+	}
+	if err := ss.spritesRepository.CreateSprite(category, sprite); err != nil {
+		return nil, err
+	}
+
+	return sprite, nil
 }

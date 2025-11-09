@@ -29,3 +29,18 @@ func NewCategoryNotFound(details string) *CategoryNotFound {
 		details: details,
 	}
 }
+
+// CategoryConflict is returned when a requested category cannot be found.
+type CategoryConflict struct {
+	details string
+}
+
+func (e *CategoryConflict) Error() string {
+	return e.details
+}
+
+func NewCategoryConflict(details string) *CategoryConflict {
+	return &CategoryConflict{
+		details: details,
+	}
+}

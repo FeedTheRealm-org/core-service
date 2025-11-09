@@ -187,7 +187,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/signup": {
+        "/auth/login": {
             "post": {
                 "description": "Log in an existing user",
                 "consumes": [
@@ -216,6 +216,52 @@ const docTemplate = `{
                         "description": "Successful login",
                         "schema": {
                             "$ref": "#/definitions/dtos.LoginAccountResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/signup": {
+            "post": {
+                "description": "Create a new user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Sign up",
+                "parameters": [
+                    {
+                        "description": "Signup data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateAccountRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful login",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateAccountResponseDTO"
                         }
                     },
                     "400": {

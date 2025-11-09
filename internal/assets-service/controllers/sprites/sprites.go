@@ -1,9 +1,17 @@
 package sprites
 
 import (
+	"net/http"
+	"path/filepath"
+
 	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
+	assets_errors "github.com/FeedTheRealm-org/core-service/internal/assets-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/services/sprites"
+	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
+	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type spritesController struct {
@@ -27,7 +35,29 @@ func NewSpritesController(conf *config.Config, spritesService sprites.SpritesSer
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/sprites/categories [get]
 func (sc *spritesController) GetCategoriesList(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "GetCategoriesList not implemented"})
+	// userId, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
+
+	categories, err := sc.spritesService.GetCategoriesList()
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.SpriteCategoryListResponse{
+		CategoryList: make([]dtos.SpriteCategoryResponse, len(categories)),
+	}
+	for idx, c := range categories {
+		res.CategoryList[idx] = dtos.SpriteCategoryResponse{
+			CategoryId:   c.Id,
+			CategoryName: c.Name,
+		}
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
 // @Summary GetSpritesListByCategory
@@ -39,7 +69,35 @@ func (sc *spritesController) GetCategoriesList(c *gin.Context) {
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/sprites/categories/{category_id} [get]
 func (sc *spritesController) GetSpritesListByCategory(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "GetSpritesListByCategory not implemented"})
+	// userId, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
+
+	categoryId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid category_id: " + err.Error()))
+		return
+	}
+
+	spritesList, err := sc.spritesService.GetSpritesListByCategory(categoryId)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.SpritesListResponse{
+		SpritesList: make([]dtos.SpriteResponse, len(spritesList)),
+	}
+	for idx, sprite := range spritesList {
+		res.SpritesList[idx] = dtos.SpriteResponse{
+			SpriteId:  sprite.Id,
+			SpriteUrl: sprite.Url,
+		}
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
 // @Summary DownloadSpriteData
@@ -51,7 +109,11 @@ func (sc *spritesController) GetSpritesListByCategory(c *gin.Context) {
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/sprites/{sprite_id} [get]
 func (sc *spritesController) DownloadSpriteData(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "DownloadSpriteData not implemented"})
+	// userId, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 }
 
 // @Summary AddCategory
@@ -61,10 +123,42 @@ func (sc *spritesController) DownloadSpriteData(c *gin.Context) {
 // @Produce  json
 // @Param category body dtos.AddSpriteCategoryRequest true "Category data"
 // @Success 201  {object}  dtos.SpriteCategoryResponse "Created category"
+// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/sprites/categories [post]
 func (sc *spritesController) AddCategory(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "AddCategory not implemented"})
+	// userId, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
+
+	req := &dtos.AddSpriteCategoryRequest{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		_ = c.Error(errors.NewBadRequestError(err.Error()))
+		return
+	}
+
+	if len(req.CategoryName) < 3 || len(req.CategoryName) > 32 {
+		_ = c.Error(errors.NewBadRequestError("category name must be between 3 and 32 characters"))
+		return
+	}
+
+	category, err := sc.spritesService.AddCategory(req.CategoryName)
+	if err != nil {
+		if _, ok := err.(*assets_errors.CategoryConflict); ok {
+			_ = c.Error(errors.NewConflictError("sprite category name already exists"))
+			return
+		}
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.SpriteCategoryResponse{
+		CategoryId:   category.Id,
+		CategoryName: category.Name,
+	}
+	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
 // @Summary UploadSpriteData
@@ -73,9 +167,57 @@ func (sc *spritesController) AddCategory(c *gin.Context) {
 // @Accept  multipart/form-data
 // @Produce  json
 // @Param sprite formData file true "Sprite file"
+// @Param category_id formData string true "Category ID"
 // @Success 201  {object}  dtos.SpriteResponse "Uploaded sprite"
+// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/sprites [put]
 func (sc *spritesController) UploadSpriteData(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "UploadSpriteData not implemented"})
+	// userId, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
+
+	categoryId, err := uuid.Parse(c.PostForm("category_id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid category_id: " + err.Error()))
+		return
+	}
+
+	reqFile, err := c.FormFile("sprite")
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("failed to get sprite file from request: " + err.Error()))
+		return
+	}
+
+	if reqFile.Size > sc.conf.Assets.MaxUploadSizeBytes {
+		_ = c.Error(errors.NewBadRequestError("file size exceeds 20MB limit"))
+		return
+	}
+
+	contentType := reqFile.Header.Get("Content-Type")
+	if contentType != "image/png" && contentType != "image/jpeg" {
+		_ = c.Error(errors.NewBadRequestError("file must be PNG or JPEG format"))
+		return
+	}
+
+	file, err := reqFile.Open()
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("failed to open sprite file: " + err.Error()))
+		return
+	}
+	defer file.Close()
+
+	sprite, err := sc.spritesService.UploadSpriteData(categoryId, file, filepath.Ext(reqFile.Filename))
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.SpriteResponse{
+		SpriteId:  sprite.Id,
+		SpriteUrl: sprite.Url,
+	}
+	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }

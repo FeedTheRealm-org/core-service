@@ -7,12 +7,12 @@ type AddSpriteCategoryRequest struct {
 }
 
 type SpriteCategoryResponse struct {
-	CategoryID   uuid.UUID `json:"category_id"`
+	CategoryId   uuid.UUID `json:"category_id"`
 	CategoryName string    `json:"category_name"`
 }
 
 type SpriteResponse struct {
-	SpriteID  uuid.UUID `json:"sprite_id"`
+	SpriteId  uuid.UUID `json:"sprite_id"`
 	SpriteUrl string    `json:"sprite_url"`
 }
 
