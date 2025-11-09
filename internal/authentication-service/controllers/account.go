@@ -133,7 +133,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 // @Success 200  {object}  dtos.LoginAccountResponseDTO "Successful login"
 // @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /auth/signup [post]
+// @Router /auth/login [post]
 func (ec *accountController) LoginAccount(c *gin.Context) {
 	req := dtos.LoginAccountRequestDTO{}
 
