@@ -43,7 +43,14 @@ func (sr *spritesRepository) GetSpritesListByCategory(category uuid.UUID) ([]*mo
 }
 
 func (sr *spritesRepository) GetSpriteById(spriteId uuid.UUID) (*models.Sprite, error) {
-	return &models.Sprite{}, nil
+	var sprite models.Sprite
+	if err := sr.db.Conn.First(&sprite, "id = ?", spriteId).Error; err != nil {
+		if errors.IsRecordNotFound(err) {
+			return nil, assets_errors.NewSpriteNotFound("sprite not found")
+		}
+		return nil, err
+	}
+	return &sprite, nil
 }
 
 func (sr *spritesRepository) AddCategory(categoryName string) (*models.Category, error) {

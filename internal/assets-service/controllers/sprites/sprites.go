@@ -2,6 +2,7 @@ package sprites
 
 import (
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/FeedTheRealm-org/core-service/config"
@@ -114,6 +115,30 @@ func (sc *spritesController) DownloadSpriteData(c *gin.Context) {
 	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
 	// 	return
 	// }
+
+	spriteIdStr := c.Param("id")
+	spriteId, err := uuid.Parse(spriteIdStr)
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid sprite_id format"))
+		return
+	}
+
+	filePath, err := sc.spritesService.GetSpriteUrl(spriteId)
+	if err != nil {
+		if _, ok := err.(*assets_errors.SpriteNotFound); ok {
+			_ = c.Error(errors.NewNotFoundError("sprite not found"))
+			return
+		}
+		_ = c.Error(err)
+		return
+	}
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		_ = c.Error(errors.NewNotFoundError("sprite file not found on disk"))
+		return
+	}
+
+	c.File(filePath)
 }
 
 // @Summary AddCategory

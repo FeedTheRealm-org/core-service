@@ -35,7 +35,11 @@ func (ss *spritesService) GetSpritesListByCategory(category uuid.UUID) ([]*model
 }
 
 func (ss *spritesService) GetSpriteUrl(spriteId uuid.UUID) (string, error) {
-	return "", nil
+	sprite, err := ss.spritesRepository.GetSpriteById(spriteId)
+	if err != nil {
+		return "", err
+	}
+	return sprite.Url, nil
 }
 
 func (ss *spritesService) AddCategory(category string) (*models.Category, error) {
