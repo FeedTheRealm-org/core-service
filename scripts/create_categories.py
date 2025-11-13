@@ -74,7 +74,8 @@ def interactive_menu(server_url, auth_token=None):
 def main():
     if len(sys.argv) < 2:
         print("Usage: python manage_categories.py <server_url> [auth_token]")
-        print("Example: python manage_categories.py http://localhost:8000")
+        print("Example (automatic): cat ./scripts/categories.txt | ./scripts/create_categories.py http://localhost:8000")
+        print("Example (manual): python manage_categories.py http://localhost:8000")
         return
 
     server_url = sys.argv[1].rstrip('/')
