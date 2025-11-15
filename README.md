@@ -69,6 +69,9 @@ make docker-exec-app-dev    # Run migrations and open bash shell in app containe
 
 # Testing commands
 make exec-test              # Build, run, and execute tests in Docker containers
+
+# Swagger commands
+make swag init              # Generate Swagger documentation
 ```
 
 ## Database Migrations
@@ -139,7 +142,7 @@ en cada uno los controladores, servicios y repositorios se ponen en sus correspo
 └── migrations
 ```
 
-## Documentation
+## Swagger Documentation
 
 Endpoint documentation was made with `Swagger` <br>
 Once staring up the project, go to this link to test out the endpoints:
