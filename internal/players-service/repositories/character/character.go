@@ -6,6 +6,7 @@ import (
 	player_errors "github.com/FeedTheRealm-org/core-service/internal/players-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/players-service/models"
 	"github.com/google/uuid"
+	"gorm.io/gorm/clause"
 )
 
 type characterRepository struct {
@@ -40,4 +41,22 @@ func (cr *characterRepository) GetCharacterInfo(userId uuid.UUID) (*models.Chara
 		return nil, err
 	}
 	return &characterInfo, nil
+}
+
+func (cr *characterRepository) UpdateCategorySprites(newCategorySprites []models.CategorySprite) error {
+	return cr.db.Conn.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}, {Name: "category_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"sprite_id", "updated_at"}),
+	}).Create(&newCategorySprites).Error
+}
+
+func (cr *characterRepository) GetCatergorySprites(userId uuid.UUID) ([]models.CategorySprite, error) {
+	var categorySprites []models.CategorySprite
+	if err := cr.db.Conn.Where("user_id = ?", userId).Find(&categorySprites).Error; err != nil {
+		return nil, err
+	}
+	if len(categorySprites) == 0 {
+		return nil, player_errors.NewCategorySpritesNotFound("no category sprites found for user")
+	}
+	return categorySprites, nil
 }
