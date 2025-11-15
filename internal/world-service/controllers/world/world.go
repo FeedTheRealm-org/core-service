@@ -86,6 +86,7 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 	}
 
 	response := &dtos.WorldResponse{
+		ID:        createdWorld.ID.String(),
 		UserId:    createdWorld.UserId.String(),
 		Name:      createdWorld.Name,
 		Data:      string(createdWorld.Data),

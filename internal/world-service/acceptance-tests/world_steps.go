@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
+	"strings"
 
 	"github.com/cucumber/godog"
 )
@@ -65,8 +67,10 @@ func iHaveLoggedInWithEmailAndPassword(email, password string) error {
 	return nil
 }
 
-/* WORLD steps */
+/* -------- World steps -------- */
 func iPublishAWorld(name string) error {
+	errorResponse = nil
+
 	if ctx.token == "" {
 		return fmt.Errorf("no logged in user")
 	}
@@ -83,45 +87,54 @@ func iPublishAWorld(name string) error {
 		errorResponse = err
 		return nil
 	}
+
 	if status != http.StatusCreated {
+		// Capture API error message
+		errorResponse = fmt.Errorf("%s", string(body))
 		return nil
 	}
-	if len(body) > 0 {
-		if err := json.Unmarshal(body, &response); err != nil {
-			return nil
-		}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		return fmt.Errorf("failed to parse publish response: %w", err)
 	}
+
 	return nil
 }
 
 func theWorldShouldBePublished() error {
+	// Validate the world creation response
 	if response.Data.ID == "" {
-		return fmt.Errorf("world ID is empty — world was not published correctly")
+		return fmt.Errorf(
+			"world ID is empty | reason: %v | body: %v",
+			errorResponse, response,
+		)
 	}
 
-	world, err := findWorldById(response.Data.ID)
+	// Fetch the found from the backend
+	found, err := findWorldById(response.Data.ID)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve world by ID: %w", err)
 	}
-	if world == nil {
+	if found == nil {
 		return fmt.Errorf("world not found by ID %s", response.Data.ID)
 	}
 
-	if world.Data.ID != response.Data.ID {
-		return fmt.Errorf("ID mismatch: expected %s, got %s",
-			response.Data.ID, world.Data.ID)
+	// Compare fields
+	expect := response.Data
+	got := found.Data
+
+	if got.ID != expect.ID {
+		return fmt.Errorf("ID mismatch: expected %s, got %s", expect.ID, got.ID)
 	}
-	if world.Data.Name != response.Data.Name {
-		return fmt.Errorf("name mismatch: expected %s, got %s",
-			response.Data.Name, world.Data.Name)
+	if got.Name != expect.Name {
+		return fmt.Errorf("name mismatch: expected %s, got %s", expect.Name, got.Name)
 	}
-	if world.Data.UserID != response.Data.UserID {
-		return fmt.Errorf("user_id mismatch: expected %s, got %s",
-			response.Data.UserID, world.Data.UserID)
+	if got.UserID != expect.UserID {
+		return fmt.Errorf("user_id mismatch: expected %s, got %s", expect.UserID, got.UserID)
 	}
-	if world.Data.Data != response.Data.Data {
-		return fmt.Errorf("data mismatch: expected %s, got %s",
-			response.Data.Data, world.Data.Data)
+
+	if err := compareJSON(got.Data, expect.Data); err != nil {
+		return fmt.Errorf("data mismatch: %w", err)
 	}
 
 	return nil
@@ -141,20 +154,22 @@ func otherPlayersShouldSeeTheWorldInListings() error {
 		}
 	}
 
-	if found == nil {
-		return fmt.Errorf("expected world ID %s to appear in listing, but it was not found", response.Data.ID)
+	// Compare fields
+	expect := response.Data
+	got := found
+
+	if got.ID != expect.ID {
+		return fmt.Errorf("ID mismatch: expected %s, got %s", expect.ID, got.ID)
+	}
+	if got.Name != expect.Name {
+		return fmt.Errorf("name mismatch: expected %s, got %s", expect.Name, got.Name)
+	}
+	if got.UserID != expect.UserID {
+		return fmt.Errorf("user_id mismatch: expected %s, got %s", expect.UserID, got.UserID)
 	}
 
-	if found.UserID != response.Data.UserID {
-		return fmt.Errorf("user_id mismatch: expected %s, got %s", response.Data.UserID, found.UserID)
-	}
-
-	if found.Name != response.Data.Name {
-		return fmt.Errorf("name mismatch: expected %s, got %s", response.Data.Name, found.Name)
-	}
-
-	if found.Data != response.Data.Data {
-		return fmt.Errorf("data mismatch:\nexpected: %s\n     got: %s", response.Data.Data, found.Data)
+	if err := compareJSON(got.Data, expect.Data); err != nil {
+		return fmt.Errorf("data mismatch: %w", err)
 	}
 
 	return nil
@@ -166,7 +181,7 @@ func iShouldSeeAnErrorMessage(errorMessage string) error {
 		return fmt.Errorf("expected an error but none occurred")
 	}
 
-	if errorResponse.Error() != errorMessage {
+	if !strings.Contains(errorResponse.Error(), errorMessage) {
 		return fmt.Errorf("expected error message '%s', but got '%s'",
 			errorMessage, errorResponse.Error())
 	}
@@ -266,6 +281,31 @@ func httpGet(url string, auth string) (int, []byte, error) {
 	return resp.StatusCode, respBytes, nil
 }
 
+func compareJSON(a, b string) error {
+	var objA, objB any
+
+	if err := json.Unmarshal([]byte(a), &objA); err != nil {
+		return fmt.Errorf("invalid JSON in 'a': %w\njson=%s", err, a)
+	}
+	if err := json.Unmarshal([]byte(b), &objB); err != nil {
+		return fmt.Errorf("invalid JSON in 'b': %w\njson=%s", err, b)
+	}
+
+	if reflect.DeepEqual(objA, objB) {
+		return nil // they match!
+	}
+
+	// Pretty-print both sides for debugging
+	prettyA, _ := json.MarshalIndent(objA, "", "  ")
+	prettyB, _ := json.MarshalIndent(objB, "", "  ")
+
+	return fmt.Errorf(
+		"JSON mismatch:\nexpected:\n%s\ngot:\n%s",
+		prettyA,
+		prettyB,
+	)
+}
+
 // -------- Scenario Initialization --------
 
 func InitializeScenarioForWorld(sc *godog.ScenarioContext) {
@@ -274,6 +314,6 @@ func InitializeScenarioForWorld(sc *godog.ScenarioContext) {
 	sc.Step(`^I publish a world with name "([^\\"]*)"$`, iPublishAWorld)
 	sc.Step(`^the world should be published$`, theWorldShouldBePublished)
 	sc.Step(`^other players should see the world in the world listings$`, otherPlayersShouldSeeTheWorldInListings)
-	sc.Step(`^I should see an error message$`, iShouldSeeAnErrorMessage)
+	sc.Step(`^I should see an error message "([^"]*)"$`, iShouldSeeAnErrorMessage)
 
 }
