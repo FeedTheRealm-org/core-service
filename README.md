@@ -90,10 +90,9 @@ go run cmd/migrate/main.go version
 
 - `DB_USER` - Database username
 - `DB_PASSWORD` - Database password
-- `DB_HOST`     - Database host
+- `DB_HOST` - Database host
 - `DB_PORT` - Database port (default: 5432)
 - `DB_NAME` - Database name
-
 
 ## Structure
 
@@ -138,4 +137,14 @@ en cada uno los controladores, servicios y repositorios se ponen en sus correspo
 │       └── utils
 │           └── logger
 └── migrations
+```
+
+## Documentation
+
+Endpoint documentation was made with `Swagger` <br>
+Once staring up the project, go to this link to test out the endpoints:
+
+```sh
+# In this case, if locally starting the project, this is the url
+http://localhost:8000/swagger/index.html
 ```

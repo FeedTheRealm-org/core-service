@@ -1,5 +1,16 @@
 basePath: /
 definitions:
+  dtos.CharacterInfoResponse:
+    properties:
+      character_bio:
+        type: string
+      character_name:
+        type: string
+      created_at:
+        type: string
+      updated_at:
+        type: string
+    type: object
   dtos.CreateAccountRequestDTO:
     properties:
       email:
@@ -34,7 +45,56 @@ definitions:
     type: object
   dtos.LoginAccountResponseDTO:
     properties:
-      token:
+      access_token:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dtos.UpdateCharacterInfoRequest:
+    properties:
+      character_bio:
+        type: string
+      character_name:
+        type: string
+    type: object
+  dtos.VerifyAccountRequestDTO:
+    properties:
+      code:
+        type: string
+      email:
+        type: string
+    type: object
+  dtos.VerifyAccountResponseDTO:
+    properties:
+      email:
+        type: string
+      verified:
+        type: boolean
+    type: object
+  dtos.WorldRequest:
+    properties:
+      data:
+        type: string
+      name:
+        type: string
+    type: object
+  dtos.WorldResponse:
+    properties:
+      created_at:
+        type: string
+      data:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+      user_id:
         type: string
     type: object
 info:
@@ -77,4 +137,131 @@ paths:
       summary: Login
       tags:
       - authentication-service
+    put:
+      consumes:
+      - application/json
+      description: Updates the name and bio of the session player character
+      parameters:
+      - description: Character Info data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateCharacterInfoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated correctly
+          schema:
+            $ref: '#/definitions/dtos.CreateAccountResponseDTO'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UpdateCharacterInfo
+      tags:
+      - players-service
+  /auth/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify a user account with email verification code
+      parameters:
+      - description: Verification data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.VerifyAccountRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful verification (Wrapped in data envelope)
+          schema:
+            $ref: '#/definitions/dtos.VerifyAccountResponseDTO'
+        "400":
+          description: Bad request or invalid code
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Verify Account
+      tags:
+      - authentication-service
+  /character/info:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the name and bio of the session player character
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Character info retrieved correctly
+          schema:
+            $ref: '#/definitions/dtos.CharacterInfoResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetCharacterInfo
+      tags:
+      - players-service
+  /world:
+    post:
+      consumes:
+      - application/json
+      description: Publishes a new world with the provided information
+      parameters:
+      - description: World Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.WorldRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Published correctly
+          schema:
+            $ref: '#/definitions/dtos.WorldResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: PublishWorld
+      tags:
+      - world-service
+  /world/:id:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the name and data of the session player world
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: World info retrieved correctly
+          schema:
+            $ref: '#/definitions/dtos.WorldResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetWorld
+      tags:
+      - world-service
 swagger: "2.0"

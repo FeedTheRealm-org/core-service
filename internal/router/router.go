@@ -7,6 +7,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
 	playersRouter "github.com/FeedTheRealm-org/core-service/internal/players-service/router"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
+	worldRouter "github.com/FeedTheRealm-org/core-service/internal/world-service/router"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,6 +23,7 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 
 	authRouter.SetupAuthenticationServiceRouter(r, conf, db, jwtManager)
 	playersRouter.SetupPlayerServiceRouter(r, conf, db)
+	worldRouter.SetupWorldServiceRouter(r, conf, db)
 
 	if conf.Server.Environment != config.Production {
 		SetupSwaggerRouter(r)
