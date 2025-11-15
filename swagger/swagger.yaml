@@ -120,6 +120,12 @@ definitions:
       verified:
         type: boolean
     type: object
+  dtos.WorldRequest:
+    properties:
+      data: {}
+      file_name:
+        type: string
+    type: object
   dtos.WorldResponse:
     properties:
       created_at:
@@ -342,9 +348,6 @@ paths:
           description: Invalid credentials or invalid JWT token
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: UpdateCharacterInfo
-      tags:
-      - players-service
       summary: Sign up
       tags:
       - authentication-service
@@ -378,7 +381,6 @@ paths:
       summary: Verify Account
       tags:
       - authentication-service
-  /character/info:
   /players/character:
     get:
       consumes:
@@ -396,6 +398,35 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: GetCharacterInfo
+      tags:
+      - players-service
+    patch:
+      consumes:
+      - application/json
+      description: Updates the name and bio of the session player character
+      parameters:
+      - description: Character Info data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.PatchCharacterInfoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated correctly
+          schema:
+            $ref: '#/definitions/dtos.CharacterInfoResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: PatchCharacterInfo
       tags:
       - players-service
   /world:
@@ -434,12 +465,6 @@ paths:
       description: Publishes a new world with the provided information
       parameters:
       - description: World Data
-    patch:
-      consumes:
-      - application/json
-      description: Updates the name and bio of the session player character
-      parameters:
-      - description: Character Info data
         in: body
         name: request
         required: true
@@ -452,14 +477,6 @@ paths:
           description: Published correctly
           schema:
             $ref: '#/definitions/dtos.WorldResponse'
-          $ref: '#/definitions/dtos.PatchCharacterInfoRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Updated correctly
-          schema:
-            $ref: '#/definitions/dtos.CharacterInfoResponse'
         "400":
           description: Bad request body
           schema:
@@ -508,7 +525,4 @@ paths:
       summary: ResetDatabase
       tags:
       - world-service
-      summary: PatchCharacterInfo
-      tags:
-      - players-service
 swagger: "2.0"

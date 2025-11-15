@@ -15,12 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/signup": {
-            "put": {
-                "description": "Updates the name and bio of the session player character",
-                "consumes": [
-                    "application/json"
-                ],
         "/assets/sprites": {
             "put": {
                 "description": "Uploads a sprite file.",
@@ -79,17 +73,6 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "players-service"
-                ],
-                "summary": "UpdateCharacterInfo",
-                "parameters": [
-                    {
-                        "description": "Character Info data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.UpdateCharacterInfoRequest"
                     "assets-service"
                 ],
                 "summary": "GetCategoriesList",
@@ -132,10 +115,6 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "Updated correctly",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.CreateAccountResponseDTO"
                     "201": {
                         "description": "Created category",
                         "schema": {
@@ -155,7 +134,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
             }
         },
         "/assets/sprites/categories/{category_id}": {
@@ -274,12 +252,55 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/verify": {
-            "post": {
-                "description": "Verify a user account with email verification code",
         "/auth/signup": {
             "post": {
                 "description": "Create a new user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Sign up",
+                "parameters": [
+                    {
+                        "description": "Signup data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateAccountRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful login",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateAccountResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/verify": {
+            "post": {
+                "description": "Verify a user account with email verification code",
                 "consumes": [
                     "application/json"
                 ],
@@ -293,16 +314,11 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "description": "Verification data",
-                "summary": "Sign up",
-                "parameters": [
-                    {
-                        "description": "Signup data",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/dtos.VerifyAccountRequestDTO"
-                            "$ref": "#/definitions/dtos.CreateAccountRequestDTO"
                         }
                     }
                 ],
@@ -315,21 +331,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad request or invalid code",
-                        "description": "Successful login",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.CreateAccountResponseDTO"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request body",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -337,12 +344,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/character/info": {
+        "/players/character": {
             "get": {
                 "description": "Retrieves the name and bio of the session player character",
-        "/auth/verify": {
-            "post": {
-                "description": "Verify a user account with email verification code",
                 "consumes": [
                     "application/json"
                 ],
@@ -362,35 +366,50 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Invalid credentials or invalid JWT token",
-                    "authentication-service"
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Updates the name and bio of the session player character",
+                "consumes": [
+                    "application/json"
                 ],
-                "summary": "Verify Account",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "players-service"
+                ],
+                "summary": "PatchCharacterInfo",
                 "parameters": [
                     {
-                        "description": "Verification data",
+                        "description": "Character Info data",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dtos.VerifyAccountRequestDTO"
+                            "$ref": "#/definitions/dtos.PatchCharacterInfoRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful verification (Wrapped in data envelope)",
+                        "description": "Updated correctly",
                         "schema": {
-                            "$ref": "#/definitions/dtos.VerifyAccountResponseDTO"
+                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad request or invalid code",
+                        "description": "Bad request body",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
-                    "500": {
-                        "description": "Internal server error",
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -401,9 +420,6 @@ const docTemplate = `{
         "/world": {
             "get": {
                 "description": "Retrieves a paginated list of worlds",
-        "/players/character": {
-            "get": {
-                "description": "Retrieves the name and bio of the session player character",
                 "consumes": [
                     "application/json"
                 ],
@@ -435,14 +451,6 @@ const docTemplate = `{
                         "description": "Worlds list retrieved correctly",
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldsListResponse"
-                    "players-service"
-                ],
-                "summary": "GetCharacterInfo",
-                "responses": {
-                    "200": {
-                        "description": "Character info retrieved correctly",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
                         }
                     },
                     "401": {
@@ -455,8 +463,6 @@ const docTemplate = `{
             },
             "post": {
                 "description": "Publishes a new world with the provided information",
-            "patch": {
-                "description": "Updates the name and bio of the session player character",
                 "consumes": [
                     "application/json"
                 ],
@@ -470,18 +476,11 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "description": "World Data",
-                    "players-service"
-                ],
-                "summary": "PatchCharacterInfo",
-                "parameters": [
-                    {
-                        "description": "Character Info data",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldRequest"
-                            "$ref": "#/definitions/dtos.PatchCharacterInfoRequest"
                         }
                     }
                 ],
@@ -490,10 +489,6 @@ const docTemplate = `{
                         "description": "Published correctly",
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldResponse"
-                    "200": {
-                        "description": "Updated correctly",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
                         }
                     },
                     "400": {
@@ -564,12 +559,6 @@ const docTemplate = `{
                     }
                 }
             }
-        }
-    },
-    "definitions": {
-        "dtos.CharacterInfoResponse": {
-            "type": "object",
-            "properties": {
         }
     },
     "definitions": {
@@ -691,29 +680,50 @@ const docTemplate = `{
                 },
                 "character_name": {
                     "type": "string"
-                },
-                "created_at": {
+                }
+            }
+        },
+        "dtos.SpriteCategoryListResponse": {
+            "type": "object",
+            "properties": {
+                "category_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.SpriteCategoryResponse"
+                    }
+                }
+            }
+        },
+        "dtos.SpriteCategoryResponse": {
+            "type": "object",
+            "properties": {
+                "category_id": {
                     "type": "string"
                 },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "updated_at": {
+                "category_name": {
                     "type": "string"
                 }
             }
         },
-        "dtos.UpdateCharacterInfoRequest": {
+        "dtos.SpriteResponse": {
             "type": "object",
             "properties": {
-                "character_bio": {
+                "sprite_id": {
                     "type": "string"
                 },
-                "character_name": {
+                "sprite_url": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.SpritesListResponse": {
+            "type": "object",
+            "properties": {
+                "sprites_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.SpriteResponse"
+                    }
                 }
             }
         },
@@ -788,72 +798,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dtos.WorldResponse"
                     }
-                }
-            }
-        },
-        "dtos.SpriteCategoryListResponse": {
-            "type": "object",
-            "properties": {
-                "category_list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.SpriteCategoryResponse"
-                    }
-                }
-            }
-        },
-        "dtos.SpriteCategoryResponse": {
-            "type": "object",
-            "properties": {
-                "category_id": {
-                    "type": "string"
-                },
-                "category_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.SpriteResponse": {
-            "type": "object",
-            "properties": {
-                "sprite_id": {
-                    "type": "string"
-                },
-                "sprite_url": {
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.SpritesListResponse": {
-            "type": "object",
-            "properties": {
-                "sprites_list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.SpriteResponse"
-                    }
-                }
-            }
-        },
-        "dtos.VerifyAccountRequestDTO": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.VerifyAccountResponseDTO": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "verified": {
-                    "type": "boolean"
                 }
             }
         }
