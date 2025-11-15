@@ -1,7 +1,18 @@
 basePath: /
 definitions:
+  dtos.AddSpriteCategoryRequest:
+    properties:
+      category_name:
+        type: string
+    required:
+    - category_name
+    type: object
   dtos.CharacterInfoResponse:
     properties:
+      category_sprites:
+        additionalProperties:
+          type: string
+        type: object
       character_bio:
         type: string
       character_name:
@@ -56,12 +67,44 @@ definitions:
       updated_at:
         type: string
     type: object
-  dtos.UpdateCharacterInfoRequest:
+  dtos.PatchCharacterInfoRequest:
     properties:
+      category_sprites:
+        additionalProperties:
+          type: string
+        type: object
       character_bio:
         type: string
       character_name:
         type: string
+    type: object
+  dtos.SpriteCategoryListResponse:
+    properties:
+      category_list:
+        items:
+          $ref: '#/definitions/dtos.SpriteCategoryResponse'
+        type: array
+    type: object
+  dtos.SpriteCategoryResponse:
+    properties:
+      category_id:
+        type: string
+      category_name:
+        type: string
+    type: object
+  dtos.SpriteResponse:
+    properties:
+      sprite_id:
+        type: string
+      sprite_url:
+        type: string
+    type: object
+  dtos.SpritesListResponse:
+    properties:
+      sprites_list:
+        items:
+          $ref: '#/definitions/dtos.SpriteResponse'
+        type: array
     type: object
   dtos.VerifyAccountRequestDTO:
     properties:
@@ -76,12 +119,6 @@ definitions:
         type: string
       verified:
         type: boolean
-    type: object
-  dtos.WorldRequest:
-    properties:
-      data: {}
-      file_name:
-        type: string
     type: object
   dtos.WorldResponse:
     properties:
@@ -121,7 +158,134 @@ info:
   title: FeedTheRealm Core Service API
   version: 0.1.0
 paths:
-  /auth/signup:
+  /assets/sprites:
+    put:
+      consumes:
+      - multipart/form-data
+      description: Uploads a sprite file.
+      parameters:
+      - description: Sprite file
+        in: formData
+        name: sprite
+        required: true
+        type: file
+      - description: Category ID
+        in: formData
+        name: category_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Uploaded sprite
+          schema:
+            $ref: '#/definitions/dtos.SpriteResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UploadSpriteData
+      tags:
+      - assets-service
+  /assets/sprites/{sprite_id}:
+    get:
+      description: Downloads the sprite file for a given sprite UUID.
+      parameters:
+      - description: Sprite UUID
+        in: path
+        name: sprite_id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Sprite file
+          schema:
+            type: file
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: DownloadSpriteData
+      tags:
+      - assets-service
+  /assets/sprites/categories:
+    get:
+      description: Retrieves the list of existing categories UUIDs.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Category list
+          schema:
+            $ref: '#/definitions/dtos.SpriteCategoryListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetCategoriesList
+      tags:
+      - assets-service
+    post:
+      consumes:
+      - application/json
+      description: Adds a new sprite category.
+      parameters:
+      - description: Category data
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AddSpriteCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created category
+          schema:
+            $ref: '#/definitions/dtos.SpriteCategoryResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: AddCategory
+      tags:
+      - assets-service
+  /assets/sprites/categories/{category_id}:
+    get:
+      description: Retrieves the list of existing sprites UUIDs for a given category
+        UUID.
+      parameters:
+      - description: Category UUID
+        in: path
+        name: category_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sprite list
+          schema:
+            $ref: '#/definitions/dtos.SpritesListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetSpritesListByCategory
+      tags:
+      - assets-service
+  /auth/login:
     post:
       consumes:
       - application/json
@@ -151,22 +315,23 @@ paths:
       summary: Login
       tags:
       - authentication-service
-    put:
+  /auth/signup:
+    post:
       consumes:
       - application/json
-      description: Updates the name and bio of the session player character
+      description: Create a new user account
       parameters:
-      - description: Character Info data
+      - description: Signup data
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dtos.UpdateCharacterInfoRequest'
+          $ref: '#/definitions/dtos.CreateAccountRequestDTO'
       produces:
       - application/json
       responses:
         "200":
-          description: Updated correctly
+          description: Successful login
           schema:
             $ref: '#/definitions/dtos.CreateAccountResponseDTO'
         "400":
@@ -180,6 +345,9 @@ paths:
       summary: UpdateCharacterInfo
       tags:
       - players-service
+      summary: Sign up
+      tags:
+      - authentication-service
   /auth/verify:
     post:
       consumes:
@@ -211,6 +379,7 @@ paths:
       tags:
       - authentication-service
   /character/info:
+  /players/character:
     get:
       consumes:
       - application/json
@@ -265,6 +434,12 @@ paths:
       description: Publishes a new world with the provided information
       parameters:
       - description: World Data
+    patch:
+      consumes:
+      - application/json
+      description: Updates the name and bio of the session player character
+      parameters:
+      - description: Character Info data
         in: body
         name: request
         required: true
@@ -277,6 +452,14 @@ paths:
           description: Published correctly
           schema:
             $ref: '#/definitions/dtos.WorldResponse'
+          $ref: '#/definitions/dtos.PatchCharacterInfoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated correctly
+          schema:
+            $ref: '#/definitions/dtos.CharacterInfoResponse'
         "400":
           description: Bad request body
           schema:
@@ -325,4 +508,7 @@ paths:
       summary: ResetDatabase
       tags:
       - world-service
+      summary: PatchCharacterInfo
+      tags:
+      - players-service
 swagger: "2.0"

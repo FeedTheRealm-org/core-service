@@ -21,6 +21,60 @@ const docTemplate = `{
                 "consumes": [
                     "application/json"
                 ],
+        "/assets/sprites": {
+            "put": {
+                "description": "Uploads a sprite file.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "UploadSpriteData",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Sprite file",
+                        "name": "sprite",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "category_id",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Uploaded sprite",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SpriteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/sprites/categories": {
+            "get": {
+                "description": "Retrieves the list of existing categories UUIDs.",
                 "produces": [
                     "application/json"
                 ],
@@ -36,6 +90,44 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/dtos.UpdateCharacterInfoRequest"
+                    "assets-service"
+                ],
+                "summary": "GetCategoriesList",
+                "responses": {
+                    "200": {
+                        "description": "Category list",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SpriteCategoryListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Adds a new sprite category.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "AddCategory",
+                "parameters": [
+                    {
+                        "description": "Category data",
+                        "name": "category",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.AddSpriteCategoryRequest"
                         }
                     }
                 ],
@@ -44,6 +136,10 @@ const docTemplate = `{
                         "description": "Updated correctly",
                         "schema": {
                             "$ref": "#/definitions/dtos.CreateAccountResponseDTO"
+                    "201": {
+                        "description": "Created category",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SpriteCategoryResponse"
                         }
                     },
                     "400": {
@@ -60,6 +156,79 @@ const docTemplate = `{
                     }
                 }
             },
+            }
+        },
+        "/assets/sprites/categories/{category_id}": {
+            "get": {
+                "description": "Retrieves the list of existing sprites UUIDs for a given category UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "GetSpritesListByCategory",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category UUID",
+                        "name": "category_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sprite list",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SpritesListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/sprites/{sprite_id}": {
+            "get": {
+                "description": "Downloads the sprite file for a given sprite UUID.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "DownloadSpriteData",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sprite UUID",
+                        "name": "sprite_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sprite file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
             "post": {
                 "description": "Log in an existing user",
                 "consumes": [
@@ -108,6 +277,9 @@ const docTemplate = `{
         "/auth/verify": {
             "post": {
                 "description": "Verify a user account with email verification code",
+        "/auth/signup": {
+            "post": {
+                "description": "Create a new user account",
                 "consumes": [
                     "application/json"
                 ],
@@ -115,6 +287,81 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Verify Account",
+                "parameters": [
+                    {
+                        "description": "Verification data",
+                "summary": "Sign up",
+                "parameters": [
+                    {
+                        "description": "Signup data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.VerifyAccountRequestDTO"
+                            "$ref": "#/definitions/dtos.CreateAccountRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful verification (Wrapped in data envelope)",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.VerifyAccountResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request or invalid code",
+                        "description": "Successful login",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateAccountResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/character/info": {
+            "get": {
+                "description": "Retrieves the name and bio of the session player character",
+        "/auth/verify": {
+            "post": {
+                "description": "Verify a user account with email verification code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "players-service"
+                ],
+                "summary": "GetCharacterInfo",
+                "responses": {
+                    "200": {
+                        "description": "Character info retrieved correctly",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
                     "authentication-service"
                 ],
                 "summary": "Verify Account",
@@ -151,38 +398,12 @@ const docTemplate = `{
                 }
             }
         },
-        "/character/info": {
-            "get": {
-                "description": "Retrieves the name and bio of the session player character",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "players-service"
-                ],
-                "summary": "GetCharacterInfo",
-                "responses": {
-                    "200": {
-                        "description": "Character info retrieved correctly",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/world": {
             "get": {
                 "description": "Retrieves a paginated list of worlds",
+        "/players/character": {
+            "get": {
+                "description": "Retrieves the name and bio of the session player character",
                 "consumes": [
                     "application/json"
                 ],
@@ -214,6 +435,14 @@ const docTemplate = `{
                         "description": "Worlds list retrieved correctly",
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldsListResponse"
+                    "players-service"
+                ],
+                "summary": "GetCharacterInfo",
+                "responses": {
+                    "200": {
+                        "description": "Character info retrieved correctly",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
                         }
                     },
                     "401": {
@@ -226,6 +455,8 @@ const docTemplate = `{
             },
             "post": {
                 "description": "Publishes a new world with the provided information",
+            "patch": {
+                "description": "Updates the name and bio of the session player character",
                 "consumes": [
                     "application/json"
                 ],
@@ -239,11 +470,18 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "description": "World Data",
+                    "players-service"
+                ],
+                "summary": "PatchCharacterInfo",
+                "parameters": [
+                    {
+                        "description": "Character Info data",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldRequest"
+                            "$ref": "#/definitions/dtos.PatchCharacterInfoRequest"
                         }
                     }
                 ],
@@ -252,6 +490,10 @@ const docTemplate = `{
                         "description": "Published correctly",
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldResponse"
+                    "200": {
+                        "description": "Updated correctly",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
                         }
                     },
                     "400": {
@@ -328,6 +570,29 @@ const docTemplate = `{
         "dtos.CharacterInfoResponse": {
             "type": "object",
             "properties": {
+        }
+    },
+    "definitions": {
+        "dtos.AddSpriteCategoryRequest": {
+            "type": "object",
+            "required": [
+                "category_name"
+            ],
+            "properties": {
+                "category_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.CharacterInfoResponse": {
+            "type": "object",
+            "properties": {
+                "category_sprites": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "character_bio": {
                     "type": "string"
                 },
@@ -396,6 +661,35 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "access_token": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.PatchCharacterInfoRequest": {
+            "type": "object",
+            "properties": {
+                "category_sprites": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "character_bio": {
+                    "type": "string"
+                },
+                "character_name": {
                     "type": "string"
                 },
                 "created_at": {
@@ -494,6 +788,72 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dtos.WorldResponse"
                     }
+                }
+            }
+        },
+        "dtos.SpriteCategoryListResponse": {
+            "type": "object",
+            "properties": {
+                "category_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.SpriteCategoryResponse"
+                    }
+                }
+            }
+        },
+        "dtos.SpriteCategoryResponse": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "string"
+                },
+                "category_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.SpriteResponse": {
+            "type": "object",
+            "properties": {
+                "sprite_id": {
+                    "type": "string"
+                },
+                "sprite_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.SpritesListResponse": {
+            "type": "object",
+            "properties": {
+                "sprites_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.SpriteResponse"
+                    }
+                }
+            }
+        },
+        "dtos.VerifyAccountRequestDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.VerifyAccountResponseDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "verified": {
+                    "type": "boolean"
                 }
             }
         }

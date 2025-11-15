@@ -30,9 +30,14 @@ type DatabaseConfig struct {
 	ShouldMigrate     bool
 }
 
+type AssetsConfig struct {
+	MaxUploadSizeBytes int64
+}
+
 type Config struct {
 	Server                *ServerConfig
 	DB                    *DatabaseConfig
+	Assets                *AssetsConfig
 	SessionTokenSecretKey string
 	SessionTokenDuration  time.Duration
 	BrevoAPIKey           string
@@ -50,13 +55,20 @@ func CreateConfig() *Config {
 		ShouldMigrate:     getEnvOrDefaultString("DB_SHOULD_MIGRATE", "false") == "true",
 	}
 
+	assetsConf := &AssetsConfig{
+		MaxUploadSizeBytes: int64(getEnvOrDefaultInt("ASSETS_MAX_UPLOAD_SIZE_BYTES", 20*1024*1024)),
+	}
+
+	serverConf := &ServerConfig{
+		Port:            getEnvOrDefaultInt("SERVER_PORT", 8000),
+		ShutdownTimeout: getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
+		Environment:     getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
+	}
+
 	return &Config{
-		Server: &ServerConfig{
-			Port:            getEnvOrDefaultInt("SERVER_PORT", 8000),
-			ShutdownTimeout: getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
-			Environment:     getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
-		},
+		Server:                serverConf,
 		DB:                    dbc,
+		Assets:                assetsConf,
 		SessionTokenSecretKey: os.Getenv("SESSION_TOKEN_SECRET_KEY"),
 		SessionTokenDuration:  getEnvOrDefaultDuration("SESSION_TOKEN_DURATION", time.Hour*24),
 		BrevoAPIKey:           os.Getenv("BREVO_API_KEY"),
