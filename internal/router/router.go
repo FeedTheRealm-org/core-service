@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
+	assetsRouter "github.com/FeedTheRealm-org/core-service/internal/assets-service/router"
 	authRouter "github.com/FeedTheRealm-org/core-service/internal/authentication-service/router"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
@@ -22,6 +23,7 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 
 	authRouter.SetupAuthenticationServiceRouter(r, conf, db, jwtManager)
 	playersRouter.SetupPlayerServiceRouter(r, conf, db)
+	assetsRouter.SetupAssetsServiceRouter(r, conf, db)
 
 	if conf.Server.Environment != config.Production {
 		SetupSwaggerRouter(r)

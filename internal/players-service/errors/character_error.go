@@ -29,3 +29,18 @@ func NewCharacterNameTaken(details string) *CharacterNameTaken {
 		details: details,
 	}
 }
+
+// CategorySpritesNotFound is returned when the category sprites for a given user ID are not found.
+type CategorySpritesNotFound struct {
+	details string
+}
+
+func (e *CategorySpritesNotFound) Error() string {
+	return e.details
+}
+
+func NewCategorySpritesNotFound(details string) *CategorySpritesNotFound {
+	return &CategorySpritesNotFound{
+		details: details,
+	}
+}

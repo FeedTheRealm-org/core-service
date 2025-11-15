@@ -29,7 +29,7 @@ func JWTAuthMiddleware(jwtManager *session.JWTManager) gin.HandlerFunc {
 			if _, ok := err.(*session.JWTExpiredTokenError); ok {
 				c.Set("expiredJWT", true)
 			}
-			logger.Logger.Warnf("Invalid JWT: %v", err)
+			logger.Logger.Warnf("Invalid JWT")
 			c.Set("invalidJWT", true)
 			return
 		}

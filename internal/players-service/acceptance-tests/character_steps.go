@@ -27,14 +27,16 @@ type loginResponse struct {
 /* CHARACTER_INFO */
 
 type CharacterInfoRequest struct {
-	CharacterName string `json:"character_name"`
-	CharacterBio  string `json:"character_bio"`
+	CharacterName   string            `json:"character_name"`
+	CharacterBio    string            `json:"character_bio"`
+	CategorySprites map[string]string `json:"category_sprites"`
 }
 
 type CharacterInfoResponse struct {
 	Data struct {
-		CharacterName string `json:"character_name"`
-		CharacterBio  string `json:"character_bio"`
+		CharacterName   string            `json:"character_name"`
+		CharacterBio    string            `json:"character_bio"`
+		CategorySprites map[string]string `json:"category_sprites"`
 	} `json:"data"`
 }
 
@@ -69,8 +71,11 @@ func iChangeMyCharacterNameTo(name string) error {
 	characterReq := CharacterInfoRequest{
 		CharacterName: name,
 		CharacterBio:  ctx.charInfo.CharacterBio, // keep existing bio
+		CategorySprites: map[string]string{
+			"31174086-cd99-44db-9012-fbd2821f24c0": "31174086-cd99-44db-9012-fbd2821f24c0",
+		},
 	}
-	_, body, err := httpWithBody("PUT", baseURL+"/player/character", characterReq, ctx.token)
+	_, body, err := httpWithBody("PATCH", baseURL+"/player/character", characterReq, ctx.token)
 	if err != nil {
 		return err
 	}

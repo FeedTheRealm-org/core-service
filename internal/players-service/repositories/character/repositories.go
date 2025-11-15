@@ -12,4 +12,10 @@ type CharacterRepository interface {
 
 	// GetCharacterInfo retrieves character information.
 	GetCharacterInfo(userId uuid.UUID) (*models.CharacterInfo, error)
+
+	// UpdateCategorySprites updates the category sprites for a user.
+	UpdateCategorySprites(newCategorySprite []models.CategorySprite) error
+
+	// GetCategorySprites retrieves the category sprites for a user.
+	GetCategorySprites(userId uuid.UUID) ([]models.CategorySprite, error)
 }
