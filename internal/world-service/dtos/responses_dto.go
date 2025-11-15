@@ -6,6 +6,7 @@ import "time"
 
 // WorldResponse represents the response payload for retrieving world information.
 type WorldResponse struct {
+	ID        string    `json:"id"`
 	UserId    string    `json:"user_id"`
 	Name      string    `json:"name"`
 	Data      string    `json:"data"`

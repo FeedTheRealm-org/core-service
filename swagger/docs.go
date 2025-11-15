@@ -181,6 +181,49 @@ const docTemplate = `{
             }
         },
         "/world": {
+            "get": {
+                "description": "Retrieves a paginated list of worlds",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "GetWorldsList",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Pagination offset (starting index)",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Pagination limit (max 100)",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Worlds list retrieved correctly",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldsListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Publishes a new world with the provided information",
                 "consumes": [
@@ -205,7 +248,7 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "Published correctly",
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldResponse"
@@ -226,7 +269,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/world/:id": {
+        "/world/{id}": {
             "get": {
                 "description": "Retrieves the name and data of the session player world",
                 "consumes": [
@@ -239,6 +282,15 @@ const docTemplate = `{
                     "world-service"
                 ],
                 "summary": "GetWorld",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "World info retrieved correctly",
@@ -395,6 +447,9 @@ const docTemplate = `{
                 "data": {
                     "type": "string"
                 },
+                "id": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -403,6 +458,26 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.WorldsListResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "worlds": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.WorldResponse"
+                    }
                 }
             }
         }

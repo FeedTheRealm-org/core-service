@@ -37,16 +37,16 @@ func NewWorldController(conf *config.Config, characterService world.WorldService
 // @Accept   json
 // @Produce  json
 // @Param   request body dtos.WorldRequest true "World Data"
-// @Success 200  {object}  dtos.WorldResponse "Published correctly"
+// @Success 201  {object}  dtos.WorldResponse "Published correctly"
 // @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /world [post]
 func (c *worldController) PublishWorld(ctx *gin.Context) {
-	// userId, err := common_handlers.GetUserIDFromSession(ctx)
-	// if err != nil {
-	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-	// 	return
-	// }
+	userId, err := common_handlers.GetUserIDFromSession(ctx)
+	if err != nil {
+		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
 
 	var req dtos.WorldRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -67,7 +67,7 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 	bytes, _ := json.Marshal(req.Data)
 
 	worldData := &models.WorldData{
-		UserId: uuid.New(), // this is a temp for testing purposes
+		UserId: userId,
 		Name:   req.FileName,
 		Data:   datatypes.JSON(bytes),
 	}
@@ -99,15 +99,16 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 // @Tags world-service
 // @Accept   json
 // @Produce  json
+// @Param id  path string true "World ID"
 // @Success 200  {object}  dtos.WorldResponse "World info retrieved correctly"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /world/:id [get]
+// @Router  /world/{id} [get]
 func (c *worldController) GetWorld(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
+	// _, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 
 	var parsedWorldId uuid.UUID
 	worldId := ctx.Param("id")
@@ -116,7 +117,7 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 		return
 	}
 
-	parsedWorldId, err = uuid.Parse(worldId)
+	parsedWorldId, err := uuid.Parse(worldId)
 	if err != nil {
 		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + worldId))
 		return
@@ -133,6 +134,7 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 	}
 
 	res := &dtos.WorldResponse{
+		ID:        worldInfo.ID.String(),
 		UserId:    worldInfo.UserId.String(),
 		Name:      worldInfo.Name,
 		Data:      string(worldInfo.Data),
@@ -148,14 +150,17 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 // @Tags world-service
 // @Accept   json
 // @Produce  json
-// @Success 200  {object}  dtos.WorldResponse "Worlds list retrieved correctly"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
+// @Param offset query int true "Pagination offset (starting index)"
+// @Param limit  query int true "Pagination limit (max 100)"
+// @Success 200 {object} dtos.WorldsListResponse "Worlds list retrieved correctly"
+// @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
+// @Router /world [get]
 func (c *worldController) GetWorldsList(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
+	// _, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 
 	offsetStr := ctx.Query("offset")
 	limitStr := ctx.Query("limit")
@@ -188,6 +193,7 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 	resList := make([]dtos.WorldResponse, 0, len(worldsList))
 	for _, worldInfo := range worldsList {
 		resList = append(resList, dtos.WorldResponse{
+			ID:        worldInfo.ID.String(),
 			UserId:    worldInfo.UserId.String(),
 			Name:      worldInfo.Name,
 			Data:      string(worldInfo.Data),
