@@ -35,6 +35,13 @@ const docTemplate = `{
                         "name": "sprite",
                         "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "category_id",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -42,6 +49,12 @@ const docTemplate = `{
                         "description": "Uploaded sprite",
                         "schema": {
                             "$ref": "#/definitions/dtos.SpriteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
@@ -106,6 +119,12 @@ const docTemplate = `{
                         "description": "Created category",
                         "schema": {
                             "$ref": "#/definitions/dtos.SpriteCategoryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
@@ -364,7 +383,7 @@ const docTemplate = `{
                 "tags": [
                     "players-service"
                 ],
-                "summary": "UpdateCharacterInfo",
+                "summary": "PatchCharacterInfo",
                 "parameters": [
                     {
                         "description": "Character Info data",
@@ -372,7 +391,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dtos.UpdateCharacterInfoRequest"
+                            "$ref": "#/definitions/dtos.PatchCharacterInfoRequest"
                         }
                     }
                 ],
@@ -414,6 +433,12 @@ const docTemplate = `{
         "dtos.CharacterInfoResponse": {
             "type": "object",
             "properties": {
+                "category_sprites": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "character_bio": {
                     "type": "string"
                 },
@@ -498,6 +523,23 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.PatchCharacterInfoRequest": {
+            "type": "object",
+            "properties": {
+                "category_sprites": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "character_bio": {
+                    "type": "string"
+                },
+                "character_name": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.SpriteCategoryListResponse": {
             "type": "object",
             "properties": {
@@ -539,17 +581,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dtos.SpriteResponse"
                     }
-                }
-            }
-        },
-        "dtos.UpdateCharacterInfoRequest": {
-            "type": "object",
-            "properties": {
-                "character_bio": {
-                    "type": "string"
-                },
-                "character_name": {
-                    "type": "string"
                 }
             }
         },

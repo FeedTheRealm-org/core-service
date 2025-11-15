@@ -35,12 +35,12 @@ collection:
             send: true
             store: true
           rebuildPath: true
-      - url: localhost:8000/assets/sprites/categories/7bd0bc26-feba-4230-894d-bc97461b0e2f
+      - url: localhost:8000/assets/sprites/categories/de6e29ad-4cfd-49f5-9cb0-c306f23e6b74
         name: GetSpritesByCategory
         meta:
           id: req_fd1e90f7f36e4217822ca98796b3b452
           created: 1762719566824
-          modified: 1762727261267
+          modified: 1763176886259
           isPrivate: false
           description: ""
           sortKey: -1762719352144
@@ -56,12 +56,12 @@ collection:
             send: true
             store: true
           rebuildPath: true
-      - url: localhost:8000/assets/sprites/492c228c-ff41-4ad4-a9ed-5225a1a0ea09
+      - url: localhost:8000/assets/sprites/c3396495-bd59-4f42-ab86-c3313e2973ad
         name: GetSpriteData
         meta:
           id: req_147c154ecfa442d7a539b321071a4f09
           created: 1762719578552
-          modified: 1762730997433
+          modified: 1763166483620
           isPrivate: false
           description: ""
           sortKey: -1762719352094
@@ -82,7 +82,7 @@ collection:
         meta:
           id: req_db2b9bf595714652955f725edabfe4ca
           created: 1762719588484
-          modified: 1762728354789
+          modified: 1763162865472
           isPrivate: false
           description: ""
           sortKey: -1762719352044
@@ -157,7 +157,7 @@ collection:
         meta:
           id: req_aef8fee84da14c99af2d23284692930d
           created: 1762720662766
-          modified: 1762720846495
+          modified: 1763162770725
           isPrivate: false
           description: ""
           sortKey: -1762720662766
@@ -238,7 +238,7 @@ collection:
     meta:
       id: fld_f8e598b3aa704f4f89810221562c69c0
       created: 1762720929044
-      modified: 1762720949161
+      modified: 1763162869846
       sortKey: -1762719994705
       description: ""
     children:
@@ -247,7 +247,7 @@ collection:
         meta:
           id: req_ee48e52c6261438f8d4b5e4c1b467f67
           created: 1762720938559
-          modified: 1762721075029
+          modified: 1763162784042
           isPrivate: false
           description: ""
           sortKey: -1762720938559
@@ -259,7 +259,7 @@ collection:
           - id: pair_6e0fbd41665b4eaa9ee8d34c650f06d1
             name: Authorization
             value: Bearer
-              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjI4MDcyNDgsImlzcyI6MTc2MjcyMDg0OCwidXNlcklEIjoiN2JiOGE0MTktOWY3Ni00NWY0LTg0Y2MtMWYwNGI0N2QwNzk4In0.2eDBu8bAyj86ZQjvw7aQm5D3FSvpJLDyEYaZ08c5VAw
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjMyNDkxNzEsImlzcyI6MTc2MzE2Mjc3MSwidXNlcklEIjoiMzljNDcwZDQtYWZmZC00NmI2LWFhZjgtODQxMTZmZmZhYWY3In0.Kp35BwbB1XAZf834Fj_fGiXhQwIeLACm6zPA3AZ8nvE
             description: ""
             disabled: false
         settings:
@@ -296,4 +296,4 @@ spec:
   meta:
     id: spc_30821d4a7a5b43abaff209a188770c38
     created: 1762719294135
-    modified: 1762719294135
+    modified: 1763162507747
