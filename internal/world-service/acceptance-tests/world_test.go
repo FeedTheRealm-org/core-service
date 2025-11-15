@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 
 	status := godog.TestSuite{
 		ScenarioInitializer: func(sc *godog.ScenarioContext) {
-			InitializeScenarioForCharacter(sc)
+			InitializeScenarioForWorld(sc)
 		},
 		Options: &opts,
 	}.Run()

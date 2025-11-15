@@ -49,13 +49,17 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 	}
 
 	var req dtos.WorldRequest
+
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		_ = ctx.Error(errors.NewBadRequestError("invalid JSON payload: " + err.Error()))
 		return
 	}
 
-	if len(req.FileName) < 3 || len(req.FileName) > 24 {
-		_ = ctx.Error(errors.NewBadRequestError("world name must be between 3 and 24 characters"))
+	// TODO: Add basic validation for world data structure, currently just storing raw data
+	bytes, _ := json.Marshal(req.Data)
+
+	if len(req.FileName) < 6 || len(req.FileName) > 24 {
+		_ = ctx.Error(errors.NewBadRequestError("world name must be between 6 and 24 characters"))
 		return
 	}
 
@@ -63,8 +67,6 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 		_ = ctx.Error(errors.NewBadRequestError("world name contains invalid special characters"))
 		return
 	}
-
-	bytes, _ := json.Marshal(req.Data)
 
 	worldData := &models.WorldData{
 		UserId: userId,
@@ -104,11 +106,11 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router  /world/{id} [get]
 func (c *worldController) GetWorld(ctx *gin.Context) {
-	// _, err := common_handlers.GetUserIDFromSession(ctx)
-	// if err != nil {
-	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-	// 	return
-	// }
+	_, err := common_handlers.GetUserIDFromSession(ctx)
+	if err != nil {
+		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
 
 	var parsedWorldId uuid.UUID
 	worldId := ctx.Param("id")
@@ -117,7 +119,7 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 		return
 	}
 
-	parsedWorldId, err := uuid.Parse(worldId)
+	parsedWorldId, err = uuid.Parse(worldId)
 	if err != nil {
 		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + worldId))
 		return
@@ -156,11 +158,11 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 // @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /world [get]
 func (c *worldController) GetWorldsList(ctx *gin.Context) {
-	// _, err := common_handlers.GetUserIDFromSession(ctx)
-	// if err != nil {
-	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-	// 	return
-	// }
+	_, err := common_handlers.GetUserIDFromSession(ctx)
+	if err != nil {
+		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
 
 	offsetStr := ctx.Query("offset")
 	limitStr := ctx.Query("limit")

@@ -108,37 +108,62 @@ en cada uno los controladores, servicios y repositorios se ponen en sus correspo
 ```bash
 .
 ├── cmd
-│   └── migrate
+│   └── main.go
 ├── config
-├── docs
+│   ├── config.go
+│   └── database.go
 ├── internal
 │   ├── authentication-service
 │   │   ├── acceptance-tests
-│   │   │   └── features
 │   │   ├── controllers
+│   │   ├── dtos
+│   │   ├── models
 │   │   ├── repositories
 │   │   ├── router
 │   │   ├── services
 │   │   └── utils
-│   │       └── logger
-│   ├── conversion-service
+│   ├── common_handlers
+│   │   ├── context_getters.go
+│   │   ├── not_found.go
+│   │   └── success_handlers.go
+│   ├── dtos
+│   │   └── envelopes.go
+│   ├── errors
+│   │   ├── database_error.go
+│   │   ├── http_error.go
+│   │   └── session_error.go
+│   ├── middleware
+│   │   ├── error_handler.go
+│   │   ├── jwt_session.go
+│   │   └── jwt_session_test.go
+│   ├── players-service
+│   │   ├── acceptance-tests
 │   │   ├── controllers
+│   │   ├── dtos
+│   │   ├── errors
+│   │   ├── models
 │   │   ├── repositories
 │   │   ├── router
-│   │   ├── services
-│   │   └── utils
-│   │       └── logger
+│   │   └── services
 │   ├── router
+│   │   ├── router.go
+│   │   └── swagger_routes.go
 │   ├── server
+│   │   └── server.go
 │   ├── utils
-│   │   └── logger
-│   └── world-browser-service
+│   │   ├── input_validation
+│   │   ├── logger
+│   │   ├── seed_database
+│   │   └── session
+│   └── world-service
+│       ├── acceptance-tests
 │       ├── controllers
+│       ├── dtos
+│       ├── errors
+│       ├── models
 │       ├── repositories
 │       ├── router
-│       ├── services
-│       └── utils
-│           └── logger
+│       └── services
 └── migrations
 ```
 

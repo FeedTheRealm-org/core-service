@@ -10,8 +10,13 @@ import (
 	"github.com/cucumber/godog"
 )
 
-/* LOGIN */
+// sessionContext holds auth info used across steps
+type sessionContext struct {
+	id    string
+	token string
+}
 
+/* LOGIN helpers and types */
 type loginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -24,152 +29,188 @@ type loginResponse struct {
 	} `json:"data"`
 }
 
-/* CHARACTER_INFO */
-
-type CharacterInfoRequest struct {
-	CharacterName string `json:"character_name"`
-	CharacterBio  string `json:"character_bio"`
+type world struct {
+	ID        string `json:"id"`
+	UserID    string `json:"user_id"`
+	Name      string `json:"name"`
+	Data      string `json:"data"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+type worldResponse struct {
+	Data world `json:"data"`
 }
 
-type CharacterInfoResponse struct {
+type worldsListResponse struct {
 	Data struct {
-		CharacterName string `json:"character_name"`
-		CharacterBio  string `json:"character_bio"`
+		Worlds []world `json:"worlds"`
+		Amount int     `json:"amount"`
+		Limit  int     `json:"limit"`
+		Offset int     `json:"offset"`
 	} `json:"data"`
-}
-
-/* SESSION */
-
-type sessionContext struct {
-	id       string
-	token    string
-	charInfo CharacterInfoRequest
 }
 
 var baseURL = "http://0.0.0.0:8000"
 var ctx sessionContext
+var response worldResponse
+var errorResponse error
 
 func iHaveLoggedInWithEmailAndPassword(email, password string) error {
 	id, token, err := login(email, password)
 	if err != nil {
 		return err
 	}
-
 	ctx.token = token
 	ctx.id = id
-
 	return nil
 }
 
-func iChangeMyCharacterNameTo(name string) error {
+/* WORLD steps */
+func iPublishAWorld(name string) error {
 	if ctx.token == "" {
 		return fmt.Errorf("no logged in user")
 	}
 
-	characterReq := CharacterInfoRequest{
-		CharacterName: name,
-		CharacterBio:  ctx.charInfo.CharacterBio, // keep existing bio
+	worldReq := map[string]any{
+		"file_name": name,
+		"data": map[string]any{
+			"worldName": name,
+		},
 	}
-	_, body, err := httpWithBody("PUT", baseURL+"/player/character", characterReq, ctx.token)
+
+	status, body, err := httpWithBody("POST", baseURL+"/world", worldReq, ctx.token)
 	if err != nil {
-		return err
+		errorResponse = err
+		return nil
 	}
-
-	var resp CharacterInfoResponse
-	json.Unmarshal(body, &resp)
-
-	if resp.Data.CharacterName != name {
-		return fmt.Errorf("failed to update name, body=%s", string(body))
+	if status != http.StatusCreated {
+		return nil
 	}
-
-	ctx.charInfo.CharacterName = name
-
+	if len(body) > 0 {
+		if err := json.Unmarshal(body, &response); err != nil {
+			return nil
+		}
+	}
 	return nil
 }
 
-func myCharacterNameShouldBeUpdated() error {
-	_, body, err := httpGet(baseURL+"/player/character", ctx.token)
+func theWorldShouldBePublished() error {
+	if response.Data.ID == "" {
+		return fmt.Errorf("world ID is empty — world was not published correctly")
+	}
+
+	world, err := findWorldById(response.Data.ID)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to retrieve world by ID: %w", err)
 	}
-	res := &CharacterInfoResponse{}
-	err = json.Unmarshal(body, res)
+	if world == nil {
+		return fmt.Errorf("world not found by ID %s", response.Data.ID)
+	}
+
+	if world.Data.ID != response.Data.ID {
+		return fmt.Errorf("ID mismatch: expected %s, got %s",
+			response.Data.ID, world.Data.ID)
+	}
+	if world.Data.Name != response.Data.Name {
+		return fmt.Errorf("name mismatch: expected %s, got %s",
+			response.Data.Name, world.Data.Name)
+	}
+	if world.Data.UserID != response.Data.UserID {
+		return fmt.Errorf("user_id mismatch: expected %s, got %s",
+			response.Data.UserID, world.Data.UserID)
+	}
+	if world.Data.Data != response.Data.Data {
+		return fmt.Errorf("data mismatch: expected %s, got %s",
+			response.Data.Data, world.Data.Data)
+	}
+
+	return nil
+}
+
+func otherPlayersShouldSeeTheWorldInListings() error {
+	listResp, err := getAllWorlds(0, 10)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch worlds list: %w", err)
 	}
 
-	if res.Data.CharacterName != ctx.charInfo.CharacterName {
-		return fmt.Errorf("expected name %q, got %q",
-			ctx.charInfo.CharacterName, res.Data.CharacterName)
+	var found *world
+	for _, w := range listResp.Data.Worlds {
+		if w.ID == response.Data.ID {
+			found = &w
+			break
+		}
+	}
+
+	if found == nil {
+		return fmt.Errorf("expected world ID %s to appear in listing, but it was not found", response.Data.ID)
+	}
+
+	if found.UserID != response.Data.UserID {
+		return fmt.Errorf("user_id mismatch: expected %s, got %s", response.Data.UserID, found.UserID)
+	}
+
+	if found.Name != response.Data.Name {
+		return fmt.Errorf("name mismatch: expected %s, got %s", response.Data.Name, found.Name)
+	}
+
+	if found.Data != response.Data.Data {
+		return fmt.Errorf("data mismatch:\nexpected: %s\n     got: %s", response.Data.Data, found.Data)
+	}
+
+	return nil
+}
+
+func iShouldSeeAnErrorMessage(errorMessage string) error {
+
+	if errorResponse == nil {
+		return fmt.Errorf("expected an error but none occurred")
+	}
+
+	if errorResponse.Error() != errorMessage {
+		return fmt.Errorf("expected error message '%s', but got '%s'",
+			errorMessage, errorResponse.Error())
 	}
 	return nil
 }
 
-func otherPlayersShouldSeeTheUpdatedName() error {
-	_, token, err := login("test2@email.com", "Password123")
+/* ---------- Endpoint Helpers ---------- */
+func findWorldById(id string) (*worldResponse, error) {
+	status, body, err := httpGet(baseURL+"/world/"+id, ctx.token)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, body, err := httpGet(baseURL+"/player/character/"+ctx.id, token)
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("get world failed, status=%d, body=%s", status, body)
+	}
+
+	var resp worldResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
+}
+
+func getAllWorlds(offset, limit int) (*worldsListResponse, error) {
+	url := fmt.Sprintf("%s/world?offset=%d&limit=%d", baseURL, offset, limit)
+
+	status, body, err := httpGet(url, ctx.token)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	res := &CharacterInfoResponse{}
-	json.Unmarshal(body, res)
 
-	if res.Data.CharacterName != ctx.charInfo.CharacterName {
-		return fmt.Errorf("expected name %q, got %q",
-			ctx.charInfo.CharacterName, res.Data.CharacterName)
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("get worlds failed, status=%d, body=%s", status, body)
 	}
-	return nil
+
+	var resp worldsListResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
 }
-
-func iUpdateMyCharacterBioTo(bio string) error {
-	return nil
-}
-
-func myCharacterBioShouldBeUpdated() error {
-	return nil
-}
-
-func theUpdatedBioShouldBeVisibleToOtherPlayersLater() error {
-	return myCharacterBioShouldBeUpdated()
-}
-
-// length validation steps
-
-func iChangeMyCharacterNameToLessThanOrMoreThanChars(_ string, min, max int) error {
-	return nil
-}
-
-func iUpdateMyCharacterBioToATextLongerThanCharacters(limit int) error {
-	return nil
-}
-
-func iShouldSeeAnErrorMessage(msg string) error {
-	return nil
-}
-
-func InitializeScenarioForCharacter(sc *godog.ScenarioContext) {
-	sc.Step(`^I have logged in with email "([^"]*)" and password "([^"]*)"$`, iHaveLoggedInWithEmailAndPassword)
-
-	sc.Step(`^I change my character name to "([^"]*)"$`, iChangeMyCharacterNameTo)
-	sc.Step(`^my character name should be updated$`, myCharacterNameShouldBeUpdated)
-	sc.Step(`^other players should see the updated name$`, otherPlayersShouldSeeTheUpdatedName)
-
-	sc.Step(`^I update my character bio to "([^"]*)"$`, iUpdateMyCharacterBioTo)
-	sc.Step(`^my character bio should be updated$`, myCharacterBioShouldBeUpdated)
-	sc.Step(`^the updated bio should be visible to other players later$`, theUpdatedBioShouldBeVisibleToOtherPlayersLater)
-
-	sc.Step(`^I change my character name to "([^"]*)" # less than (\d+) or more than (\d+) chars$`, iChangeMyCharacterNameToLessThanOrMoreThanChars)
-	sc.Step(`^I should see an error message "([^"]*)"$`, iShouldSeeAnErrorMessage)
-
-	sc.Step(`^I update my character bio to a text longer than (\d+) characters$`, iUpdateMyCharacterBioToATextLongerThanCharacters)
-	sc.Step(`^I should see an error message "([^"]*)"$`, iShouldSeeAnErrorMessage)
-}
-
-/* HTTP UTILS */
 
 func login(email, password string) (string, string, error) {
 	loginReq := loginRequest{Email: email, Password: password}
@@ -181,22 +222,19 @@ func login(email, password string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-
 	body, _ := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
 		return "", "", fmt.Errorf("login failed, status=%d, body=%s", resp.StatusCode, string(body))
 	}
-
 	var loginResp loginResponse
-	err = json.Unmarshal(body, &loginResp)
-	if err != nil {
+	if err := json.Unmarshal(body, &loginResp); err != nil {
 		return "", "", err
 	}
-
 	return loginResp.Data.Id, loginResp.Data.AccessToken, nil
 }
+
+// --------- HTTP helpers reused by steps ----------
 
 func httpWithBody(method, url string, body any, auth string) (int, []byte, error) {
 	jsonValue, _ := json.Marshal(body)
@@ -226,4 +264,16 @@ func httpGet(url string, auth string) (int, []byte, error) {
 	defer resp.Body.Close()
 	respBytes, _ := io.ReadAll(resp.Body)
 	return resp.StatusCode, respBytes, nil
+}
+
+// -------- Scenario Initialization --------
+
+func InitializeScenarioForWorld(sc *godog.ScenarioContext) {
+	sc.Step(`^I have logged in with email "([^\\"]*)" and password "([^\\"]*)"$`, iHaveLoggedInWithEmailAndPassword)
+
+	sc.Step(`^I publish a world with name "([^\\"]*)"$`, iPublishAWorld)
+	sc.Step(`^the world should be published$`, theWorldShouldBePublished)
+	sc.Step(`^other players should see the world in the world listings$`, otherPlayersShouldSeeTheWorldInListings)
+	sc.Step(`^I should see an error message$`, iShouldSeeAnErrorMessage)
+
 }
