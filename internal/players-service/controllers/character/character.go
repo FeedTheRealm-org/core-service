@@ -33,7 +33,7 @@ func NewCharacterController(conf *config.Config, characterService character.Char
 // @Tags players-service
 // @Accept   json
 // @Produce  json
-// @Param   request body dtos.UpdateCharacterInfoRequest true "Character Info data"
+// @Param   request body dtos.PatchCharacterInfoRequest true "Character Info data"
 // @Success 200  {object}  dtos.CreateAccountResponseDTO "Updated correctly"
 // @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
