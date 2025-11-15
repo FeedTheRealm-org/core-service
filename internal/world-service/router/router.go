@@ -1,6 +1,8 @@
 package router
 
 import (
+	"os"
+
 	"github.com/FeedTheRealm-org/core-service/config"
 	world_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/world"
 	world_repo "github.com/FeedTheRealm-org/core-service/internal/world-service/repositories/world"
@@ -18,4 +20,7 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 	worldGroup.POST("", worldController.PublishWorld)
 	worldGroup.GET("", worldController.GetWorldsList)
 	worldGroup.GET(":id", worldController.GetWorld)
+	if os.Getenv("ALLOW_DB_RESET") == "true" {
+		worldGroup.DELETE("/reset-database", worldController.ResetDatabase)
+	}
 }

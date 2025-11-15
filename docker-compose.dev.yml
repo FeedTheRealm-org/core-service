@@ -19,6 +19,7 @@ services:
       - SESSION_TOKEN_DURATION=24h
       - BREVO_API_KEY=${BREVO_API_KEY}
       - EMAIL_SENDER_ADDRESS=${EMAIL_SENDER_ADDRESS}
+      - ALLOW_DB_RESET=true
     depends_on:
       dev_db:
         condition: service_healthy

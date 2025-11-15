@@ -2,6 +2,7 @@ package world
 
 import (
 	"errors"
+	"os"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	world_errors "github.com/FeedTheRealm-org/core-service/internal/world-service/errors"
@@ -47,4 +48,12 @@ func (r *worldRepository) GetWorldsList(offset int, limit int) ([]*models.WorldD
 	var worlds []*models.WorldData
 	err := r.db.Conn.Offset(offset).Limit(limit).Find(&worlds).Error
 	return worlds, err
+}
+
+func (r *worldRepository) ClearDatabase() error {
+	if os.Getenv("ALLOW_DB_RESET") != "true" {
+		return errors.New("forbidden: database reset not allowed")
+	}
+	err := r.db.Conn.Exec("DELETE FROM world_data").Error
+	return err
 }

@@ -313,4 +313,16 @@ paths:
       summary: GetWorld
       tags:
       - world-service
+  /world/reset-database:
+    delete:
+      consumes:
+      - application/json
+      description: Clears all data in the database, this is only meant for testing
+        and development environments
+      produces:
+      - application/json
+      responses: {}
+      summary: ResetDatabase
+      tags:
+      - world-service
 swagger: "2.0"

@@ -269,6 +269,22 @@ const docTemplate = `{
                 }
             }
         },
+        "/world/reset-database": {
+            "delete": {
+                "description": "Clears all data in the database, this is only meant for testing and development environments",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "ResetDatabase",
+                "responses": {}
+            }
+        },
         "/world/{id}": {
             "get": {
                 "description": "Retrieves the name and data of the session player world",

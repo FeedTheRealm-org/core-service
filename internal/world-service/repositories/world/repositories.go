@@ -15,4 +15,6 @@ type WorldRepository interface {
 
 	// GetWorldsList retrieves a paginated list of worlds.
 	GetWorldsList(offset int, limit int) ([]*models.WorldData, error)
+
+	ClearDatabase() error
 }

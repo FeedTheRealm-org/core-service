@@ -213,3 +213,20 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
 }
+
+// @Summary ResetDatabase
+// @Description Clears all data in the database, this is only meant for testing and development environments
+// @Tags world-service
+// @Accept   json
+// @Produce  json
+// @Router /world/reset-database [delete]
+func (c *worldController) ResetDatabase(ctx *gin.Context) {
+
+	err := c.worldService.ClearDatabase()
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, "Successfully reset database")
+}

@@ -12,4 +12,7 @@ type WorldController interface {
 
 	// GetWorldsList retrieves a paginated list of worlds.
 	GetWorldsList(c *gin.Context)
+
+	// ResetDatabase clears all data in the database.
+	ResetDatabase(c *gin.Context)
 }
