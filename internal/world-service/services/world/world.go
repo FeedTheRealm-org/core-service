@@ -20,7 +20,7 @@ func NewWorldService(conf *config.Config, worldRepository world.WorldRepository)
 	}
 }
 
-func (cs *worldService) PublishWorld(newWorldData *models.WorldData) error {
+func (cs *worldService) PublishWorld(newWorldData *models.WorldData) (*models.WorldData, error) {
 	return cs.worldRepository.StoreWorldData(newWorldData)
 }
 

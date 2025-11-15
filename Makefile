@@ -40,3 +40,7 @@ exec-test: # Build and run test containers, execute tests, and clean up
 	docker compose -f docker-compose.test.yml exec -T app sh run_tests.sh
 	docker compose -f docker-compose.test.yml down -v
 .PHONY: exec-test
+
+swagger-update:
+	swag init -g cmd/main.go -o ./swagger
+.PHONY: swagger-update

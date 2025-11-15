@@ -8,7 +8,7 @@ import (
 // WorldRepository defines the interface for world-related database operations.
 type WorldRepository interface {
 	// StoreWorldData handles the storing of world information.
-	StoreWorldData(newWorldData *models.WorldData) error
+	StoreWorldData(newWorldData *models.WorldData) (*models.WorldData, error)
 
 	// GetWorldData retrieves information for a specific world.
 	GetWorldData(worldID uuid.UUID) (*models.WorldData, error)

@@ -8,7 +8,7 @@ import (
 // WorldService defines the interface for character-related operations.
 type WorldService interface {
 	// PublishWorld handles the publishing of world information.
-	PublishWorld(newWorldData *models.WorldData) error
+	PublishWorld(newWorldData *models.WorldData) (*models.WorldData, error)
 
 	// GetWorldData retrieves information for a specific world.
 	GetWorld(worldID uuid.UUID) (*models.WorldData, error)

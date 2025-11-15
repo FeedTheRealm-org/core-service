@@ -1,6 +1,7 @@
 package world
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -53,23 +54,27 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 		return
 	}
 
-	if len(req.Name) < 3 || len(req.Name) > 24 {
+	if len(req.FileName) < 3 || len(req.FileName) > 24 {
 		_ = ctx.Error(errors.NewBadRequestError("world name must be between 3 and 24 characters"))
 		return
 	}
 
-	if input_validation.ValidateInvalidCharacters(req.Name) || input_validation.HasSpaces(req.Name) {
+	if input_validation.ValidateInvalidCharacters(req.FileName) || input_validation.HasSpaces(req.FileName) {
 		_ = ctx.Error(errors.NewBadRequestError("world name contains invalid special characters"))
 		return
 	}
 
+	bytes, _ := json.Marshal(req.Data)
+
 	worldData := &models.WorldData{
-		// UserId: userId,
-		Name: req.Name,
-		Data: datatypes.JSON(req.Data),
+		UserId: uuid.New(), // this is a temp for testing purposes
+		Name:   req.FileName,
+		Data:   datatypes.JSON(bytes),
 	}
 
-	if err := c.worldService.PublishWorld(worldData); err != nil {
+	createdWorld, err := c.worldService.PublishWorld(worldData)
+
+	if err != nil {
 		if _, ok := err.(*world_errors.WorldNameTaken); ok {
 			_ = ctx.Error(errors.NewConflictError("world name is already taken"))
 			return
@@ -78,11 +83,15 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 		return
 	}
 
-	res := &dtos.WorldPublishResponse{
-		Response: "World published successfully",
+	response := &dtos.WorldResponse{
+		UserId:    createdWorld.UserId.String(),
+		Name:      createdWorld.Name,
+		Data:      string(createdWorld.Data),
+		CreatedAt: createdWorld.CreatedAt,
+		UpdatedAt: createdWorld.UpdatedAt,
 	}
 
-	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
+	common_handlers.HandleSuccessResponse(ctx, http.StatusCreated, response)
 }
 
 // @Summary GetWorld

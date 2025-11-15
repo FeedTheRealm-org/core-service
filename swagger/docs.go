@@ -380,10 +380,8 @@ const docTemplate = `{
         "dtos.WorldRequest": {
             "type": "object",
             "properties": {
-                "data": {
-                    "type": "string"
-                },
-                "name": {
+                "data": {},
+                "file_name": {
                     "type": "string"
                 }
             }

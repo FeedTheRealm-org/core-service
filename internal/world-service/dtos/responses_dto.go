@@ -13,10 +13,6 @@ type WorldResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type WorldPublishResponse struct {
-	Response string `json:"response"`
-}
-
 type WorldsListResponse struct {
 	Worlds []WorldResponse `json:"worlds"`
 	Total  int             `json:"amount"`

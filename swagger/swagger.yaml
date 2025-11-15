@@ -79,9 +79,8 @@ definitions:
     type: object
   dtos.WorldRequest:
     properties:
-      data:
-        type: string
-      name:
+      data: {}
+      file_name:
         type: string
     type: object
   dtos.WorldResponse:

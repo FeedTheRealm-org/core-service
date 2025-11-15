@@ -24,8 +24,9 @@ func NewWorldRepository(conf *config.Config, db *config.DB) WorldRepository {
 }
 
 // StoreWorldData stores new world data in the database.
-func (r *worldRepository) StoreWorldData(newWorldData *models.WorldData) error {
-	return r.db.Conn.Save(newWorldData).Error
+func (r *worldRepository) StoreWorldData(newWorldData *models.WorldData) (*models.WorldData, error) {
+	err := r.db.Conn.Create(newWorldData).Error
+	return newWorldData, err
 }
 
 // GetWorldData retrieves information for a specific world by ID.
