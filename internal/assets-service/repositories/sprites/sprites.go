@@ -13,7 +13,7 @@ type spritesRepository struct {
 	db   *config.DB
 }
 
-// NewSpritesRepository creates a new instance of CharacteRepository.
+// NewSpritesRepository creates a new instance of SpritesRepository.
 func NewSpritesRepository(conf *config.Config, db *config.DB) SpritesRepository {
 	return &spritesRepository{
 		conf: conf,

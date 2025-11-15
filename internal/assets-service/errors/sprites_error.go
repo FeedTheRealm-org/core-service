@@ -30,7 +30,7 @@ func NewCategoryNotFound(details string) *CategoryNotFound {
 	}
 }
 
-// CategoryConflict is returned when a requested category cannot be found.
+// CategoryConflict is returned in conflict scenarios, such as when attempting to create a category that already exists.
 type CategoryConflict struct {
 	details string
 }

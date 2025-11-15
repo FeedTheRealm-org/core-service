@@ -20,7 +20,7 @@ type spritesController struct {
 	spritesService sprites.SpritesService
 }
 
-// NewSpritesController creates a new instance of CharacterController.
+// NewSpritesController creates a new instance of SpritesController.
 func NewSpritesController(conf *config.Config, spritesService sprites.SpritesService) SpritesController {
 	return &spritesController{
 		conf:           conf,
@@ -217,7 +217,7 @@ func (sc *spritesController) UploadSpriteData(c *gin.Context) {
 	}
 
 	if reqFile.Size > sc.conf.Assets.MaxUploadSizeBytes {
-		_ = c.Error(errors.NewBadRequestError("file size exceeds 20MB limit"))
+		_ = c.Error(errors.NewBadRequestError("file size exceeds the limit"))
 		return
 	}
 

@@ -399,7 +399,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated correctly",
                         "schema": {
-                            "$ref": "#/definitions/dtos.CreateAccountResponseDTO"
+                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
                         }
                     },
                     "400": {
