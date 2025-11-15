@@ -366,7 +366,7 @@ paths:
       summary: GetCharacterInfo
       tags:
       - players-service
-    put:
+    patch:
       consumes:
       - application/json
       description: Updates the name and bio of the session player character

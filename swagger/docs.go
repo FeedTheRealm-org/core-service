@@ -372,7 +372,7 @@ const docTemplate = `{
                     }
                 }
             },
-            "put": {
+            "patch": {
                 "description": "Updates the name and bio of the session player character",
                 "consumes": [
                     "application/json"

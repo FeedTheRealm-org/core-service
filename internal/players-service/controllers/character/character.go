@@ -37,7 +37,7 @@ func NewCharacterController(conf *config.Config, characterService character.Char
 // @Success 200  {object}  dtos.CreateAccountResponseDTO "Updated correctly"
 // @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /players/character [put]
+// @Router /players/character [patch]
 func (c *characterController) PatchCharacterInfo(ctx *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {
