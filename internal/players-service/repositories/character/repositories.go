@@ -16,6 +16,6 @@ type CharacterRepository interface {
 	// UpdateCategorySprites updates the category sprites for a user.
 	UpdateCategorySprites(newCategorySprite []models.CategorySprite) error
 
-	// GetCatergorySprites retrieves the category sprites for a user.
-	GetCatergorySprites(userId uuid.UUID) ([]models.CategorySprite, error)
+	// GetCategorySprites retrieves the category sprites for a user.
+	GetCategorySprites(userId uuid.UUID) ([]models.CategorySprite, error)
 }

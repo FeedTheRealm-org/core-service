@@ -38,7 +38,7 @@ func (cs *characterService) GetCharacterInfo(userId uuid.UUID) (*models.Characte
 	if err != nil {
 		return nil, nil, err
 	}
-	categorySprites, err := cs.characterRepository.GetCatergorySprites(userId)
+	categorySprites, err := cs.characterRepository.GetCategorySprites(userId)
 	if err != nil {
 		return nil, nil, err
 	}

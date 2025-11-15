@@ -50,7 +50,7 @@ func (cr *characterRepository) UpdateCategorySprites(newCategorySprites []models
 	}).Create(&newCategorySprites).Error
 }
 
-func (cr *characterRepository) GetCatergorySprites(userId uuid.UUID) ([]models.CategorySprite, error) {
+func (cr *characterRepository) GetCategorySprites(userId uuid.UUID) ([]models.CategorySprite, error) {
 	var categorySprites []models.CategorySprite
 	if err := cr.db.Conn.Where("user_id = ?", userId).Find(&categorySprites).Error; err != nil {
 		return nil, err
