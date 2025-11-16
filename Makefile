@@ -48,3 +48,11 @@ exec-test:
 swag init:
 	swag init -g cmd/main.go -o ./swagger
 .PHONY: swag init
+
+NAME ?= migration
+TIMESTAMP := $(shell date +"%Y%m%d%H%M%S")
+
+migrate-create: # Generate new migration (golang-migrate format)
+	@touch migrations/$(TIMESTAMP)_$(NAME).up.sql
+	@touch migrations/$(TIMESTAMP)_$(NAME).down.sql
+.PHONY: migrate-create
