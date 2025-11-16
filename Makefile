@@ -31,12 +31,20 @@ docker-up-dev: docker-build-dev # Start development containers
 .PHONY: docker-up-dev
 
 docker-exec-app-dev: docker-up-dev # Execute a bash shell in the development app container
+	swag init -g cmd/main.go -o ./swagger
 	docker compose -f docker-compose.dev.yml exec -it app /bin/bash
 .PHONY: docker-exec-app-dev
 
-exec-test: # Build and run test containers, execute tests, and clean up
+exec-test:
+	docker compose -f docker-compose.test.yml down -v --remove-orphans
 	docker compose -f docker-compose.test.yml build
-	docker compose -f docker-compose.test.yml up -d
+	docker compose -f docker-compose.test.yml up -d --remove-orphans
 	docker compose -f docker-compose.test.yml exec -T app sh run_tests.sh
-	docker compose -f docker-compose.test.yml down -v
+	docker compose -f docker-compose.test.yml down -v --remove-orphans
 .PHONY: exec-test
+
+
+
+swag init:
+	swag init -g cmd/main.go -o ./swagger
+.PHONY: swag init

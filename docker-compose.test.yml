@@ -16,6 +16,7 @@ services:
       - DB_SHOULD_MIGRATE=true
       - SESSION_TOKEN_SECRET_KEY=test_secret_key
       - SESSION_TOKEN_DURATION=1h
+      - ALLOW_DB_RESET=true
     depends_on:
       test_db:
         condition: service_healthy

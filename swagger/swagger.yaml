@@ -120,6 +120,40 @@ definitions:
       verified:
         type: boolean
     type: object
+  dtos.WorldRequest:
+    properties:
+      data: {}
+      file_name:
+        type: string
+    type: object
+  dtos.WorldResponse:
+    properties:
+      created_at:
+        type: string
+      data:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  dtos.WorldsListResponse:
+    properties:
+      amount:
+        type: integer
+      limit:
+        type: integer
+      offset:
+        type: integer
+      worlds:
+        items:
+          $ref: '#/definitions/dtos.WorldResponse'
+        type: array
+    type: object
 info:
   contact: {}
   description: |-
@@ -395,4 +429,100 @@ paths:
       summary: PatchCharacterInfo
       tags:
       - players-service
+  /world:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of worlds
+      parameters:
+      - description: Pagination offset (starting index)
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: Pagination limit (max 100)
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Worlds list retrieved correctly
+          schema:
+            $ref: '#/definitions/dtos.WorldsListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetWorldsList
+      tags:
+      - world-service
+    post:
+      consumes:
+      - application/json
+      description: Publishes a new world with the provided information
+      parameters:
+      - description: World Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.WorldRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Published correctly
+          schema:
+            $ref: '#/definitions/dtos.WorldResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: PublishWorld
+      tags:
+      - world-service
+  /world/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the name and data of the session player world
+      parameters:
+      - description: World ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: World info retrieved correctly
+          schema:
+            $ref: '#/definitions/dtos.WorldResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetWorld
+      tags:
+      - world-service
+  /world/reset-database:
+    delete:
+      consumes:
+      - application/json
+      description: Clears all data in the database, this is only meant for testing
+        and development environments
+      produces:
+      - application/json
+      responses: {}
+      summary: ResetDatabase
+      tags:
+      - world-service
 swagger: "2.0"

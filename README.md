@@ -69,6 +69,9 @@ make docker-exec-app-dev    # Run migrations and open bash shell in app containe
 
 # Testing commands
 make exec-test              # Build, run, and execute tests in Docker containers
+
+# Swagger commands
+make swag init              # Generate Swagger documentation
 ```
 
 ## Database Migrations
@@ -90,10 +93,9 @@ go run cmd/migrate/main.go version
 
 - `DB_USER` - Database username
 - `DB_PASSWORD` - Database password
-- `DB_HOST`     - Database host
+- `DB_HOST` - Database host
 - `DB_PORT` - Database port (default: 5432)
 - `DB_NAME` - Database name
-
 
 ## Structure
 
@@ -106,36 +108,71 @@ en cada uno los controladores, servicios y repositorios se ponen en sus correspo
 ```bash
 .
 ├── cmd
-│   └── migrate
+│   └── main.go
 ├── config
-├── docs
+│   ├── config.go
+│   └── database.go
 ├── internal
 │   ├── authentication-service
 │   │   ├── acceptance-tests
-│   │   │   └── features
 │   │   ├── controllers
+│   │   ├── dtos
+│   │   ├── models
 │   │   ├── repositories
 │   │   ├── router
 │   │   ├── services
 │   │   └── utils
-│   │       └── logger
-│   ├── conversion-service
+│   ├── common_handlers
+│   │   ├── context_getters.go
+│   │   ├── not_found.go
+│   │   └── success_handlers.go
+│   ├── dtos
+│   │   └── envelopes.go
+│   ├── errors
+│   │   ├── database_error.go
+│   │   ├── http_error.go
+│   │   └── session_error.go
+│   ├── middleware
+│   │   ├── error_handler.go
+│   │   ├── jwt_session.go
+│   │   └── jwt_session_test.go
+│   ├── players-service
+│   │   ├── acceptance-tests
 │   │   ├── controllers
+│   │   ├── dtos
+│   │   ├── errors
+│   │   ├── models
 │   │   ├── repositories
 │   │   ├── router
-│   │   ├── services
-│   │   └── utils
-│   │       └── logger
+│   │   └── services
 │   ├── router
+│   │   ├── router.go
+│   │   └── swagger_routes.go
 │   ├── server
+│   │   └── server.go
 │   ├── utils
-│   │   └── logger
-│   └── world-browser-service
+│   │   ├── input_validation
+│   │   ├── logger
+│   │   ├── seed_database
+│   │   └── session
+│   └── world-service
+│       ├── acceptance-tests
 │       ├── controllers
+│       ├── dtos
+│       ├── errors
+│       ├── models
 │       ├── repositories
 │       ├── router
-│       ├── services
-│       └── utils
-│           └── logger
+│       └── services
 └── migrations
+```
+
+## Swagger Documentation
+
+Endpoint documentation was made with `Swagger` <br>
+Once staring up the project, go to this link to test out the endpoints:
+
+```sh
+# In this case, if locally starting the project, this is the url
+http://localhost:8000/swagger/index.html
 ```
