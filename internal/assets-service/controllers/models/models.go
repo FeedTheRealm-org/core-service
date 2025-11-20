@@ -31,6 +31,19 @@ func NewModelsController(conf *config.Config, modelService service.ModelsService
 	}
 }
 
+// DownloadModelsByWorldId downloads all models and materials for a specific world as a ZIP file
+// @Summary Download world models
+// @Description Downloads all 3D models and their materials for a specific world as a ZIP archive
+// @Tags Models
+// @Accept json
+// @Produce application/zip
+// @Param world_id path string true "World ID" format(uuid)
+// @Success 200 {file} binary "ZIP file containing all models and materials"
+// @Failure 400 {object} map[string]interface{} "Bad request - invalid world_id format"
+// @Failure 401 {object} map[string]interface{} "Unauthorized - invalid or missing JWT token"
+// @Failure 404 {object} map[string]interface{} "Not found - no models found for this world"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /assets/models/{world_id} [get]
 func (mc *modelsController) DownloadModelsByWorldId(c *gin.Context) {
 	worldIDStr := c.Param("world_id") // Fixed parameter name
 	if worldIDStr == "" {
@@ -113,6 +126,26 @@ func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
 	return nil
 }
 
+// UploadModelsByWorldId uploads multiple 3D models and materials to a specific world
+// @Summary Upload world models
+// @Description Upload multiple 3D models with their materials to a specific world. Supports FBX, OBJ model files and various material formats.
+// @Tags Models
+// @Accept multipart/form-data
+// @Produce json
+// @Param world_id formData string true "World ID" format(uuid)
+// @Param models[0].name formData string true "Name of the first model"
+// @Param models[0].model_id formData string true "Unique ID for the first model" format(uuid)
+// @Param models[0].model_file formData file true "3D model file (FBX, OBJ, etc.)"
+// @Param models[0].material_file formData file true "Material file (MAT, MTL, etc.)"
+// @Param models[1].name formData string false "Name of the second model"
+// @Param models[1].model_id formData string false "Unique ID for the second model" format(uuid)
+// @Param models[1].model_file formData file false "3D model file for second model"
+// @Param models[1].material_file formData file false "Material file for second model"
+// @Success 201 {object} dtos.ModelsPublishListResponse "Successfully uploaded models"
+// @Failure 400 {object} map[string]interface{} "Bad request - missing required fields or invalid format"
+// @Failure 401 {object} map[string]interface{} "Unauthorized - invalid or missing JWT token"
+// @Failure 500 {object} map[string]interface{} "Internal server error - failed to save models"
+// @Router /assets/models [post]
 func (mc *modelsController) UploadModelsByWorldId(c *gin.Context) {
 
 	_, err := common_handlers.GetUserIDFromSession(c)
