@@ -29,7 +29,7 @@ def get_token(email, password):
 
 def generate_random_name():
     """Generate a random world name with 6-24 characters (alphanumeric, no spaces)"""
-    length = random.randint(6, 24)
+    length = random.randint(7, 24)
     return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
 
