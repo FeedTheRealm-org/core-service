@@ -6,8 +6,7 @@ CREATE TABLE IF NOT EXISTS models (
   world_id UUID NOT NULL,
   name TEXT NOT NULL,
   model_url TEXT NOT NULL,
-  prefab_url TEXT,
-  metadata_url TEXT,
+  material_url TEXT NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
