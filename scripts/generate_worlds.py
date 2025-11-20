@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import sys
 import time
+import random
+import string
 import requests
 
 BASE_URL = "http://localhost:8000"
@@ -25,6 +27,12 @@ def get_token(email, password):
         sys.exit(1)
 
 
+def generate_random_name():
+    """Generate a random world name with 6-24 characters (alphanumeric, no spaces)"""
+    length = random.randint(6, 24)
+    return "".join(random.choices(string.ascii_letters + string.digits, k=length))
+
+
 def post_worlds(token, count):
     headers = {
         "Accept": "application/json",
@@ -33,7 +41,7 @@ def post_worlds(token, count):
     }
 
     for i in range(0, count):
-        world_name = f"world_{i}"
+        world_name = generate_random_name()
         payload = {
             "data": {
                 "worldName": world_name,

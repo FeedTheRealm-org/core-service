@@ -445,6 +445,10 @@ paths:
         name: limit
         required: true
         type: integer
+      - description: Filter worlds by name (case-insensitive partial match)
+        in: query
+        name: filter
+        type: string
       produces:
       - application/json
       responses:

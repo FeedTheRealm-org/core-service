@@ -44,9 +44,15 @@ func (r *worldRepository) GetWorldData(worldID uuid.UUID) (*models.WorldData, er
 }
 
 // GetWorldsList retrieves a paginated list of worlds.
-func (r *worldRepository) GetWorldsList(offset int, limit int) ([]*models.WorldData, error) {
+func (r *worldRepository) GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error) {
 	var worlds []*models.WorldData
-	err := r.db.Conn.Offset(offset).Limit(limit).Find(&worlds).Error
+	query := r.db.Conn.Offset(offset).Limit(limit)
+
+	if filter != "" {
+		query = query.Where("name ILIKE ?", "%"+filter+"%")
+	}
+
+	err := query.Find(&worlds).Error
 	return worlds, err
 }
 

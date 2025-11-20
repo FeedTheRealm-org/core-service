@@ -444,6 +444,12 @@ const docTemplate = `{
                         "name": "limit",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter worlds by name (case-insensitive partial match)",
+                        "name": "filter",
+                        "in": "query"
                     }
                 ],
                 "responses": {
