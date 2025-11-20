@@ -1,8 +1,12 @@
 package sprites
 
 import (
+	"archive/zip"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
@@ -27,61 +31,140 @@ func NewModelsController(conf *config.Config, modelService service.ModelsService
 	}
 }
 
-func (sc *modelsController) DownloadModelsByWorldId(c *gin.Context) {
-	// TODO: implement!!
-}
-func (mc *modelsController) UploadModelsByWorldId(ctx *gin.Context) {
-
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
-	worldIDStr := ctx.PostForm("world_id")
+func (mc *modelsController) DownloadModelsByWorldId(c *gin.Context) {
+	worldIDStr := c.Param("world_id") // Fixed parameter name
 	if worldIDStr == "" {
-		_ = ctx.Error(errors.NewNotFoundError("world_id is required"))
+		_ = c.Error(errors.NewBadRequestError("world_id is required"))
 		return
 	}
 
 	worldID, err := uuid.Parse(worldIDStr)
 	if err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("invalid world_id format"))
+		_ = c.Error(errors.NewBadRequestError("invalid world_id format"))
 		return
 	}
 
-	form := ctx.Request.MultipartForm
+	worldModels, err := mc.modelService.GetModelsByWorld(worldID)
+	if err != nil {
+		_ = c.Error(errors.NewInternalServerError("failed to get world models: " + err.Error()))
+		return
+	}
+
+	if len(worldModels) == 0 {
+		_ = c.Error(errors.NewNotFoundError("no models found for world with id: " + worldID.String()))
+		return
+	}
+	zipFilename := fmt.Sprintf("world-%s-models.zip", worldID.String())
+	c.Header("Content-Type", "application/zip")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", zipFilename))
+	zipWriter := zip.NewWriter(c.Writer)
+	defer zipWriter.Close()
+
+	for _, model := range worldModels {
+		modelZipPath := fmt.Sprintf("%s/%s", model.Name, filepath.Base(model.ModelURL))
+		if err := addFileToZip(zipWriter, model.ModelURL, modelZipPath); err != nil {
+			_ = c.Error(errors.NewInternalServerError("failed to add model file to zip: " + err.Error()))
+			return
+		}
+		materialZipPath := fmt.Sprintf("%s/%s", model.Name, filepath.Base(model.MaterialURL))
+		if err := addFileToZip(zipWriter, model.MaterialURL, materialZipPath); err != nil {
+			_ = c.Error(errors.NewInternalServerError("failed to add material file to zip: " + err.Error()))
+			return
+		}
+	}
+}
+
+// ------- Helper function for zip files -------
+func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open file %s: %w", filePath, err)
+	}
+	defer file.Close()
+
+	// Get file info
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to get file info: %w", err)
+	}
+
+	// Create ZIP file header
+	header, err := zip.FileInfoHeader(fileInfo)
+	if err != nil {
+		return fmt.Errorf("failed to create zip header: %w", err)
+	}
+
+	// Set the name of the file in the ZIP
+	header.Name = zipPath
+	header.Method = zip.Deflate
+
+	// Create writer for this file in the ZIP
+	writer, err := zipWriter.CreateHeader(header)
+	if err != nil {
+		return fmt.Errorf("failed to create zip writer: %w", err)
+	}
+
+	// Copy file content to ZIP
+	_, err = io.Copy(writer, file)
+	if err != nil {
+		return fmt.Errorf("failed to copy file content: %w", err)
+	}
+
+	return nil
+}
+
+func (mc *modelsController) UploadModelsByWorldId(c *gin.Context) {
+
+	_, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	worldIDStr := c.PostForm("world_id")
+	if worldIDStr == "" {
+		_ = c.Error(errors.NewNotFoundError("world_id is required"))
+		return
+	}
+
+	worldID, err := uuid.Parse(worldIDStr)
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid world_id format"))
+		return
+	}
+
+	form := c.Request.MultipartForm
 	if form == nil || len(form.File) == 0 {
-		_ = ctx.Error(errors.NewBadRequestError("no files uploaded"))
+		_ = c.Error(errors.NewBadRequestError("no files uploaded"))
 		return
 	}
 
 	modelsRequest := []models.Model{}
 
 	for i := 0; ; i++ {
-		name := ctx.PostForm(fmt.Sprintf("models[%d].name", i))
+		name := c.PostForm(fmt.Sprintf("models[%d].name", i))
 		if name == "" {
 			break
 		}
-		modelIDStr := ctx.PostForm(fmt.Sprintf("models[%d].model_id", i))
+		modelIDStr := c.PostForm(fmt.Sprintf("models[%d].model_id", i))
 		if modelIDStr == "" {
-			_ = ctx.Error(errors.NewBadRequestError(fmt.Sprintf("model_id is required for model %d", i)))
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("model_id is required for model %d", i)))
 			return
 		}
 
 		modelID, err := uuid.Parse(modelIDStr)
 		if err != nil {
-			_ = ctx.Error(errors.NewBadRequestError(fmt.Sprintf("invalid model_id format for model %d", i)))
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid model_id format for model %d", i)))
 			return
 		}
-		modelFile, err := ctx.FormFile(fmt.Sprintf("models[%d].model_file", i))
+		modelFile, err := c.FormFile(fmt.Sprintf("models[%d].model_file", i))
 		if err != nil {
-			_ = ctx.Error(errors.NewBadRequestError(fmt.Sprintf("model_file is required for model %d", i)))
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("model_file is required for model %d", i)))
 			return
 		}
-		materialFile, err := ctx.FormFile(fmt.Sprintf("models[%d].material_file", i))
+		materialFile, err := c.FormFile(fmt.Sprintf("models[%d].material_file", i))
 		if err != nil {
-			_ = ctx.Error(errors.NewBadRequestError(fmt.Sprintf("material_file is required for model %d", i)))
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("material_file is required for model %d", i)))
 			return
 		}
 		// Collect metadata and file headers
@@ -94,27 +177,27 @@ func (mc *modelsController) UploadModelsByWorldId(ctx *gin.Context) {
 	}
 
 	if len(modelsRequest) == 0 {
-		_ = ctx.Error(errors.NewBadRequestError("no models uploaded"))
+		_ = c.Error(errors.NewBadRequestError("no models uploaded"))
 		return
 	}
 
 	savedModels, err := mc.modelService.PublishModels(worldID, modelsRequest)
 	if err != nil {
-		_ = ctx.Error(errors.NewInternalServerError(err.Error()))
+		_ = c.Error(errors.NewInternalServerError(err.Error()))
 		return
 	}
 
-	modelResponses := make([]dtos.ModelResponse, len(savedModels))
+	modelResponses := make([]dtos.ModelPublishResponse, len(savedModels))
 	for i, model := range savedModels {
-		modelResponses[i] = dtos.ModelResponse{
+		modelResponses[i] = dtos.ModelPublishResponse{
 			ModelID: model.ModelID,
 			Name:    model.Name,
 		}
 	}
 
-	modelsListResponse := dtos.ModelsListResponse{
+	modelsListResponse := dtos.ModelsPublishListResponse{
 		WorldID: worldID,
 		List:    modelResponses,
 	}
-	common_handlers.HandleSuccessResponse(ctx, http.StatusCreated, modelsListResponse)
+	common_handlers.HandleSuccessResponse(c, http.StatusCreated, modelsListResponse)
 }
