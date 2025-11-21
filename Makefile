@@ -48,3 +48,8 @@ exec-test:
 swag init:
 	swag init -g cmd/main.go -o ./swagger
 .PHONY: swag init
+
+
+migrate-create:
+	migrate create -ext sql -dir migrations $(name)
+.PHONY: migrate-create

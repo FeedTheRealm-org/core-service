@@ -1,0 +1,464 @@
+{
+	"info": {
+		"_postman_id": "d0be715a-3b44-4ef1-814c-912a65ef7908",
+		"name": "FTR - Core Services",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "31566607"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"protocolProfileBehavior": {
+						"followRedirects": true,
+						"disableUrlEncoding": false,
+						"disableCookies": false
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "User-Agent",
+								"value": "insomnia/12.0.0"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"santisevitz@hotmail.com\",\n  \"password\": \"santisevitz@hotmail.comA1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8000/auth/login",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Signup",
+					"protocolProfileBehavior": {
+						"followRedirects": true,
+						"disableUrlEncoding": false,
+						"disableCookies": false
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "User-Agent",
+								"value": "insomnia/12.0.0"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"santisevitz@hotmail.com\",\n  \"password\": \"santisevitz@hotmail.comA1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8000/auth/signup",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"auth",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify",
+					"protocolProfileBehavior": {
+						"followRedirects": true,
+						"disableUrlEncoding": false,
+						"disableCookies": false
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "User-Agent",
+								"value": "insomnia/12.0.0"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"671215\",\n  \"email\": \"santisevitz@hotmail.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8000/auth/verify",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"auth",
+								"verify"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Players/Character",
+			"item": [
+				{
+					"name": "GetCharacterInfo",
+					"protocolProfileBehavior": {
+						"followRedirects": true,
+						"disableUrlEncoding": false,
+						"disableCookies": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "User-Agent",
+								"value": "insomnia/12.0.0"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjMyNDkxNzEsImlzcyI6MTc2MzE2Mjc3MSwidXNlcklEIjoiMzljNDcwZDQtYWZmZC00NmI2LWFhZjgtODQxMTZmZmZhYWY3In0.Kp35BwbB1XAZf834Fj_fGiXhQwIeLACm6zPA3AZ8nvE"
+							}
+						],
+						"url": {
+							"raw": "localhost:8000/player/character",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"player",
+								"character"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Assets",
+			"item": [
+				{
+					"name": "Sprites",
+					"item": [
+						{
+							"name": "GetCategories",
+							"protocolProfileBehavior": {
+								"followRedirects": true,
+								"disableUrlEncoding": false,
+								"disableCookies": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "User-Agent",
+										"value": "insomnia/12.0.0"
+									}
+								],
+								"url": {
+									"raw": "localhost:8000/assets/sprites/categories",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"assets",
+										"sprites",
+										"categories"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetSpritesByCategory",
+							"protocolProfileBehavior": {
+								"followRedirects": true,
+								"disableUrlEncoding": false,
+								"disableCookies": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "User-Agent",
+										"value": "insomnia/12.0.0"
+									}
+								],
+								"url": {
+									"raw": "localhost:8000/assets/sprites/categories/de6e29ad-4cfd-49f5-9cb0-c306f23e6b74",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"assets",
+										"sprites",
+										"categories",
+										"de6e29ad-4cfd-49f5-9cb0-c306f23e6b74"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetSpriteData",
+							"protocolProfileBehavior": {
+								"followRedirects": true,
+								"disableUrlEncoding": false,
+								"disableCookies": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "User-Agent",
+										"value": "insomnia/12.0.0"
+									}
+								],
+								"url": {
+									"raw": "localhost:8000/assets/sprites/c3396495-bd59-4f42-ab86-c3313e2973ad",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"assets",
+										"sprites",
+										"c3396495-bd59-4f42-ab86-c3313e2973ad"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "UploadSprite",
+							"protocolProfileBehavior": {
+								"followRedirects": true,
+								"disableUrlEncoding": false,
+								"disableCookies": false
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjMzODUwMjcsImlzcyI6MTc2MzI5ODYyNywidXNlcklEIjoiZDc1OGZlZmMtNDc4OC00ZWQ3LTkzOTItNDcxNWI5ZTVmZDlhIn0.L4T1xhW-u-7EboEOLbLfqpK5-0ngxiOYimvBabBWiyg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "multipart/form-data"
+									},
+									{
+										"key": "User-Agent",
+										"value": "insomnia/12.0.0"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "sprite",
+											"type": "file",
+											"src": "/home/maxo/Desktop/feed_the_realm/client/Assets/SPUM/Resources/Addons/Legacy/0_Unit/0_Sprite/0_Hair/Hair_3.png"
+										},
+										{
+											"key": "category_id",
+											"value": "7bd0bc26-feba-4230-894d-bc97461b0e2f"
+										}
+									]
+								},
+								"url": {
+									"raw": "localhost:8000/assets/sprites",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"assets",
+										"sprites"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "AddCategory",
+							"protocolProfileBehavior": {
+								"followRedirects": true,
+								"disableUrlEncoding": false,
+								"disableCookies": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "User-Agent",
+										"value": "insomnia/12.0.0"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"category_name\": \"hair\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:8000/assets/sprites/categories",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"assets",
+										"sprites",
+										"categories"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Models",
+					"item": [
+						{
+							"name": "Upload 3D Models",
+							"protocolProfileBehavior": {
+								"followRedirects": true,
+								"disableUrlEncoding": false,
+								"disableCookies": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjM2OTE1OTgsImlzcyI6MTc2MzYwNTE5OCwidXNlcklEIjoiNTRmNjVkZTQtM2M5Yi00NTg2LTg1NzktMTVmM2NlYmJjN2RjIn0.il2F720meKkE5outueI14VjAzDl7zJncSdhV379HGHM"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "world_id",
+											"value": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
+											"type": "text"
+										},
+										{
+											"key": "models[0].model_id",
+											"value": "1a2b3c4d-5e6f-7890-abcd-ef1234567258",
+											"type": "text"
+										},
+										{
+											"key": "models[0].name",
+											"value": "Building",
+											"type": "text"
+										},
+										{
+											"key": "models[0].model_file",
+											"type": "file",
+											"src": "/home/sev/Desktop/Facultad/TPF/world-editor-client/Assets/RPGPP_LT/Materials/rpgpp_lt_cloud_a.mat"
+										},
+										{
+											"key": "models[0].material_file",
+											"type": "file",
+											"src": "/home/sev/Desktop/Facultad/TPF/world-editor-client/Assets/RPGPP_LT/Materials/rpgpp_lt_mat_a.mat"
+										},
+										{
+											"key": "models[1].model_id",
+											"value": "1a2b3c4d-5e6f-7890-abcd-ef1234567123",
+											"type": "text"
+										},
+										{
+											"key": "models[1].name",
+											"value": "Tree",
+											"type": "text"
+										},
+										{
+											"key": "models[1].model_file",
+											"type": "file",
+											"src": "/home/sev/Desktop/Facultad/TPF/world-editor-client/Assets/RPGPP_LT/Materials/rpgpp_lt_cloud_a.mat.meta"
+										},
+										{
+											"key": "models[1].material_file",
+											"type": "file",
+											"src": "/home/sev/Desktop/Facultad/TPF/world-editor-client/Assets/RPGPP_LT/Materials/rpgpp_lt_mat_a.mat"
+										}
+									]
+								},
+								"url": {
+									"raw": "localhost:8000/assets/models",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"assets",
+										"models"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	]
+}
