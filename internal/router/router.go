@@ -5,6 +5,7 @@ import (
 	assetsRouter "github.com/FeedTheRealm-org/core-service/internal/assets-service/router"
 	authRouter "github.com/FeedTheRealm-org/core-service/internal/authentication-service/router"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
+	itemsRouter "github.com/FeedTheRealm-org/core-service/internal/items-service/router"
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
 	playersRouter "github.com/FeedTheRealm-org/core-service/internal/players-service/router"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
@@ -26,6 +27,7 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 	playersRouter.SetupPlayerServiceRouter(r, conf, db)
 	worldRouter.SetupWorldServiceRouter(r, conf, db)
 	assetsRouter.SetupAssetsServiceRouter(r, conf, db)
+	itemsRouter.SetupItemsServiceRouter(r, conf, db)
 
 	if conf.Server.Environment != config.Production {
 		SetupSwaggerRouter(r)
