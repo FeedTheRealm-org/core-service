@@ -28,8 +28,8 @@ func (cs *worldService) GetWorld(worldID uuid.UUID) (*models.WorldData, error) {
 	return cs.worldRepository.GetWorldData(worldID)
 }
 
-func (cs *worldService) GetWorldsList(offset int, limit int) ([]*models.WorldData, error) {
-	return cs.worldRepository.GetWorldsList(offset, limit)
+func (cs *worldService) GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error) {
+	return cs.worldRepository.GetWorldsList(offset, limit, filter)
 }
 
 func (cs *worldService) ClearDatabase() error {

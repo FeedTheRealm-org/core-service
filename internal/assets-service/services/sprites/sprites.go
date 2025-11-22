@@ -61,7 +61,9 @@ func (ss *spritesService) UploadSpriteData(category uuid.UUID, spriteData multip
 	if err != nil {
 		return nil, err
 	}
-	defer destFile.Close()
+	defer func() {
+		_ = destFile.Close()
+	}()
 
 	if _, err := io.Copy(destFile, spriteData); err != nil {
 		return nil, err

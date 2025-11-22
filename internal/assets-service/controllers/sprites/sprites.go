@@ -232,7 +232,9 @@ func (sc *spritesController) UploadSpriteData(c *gin.Context) {
 		_ = c.Error(errors.NewBadRequestError("failed to open sprite file: " + err.Error()))
 		return
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	sprite, err := sc.spritesService.UploadSpriteData(categoryId, file, filepath.Ext(reqFile.Filename))
 	if err != nil {

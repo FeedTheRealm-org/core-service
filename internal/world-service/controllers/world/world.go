@@ -155,6 +155,7 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 // @Produce  json
 // @Param offset query int true "Pagination offset (starting index)"
 // @Param limit  query int true "Pagination limit (max 100)"
+// @Param filter query string false "Filter worlds by name (case-insensitive partial match)"
 // @Success 200 {object} dtos.WorldsListResponse "Worlds list retrieved correctly"
 // @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /world [get]
@@ -167,6 +168,8 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 
 	offsetStr := ctx.Query("offset")
 	limitStr := ctx.Query("limit")
+	filter := ctx.Query("filter")
+
 	if offsetStr == "" || limitStr == "" {
 		_ = ctx.Error(errors.NewBadRequestError("offset and limit are required"))
 		return
@@ -183,7 +186,7 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 		return
 	}
 
-	worldsList, err := c.worldService.GetWorldsList(offset, limit)
+	worldsList, err := c.worldService.GetWorldsList(offset, limit, filter)
 	if err != nil {
 		if _, ok := err.(*world_errors.WorldInfoNotFound); ok {
 			_ = ctx.Error(errors.NewNotFoundError("world info not found"))
