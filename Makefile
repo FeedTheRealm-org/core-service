@@ -31,9 +31,14 @@ docker-up-dev: docker-build-dev # Start development containers
 .PHONY: docker-up-dev
 
 docker-exec-app-dev: docker-up-dev # Execute a bash shell in the development app container
-	swag init -g cmd/main.go -o ./swagger
+	docker compose -f docker-compose.dev.yml exec app swag init -g cmd/main.go -o ./swagger
 	docker compose -f docker-compose.dev.yml exec -it app /bin/bash
 .PHONY: docker-exec-app-dev
+
+docker-run-app-dev: docker-up-dev # Run the application in the development container
+	docker compose -f docker-compose.dev.yml exec app swag init -g cmd/main.go -o ./swagger
+	docker compose -f docker-compose.dev.yml exec app go run cmd/main.go
+.PHONY: docker-run-app-dev
 
 exec-test:
 	docker compose -f docker-compose.test.yml down -v --remove-orphans

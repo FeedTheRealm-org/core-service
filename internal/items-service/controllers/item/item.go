@@ -40,7 +40,7 @@ func NewItemController(conf *config.Config, itemService item.ItemService, itemSp
 // @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Failure 409  {object}  dtos.ErrorResponse "Item already exists"
-// @Router /api/items [post]
+// @Router /items [post]
 func (ic *itemController) CreateItem(ctx *gin.Context) {
 	// _, err := common_handlers.GetUserIDFromSession(ctx)
 	// if err != nil {
@@ -106,7 +106,7 @@ func (ic *itemController) CreateItem(ctx *gin.Context) {
 // @Success 201  {object}  dtos.ItemsListResponse "Items created"
 // @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /api/items/batch [post]
+// @Router /items/batch [post]
 func (ic *itemController) CreateItemsBatch(ctx *gin.Context) {
 	// _, err := common_handlers.GetUserIDFromSession(ctx)
 	// if err != nil {
@@ -174,7 +174,7 @@ func (ic *itemController) CreateItemsBatch(ctx *gin.Context) {
 // @Produce  json
 // @Success 200  {object}  dtos.ItemsListResponse "Items list"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /api/items/metadata [get]
+// @Router /items/metadata [get]
 func (ic *itemController) GetItemsMetadata(ctx *gin.Context) {
 	// _, err := common_handlers.GetUserIDFromSession(ctx)
 	// if err != nil {
@@ -217,7 +217,7 @@ func (ic *itemController) GetItemsMetadata(ctx *gin.Context) {
 // @Failure 400  {object}  dtos.ErrorResponse "Invalid item ID"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Failure 404  {object}  dtos.ErrorResponse "Item not found"
-// @Router /api/items/{id} [get]
+// @Router /items/{id} [get]
 func (ic *itemController) GetItemById(ctx *gin.Context) {
 	// _, err := common_handlers.GetUserIDFromSession(ctx)
 	// if err != nil {
@@ -316,15 +316,16 @@ func (ic *itemController) UploadItemSprite(ctx *gin.Context) {
 }
 
 // @Summary DownloadItemSprite
-// @Description Downloads a sprite file by sprite ID directly (without category)
+// @Description Downloads a sprite file by sprite ID (optionally filtered by category via query param)
 // @Tags items-service
 // @Produce  octet-stream
 // @Param sprite_id path string true "Sprite UUID"
+// @Param category query string false "Category (armor/weapon/consumable) - optional validation"
 // @Success 200  {file}  byte "Sprite file"
-// @Failure 400  {object}  dtos.ErrorResponse "Invalid sprite ID"
+// @Failure 400  {object}  dtos.ErrorResponse "Invalid sprite ID or category mismatch"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Failure 404  {object}  dtos.ErrorResponse "Sprite not found"
-// @Router /assets/sprites/items/by-id/{sprite_id} [get]
+// @Router /assets/sprites/items/{sprite_id} [get]
 func (ic *itemController) DownloadItemSprite(ctx *gin.Context) {
 	// _, err := common_handlers.GetUserIDFromSession(ctx)
 	// if err != nil {
@@ -339,51 +340,7 @@ func (ic *itemController) DownloadItemSprite(ctx *gin.Context) {
 		return
 	}
 
-	filePath, err := ic.itemSpriteService.GetSpriteFile(spriteId)
-	if err != nil {
-		if _, ok := err.(*item_errors.ItemSpriteNotFound); ok {
-			_ = ctx.Error(errors.NewNotFoundError("sprite not found"))
-			return
-		}
-		_ = ctx.Error(err)
-		return
-	}
-
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		_ = ctx.Error(errors.NewNotFoundError("sprite file not found on disk"))
-		return
-	}
-
-	ctx.File(filePath)
-}
-
-// @Summary DownloadItemSpriteByCategory
-// @Description Downloads a sprite file by category and sprite ID (matches Unity ItemAssetsService)
-// @Tags items-service
-// @Produce  octet-stream
-// @Param category path string true "Category (armor/weapon/consumable)"
-// @Param sprite_id path string true "Sprite UUID"
-// @Success 200  {file}  byte "Sprite file"
-// @Failure 400  {object}  dtos.ErrorResponse "Invalid parameters"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Failure 404  {object}  dtos.ErrorResponse "Sprite not found"
-// @Router /assets/sprites/items/{category}/{sprite_id} [get]
-func (ic *itemController) DownloadItemSpriteByCategory(ctx *gin.Context) {
-	// _, err := common_handlers.GetUserIDFromSession(ctx)
-	// if err != nil {
-	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-	// 	return
-	// }
-
-	category := ctx.Param("category")
-	spriteIdStr := ctx.Param("sprite_id")
-
-	spriteId, err := uuid.Parse(spriteIdStr)
-	if err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("invalid sprite ID format"))
-		return
-	}
-
+	// Get sprite from database
 	sprite, err := ic.itemSpriteService.GetSpriteById(spriteId)
 	if err != nil {
 		if _, ok := err.(*item_errors.ItemSpriteNotFound); ok {
@@ -394,8 +351,9 @@ func (ic *itemController) DownloadItemSpriteByCategory(ctx *gin.Context) {
 		return
 	}
 
-	// Verify category matches
-	if sprite.Category != category {
+	// Optional: validate category if provided as query parameter
+	category := ctx.Query("category")
+	if category != "" && sprite.Category != category {
 		_ = ctx.Error(errors.NewBadRequestError("sprite does not belong to specified category"))
 		return
 	}
@@ -417,7 +375,7 @@ func (ic *itemController) DownloadItemSpriteByCategory(ctx *gin.Context) {
 // @Failure 400  {object}  dtos.ErrorResponse "Invalid item ID"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Failure 404  {object}  dtos.ErrorResponse "Item not found"
-// @Router /api/items/{id} [delete]
+// @Router /items/{id} [delete]
 func (ic *itemController) DeleteItem(ctx *gin.Context) {
 	// _, err := common_handlers.GetUserIDFromSession(ctx)
 	// if err != nil {

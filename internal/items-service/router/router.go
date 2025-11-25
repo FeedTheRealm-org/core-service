@@ -21,7 +21,7 @@ func SetupItemsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 	itemController := item_controller.NewItemController(conf, itemService, itemSpriteService)
 
 	// API routes for item metadata
-	apiGroup := r.Group("/api/items")
+	apiGroup := r.Group("/items")
 	{
 		apiGroup.POST("", itemController.CreateItem)
 		apiGroup.POST("/batch", itemController.CreateItemsBatch)
@@ -34,10 +34,8 @@ func SetupItemsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 	assetsGroup := r.Group("/assets/sprites/items")
 	{
 		assetsGroup.POST("", itemController.UploadItemSprite)
-		// Download by ID with explicit prefix to avoid route conflict
-		assetsGroup.GET("/by-id/:sprite_id", itemController.DownloadItemSprite)
-		// Download by category and ID (matches Unity's ItemAssetsService)
-		assetsGroup.GET("/:category/:sprite_id", itemController.DownloadItemSpriteByCategory)
+		// Download by ID (optionally filtered by category via query param)
+		assetsGroup.GET("/:sprite_id", itemController.DownloadItemSprite)
 		assetsGroup.DELETE("/:sprite_id", itemController.DeleteItemSprite)
 	}
 }

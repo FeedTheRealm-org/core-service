@@ -22,11 +22,8 @@ type ItemController interface {
 	// UploadItemSprite handles sprite file upload for items.
 	UploadItemSprite(c *gin.Context)
 
-	// DownloadItemSprite handles sprite file download by ID.
+	// DownloadItemSprite handles sprite file download by ID (with optional category query param).
 	DownloadItemSprite(c *gin.Context)
-
-	// DownloadItemSpriteByCategory handles sprite file download with category path.
-	DownloadItemSpriteByCategory(c *gin.Context)
 
 	// DeleteItemSprite deletes a sprite by ID.
 	DeleteItemSprite(c *gin.Context)
