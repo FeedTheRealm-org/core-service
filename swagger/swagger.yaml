@@ -34,6 +34,31 @@ definitions:
       email:
         type: string
     type: object
+  dtos.CreateItemBatchRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dtos.CreateItemRequest'
+        type: array
+    required:
+    - items
+    type: object
+  dtos.CreateItemRequest:
+    properties:
+      category:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      sprite_id:
+        type: string
+    required:
+    - category
+    - description
+    - name
+    - sprite_id
+    type: object
   dtos.ErrorResponse:
     properties:
       detail:
@@ -46,6 +71,43 @@ definitions:
         type: string
       type:
         type: string
+    type: object
+  dtos.ItemMetadataResponse:
+    properties:
+      category:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      sprite_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dtos.ItemSpriteResponse:
+    properties:
+      category:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      updated_at:
+        type: string
+      url:
+        type: string
+    type: object
+  dtos.ItemsListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dtos.ItemMetadataResponse'
+        type: array
     type: object
   dtos.LoginAccountRequestDTO:
     properties:
@@ -428,6 +490,107 @@ paths:
       summary: GetSpritesListByCategory
       tags:
       - assets-service
+  /assets/sprites/items:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads a sprite file for items
+      parameters:
+      - description: Sprite file
+        in: formData
+        name: sprite
+        required: true
+        type: file
+      - description: Category (armor/weapon/consumable)
+        in: formData
+        name: category
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Uploaded sprite
+          schema:
+            $ref: '#/definitions/dtos.ItemSpriteResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UploadItemSprite
+      tags:
+      - items-service
+  /assets/sprites/items/{sprite_id}:
+    delete:
+      description: Deletes a sprite by its ID and removes the file from disk
+      parameters:
+      - description: Sprite UUID
+        in: path
+        name: sprite_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sprite deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid sprite ID
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Sprite not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: DeleteItemSprite
+      tags:
+      - items-service
+    get:
+      description: Downloads a sprite file by sprite ID (optionally filtered by category
+        via query param)
+      parameters:
+      - description: Sprite UUID
+        in: path
+        name: sprite_id
+        required: true
+        type: string
+      - description: Category (armor/weapon/consumable) - optional validation
+        in: query
+        name: category
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Sprite file
+          schema:
+            type: file
+        "400":
+          description: Invalid sprite ID or category mismatch
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Sprite not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: DownloadItemSprite
+      tags:
+      - items-service
   /auth/login:
     post:
       consumes:
@@ -518,6 +681,149 @@ paths:
       summary: Verify Account
       tags:
       - authentication-service
+  /items:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new game item with metadata
+      parameters:
+      - description: Item data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Item created
+          schema:
+            $ref: '#/definitions/dtos.ItemMetadataResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "409":
+          description: Item already exists
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: CreateItem
+      tags:
+      - items-service
+  /items/{id}:
+    delete:
+      description: Deletes an item by its ID
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid item ID
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Item not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: DeleteItem
+      tags:
+      - items-service
+    get:
+      description: Retrieves a single item by its ID
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item metadata
+          schema:
+            $ref: '#/definitions/dtos.ItemMetadataResponse'
+        "400":
+          description: Invalid item ID
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Item not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetItemById
+      tags:
+      - items-service
+  /items/batch:
+    post:
+      consumes:
+      - application/json
+      description: Creates multiple game items at once
+      parameters:
+      - description: Batch of items
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateItemBatchRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Items created
+          schema:
+            $ref: '#/definitions/dtos.ItemsListResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: CreateItemsBatch
+      tags:
+      - items-service
+  /items/metadata:
+    get:
+      description: Retrieves all items metadata (for Unity client initialization)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Items list
+          schema:
+            $ref: '#/definitions/dtos.ItemsListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetItemsMetadata
+      tags:
+      - items-service
   /players/character:
     get:
       consumes:
