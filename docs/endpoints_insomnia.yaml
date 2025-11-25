@@ -270,6 +270,260 @@ collection:
             send: true
             store: true
           rebuildPath: true
+  - name: Items
+    meta:
+      id: fld_items_service_collection
+      created: 1732558800000
+      modified: 1732558800000
+      sortKey: -1762719994600
+      description: "Items service endpoints"
+    children:
+      - url: localhost:8000/items
+        name: CreateItem
+        meta:
+          id: req_items_create_item
+          created: 1732558801000
+          modified: 1732558801000
+          isPrivate: false
+          description: "Create a new item"
+          sortKey: -1732558801000
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "name": "Health Potion",
+              "description": "Restores 50 HP",
+              "category": "consumable",
+              "sprite_id": "00000000-0000-0000-0000-000000000000"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/batch
+        name: CreateItemsBatch
+        meta:
+          id: req_items_create_batch
+          created: 1732558802000
+          modified: 1732558802000
+          isPrivate: false
+          description: "Create multiple items at once"
+          sortKey: -1732558802000
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "items": [
+                {
+                  "name": "Health Potion",
+                  "description": "Restores 50 HP",
+                  "category": "consumable",
+                  "sprite_id": "00000000-0000-0000-0000-000000000000"
+                },
+                {
+                  "name": "Mana Potion",
+                  "description": "Restores 50 MP",
+                  "category": "consumable",
+                  "sprite_id": "00000000-0000-0000-0000-000000000001"
+                }
+              ]
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/metadata
+        name: GetItemsMetadata
+        meta:
+          id: req_items_get_metadata
+          created: 1732558803000
+          modified: 1732558803000
+          isPrivate: false
+          description: "Get all items metadata"
+          sortKey: -1732558803000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/00000000-0000-0000-0000-000000000000
+        name: GetItemById
+        meta:
+          id: req_items_get_by_id
+          created: 1732558804000
+          modified: 1732558804000
+          isPrivate: false
+          description: "Get a specific item by ID"
+          sortKey: -1732558804000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/00000000-0000-0000-0000-000000000000
+        name: DeleteItem
+        meta:
+          id: req_items_delete
+          created: 1732558805000
+          modified: 1732558805000
+          isPrivate: false
+          description: "Delete an item by ID"
+          sortKey: -1732558805000
+        method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Items/Sprites
+    meta:
+      id: fld_items_sprites_collection
+      created: 1732558810000
+      modified: 1732558810000
+      sortKey: -1762719994550
+      description: "Item sprites endpoints"
+    children:
+      - url: localhost:8000/assets/sprites/items
+        name: UploadItemSprite
+        meta:
+          id: req_items_upload_sprite
+          created: 1732558811000
+          modified: 1732558811000
+          isPrivate: false
+          description: "Upload a sprite for an item"
+          sortKey: -1732558811000
+        method: POST
+        body:
+          mimeType: multipart/form-data
+          params:
+            - id: pair_items_sprite_file
+              name: sprite
+              value: ""
+              description: "Sprite image file"
+              disabled: false
+              type: file
+              fileName: /path/to/sprite.png
+            - id: pair_items_sprite_category
+              name: category
+              value: "weapon"
+              description: "Category (armor/weapon/consumable)"
+              disabled: false
+        headers:
+          - name: Content-Type
+            value: multipart/form-data
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/assets/sprites/items/00000000-0000-0000-0000-000000000000
+        name: DownloadItemSprite
+        meta:
+          id: req_items_download_sprite
+          created: 1732558812000
+          modified: 1732558812000
+          isPrivate: false
+          description: "Download item sprite by ID (without category validation)"
+          sortKey: -1732558812000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/assets/sprites/items/00000000-0000-0000-0000-000000000000?category=weapon
+        name: DownloadItemSpriteWithCategory
+        meta:
+          id: req_items_download_sprite_category
+          created: 1732558813000
+          modified: 1732558813000
+          isPrivate: false
+          description: "Download item sprite by ID with category validation (query param)"
+          sortKey: -1732558813000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/assets/sprites/items/00000000-0000-0000-0000-000000000000
+        name: DeleteItemSprite
+        meta:
+          id: req_items_delete_sprite
+          created: 1732558814000
+          modified: 1732558814000
+          isPrivate: false
+          description: "Delete an item sprite by ID"
+          sortKey: -1732558814000
+        method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
 cookieJar:
   name: Default Jar
   meta:
