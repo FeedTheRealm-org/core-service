@@ -42,11 +42,11 @@ func NewItemController(conf *config.Config, itemService item.ItemService, itemSp
 // @Failure 409  {object}  dtos.ErrorResponse "Item already exists"
 // @Router /api/items [post]
 func (ic *itemController) CreateItem(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
+	// _, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 
 	req := &dtos.CreateItemRequest{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -108,11 +108,11 @@ func (ic *itemController) CreateItem(ctx *gin.Context) {
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /api/items/batch [post]
 func (ic *itemController) CreateItemsBatch(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
+	// _, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 
 	req := &dtos.CreateItemBatchRequest{}
 	if err := ctx.ShouldBindJSON(req); err != nil {
@@ -176,11 +176,11 @@ func (ic *itemController) CreateItemsBatch(ctx *gin.Context) {
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /api/items/metadata [get]
 func (ic *itemController) GetItemsMetadata(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
+	// _, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 
 	items, err := ic.itemService.GetAllItems()
 	if err != nil {
@@ -219,11 +219,11 @@ func (ic *itemController) GetItemsMetadata(ctx *gin.Context) {
 // @Failure 404  {object}  dtos.ErrorResponse "Item not found"
 // @Router /api/items/{id} [get]
 func (ic *itemController) GetItemById(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
+	// _, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 
 	itemIdStr := ctx.Param("id")
 	itemId, err := uuid.Parse(itemIdStr)
@@ -267,11 +267,11 @@ func (ic *itemController) GetItemById(ctx *gin.Context) {
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/sprites/items [post]
 func (ic *itemController) UploadItemSprite(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
+	// _, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 
 	category := ctx.PostForm("category")
 	if category == "" {
@@ -326,11 +326,11 @@ func (ic *itemController) UploadItemSprite(ctx *gin.Context) {
 // @Failure 404  {object}  dtos.ErrorResponse "Sprite not found"
 // @Router /assets/sprites/items/by-id/{sprite_id} [get]
 func (ic *itemController) DownloadItemSprite(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
+	// _, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 
 	spriteIdStr := ctx.Param("sprite_id")
 	spriteId, err := uuid.Parse(spriteIdStr)
@@ -369,11 +369,11 @@ func (ic *itemController) DownloadItemSprite(ctx *gin.Context) {
 // @Failure 404  {object}  dtos.ErrorResponse "Sprite not found"
 // @Router /assets/sprites/items/{category}/{sprite_id} [get]
 func (ic *itemController) DownloadItemSpriteByCategory(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
+	// _, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 
 	category := ctx.Param("category")
 	spriteIdStr := ctx.Param("sprite_id")
@@ -419,11 +419,11 @@ func (ic *itemController) DownloadItemSpriteByCategory(ctx *gin.Context) {
 // @Failure 404  {object}  dtos.ErrorResponse "Item not found"
 // @Router /api/items/{id} [delete]
 func (ic *itemController) DeleteItem(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
+	// _, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 
 	itemIdStr := ctx.Param("id")
 	itemId, err := uuid.Parse(itemIdStr)
@@ -462,11 +462,11 @@ func (ic *itemController) DeleteItem(ctx *gin.Context) {
 // @Failure 404  {object}  dtos.ErrorResponse "Sprite not found"
 // @Router /assets/sprites/items/{sprite_id} [delete]
 func (ic *itemController) DeleteItemSprite(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
+	// _, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 
 	spriteIdStr := ctx.Param("sprite_id")
 	spriteId, err := uuid.Parse(spriteIdStr)
