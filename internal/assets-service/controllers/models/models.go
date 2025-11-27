@@ -71,7 +71,9 @@ func (mc *modelsController) DownloadModelsByWorldId(c *gin.Context) {
 	c.Header("Content-Type", "application/zip")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", zipFilename))
 	zipWriter := zip.NewWriter(c.Writer)
-	defer zipWriter.Close()
+	defer func() {
+		_ = zipWriter.Close()
+	}()
 
 	for _, model := range worldModels {
 		modelZipPath := fmt.Sprintf("%s/%s", model.Name, filepath.Base(model.ModelURL))
@@ -93,7 +95,9 @@ func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open file %s: %w", filePath, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	// Get file info
 	fileInfo, err := file.Stat()
