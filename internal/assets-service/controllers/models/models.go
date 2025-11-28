@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -45,7 +46,7 @@ func NewModelsController(conf *config.Config, modelService service.ModelsService
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /assets/models/{world_id} [get]
 func (mc *modelsController) DownloadModelsByWorldId(c *gin.Context) {
-	worldIDStr := c.Param("world_id") // Fixed parameter name
+	worldIDStr := c.Param("world_id")
 	if worldIDStr == "" {
 		_ = c.Error(errors.NewBadRequestError("world_id is required"))
 		return
@@ -57,37 +58,50 @@ func (mc *modelsController) DownloadModelsByWorldId(c *gin.Context) {
 		return
 	}
 
-	worldModels, err := mc.modelService.GetModelsByWorld(worldID)
-	if err != nil {
-		_ = c.Error(errors.NewInternalServerError("failed to get world models: " + err.Error()))
+	// Path: bucket/worlds/<worldId>/models
+	modelsDir := filepath.Join("bucket", "worlds", worldID.String(), "models")
+	info, err := os.Stat(modelsDir)
+	if err != nil || !info.IsDir() {
+		_ = c.Error(errors.NewNotFoundError("models folder not found for this world"))
 		return
 	}
 
-	if len(worldModels) == 0 {
-		_ = c.Error(errors.NewNotFoundError("no models found for world with id: " + worldID.String()))
-		return
-	}
-	zipFilename := fmt.Sprintf("world-%s-models.zip", worldID.String())
+	// Generate filename like: <uuid>.zip
+	zipFilename := fmt.Sprintf("%s.zip", worldID.String())
+
+	// Set headers for file download
 	c.Header("Content-Type", "application/zip")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", zipFilename))
+	c.Header("Transfer-Encoding", "chunked") // enables streaming
+
 	zipWriter := zip.NewWriter(c.Writer)
 	defer zipWriter.Close()
 
-	for _, model := range worldModels {
-		modelZipPath := fmt.Sprintf("%s/%s", model.Name, filepath.Base(model.ModelURL))
-		if err := addFileToZip(zipWriter, model.ModelURL, modelZipPath); err != nil {
-			_ = c.Error(errors.NewInternalServerError("failed to add model file to zip: " + err.Error()))
-			return
+	// Walk through the models directory and write to ZIP
+	err = filepath.WalkDir(modelsDir, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
 		}
-		materialZipPath := fmt.Sprintf("%s/%s", model.Name, filepath.Base(model.MaterialURL))
-		if err := addFileToZip(zipWriter, model.MaterialURL, materialZipPath); err != nil {
-			_ = c.Error(errors.NewInternalServerError("failed to add material file to zip: " + err.Error()))
-			return
+		if d.IsDir() {
+			return nil
 		}
+
+		// Keep only relative path inside zip (e.g., 6445f0a2/.../model.fbx)
+		relPath, err := filepath.Rel(modelsDir, path)
+		if err != nil {
+			return err
+		}
+
+		return addFileToZip(zipWriter, path, filepath.ToSlash(relPath))
+	})
+
+	if err != nil {
+		_ = c.Error(errors.NewInternalServerError("failed to create zip: " + err.Error()))
+		return
 	}
 }
 
-// ------- Helper function for zip files -------
+// Helper: Add file to ZIP
 func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -101,23 +115,22 @@ func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
 		return fmt.Errorf("failed to get file info: %w", err)
 	}
 
-	// Create ZIP file header
+	// Create ZIP header
 	header, err := zip.FileInfoHeader(fileInfo)
 	if err != nil {
 		return fmt.Errorf("failed to create zip header: %w", err)
 	}
 
-	// Set the name of the file in the ZIP
-	header.Name = zipPath
+	header.Name = zipPath // relative path inside zip
 	header.Method = zip.Deflate
 
-	// Create writer for this file in the ZIP
+	// Create ZIP writer
 	writer, err := zipWriter.CreateHeader(header)
 	if err != nil {
 		return fmt.Errorf("failed to create zip writer: %w", err)
 	}
 
-	// Copy file content to ZIP
+	// Stream file into ZIP (efficient, no RAM loading)
 	_, err = io.Copy(writer, file)
 	if err != nil {
 		return fmt.Errorf("failed to copy file content: %w", err)
