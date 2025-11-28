@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Activate your account</title>
+    <style>
+      body,
+      table,
+      td {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+      img {
+        border: 0;
+        display: block;
+        outline: none;
+        text-decoration: none;
+        -ms-interpolation-mode: bicubic;
+      }
+      body {
+        width: 100% !important;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        background: #ffffff;
+        color: #222;
+      }
+      .ExternalClass {
+        width: 100%;
+      }
+      @media only screen and (max-width: 600px) {
+        .container {
+          width: 100% !important;
+        }
+        .content {
+          padding: 20px !important;
+        }
+        .footer-box {
+          padding: 18px !important;
+        }
+        .headline {
+          font-size: 22px !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      <tr>
+        <td align="center" style="padding: 28px 12px">
+          <table
+            class="container"
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            role="presentation"
+            style="max-width: 600px"
+          >
+            <tr>
+              <td align="center" style="padding: 10px 18px">
+                <h1
+                  class="headline"
+                  style="
+                    margin: 0;
+                    font-weight: 600;
+                    font-size: 28px;
+                    color: #111827;
+                  "
+                >
+                  Feed The Realm - Activate your account
+                </h1>
+                <img
+                  src="{{.LogoURL}}"
+                  alt="Feed The Realm Logo"
+                  style="
+                    max-width: 150px;
+                    border-radius: 12%;
+                    margin: 20px auto;
+                    display: block;
+                  "
+                />
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                class="content"
+                style="
+                  padding: 18px 28px 28px 28px;
+                  text-align: center;
+                  color: #374151;
+                "
+              >
+                <p
+                  style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5"
+                >
+                  Your activation code for
+                  <strong
+                    style="
+                      background: #fff2b8;
+                      padding: 0 4px;
+                      border-radius: 2px;
+                    "
+                    >Feed the Realm</strong
+                  >
+                  account is:
+                </p>
+
+                <div
+                  style="
+                    display: inline-block;
+                    margin-top: 14px;
+                    padding: 12px 18px;
+                    border-radius: 8px;
+                    background: #f3f4f6;
+                    font-weight: 700;
+                    font-size: 18px;
+                    letter-spacing: 1px;
+                    color: #0f172a;
+                  "
+                >
+                  {{.VerifyCode}}
+                </div>
+
+                <p style="margin: 18px 0 0 0; font-size: 13px; color: #6b7280">
+                  If you didn’t request this code, you can safely ignore this
+                  email.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding: 0 28px 28px 28px">
+                <table
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  role="presentation"
+                  style="
+                    background: #f3f6f9;
+                    border-radius: 6px;
+                    overflow: hidden;
+                  "
+                >
+                  <tr>
+                    <td
+                      class="footer-box"
+                      style="padding: 22px; text-align: center"
+                    >
+                      <strong style="font-size: 16px; color: #0f172a"
+                        >Feed the Realm</strong
+                      ><br /><br />
+
+                      <div
+                        style="
+                          font-size: 13px;
+                          color: #6b7280;
+                          line-height: 1.5;
+                        "
+                      >
+                        Ciudad Autónoma de Buenos Aires, Argentina<br />
+                        This email was sent automatically.<br />
+                        You received this email because you attempted to
+                        register an account.
+                      </div>
+
+                      <div style="padding-top: 12px">
+                        This email was sent to {{.ToEmail}}
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style="
+                  text-align: center;
+                  font-size: 12px;
+                  color: #9ca3af;
+                  padding: 8px 0 28px 0;
+                "
+              >
+                &copy; Feed the Realm. All rights reserved.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

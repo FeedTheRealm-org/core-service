@@ -75,7 +75,9 @@ func (mc *modelsController) DownloadModelsByWorldId(c *gin.Context) {
 	c.Header("Transfer-Encoding", "chunked") // enables streaming
 
 	zipWriter := zip.NewWriter(c.Writer)
-	defer zipWriter.Close()
+	defer func() {
+		_ = zipWriter.Close()
+	}()
 
 	// Walk through the models directory and write to ZIP
 	err = filepath.WalkDir(modelsDir, func(path string, d fs.DirEntry, walkErr error) error {
@@ -107,7 +109,9 @@ func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open file %s: %w", filePath, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	// Get file info
 	fileInfo, err := file.Stat()

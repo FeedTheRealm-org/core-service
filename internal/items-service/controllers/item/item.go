@@ -11,6 +11,7 @@ import (
 	item_errors "github.com/FeedTheRealm-org/core-service/internal/items-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/items-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/items-service/services/item"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -454,6 +455,7 @@ func (ic *itemController) DeleteItemSprite(ctx *gin.Context) {
 	if err := os.Remove(sprite.Url); err != nil {
 		// Log error but don't fail the request
 		// The database record is already deleted
+		logger.Logger.Warnf("Failed to remove sprite file from disk: %v", err)
 	}
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, gin.H{"message": "sprite deleted successfully"})

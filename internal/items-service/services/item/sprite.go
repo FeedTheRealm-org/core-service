@@ -33,7 +33,9 @@ func (iss *itemSpriteService) UploadSprite(category string, fileHeader *multipar
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	// Generate unique filename
 	ext := filepath.Ext(fileHeader.Filename)
@@ -54,7 +56,9 @@ func (iss *itemSpriteService) UploadSprite(category string, fileHeader *multipar
 	if err != nil {
 		return nil, err
 	}
-	defer destFile.Close()
+	defer func() {
+		_ = destFile.Close()
+	}()
 
 	// Copy uploaded file to destination
 	if _, err := io.Copy(destFile, file); err != nil {
@@ -68,7 +72,7 @@ func (iss *itemSpriteService) UploadSprite(category string, fileHeader *multipar
 	}
 	if err := iss.spriteRepository.CreateSprite(sprite); err != nil {
 		// Clean up the file if database insertion fails
-		os.Remove(filePath)
+		_ = os.Remove(filePath)
 		return nil, err
 	}
 
