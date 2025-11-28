@@ -825,24 +825,6 @@ paths:
       tags:
       - items-service
   /players/character:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves the name and bio of the session player character
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Character info retrieved correctly
-          schema:
-            $ref: '#/definitions/dtos.CharacterInfoResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: GetCharacterInfo
-      tags:
-      - players-service
     patch:
       consumes:
       - application/json
@@ -870,6 +852,25 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: PatchCharacterInfo
+      tags:
+      - players-service
+  /players/character/:id:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the name and bio of the session player character
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Character info retrieved correctly
+          schema:
+            $ref: '#/definitions/dtos.CharacterInfoResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetCharacterInfo
       tags:
       - players-service
   /world:

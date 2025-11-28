@@ -881,33 +881,6 @@ const docTemplate = `{
             }
         },
         "/players/character": {
-            "get": {
-                "description": "Retrieves the name and bio of the session player character",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "players-service"
-                ],
-                "summary": "GetCharacterInfo",
-                "responses": {
-                    "200": {
-                        "description": "Character info retrieved correctly",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "patch": {
                 "description": "Updates the name and bio of the session player character",
                 "consumes": [
@@ -942,6 +915,35 @@ const docTemplate = `{
                         "description": "Bad request body",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/players/character/:id": {
+            "get": {
+                "description": "Retrieves the name and bio of the session player character",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "players-service"
+                ],
+                "summary": "GetCharacterInfo",
+                "responses": {
+                    "200": {
+                        "description": "Character info retrieved correctly",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
                         }
                     },
                     "401": {

@@ -101,7 +101,7 @@ func (c *characterController) PatchCharacterInfo(ctx *gin.Context) {
 // @Produce  json
 // @Success 200  {object}  dtos.CharacterInfoResponse "Character info retrieved correctly"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /players/character [get]
+// @Router /players/character/:id [get]
 func (c *characterController) GetCharacterInfo(ctx *gin.Context) {
 	sessionUserId, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {
