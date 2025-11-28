@@ -20,6 +20,9 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 	r.Use(middleware.ErrorHandlerMiddleware())
 	r.Use(middleware.JWTAuthMiddleware(jwtManager))
 
+	// Serve static files from public directory
+	r.Static("/public", "./public")
+
 	// Setup service routers
 	r.NoRoute(common_handlers.NotFoundController)
 
