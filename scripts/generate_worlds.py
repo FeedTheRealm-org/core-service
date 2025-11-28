@@ -2,7 +2,6 @@
 import sys
 import time
 import random
-import string
 import requests
 
 BASE_URL = "http://localhost:8000"
@@ -28,9 +27,104 @@ def get_token(email, password):
 
 
 def generate_random_name():
-    """Generate a random world name with 6-24 characters (alphanumeric, no spaces)"""
-    length = random.randint(7, 24)
-    return "".join(random.choices(string.ascii_letters + string.digits, k=length))
+    """Generate a fantasy-like world name using curated word lists"""
+    adjectives = [
+        "Ancient",
+        "Dark",
+        "Forgotten",
+        "Hidden",
+        "Lost",
+        "Mystical",
+        "Shadow",
+        "Eternal",
+        "Crystal",
+        "Frozen",
+        "Golden",
+        "Silver",
+        "Emerald",
+        "Azure",
+        "Crimson",
+        "Obsidian",
+        "Whispering",
+        "Thunder",
+        "Storm",
+        "Blood",
+        "Iron",
+        "Steel",
+        "Fire",
+        "Ice",
+        "Sacred",
+        "Cursed",
+        "Blessed",
+        "Divine",
+        "Arcane",
+        "Enchanted",
+        "Haunted",
+        "Radiant",
+    ]
+
+    nouns = [
+        "Realm",
+        "Kingdom",
+        "Land",
+        "World",
+        "Domain",
+        "Empire",
+        "Valley",
+        "Mountain",
+        "Forest",
+        "Desert",
+        "Ocean",
+        "Island",
+        "Castle",
+        "Temple",
+        "Cave",
+        "Garden",
+        "Throne",
+        "Crown",
+        "Sword",
+        "Shield",
+        "Fortress",
+        "Citadel",
+        "Sanctuary",
+        "Haven",
+        "Abyss",
+        "Peak",
+        "Grove",
+        "Spire",
+        "Forge",
+        "Keep",
+        "Burg",
+        "Stead",
+    ]
+
+    suffixes = [
+        "ia",
+        "land",
+        "realm",
+        "world",
+        "haven",
+        "spire",
+        "forge",
+        "keep",
+        "burg",
+        "stead",
+    ]
+
+    adjective = random.choice(adjectives)
+    noun = random.choice(nouns)
+
+    if random.random() < 0.4:  # 40% chance for compound names
+        name = f"{adjective} {noun}"
+    else:
+        suffix = random.choice(suffixes)
+        name = f"{adjective}{noun}{suffix}"
+
+    # Ensure reasonable length
+    if len(name) > 24:
+        name = name[:24].rstrip()
+
+    return name
 
 
 def post_worlds(token, count):
@@ -42,6 +136,14 @@ def post_worlds(token, count):
 
     for i in range(0, count):
         world_name = generate_random_name()
+        # Create a safe filename by replacing spaces and special chars
+        safe_filename = "".join(
+            c for c in world_name if c.isalnum() or c in (" ", "-")
+        ).rstrip()
+        safe_filename = safe_filename.replace(" ", "_").lower()
+        if not safe_filename:
+            safe_filename = f"world_{i}"
+
         payload = {
             "data": {
                 "worldName": world_name,
@@ -50,7 +152,7 @@ def post_worlds(token, count):
                     {"Position": {"x": 0, "y": 0, "z": -5}, "AssetDataId": 4},
                 ],
             },
-            "file_name": f"{world_name}.world",
+            "file_name": f"{safe_filename}.world",
         }
 
         try:
