@@ -20,6 +20,7 @@ const templateName = "verification_email"
 type EmailTemplateData struct {
 	VerifyCode string
 	ToEmail    string
+	LogoURL    string
 }
 
 type emailSenderService struct {
@@ -47,7 +48,7 @@ func createEmailTemplate() (*template.Template, error) {
 	return tmpl, nil
 }
 
-func createPayloadForSendEmail(fromEmail string, toEmail string, verifyCode string) (*bytes.Buffer, error) {
+func createPayloadForSendEmail(fromEmail string, toEmail string, verifyCode string, logoURL string) (*bytes.Buffer, error) {
 	tmpl, err := createEmailTemplate()
 	if err != nil {
 		return nil, err
@@ -56,6 +57,7 @@ func createPayloadForSendEmail(fromEmail string, toEmail string, verifyCode stri
 	data := EmailTemplateData{
 		VerifyCode: verifyCode,
 		ToEmail:    toEmail,
+		LogoURL:    logoURL,
 	}
 
 	var htmlBuffer bytes.Buffer
@@ -96,7 +98,7 @@ func createRequestForSendEmail(payload *bytes.Buffer, apiKey string) (*http.Requ
 }
 
 func (s *emailSenderService) SendVerificationEmail(toEmail string, verifyCode string) error {
-	data, err := createPayloadForSendEmail(s.conf.EmailSenderAddress, toEmail, verifyCode)
+	data, err := createPayloadForSendEmail(s.conf.EmailSenderAddress, toEmail, verifyCode, s.conf.EmailLogoURL)
 	if err != nil {
 		return err
 	}
