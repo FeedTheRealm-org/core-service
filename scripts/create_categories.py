@@ -2,6 +2,7 @@
 
 import requests
 import sys
+import time
 
 def fetch_categories(server_url, auth_token=None):
     url = f"{server_url}/assets/sprites/categories"
@@ -45,6 +46,7 @@ def add_category(server_url, category_name, auth_token=None):
             data = response.json()
             category_data = data.get('data', {})
             print(f"✓ Created: {category_data.get('category_name')} (ID: {category_data.get('category_id')})\n")
+            time.sleep(0.5)
             return True
         elif response.status_code == 409:
             print(f"✗ Category '{category_name}' already exists\n")

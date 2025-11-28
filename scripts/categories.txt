@@ -1,9 +1,9 @@
 hair
-face-hair
 eye-back
+face-hair
 cloth
+foot-boot
 armor
 helmet
-foot-boot
 cape
 q
