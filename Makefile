@@ -45,7 +45,7 @@ delete-volumes:
 	docker volume rm $$(docker volume ls -q)
 .PHONY: delete-volumes
 
-swag init:
+swag-init:
 	swag init -g cmd/main.go -o ./swagger
 .PHONY: swag init
 
