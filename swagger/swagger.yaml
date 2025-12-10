@@ -7,6 +7,18 @@ definitions:
     required:
     - category_name
     type: object
+  dtos.BundlePublishResponse:
+    properties:
+      bundle_url:
+        example: bucket/bundles/1a2b3c4d-5e6f-7890-abcd-ef1234567890/bundle.zip
+        type: string
+      version:
+        example: 1
+        type: integer
+      world_id:
+        example: 1a2b3c4d-5e6f-7890-abcd-ef1234567890
+        type: string
+    type: object
   dtos.CharacterInfoResponse:
     properties:
       category_sprites:
@@ -129,24 +141,6 @@ definitions:
       updated_at:
         type: string
     type: object
-  dtos.ModelPublishResponse:
-    properties:
-      model_id:
-        type: string
-      name:
-        type: string
-    type: object
-  dtos.ModelsPublishListResponse:
-    properties:
-      models:
-        items:
-          $ref: '#/definitions/dtos.ModelPublishResponse'
-        type: array
-      world_id:
-        type: string
-    required:
-    - world_id
-    type: object
   dtos.PatchCharacterInfoRequest:
     properties:
       category_sprites:
@@ -244,88 +238,12 @@ info:
   title: FeedTheRealm Core Service API
   version: 0.1.0
 paths:
-  /assets/models:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Upload multiple 3D models with their materials to a specific world.
-        Supports FBX, OBJ model files and various material formats.
-      parameters:
-      - description: World ID
-        format: uuid
-        in: formData
-        name: world_id
-        required: true
-        type: string
-      - description: Name of the first model
-        in: formData
-        name: models[0].name
-        required: true
-        type: string
-      - description: Unique ID for the first model
-        format: uuid
-        in: formData
-        name: models[0].model_id
-        required: true
-        type: string
-      - description: 3D model file (FBX, OBJ, etc.)
-        in: formData
-        name: models[0].model_file
-        required: true
-        type: file
-      - description: Material file (MAT, MTL, etc.)
-        in: formData
-        name: models[0].material_file
-        required: true
-        type: file
-      - description: Name of the second model
-        in: formData
-        name: models[1].name
-        type: string
-      - description: Unique ID for the second model
-        format: uuid
-        in: formData
-        name: models[1].model_id
-        type: string
-      - description: 3D model file for second model
-        in: formData
-        name: models[1].model_file
-        type: file
-      - description: Material file for second model
-        in: formData
-        name: models[1].material_file
-        type: file
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Successfully uploaded models
-          schema:
-            $ref: '#/definitions/dtos.ModelsPublishListResponse'
-        "400":
-          description: Bad request - missing required fields or invalid format
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized - invalid or missing JWT token
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error - failed to save models
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Upload world models
-      tags:
-      - Models
-  /assets/models/{world_id}:
+  /assets/bundles/{world_id}:
     get:
       consumes:
       - application/json
-      description: Downloads all 3D models and their materials for a specific world
-        as a ZIP archive
+      description: Downloads the bundle file (ZIP) containing all models and materials
+        for a specific world
       parameters:
       - description: World ID
         format: uuid
@@ -334,10 +252,10 @@ paths:
         required: true
         type: string
       produces:
-      - application/zip
+      - application/octet-stream
       responses:
         "200":
-          description: ZIP file containing all models and materials
+          description: Bundle file
           schema:
             type: file
         "400":
@@ -351,7 +269,7 @@ paths:
             additionalProperties: true
             type: object
         "404":
-          description: Not found - no models found for this world
+          description: Not found - bundle not found for this world
           schema:
             additionalProperties: true
             type: object
@@ -360,9 +278,55 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Download world models
+      security:
+      - BearerAuth: []
+      summary: Download world bundle
       tags:
-      - Models
+      - Bundles
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a bundle file (ZIP) for a specific world containing all
+        models and materials
+      parameters:
+      - description: World ID
+        format: uuid
+        in: path
+        name: world_id
+        required: true
+        type: string
+      - description: Bundle file (ZIP)
+        in: formData
+        name: bundle
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully uploaded bundle
+          schema:
+            $ref: '#/definitions/dtos.BundlePublishResponse'
+        "400":
+          description: Bad request - missing required fields or invalid format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing JWT token
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error - failed to save bundle
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload world bundle
+      tags:
+      - Bundles
   /assets/sprites:
     put:
       consumes:

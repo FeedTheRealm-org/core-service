@@ -30,7 +30,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"santisevitz@hotmail.com\",\n  \"password\": \"santisevitz@hotmail.comA1\"\n}",
+							"raw": "{\n  \"email\": \"santisevitz@hotmail.com\",\n  \"password\": \"santisevitz@hotmail.com1!\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -375,82 +375,68 @@
 					]
 				},
 				{
-					"name": "Models",
+					"name": "Bundles",
 					"item": [
 						{
-							"name": "Upload 3D Models",
+							"name": "Get Bundle",
 							"protocolProfileBehavior": {
 								"followRedirects": true,
 								"disableUrlEncoding": false,
 								"disableCookies": false
 							},
 							"request": {
-								"method": "POST",
+								"method": "GET",
 								"header": [
 									{
 										"key": "Authorization",
 										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjM2OTE1OTgsImlzcyI6MTc2MzYwNTE5OCwidXNlcklEIjoiNTRmNjVkZTQtM2M5Yi00NTg2LTg1NzktMTVmM2NlYmJjN2RjIn0.il2F720meKkE5outueI14VjAzDl7zJncSdhV379HGHM"
 									}
 								],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "world_id",
-											"value": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
-											"type": "text"
-										},
-										{
-											"key": "models[0].model_id",
-											"value": "1a2b3c4d-5e6f-7890-abcd-ef1234567258",
-											"type": "text"
-										},
-										{
-											"key": "models[0].name",
-											"value": "Building",
-											"type": "text"
-										},
-										{
-											"key": "models[0].model_file",
-											"type": "file",
-											"src": "/home/sev/Desktop/Facultad/TPF/world-editor-client/Assets/RPGPP_LT/Materials/rpgpp_lt_cloud_a.mat"
-										},
-										{
-											"key": "models[0].material_file",
-											"type": "file",
-											"src": "/home/sev/Desktop/Facultad/TPF/world-editor-client/Assets/RPGPP_LT/Materials/rpgpp_lt_mat_a.mat"
-										},
-										{
-											"key": "models[1].model_id",
-											"value": "1a2b3c4d-5e6f-7890-abcd-ef1234567123",
-											"type": "text"
-										},
-										{
-											"key": "models[1].name",
-											"value": "Tree",
-											"type": "text"
-										},
-										{
-											"key": "models[1].model_file",
-											"type": "file",
-											"src": "/home/sev/Desktop/Facultad/TPF/world-editor-client/Assets/RPGPP_LT/Materials/rpgpp_lt_cloud_a.mat.meta"
-										},
-										{
-											"key": "models[1].material_file",
-											"type": "file",
-											"src": "/home/sev/Desktop/Facultad/TPF/world-editor-client/Assets/RPGPP_LT/Materials/rpgpp_lt_mat_a.mat"
-										}
-									]
-								},
 								"url": {
-									"raw": "localhost:8000/assets/models",
+									"raw": "localhost:8000/assets/bundles/1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 									"host": [
 										"localhost"
 									],
 									"port": "8000",
 									"path": [
 										"assets",
-										"models"
+										"bundles",
+										"1a2b3c4d-5e6f-7890-abcd-ef1234567890"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Upload Bundle",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjU0ODQ4ODMsImlzcyI6MTc2NTM5ODQ4MywidXNlcklEIjoiY2FiNzM2OTctMmRiOS00MmRlLTg4YTUtYzYyYzY5NjNlY2ZmIn0.O7JKlt7vuy1z3WvsmahkcqcZtS3AVfuAHKf0oLoLfdc"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "bundle",
+											"type": "file",
+											"src": "/home/sev/Desktop/GetLatestReportStream.pdf"
+										}
+									]
+								},
+								"url": {
+									"raw": "localhost:8000/assets/bundles/1a2b3c4d-5e6f-7890-abcd-ef1234567890",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"assets",
+										"bundles",
+										"1a2b3c4d-5e6f-7890-abcd-ef1234567890"
 									]
 								}
 							},
@@ -461,30 +447,29 @@
 			]
 		},
 		{
-			"name": "Items",
+			"name": "World",
 			"item": [
 				{
-					"name": "CreateItem",
-					"protocolProfileBehavior": {
-						"followRedirects": true,
-						"disableUrlEncoding": false,
-						"disableCookies": false
-					},
+					"name": "Publish World",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
-								"key": "Content-Type",
+								"key": "accept",
 								"value": "application/json"
 							},
 							{
-								"key": "User-Agent",
-								"value": "insomnia/12.0.0"
+								"key": "Authorization",
+								"value": "Bearer YOUR_TOKEN_HERE"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"Health Potion\",\n  \"description\": \"Restores 50 HP\",\n  \"category\": \"consumable\",\n  \"sprite_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+							"raw": "{\n  \"data\": {\n    \"worldName\": \"treeland\",\n    \"objectPlacementData\": [\n      {\n        \"Position\": {\n          \"x\": -4,\n          \"y\": 0,\n          \"z\": -4\n        },\n        \"AssetDataId\": 12\n      },\n      {\n        \"Position\": {\n          \"x\": 0,\n          \"y\": 0,\n          \"z\": -5\n        },\n        \"AssetDataId\": 4\n      }\n    ]\n  },\n  \"file_name\": \"treeland.world\"\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -492,290 +477,72 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8000/items",
+							"raw": "http://localhost:8000/world",
+							"protocol": "http",
 							"host": [
 								"localhost"
 							],
 							"port": "8000",
 							"path": [
-								"items"
+								"world"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "CreateItemsBatch",
-					"protocolProfileBehavior": {
-						"followRedirects": true,
-						"disableUrlEncoding": false,
-						"disableCookies": false
-					},
+					"name": "Get World",
 					"request": {
-						"method": "POST",
+						"method": "GET",
 						"header": [
 							{
-								"key": "Content-Type",
+								"key": "accept",
 								"value": "application/json"
 							},
 							{
-								"key": "User-Agent",
-								"value": "insomnia/12.0.0"
+								"key": "Authorization",
+								"value": "Bearer YOUR_TOKEN_HERE"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"items\": [\n    {\n      \"name\": \"Health Potion\",\n      \"description\": \"Restores 50 HP\",\n      \"category\": \"consumable\",\n      \"sprite_id\": \"00000000-0000-0000-0000-000000000000\"\n    },\n    {\n      \"name\": \"Mana Potion\",\n      \"description\": \"Restores 50 MP\",\n      \"category\": \"consumable\",\n      \"sprite_id\": \"00000000-0000-0000-0000-000000000001\"\n    }\n  ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
-							"raw": "localhost:8000/items/batch",
+							"raw": "http://localhost:8000/world/4cb14079-cadf-4678-9183-7b518cfba788",
+							"protocol": "http",
 							"host": [
 								"localhost"
 							],
 							"port": "8000",
 							"path": [
-								"items",
-								"batch"
+								"world",
+								"4cb14079-cadf-4678-9183-7b518cfba788"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "GetItemsMetadata",
-					"protocolProfileBehavior": {
-						"followRedirects": true,
-						"disableUrlEncoding": false,
-						"disableCookies": false
-					},
+					"name": "Get Worlds",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
-								"key": "User-Agent",
-								"value": "insomnia/12.0.0"
-							}
-						],
-						"url": {
-							"raw": "localhost:8000/items/metadata",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"items",
-								"metadata"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GetItemById",
-					"protocolProfileBehavior": {
-						"followRedirects": true,
-						"disableUrlEncoding": false,
-						"disableCookies": false
-					},
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "User-Agent",
-								"value": "insomnia/12.0.0"
-							}
-						],
-						"url": {
-							"raw": "localhost:8000/items/00000000-0000-0000-0000-000000000000",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"items",
-								"00000000-0000-0000-0000-000000000000"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "DeleteItem",
-					"protocolProfileBehavior": {
-						"followRedirects": true,
-						"disableUrlEncoding": false,
-						"disableCookies": false
-					},
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "User-Agent",
-								"value": "insomnia/12.0.0"
-							}
-						],
-						"url": {
-							"raw": "localhost:8000/items/00000000-0000-0000-0000-000000000000",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"items",
-								"00000000-0000-0000-0000-000000000000"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Items/Sprites",
-			"item": [
-				{
-					"name": "UploadItemSprite",
-					"protocolProfileBehavior": {
-						"followRedirects": true,
-						"disableUrlEncoding": false,
-						"disableCookies": false
-					},
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "multipart/form-data"
+								"key": "accept",
+								"value": "application/json"
 							},
 							{
-								"key": "User-Agent",
-								"value": "insomnia/12.0.0"
+								"key": "Authorization",
+								"value": "Bearer YOUR_TOKEN_HERE"
 							}
 						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "sprite",
-									"type": "file",
-									"src": "/path/to/sprite.png"
-								},
-								{
-									"key": "category",
-									"value": "weapon",
-									"type": "text"
-								}
-							]
-						},
 						"url": {
-							"raw": "localhost:8000/assets/sprites/items",
+							"raw": "http://localhost:8000/world/4cb14079-cadf-4678-9183-7b518cfba788",
+							"protocol": "http",
 							"host": [
 								"localhost"
 							],
 							"port": "8000",
 							"path": [
-								"assets",
-								"sprites",
-								"items"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "DownloadItemSprite",
-					"protocolProfileBehavior": {
-						"followRedirects": true,
-						"disableUrlEncoding": false,
-						"disableCookies": false
-					},
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "User-Agent",
-								"value": "insomnia/12.0.0"
-							}
-						],
-						"url": {
-							"raw": "localhost:8000/assets/sprites/items/00000000-0000-0000-0000-000000000000",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"assets",
-								"sprites",
-								"items",
-								"00000000-0000-0000-0000-000000000000"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "DownloadItemSpriteByCategory",
-					"protocolProfileBehavior": {
-						"followRedirects": true,
-						"disableUrlEncoding": false,
-						"disableCookies": false
-					},
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "User-Agent",
-								"value": "insomnia/12.0.0"
-							}
-						],
-						"url": {
-							"raw": "localhost:8000/assets/sprites/items/weapon/00000000-0000-0000-0000-000000000000",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"assets",
-								"sprites",
-								"items",
-								"weapon",
-								"00000000-0000-0000-0000-000000000000"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "DeleteItemSprite",
-					"protocolProfileBehavior": {
-						"followRedirects": true,
-						"disableUrlEncoding": false,
-						"disableCookies": false
-					},
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "User-Agent",
-								"value": "insomnia/12.0.0"
-							}
-						],
-						"url": {
-							"raw": "localhost:8000/assets/sprites/items/00000000-0000-0000-0000-000000000000",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"assets",
-								"sprites",
-								"items",
-								"00000000-0000-0000-0000-000000000000"
+								"world",
+								"4cb14079-cadf-4678-9183-7b518cfba788"
 							]
 						}
 					},

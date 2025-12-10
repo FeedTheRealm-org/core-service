@@ -2,11 +2,11 @@ package router
 
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
-	models_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/models"
+	bundles_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/bundles"
 	sprites_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/sprites"
-	models_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/models"
+	bundles_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bundles"
 	sprites_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/sprites"
-	models_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/models"
+	bundles_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/bundles"
 	sprites_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/sprites"
 	"github.com/gin-gonic/gin"
 )
@@ -29,11 +29,11 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 
 	/* Model Endpoints */
 
-	modelsRepo := models_repo.NewModelsRepository(conf, db)
-	modelsService := models_service.NewModelsService(conf, modelsRepo)
-	modelsController := models_controller.NewModelsController(conf, modelsService)
-	modelsGroup := g.Group("/models")
-	modelsGroup.GET("/:world_id", modelsController.DownloadModelsByWorldId)
-	modelsGroup.POST("", modelsController.UploadModelsByWorldId)
+	bundlesRepo := bundles_repo.NewBundlesRepository(conf, db)
+	bundlesService := bundles_service.NewBundlesService(conf, bundlesRepo)
+	bundlesController := bundles_controller.NewBundleController(conf, bundlesService)
+	bundlesGroup := g.Group("bundles")
+	bundlesGroup.GET("/:world_id", bundlesController.DownloadWorldBundle)
+	bundlesGroup.POST("/:world_id", bundlesController.UploadWorldBundle)
 
 }

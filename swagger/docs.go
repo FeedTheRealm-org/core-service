@@ -15,127 +15,24 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/assets/models": {
-            "post": {
-                "description": "Upload multiple 3D models with their materials to a specific world. Supports FBX, OBJ model files and various material formats.",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Models"
-                ],
-                "summary": "Upload world models",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "World ID",
-                        "name": "world_id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Name of the first model",
-                        "name": "models[0].name",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Unique ID for the first model",
-                        "name": "models[0].model_id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "3D model file (FBX, OBJ, etc.)",
-                        "name": "models[0].model_file",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "Material file (MAT, MTL, etc.)",
-                        "name": "models[0].material_file",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Name of the second model",
-                        "name": "models[1].name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Unique ID for the second model",
-                        "name": "models[1].model_id",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "3D model file for second model",
-                        "name": "models[1].model_file",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Material file for second model",
-                        "name": "models[1].material_file",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Successfully uploaded models",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ModelsPublishListResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request - missing required fields or invalid format",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - invalid or missing JWT token",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error - failed to save models",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/assets/models/{world_id}": {
+        "/assets/bundles/{world_id}": {
             "get": {
-                "description": "Downloads all 3D models and their materials for a specific world as a ZIP archive",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Downloads the bundle file (ZIP) containing all models and materials for a specific world",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
-                    "application/zip"
+                    "application/octet-stream"
                 ],
                 "tags": [
-                    "Models"
+                    "Bundles"
                 ],
-                "summary": "Download world models",
+                "summary": "Download world bundle",
                 "parameters": [
                     {
                         "type": "string",
@@ -148,7 +45,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "ZIP file containing all models and materials",
+                        "description": "Bundle file",
                         "schema": {
                             "type": "file"
                         }
@@ -168,7 +65,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not found - no models found for this world",
+                        "description": "Not found - bundle not found for this world",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -176,6 +73,70 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload a bundle file (ZIP) for a specific world containing all models and materials",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bundles"
+                ],
+                "summary": "Upload world bundle",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "World ID",
+                        "name": "world_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Bundle file (ZIP)",
+                        "name": "bundle",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully uploaded bundle",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.BundlePublishResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - missing required fields or invalid format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing JWT token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - failed to save bundle",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1117,6 +1078,23 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.BundlePublishResponse": {
+            "type": "object",
+            "properties": {
+                "bundle_url": {
+                    "type": "string",
+                    "example": "bucket/bundles/1a2b3c4d-5e6f-7890-abcd-ef1234567890/bundle.zip"
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "world_id": {
+                    "type": "string",
+                    "example": "1a2b3c4d-5e6f-7890-abcd-ef1234567890"
+                }
+            }
+        },
         "dtos.CharacterInfoResponse": {
             "type": "object",
             "properties": {
@@ -1300,34 +1278,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.ModelPublishResponse": {
-            "type": "object",
-            "properties": {
-                "model_id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.ModelsPublishListResponse": {
-            "type": "object",
-            "required": [
-                "world_id"
-            ],
-            "properties": {
-                "models": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.ModelPublishResponse"
-                    }
-                },
-                "world_id": {
                     "type": "string"
                 }
             }
