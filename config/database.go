@@ -97,6 +97,7 @@ func (db *DB) runMigrations() error {
 		if err != nil {
 			return err
 		}
+		defer m.Close()
 
 		logger.Logger.Infof("Applying migrations for %s...", folderName)
 		err = m.Up()
