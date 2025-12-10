@@ -49,6 +49,6 @@ swag-init: # Generate Swagger documentation
 	swag init -g cmd/main.go -o ./swagger
 .PHONY: swag-init
 
-migrate-create: # Create a new database migration. Usage: make migrate-create name=your_migration_name
-	migrate create -ext sql -dir migrations $(name)
+migrate-create: # Create a new database migration. Usage: make migrate-create service=your_service name=your_migration_name
+	migrate create -ext sql -dir migrations/$(service) $(name)
 .PHONY: migrate-create
