@@ -14,34 +14,24 @@ down: # Stop and remove containers
 	docker compose -f $(COMPOSE_BASE) down
 .PHONY: down
 
-up: down # Build and start containers
+build: down # Build containers
 	docker compose -f $(COMPOSE_BASE) build
+.PHONY: build
+
+up: down # Build and start containers
 	docker compose -f $(COMPOSE_BASE) up -d
 .PHONY: up
 
-down-dev: # Stop and remove development containers
-	docker compose -f $(COMPOSE_DEV) down
-.PHONY: down-dev
+up-build: down # Build and start containers
+	docker compose -f $(COMPOSE_BASE) up -d --build
+.PHONY: up-build
 
-build-dev: down-dev # Build development containers
-	docker compose -f $(COMPOSE_DEV) build
-.PHONY: build-dev
-
-up-dev: build-dev # Start development containers
-	docker compose -f $(COMPOSE_DEV) up -d
-.PHONY: up-dev
-
-exec-dev: up-dev # Execute a bash shell in the development app container
+dev: # Execute a bash shell in the development app container
+	docker compose -f $(COMPOSE_DEV) up -d --build
 	docker compose -f $(COMPOSE_DEV) exec app swag init -g cmd/main.go -o ./swagger
 	-docker compose -f $(COMPOSE_DEV) exec -it app /bin/bash
 	docker compose -f $(COMPOSE_DEV) down
-.PHONY: exec-dev
-
-run-dev: up-dev # Run the application in the development container
-	docker compose -f $(COMPOSE_DEV) exec app swag init -g cmd/main.go -o ./swagger
-	docker compose -f $(COMPOSE_DEV) exec app go run cmd/main.go
-	docker compose -f $(COMPOSE_DEV) down -v --remove-orphans
-.PHONY: run-dev
+.PHONY: dev
 
 exec-test:
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
@@ -50,6 +40,10 @@ exec-test:
 	docker compose -f $(COMPOSE_TEST) exec -T app sh run_tests.sh
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
 .PHONY: exec-test
+
+delete-volumes:
+	docker volume rm $$(docker volume ls -q)
+.PHONY: delete-volumes
 
 swag init:
 	swag init -g cmd/main.go -o ./swagger
