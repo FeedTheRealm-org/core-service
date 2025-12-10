@@ -33,7 +33,7 @@ dev: # Execute a bash shell in the development app container
 	docker compose -f $(COMPOSE_DEV) down
 .PHONY: dev
 
-exec-test:
+exec-test: # Execute all tests
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
 	docker compose -f $(COMPOSE_TEST) build
 	docker compose -f $(COMPOSE_TEST) up -d --remove-orphans
@@ -41,14 +41,14 @@ exec-test:
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
 .PHONY: exec-test
 
-delete-volumes:
+delete-volumes: # Delete all Docker volumes
 	docker volume rm $$(docker volume ls -q)
 .PHONY: delete-volumes
 
-swag-init:
+swag-init: # Generate Swagger documentation
 	swag init -g cmd/main.go -o ./swagger
 .PHONY: swag init
 
-migrate-create:
+migrate-create: # Create a new database migration. Usage: make migrate-create name=your_migration_name
 	migrate create -ext sql -dir migrations $(name)
 .PHONY: migrate-create
