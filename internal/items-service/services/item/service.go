@@ -1,8 +1,6 @@
 package item
 
 import (
-	"mime/multipart"
-
 	"github.com/FeedTheRealm-org/core-service/internal/items-service/models"
 	"github.com/google/uuid"
 )
@@ -22,26 +20,29 @@ type ItemService interface {
 	GetAllItems() ([]models.Item, error)
 
 	// GetItemsByCategory retrieves all items of a specific category.
-	GetItemsByCategory(category string) ([]models.Item, error)
+	GetItemsByCategory(categoryId uuid.UUID) ([]models.Item, error)
 
 	// DeleteItem deletes an item by its ID.
 	DeleteItem(id uuid.UUID) error
+
+	// ClearAllItems deletes all items (for testing only).
+	ClearAllItems() error
 }
 
-// ItemSpriteService defines the interface for item sprite-related business logic operations.
-type ItemSpriteService interface {
-	// UploadSprite uploads a sprite file and saves its metadata.
-	UploadSprite(category string, file *multipart.FileHeader) (*models.ItemSprite, error)
+// ItemCategoryService defines the interface for item category-related business logic operations.
+type ItemCategoryService interface {
+	// CreateCategory creates a new item category.
+	CreateCategory(name string) (*models.ItemCategory, error)
 
-	// GetSpriteById retrieves a sprite by its ID.
-	GetSpriteById(id uuid.UUID) (*models.ItemSprite, error)
+	// GetCategoryById retrieves a category by its ID.
+	GetCategoryById(id uuid.UUID) (*models.ItemCategory, error)
 
-	// GetSpritesByCategory retrieves all sprites of a specific category.
-	GetSpritesByCategory(category string) ([]models.ItemSprite, error)
+	// GetAllCategories retrieves all categories.
+	GetAllCategories() ([]models.ItemCategory, error)
 
-	// GetSpriteFile retrieves the file path for a sprite.
-	GetSpriteFile(id uuid.UUID) (string, error)
+	// DeleteCategory deletes a category by its ID.
+	DeleteCategory(id uuid.UUID) error
 
-	// DeleteSprite deletes a sprite by its ID.
-	DeleteSprite(id uuid.UUID) error
+	// ClearAllCategories deletes all categories (for testing only).
+	ClearAllCategories() error
 }

@@ -45,7 +45,7 @@ definitions:
     type: object
   dtos.CreateItemRequest:
     properties:
-      category:
+      category_id:
         type: string
       description:
         type: string
@@ -54,7 +54,7 @@ definitions:
       sprite_id:
         type: string
     required:
-    - category
+    - category_id
     - description
     - name
     - sprite_id
@@ -74,7 +74,7 @@ definitions:
     type: object
   dtos.ItemMetadataResponse:
     properties:
-      category:
+      category_id:
         type: string
       created_at:
         type: string
@@ -87,19 +87,6 @@ definitions:
       sprite_id:
         type: string
       updated_at:
-        type: string
-    type: object
-  dtos.ItemSpriteResponse:
-    properties:
-      category:
-        type: string
-      created_at:
-        type: string
-      id:
-        type: string
-      updated_at:
-        type: string
-      url:
         type: string
     type: object
   dtos.ItemsListResponse:
@@ -490,107 +477,6 @@ paths:
       summary: GetSpritesListByCategory
       tags:
       - assets-service
-  /assets/sprites/items:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Uploads a sprite file for items
-      parameters:
-      - description: Sprite file
-        in: formData
-        name: sprite
-        required: true
-        type: file
-      - description: Category (armor/weapon/consumable)
-        in: formData
-        name: category
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Uploaded sprite
-          schema:
-            $ref: '#/definitions/dtos.ItemSpriteResponse'
-        "400":
-          description: Bad request
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: UploadItemSprite
-      tags:
-      - items-service
-  /assets/sprites/items/{sprite_id}:
-    delete:
-      description: Deletes a sprite by its ID and removes the file from disk
-      parameters:
-      - description: Sprite UUID
-        in: path
-        name: sprite_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Sprite deleted successfully
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Invalid sprite ID
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "404":
-          description: Sprite not found
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: DeleteItemSprite
-      tags:
-      - items-service
-    get:
-      description: Downloads a sprite file by sprite ID (optionally filtered by category
-        via query param)
-      parameters:
-      - description: Sprite UUID
-        in: path
-        name: sprite_id
-        required: true
-        type: string
-      - description: Category (armor/weapon/consumable) - optional validation
-        in: query
-        name: category
-        type: string
-      produces:
-      - application/octet-stream
-      responses:
-        "200":
-          description: Sprite file
-          schema:
-            type: file
-        "400":
-          description: Invalid sprite ID or category mismatch
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "404":
-          description: Sprite not found
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: DownloadItemSprite
-      tags:
-      - items-service
   /auth/login:
     post:
       consumes:

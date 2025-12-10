@@ -10,7 +10,7 @@ import (
 type CreateItemRequest struct {
 	Name        string    `json:"name" binding:"required"`
 	Description string    `json:"description" binding:"required"`
-	Category    string    `json:"category" binding:"required"`
+	CategoryId  uuid.UUID `json:"category_id" binding:"required"`
 	SpriteId    uuid.UUID `json:"sprite_id" binding:"required"`
 }
 
@@ -24,7 +24,7 @@ type ItemMetadataResponse struct {
 	Id          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	Category    string    `json:"category"`
+	CategoryId  uuid.UUID `json:"category_id"`
 	SpriteId    uuid.UUID `json:"sprite_id"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
@@ -35,17 +35,20 @@ type ItemsListResponse struct {
 	Items []ItemMetadataResponse `json:"items"`
 }
 
-// UploadSpriteRequest represents the request payload for uploading a sprite.
-// This is a multipart form request, so we use form tags.
-type UploadSpriteRequest struct {
-	Category string `form:"category" binding:"required"`
+// CreateItemCategoryRequest represents the request payload for creating an item category.
+type CreateItemCategoryRequest struct {
+	Name string `json:"name" binding:"required"`
 }
 
-// ItemSpriteResponse represents a sprite metadata response.
-type ItemSpriteResponse struct {
+// ItemCategoryResponse represents an item category response.
+type ItemCategoryResponse struct {
 	Id        uuid.UUID `json:"id"`
-	Category  string    `json:"category"`
-	Url       string    `json:"url"`
+	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// ItemCategoriesListResponse represents the response payload for retrieving all item categories.
+type ItemCategoriesListResponse struct {
+	Categories []ItemCategoryResponse `json:"categories"`
 }

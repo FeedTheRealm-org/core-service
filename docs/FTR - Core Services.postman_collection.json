@@ -484,7 +484,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"Health Potion\",\n  \"description\": \"Restores 50 HP\",\n  \"category\": \"consumable\",\n  \"sprite_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+							"raw": "{\n  \"name\": \"Health Potion\",\n  \"description\": \"Restores 50 HP\",\n  \"category_id\": \"00000000-0000-0000-0000-000000000001\",\n  \"sprite_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -525,7 +525,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"items\": [\n    {\n      \"name\": \"Health Potion\",\n      \"description\": \"Restores 50 HP\",\n      \"category\": \"consumable\",\n      \"sprite_id\": \"00000000-0000-0000-0000-000000000000\"\n    },\n    {\n      \"name\": \"Mana Potion\",\n      \"description\": \"Restores 50 MP\",\n      \"category\": \"consumable\",\n      \"sprite_id\": \"00000000-0000-0000-0000-000000000001\"\n    }\n  ]\n}",
+							"raw": "{\n  \"items\": [\n    {\n      \"name\": \"Health Potion\",\n      \"description\": \"Restores 50 HP\",\n      \"category_id\": \"00000000-0000-0000-0000-000000000001\",\n      \"sprite_id\": \"00000000-0000-0000-0000-000000000000\"\n    },\n    {\n      \"name\": \"Mana Potion\",\n      \"description\": \"Restores 50 MP\",\n      \"category_id\": \"00000000-0000-0000-0000-000000000001\",\n      \"sprite_id\": \"00000000-0000-0000-0000-000000000001\"\n    }\n  ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -636,6 +636,113 @@
 			]
 		},
 		{
+			"name": "Items/Categories",
+			"item": [
+				{
+					"name": "CreateItemCategory",
+					"protocolProfileBehavior": {
+						"followRedirects": true,
+						"disableUrlEncoding": false,
+						"disableCookies": false
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "User-Agent",
+								"value": "insomnia/12.0.0"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"consumable\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8000/items/categories",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"items",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetItemCategories",
+					"protocolProfileBehavior": {
+						"followRedirects": true,
+						"disableUrlEncoding": false,
+						"disableCookies": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "User-Agent",
+								"value": "insomnia/12.0.0"
+							}
+						],
+						"url": {
+							"raw": "localhost:8000/items/categories",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"items",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteItemCategory",
+					"protocolProfileBehavior": {
+						"followRedirects": true,
+						"disableUrlEncoding": false,
+						"disableCookies": false
+					},
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "User-Agent",
+								"value": "insomnia/12.0.0"
+							}
+						],
+						"url": {
+							"raw": "localhost:8000/items/categories/00000000-0000-0000-0000-000000000001",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"items",
+								"categories",
+								"00000000-0000-0000-0000-000000000001"
+							]
+						}
+					},
+					"response": []
+				}
+                
+			]
+		},
+		{
 			"name": "Items/Sprites",
 			"item": [
 				{
@@ -666,8 +773,8 @@
 									"src": "/path/to/sprite.png"
 								},
 								{
-									"key": "category",
-									"value": "weapon",
+									"key": "category_id",
+									"value": "00000000-0000-0000-0000-000000000001",
 									"type": "text"
 								}
 							]
@@ -682,6 +789,72 @@
 								"assets",
 								"sprites",
 								"items"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetAllItemSprites",
+					"protocolProfileBehavior": {
+						"followRedirects": true,
+						"disableUrlEncoding": false,
+						"disableCookies": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "User-Agent",
+								"value": "insomnia/12.0.0"
+							}
+						],
+						"url": {
+							"raw": "localhost:8000/assets/sprites/items",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"assets",
+								"sprites",
+								"items"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetItemSpritesByCategory",
+					"protocolProfileBehavior": {
+						"followRedirects": true,
+						"disableUrlEncoding": false,
+						"disableCookies": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "User-Agent",
+								"value": "insomnia/12.0.0"
+							}
+						],
+						"url": {
+							"raw": "localhost:8000/assets/sprites/items?category_id=00000000-0000-0000-0000-000000000001",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"assets",
+								"sprites",
+								"items"
+							],
+							"query": [
+								{
+									"key": "category_id",
+									"value": "00000000-0000-0000-0000-000000000001"
+								}
 							]
 						}
 					},
@@ -719,38 +892,6 @@
 					"response": []
 				},
 				{
-					"name": "DownloadItemSpriteByCategory",
-					"protocolProfileBehavior": {
-						"followRedirects": true,
-						"disableUrlEncoding": false,
-						"disableCookies": false
-					},
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "User-Agent",
-								"value": "insomnia/12.0.0"
-							}
-						],
-						"url": {
-							"raw": "localhost:8000/assets/sprites/items/weapon/00000000-0000-0000-0000-000000000000",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"assets",
-								"sprites",
-								"items",
-								"weapon",
-								"00000000-0000-0000-0000-000000000000"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "DeleteItemSprite",
 					"protocolProfileBehavior": {
 						"followRedirects": true,
@@ -776,6 +917,37 @@
 								"sprites",
 								"items",
 								"00000000-0000-0000-0000-000000000000"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetItemCategories",
+					"protocolProfileBehavior": {
+						"followRedirects": true,
+						"disableUrlEncoding": false,
+						"disableCookies": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "User-Agent",
+								"value": "insomnia/12.0.0"
+							}
+						],
+						"url": {
+							"raw": "localhost:8000/assets/sprites/items/categories",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"assets",
+								"sprites",
+								"items",
+								"categories"
 							]
 						}
 					},

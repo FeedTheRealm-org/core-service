@@ -53,8 +53,8 @@ func (is *itemService) GetAllItems() ([]models.Item, error) {
 	return items, nil
 }
 
-func (is *itemService) GetItemsByCategory(category string) ([]models.Item, error) {
-	items, err := is.itemRepository.GetItemsByCategory(category)
+func (is *itemService) GetItemsByCategory(categoryId uuid.UUID) ([]models.Item, error) {
+	items, err := is.itemRepository.GetItemsByCategory(categoryId)
 	if err != nil {
 		return nil, err
 	}
@@ -67,4 +67,8 @@ func (is *itemService) DeleteItem(id uuid.UUID) error {
 	}
 	logger.Logger.Infof("Item deleted: %s", id)
 	return nil
+}
+
+func (is *itemService) ClearAllItems() error {
+	return is.itemRepository.DeleteAll()
 }

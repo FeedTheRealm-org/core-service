@@ -20,26 +20,38 @@ type ItemRepository interface {
 	GetAllItems() ([]models.Item, error)
 
 	// GetItemsByCategory retrieves all items of a specific category.
-	GetItemsByCategory(category string) ([]models.Item, error)
+	GetItemsByCategory(categoryId uuid.UUID) ([]models.Item, error)
 
 	// UpdateItem updates an existing item.
 	UpdateItem(item *models.Item) error
 
 	// DeleteItem deletes an item by its ID.
 	DeleteItem(id uuid.UUID) error
+
+	// DeleteAll deletes all items (for testing only).
+	DeleteAll() error
 }
 
-// ItemSpriteRepository defines the interface for item sprite-related database operations.
-type ItemSpriteRepository interface {
-	// CreateSprite creates a new sprite in the database.
-	CreateSprite(sprite *models.ItemSprite) error
+// ItemCategoryRepository defines the interface for item category-related database operations.
+type ItemCategoryRepository interface {
+	// CreateCategory creates a new item category in the database.
+	CreateCategory(category *models.ItemCategory) error
 
-	// GetSpriteById retrieves a sprite by its ID.
-	GetSpriteById(id uuid.UUID) (*models.ItemSprite, error)
+	// GetCategoryById retrieves a category by its ID.
+	GetCategoryById(id uuid.UUID) (*models.ItemCategory, error)
 
-	// GetSpritesByCategory retrieves all sprites of a specific category.
-	GetSpritesByCategory(category string) ([]models.ItemSprite, error)
+	// GetAllCategories retrieves all categories from the database.
+	GetAllCategories() ([]models.ItemCategory, error)
 
-	// DeleteSprite deletes a sprite by its ID.
-	DeleteSprite(id uuid.UUID) error
+	// DeleteCategory deletes a category by its ID.
+	DeleteCategory(id uuid.UUID) error
+
+	// CountItemsUsingCategory counts items that reference a specific category.
+	CountItemsUsingCategory(categoryId uuid.UUID) (int64, error)
+
+	// CountSpritesUsingCategory counts sprites that reference a specific category.
+	CountSpritesUsingCategory(categoryId uuid.UUID) (int64, error)
+
+	// DeleteAll deletes all categories (for testing only).
+	DeleteAll() error
 }

@@ -2,7 +2,6 @@ package item
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
@@ -16,17 +15,17 @@ import (
 )
 
 type itemController struct {
-	conf              *config.Config
-	itemService       item.ItemService
-	itemSpriteService item.ItemSpriteService
+	conf                *config.Config
+	itemService         item.ItemService
+	itemCategoryService item.ItemCategoryService
 }
 
 // NewItemController creates a new instance of ItemController.
-func NewItemController(conf *config.Config, itemService item.ItemService, itemSpriteService item.ItemSpriteService) ItemController {
+func NewItemController(conf *config.Config, itemService item.ItemService, itemCategoryService item.ItemCategoryService) ItemController {
 	return &itemController{
-		conf:              conf,
-		itemService:       itemService,
-		itemSpriteService: itemSpriteService,
+		conf:                conf,
+		itemService:         itemService,
+		itemCategoryService: itemCategoryService,
 	}
 }
 
@@ -63,15 +62,22 @@ func (ic *itemController) CreateItem(ctx *gin.Context) {
 		_ = ctx.Error(errors.NewBadRequestError("item description must be less than 256 characters"))
 		return
 	}
-	if len(req.Category) < 3 || len(req.Category) > 32 {
-		_ = ctx.Error(errors.NewBadRequestError("category must be between 3 and 32 characters"))
+
+	// Validate that category exists
+	_, err := ic.itemCategoryService.GetCategoryById(req.CategoryId)
+	if err != nil {
+		if _, ok := err.(*item_errors.ItemCategoryNotFound); ok {
+			_ = ctx.Error(errors.NewBadRequestError(err.Error()))
+			return
+		}
+		_ = ctx.Error(err)
 		return
 	}
 
 	newItem := &models.Item{
 		Name:        req.Name,
 		Description: req.Description,
-		Category:    req.Category,
+		CategoryId:  req.CategoryId,
 		SpriteId:    req.SpriteId,
 	}
 
@@ -88,7 +94,7 @@ func (ic *itemController) CreateItem(ctx *gin.Context) {
 		Id:          newItem.Id,
 		Name:        newItem.Name,
 		Description: newItem.Description,
-		Category:    newItem.Category,
+		CategoryId:  newItem.CategoryId,
 		SpriteId:    newItem.SpriteId,
 		CreatedAt:   newItem.CreatedAt,
 		UpdatedAt:   newItem.UpdatedAt,
@@ -137,7 +143,7 @@ func (ic *itemController) CreateItemsBatch(ctx *gin.Context) {
 		items[i] = models.Item{
 			Name:        itemReq.Name,
 			Description: itemReq.Description,
-			Category:    itemReq.Category,
+			CategoryId:  itemReq.CategoryId,
 			SpriteId:    itemReq.SpriteId,
 		}
 	}
@@ -154,7 +160,7 @@ func (ic *itemController) CreateItemsBatch(ctx *gin.Context) {
 			Id:          item.Id,
 			Name:        item.Name,
 			Description: item.Description,
-			Category:    item.Category,
+			CategoryId:  item.CategoryId,
 			SpriteId:    item.SpriteId,
 			CreatedAt:   item.CreatedAt,
 			UpdatedAt:   item.UpdatedAt,
@@ -194,7 +200,7 @@ func (ic *itemController) GetItemsMetadata(ctx *gin.Context) {
 			Id:          item.Id,
 			Name:        item.Name,
 			Description: item.Description,
-			Category:    item.Category,
+			CategoryId:  item.CategoryId,
 			SpriteId:    item.SpriteId,
 			CreatedAt:   item.CreatedAt,
 			UpdatedAt:   item.UpdatedAt,
@@ -246,124 +252,13 @@ func (ic *itemController) GetItemById(ctx *gin.Context) {
 		Id:          item.Id,
 		Name:        item.Name,
 		Description: item.Description,
-		Category:    item.Category,
+		CategoryId:  item.CategoryId,
 		SpriteId:    item.SpriteId,
 		CreatedAt:   item.CreatedAt,
 		UpdatedAt:   item.UpdatedAt,
 	}
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
-}
-
-// @Summary UploadItemSprite
-// @Description Uploads a sprite file for items
-// @Tags items-service
-// @Accept  multipart/form-data
-// @Produce  json
-// @Param sprite formData file true "Sprite file"
-// @Param category formData string true "Category (armor/weapon/consumable)"
-// @Success 201  {object}  dtos.ItemSpriteResponse "Uploaded sprite"
-// @Failure 400  {object}  dtos.ErrorResponse "Bad request"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /assets/sprites/items [post]
-func (ic *itemController) UploadItemSprite(ctx *gin.Context) {
-	// _, err := common_handlers.GetUserIDFromSession(ctx)
-	// if err != nil {
-	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-	// 	return
-	// }
-
-	category := ctx.PostForm("category")
-	if category == "" {
-		_ = ctx.Error(errors.NewBadRequestError("category is required"))
-		return
-	}
-
-	reqFile, err := ctx.FormFile("sprite")
-	if err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("failed to get sprite file from request: " + err.Error()))
-		return
-	}
-
-	// Validate file size (using same config as assets-service)
-	if reqFile.Size > ic.conf.Assets.MaxUploadSizeBytes {
-		_ = ctx.Error(errors.NewBadRequestError("file size exceeds the limit"))
-		return
-	}
-
-	// Validate content type
-	contentType := reqFile.Header.Get("Content-Type")
-	if contentType != "image/png" && contentType != "image/jpeg" {
-		_ = ctx.Error(errors.NewBadRequestError("file must be PNG or JPEG format"))
-		return
-	}
-
-	sprite, err := ic.itemSpriteService.UploadSprite(category, reqFile)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
-	res := &dtos.ItemSpriteResponse{
-		Id:        sprite.Id,
-		Category:  sprite.Category,
-		Url:       sprite.Url,
-		CreatedAt: sprite.CreatedAt,
-		UpdatedAt: sprite.UpdatedAt,
-	}
-
-	common_handlers.HandleSuccessResponse(ctx, http.StatusCreated, res)
-}
-
-// @Summary DownloadItemSprite
-// @Description Downloads a sprite file by sprite ID (optionally filtered by category via query param)
-// @Tags items-service
-// @Produce  octet-stream
-// @Param sprite_id path string true "Sprite UUID"
-// @Param category query string false "Category (armor/weapon/consumable) - optional validation"
-// @Success 200  {file}  byte "Sprite file"
-// @Failure 400  {object}  dtos.ErrorResponse "Invalid sprite ID or category mismatch"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Failure 404  {object}  dtos.ErrorResponse "Sprite not found"
-// @Router /assets/sprites/items/{sprite_id} [get]
-func (ic *itemController) DownloadItemSprite(ctx *gin.Context) {
-	// _, err := common_handlers.GetUserIDFromSession(ctx)
-	// if err != nil {
-	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-	// 	return
-	// }
-
-	spriteIdStr := ctx.Param("sprite_id")
-	spriteId, err := uuid.Parse(spriteIdStr)
-	if err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("invalid sprite ID format"))
-		return
-	}
-
-	// Get sprite from database
-	sprite, err := ic.itemSpriteService.GetSpriteById(spriteId)
-	if err != nil {
-		if _, ok := err.(*item_errors.ItemSpriteNotFound); ok {
-			_ = ctx.Error(errors.NewNotFoundError("sprite not found"))
-			return
-		}
-		_ = ctx.Error(err)
-		return
-	}
-
-	// Optional: validate category if provided as query parameter
-	category := ctx.Query("category")
-	if category != "" && sprite.Category != category {
-		_ = ctx.Error(errors.NewBadRequestError("sprite does not belong to specified category"))
-		return
-	}
-
-	if _, err := os.Stat(sprite.Url); os.IsNotExist(err) {
-		_ = ctx.Error(errors.NewNotFoundError("sprite file not found on disk"))
-		return
-	}
-
-	ctx.File(sprite.Url)
 }
 
 // @Summary DeleteItem
@@ -409,52 +304,85 @@ func (ic *itemController) DeleteItem(ctx *gin.Context) {
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, gin.H{"message": "item deleted successfully"})
 }
 
-// @Summary DeleteItemSprite
-// @Description Deletes a sprite by its ID and removes the file from disk
-// @Tags items-service
-// @Produce  json
-// @Param sprite_id path string true "Sprite UUID"
-// @Success 200  {object}  map[string]interface{} "Sprite deleted successfully"
-// @Failure 400  {object}  dtos.ErrorResponse "Invalid sprite ID"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Failure 404  {object}  dtos.ErrorResponse "Sprite not found"
-// @Router /assets/sprites/items/{sprite_id} [delete]
-func (ic *itemController) DeleteItemSprite(ctx *gin.Context) {
-	// _, err := common_handlers.GetUserIDFromSession(ctx)
-	// if err != nil {
-	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-	// 	return
-	// }
-
-	spriteIdStr := ctx.Param("sprite_id")
-	spriteId, err := uuid.Parse(spriteIdStr)
-	if err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("invalid sprite ID format"))
+// CreateItemCategory creates a new item category.
+func (ic *itemController) CreateItemCategory(ctx *gin.Context) {
+	req := &dtos.CreateItemCategoryRequest{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		_ = ctx.Error(errors.NewBadRequestError(err.Error()))
 		return
 	}
 
-	// Get sprite to get file path before deleting
-	sprite, err := ic.itemSpriteService.GetSpriteById(spriteId)
+	if len(req.Name) < 3 || len(req.Name) > 32 {
+		_ = ctx.Error(errors.NewBadRequestError("category name must be between 3 and 32 characters"))
+		return
+	}
+
+	category, err := ic.itemCategoryService.CreateCategory(req.Name)
 	if err != nil {
-		if _, ok := err.(*item_errors.ItemSpriteNotFound); ok {
-			_ = ctx.Error(errors.NewNotFoundError("sprite not found"))
+		if _, ok := err.(*item_errors.ItemCategoryConflict); ok {
+			_ = ctx.Error(errors.NewConflictError("category name already exists"))
 			return
 		}
 		_ = ctx.Error(err)
 		return
 	}
 
-	// Delete from database
-	if err := ic.itemSpriteService.DeleteSprite(spriteId); err != nil {
+	res := &dtos.ItemCategoryResponse{
+		Id:        category.Id,
+		Name:      category.Name,
+		CreatedAt: category.CreatedAt,
+		UpdatedAt: category.UpdatedAt,
+	}
+
+	common_handlers.HandleSuccessResponse(ctx, http.StatusCreated, res)
+}
+
+// GetItemCategories retrieves all item categories.
+func (ic *itemController) GetItemCategories(ctx *gin.Context) {
+	categories, err := ic.itemCategoryService.GetAllCategories()
+	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 
-	// Delete file from disk
-	if err := os.Remove(sprite.Url); err != nil {
-		// Log error but don't fail the request
-		// The database record is already deleted
+	responseCategories := make([]dtos.ItemCategoryResponse, len(categories))
+	for i, cat := range categories {
+		responseCategories[i] = dtos.ItemCategoryResponse{
+			Id:        cat.Id,
+			Name:      cat.Name,
+			CreatedAt: cat.CreatedAt,
+			UpdatedAt: cat.UpdatedAt,
+		}
 	}
 
-	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, gin.H{"message": "sprite deleted successfully"})
+	res := &dtos.ItemCategoriesListResponse{
+		Categories: responseCategories,
+	}
+
+	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
+}
+
+// DeleteItemCategory deletes an item category by ID.
+func (ic *itemController) DeleteItemCategory(ctx *gin.Context) {
+	categoryIdStr := ctx.Param("id")
+	categoryId, err := uuid.Parse(categoryIdStr)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid category ID format"))
+		return
+	}
+
+	if err := ic.itemCategoryService.DeleteCategory(categoryId); err != nil {
+		if _, ok := err.(*item_errors.ItemCategoryNotFound); ok {
+			_ = ctx.Error(errors.NewNotFoundError(err.Error()))
+			return
+		}
+		if categoryInUse, ok := err.(*item_errors.ItemCategoryInUse); ok {
+			_ = ctx.Error(errors.NewBadRequestError(categoryInUse.Error()))
+			return
+		}
+		_ = ctx.Error(err)
+		return
+	}
+
+	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, gin.H{"message": "category deleted successfully"})
 }

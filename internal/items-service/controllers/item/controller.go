@@ -19,12 +19,12 @@ type ItemController interface {
 	// DeleteItem deletes an item by ID.
 	DeleteItem(c *gin.Context)
 
-	// UploadItemSprite handles sprite file upload for items.
-	UploadItemSprite(c *gin.Context)
+	// CreateItemCategory creates a new item category.
+	CreateItemCategory(c *gin.Context)
 
-	// DownloadItemSprite handles sprite file download by ID (with optional category query param).
-	DownloadItemSprite(c *gin.Context)
+	// GetItemCategories retrieves all item categories.
+	GetItemCategories(c *gin.Context)
 
-	// DeleteItemSprite deletes a sprite by ID.
-	DeleteItemSprite(c *gin.Context)
+	// DeleteItemCategory deletes an item category by ID.
+	DeleteItemCategory(c *gin.Context)
 }

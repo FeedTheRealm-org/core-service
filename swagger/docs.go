@@ -340,156 +340,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/assets/sprites/items": {
-            "post": {
-                "description": "Uploads a sprite file for items",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "items-service"
-                ],
-                "summary": "UploadItemSprite",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "Sprite file",
-                        "name": "sprite",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Category (armor/weapon/consumable)",
-                        "name": "category",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Uploaded sprite",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ItemSpriteResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/assets/sprites/items/{sprite_id}": {
-            "get": {
-                "description": "Downloads a sprite file by sprite ID (optionally filtered by category via query param)",
-                "produces": [
-                    "application/octet-stream"
-                ],
-                "tags": [
-                    "items-service"
-                ],
-                "summary": "DownloadItemSprite",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Sprite UUID",
-                        "name": "sprite_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Category (armor/weapon/consumable) - optional validation",
-                        "name": "category",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sprite file",
-                        "schema": {
-                            "type": "file"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid sprite ID or category mismatch",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Sprite not found",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Deletes a sprite by its ID and removes the file from disk",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "items-service"
-                ],
-                "summary": "DeleteItemSprite",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Sprite UUID",
-                        "name": "sprite_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sprite deleted successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid sprite ID",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Sprite not found",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/assets/sprites/{sprite_id}": {
             "get": {
                 "description": "Downloads the sprite file for a given sprite UUID.",
@@ -1176,13 +1026,13 @@ const docTemplate = `{
         "dtos.CreateItemRequest": {
             "type": "object",
             "required": [
-                "category",
+                "category_id",
                 "description",
                 "name",
                 "sprite_id"
             ],
             "properties": {
-                "category": {
+                "category_id": {
                     "type": "string"
                 },
                 "description": {
@@ -1219,7 +1069,7 @@ const docTemplate = `{
         "dtos.ItemMetadataResponse": {
             "type": "object",
             "properties": {
-                "category": {
+                "category_id": {
                     "type": "string"
                 },
                 "created_at": {
@@ -1238,26 +1088,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.ItemSpriteResponse": {
-            "type": "object",
-            "properties": {
-                "category": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "url": {
                     "type": "string"
                 }
             }

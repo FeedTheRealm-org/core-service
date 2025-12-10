@@ -294,7 +294,7 @@ collection:
             {
               "name": "Health Potion",
               "description": "Restores 50 HP",
-              "category": "consumable",
+              "category_id": "00000000-0000-0000-0000-000000000001",
               "sprite_id": "00000000-0000-0000-0000-000000000000"
             }
         headers:
@@ -328,13 +328,13 @@ collection:
                 {
                   "name": "Health Potion",
                   "description": "Restores 50 HP",
-                  "category": "consumable",
+                  "category_id": "00000000-0000-0000-0000-000000000001",
                   "sprite_id": "00000000-0000-0000-0000-000000000000"
                 },
                 {
                   "name": "Mana Potion",
                   "description": "Restores 50 MP",
-                  "category": "consumable",
+                  "category_id": "00000000-0000-0000-0000-000000000001",
                   "sprite_id": "00000000-0000-0000-0000-000000000001"
                 }
               ]
@@ -415,13 +415,92 @@ collection:
             send: true
             store: true
           rebuildPath: true
+  - name: Items/Categories
+    meta:
+      id: fld_items_categories_collection
+      created: 1732558806000
+      modified: 1732558806000
+      sortKey: -1762719994580
+      description: "Item categories endpoints"
+    children:
+      - url: localhost:8000/items/categories
+        name: CreateItemCategory
+        meta:
+          id: req_items_create_category
+          created: 1732558807000
+          modified: 1732558807000
+          isPrivate: false
+          description: "Create a new item category"
+          sortKey: -1732558807000
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "name": "consumable"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/categories
+        name: GetItemCategories
+        meta:
+          id: req_items_get_categories
+          created: 1732558808000
+          modified: 1732558808000
+          isPrivate: false
+          description: "Get all item categories"
+          sortKey: -1732558808000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/categories/00000000-0000-0000-0000-000000000001
+        name: DeleteItemCategory
+        meta:
+          id: req_items_delete_category
+          created: 1732558809000
+          modified: 1732558809000
+          isPrivate: false
+          description: "Delete an item category by ID (fails if in use)"
+          sortKey: -1732558809000
+        method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
   - name: Items/Sprites
     meta:
       id: fld_items_sprites_collection
       created: 1732558810000
       modified: 1732558810000
       sortKey: -1762719994550
-      description: "Item sprites endpoints"
+      description: "Item sprites endpoints (managed by assets-service)"
     children:
       - url: localhost:8000/assets/sprites/items
         name: UploadItemSprite
@@ -444,9 +523,9 @@ collection:
               type: file
               fileName: /path/to/sprite.png
             - id: pair_items_sprite_category
-              name: category
-              value: "weapon"
-              description: "Category (armor/weapon/consumable)"
+              name: category_id
+              value: "00000000-0000-0000-0000-000000000001"
+              description: "Category UUID"
               disabled: false
         headers:
           - name: Content-Type
@@ -461,14 +540,14 @@ collection:
             send: true
             store: true
           rebuildPath: true
-      - url: localhost:8000/assets/sprites/items/00000000-0000-0000-0000-000000000000
-        name: DownloadItemSprite
+      - url: localhost:8000/assets/sprites/items
+        name: GetAllItemSprites
         meta:
-          id: req_items_download_sprite
+          id: req_items_get_all_sprites
           created: 1732558812000
           modified: 1732558812000
           isPrivate: false
-          description: "Download item sprite by ID (without category validation)"
+          description: "Get all item sprites (optional category filter via query param)"
           sortKey: -1732558812000
         method: GET
         headers:
@@ -482,15 +561,36 @@ collection:
             send: true
             store: true
           rebuildPath: true
-      - url: localhost:8000/assets/sprites/items/00000000-0000-0000-0000-000000000000?category=weapon
-        name: DownloadItemSpriteWithCategory
+      - url: localhost:8000/assets/sprites/items?category_id=00000000-0000-0000-0000-000000000001
+        name: GetItemSpritesByCategory
         meta:
-          id: req_items_download_sprite_category
+          id: req_items_get_sprites_by_category
           created: 1732558813000
           modified: 1732558813000
           isPrivate: false
-          description: "Download item sprite by ID with category validation (query param)"
+          description: "Get item sprites filtered by category"
           sortKey: -1732558813000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/assets/sprites/items/00000000-0000-0000-0000-000000000000
+        name: DownloadItemSprite
+        meta:
+          id: req_items_download_sprite
+          created: 1732558814000
+          modified: 1732558814000
+          isPrivate: false
+          description: "Download item sprite by ID"
+          sortKey: -1732558814000
         method: GET
         headers:
           - name: User-Agent
@@ -507,12 +607,33 @@ collection:
         name: DeleteItemSprite
         meta:
           id: req_items_delete_sprite
-          created: 1732558814000
-          modified: 1732558814000
+          created: 1732558815000
+          modified: 1732558815000
           isPrivate: false
           description: "Delete an item sprite by ID"
-          sortKey: -1732558814000
+          sortKey: -1732558815000
         method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/assets/sprites/items/categories
+        name: GetItemCategories
+        meta:
+          id: req_items_get_categories_from_assets
+          created: 1732558816000
+          modified: 1732558816000
+          isPrivate: false
+          description: "Get all item categories (read-only from assets-service)"
+          sortKey: -1732558816000
+        method: GET
         headers:
           - name: User-Agent
             value: insomnia/12.0.0
