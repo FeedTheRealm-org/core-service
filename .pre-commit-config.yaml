@@ -12,3 +12,11 @@
           entry: golangci-lint run
           language: system
           files: \.(go)$
+    - repo: local
+      hooks:
+        - id: go-fmt-check
+          name: gofmt check
+          entry: bash -c 'files=$(gofmt -w -l "$@"); if [ -n "$files" ]; then echo "Unformatted files:"; echo "$files"; exit 1; fi' --
+          language: system
+          types: [go]
+          pass_filenames: true
