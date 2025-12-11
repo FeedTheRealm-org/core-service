@@ -2,12 +2,12 @@ package config
 
 import (
 	"fmt"
-
+	"os"
 	"time"
 
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	migratePostgres "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"gorm.io/driver/postgres"
@@ -64,17 +64,45 @@ func NewDB(conf *Config) (*DB, error) {
 }
 
 func (db *DB) runMigrations() error {
-	m, err := migrate.New(
-		"file://./migrations",
-		db.dsn,
-	)
+	entries, err := os.ReadDir("migrations")
 	if err != nil {
 		return err
 	}
 
-	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
+	sqlDB, err := db.Conn.DB()
+	if err != nil {
 		return err
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		folderName := entry.Name()
+
+		driver, err := migratePostgres.WithInstance(sqlDB, &migratePostgres.Config{
+			MigrationsTable: "schema_migrations_" + folderName,
+		})
+		if err != nil {
+			return err
+		}
+
+		sourceURL := fmt.Sprintf("file://migrations/%s", folderName)
+		m, err := migrate.NewWithDatabaseInstance(
+			sourceURL,
+			"postgres",
+			driver,
+		)
+		if err != nil {
+			return err
+		}
+
+		logger.Logger.Infof("Applying migrations for %s...", folderName)
+		err = m.Up()
+		if err != nil && err != migrate.ErrNoChange {
+			return fmt.Errorf("migration failed for %s: %w", folderName, err)
+		}
 	}
 
 	return nil
