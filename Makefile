@@ -1,5 +1,6 @@
-README = README.md
-README_TMP = README.tmp
+COMPOSE_BASE := docker-compose.yml
+COMPOSE_DEV := docker-compose.dev.yml
+COMPOSE_TEST := docker-compose.test.yml
 
 help: # Show this help message
 	@awk -F'#' '/^[^[:space:]].*:/ && !/^\.PHONY/ { \
@@ -10,51 +11,44 @@ help: # Show this help message
 .PHONY: help
 
 down: # Stop and remove containers
-	docker compose -f docker-compose.yml down
+	docker compose -f $(COMPOSE_BASE) down
 .PHONY: down
 
+build: down # Build containers
+	docker compose -f $(COMPOSE_BASE) build
+.PHONY: build
+
 up: down # Build and start containers
-	docker compose -f docker-compose.yml build
-	docker compose -f docker-compose.yml up -d
+	docker compose -f $(COMPOSE_BASE) up -d
 .PHONY: up
 
-docker-down-dev: # Stop and remove development containers
-	docker compose -f docker-compose.dev.yml down
-.PHONY: docker-down-dev
+up-build: down # Build and start containers
+	docker compose -f $(COMPOSE_BASE) up -d --build
+.PHONY: up-build
 
-docker-build-dev: docker-down-dev # Build development containers
-	docker compose -f docker-compose.dev.yml build
-.PHONY: docker-build-dev
+dev: # Execute a bash shell in the development app container
+	docker compose -f $(COMPOSE_DEV) up -d --build
+	docker compose -f $(COMPOSE_DEV) exec app swag init -g cmd/main.go -o ./swagger
+	-docker compose -f $(COMPOSE_DEV) exec -it app /bin/bash
+	docker compose -f $(COMPOSE_DEV) down
+.PHONY: dev
 
-docker-up-dev: docker-build-dev # Start development containers
-	docker compose -f docker-compose.dev.yml up -d
-.PHONY: docker-up-dev
-
-docker-exec-app-dev: docker-up-dev # Execute a bash shell in the development app container
-	docker compose -f docker-compose.dev.yml exec app swag init -g cmd/main.go -o ./swagger
-	docker compose -f docker-compose.dev.yml exec -it app /bin/bash
-.PHONY: docker-exec-app-dev
-
-docker-run-app-dev: docker-up-dev # Run the application in the development container
-	docker compose -f docker-compose.dev.yml exec app swag init -g cmd/main.go -o ./swagger
-	docker compose -f docker-compose.dev.yml exec app go run cmd/main.go
-.PHONY: docker-run-app-dev
-
-exec-test:
-	docker compose -f docker-compose.test.yml down -v --remove-orphans
-	docker compose -f docker-compose.test.yml build
-	docker compose -f docker-compose.test.yml up -d --remove-orphans
-	docker compose -f docker-compose.test.yml exec -T app sh run_tests.sh
-	docker compose -f docker-compose.test.yml down -v --remove-orphans
+exec-test: # Execute all tests
+	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
+	docker compose -f $(COMPOSE_TEST) build
+	docker compose -f $(COMPOSE_TEST) up -d --remove-orphans
+	docker compose -f $(COMPOSE_TEST) exec -T app sh run_tests.sh
+	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
 .PHONY: exec-test
 
+delete-volumes: # Delete all Docker volumes
+	docker volume rm $$(docker volume ls -q)
+.PHONY: delete-volumes
 
-
-swag init:
+swag-init: # Generate Swagger documentation
 	swag init -g cmd/main.go -o ./swagger
-.PHONY: swag init
+.PHONY: swag-init
 
-
-migrate-create:
-	migrate create -ext sql -dir migrations $(name)
+migrate-create: # Create a new database migration. Usage: make migrate-create service=your_service name=your_migration_name
+	migrate create -ext sql -dir migrations/$(service) $(name)
 .PHONY: migrate-create
