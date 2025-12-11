@@ -42,6 +42,7 @@ type Config struct {
 	SessionTokenDuration  time.Duration
 	BrevoAPIKey           string
 	EmailSenderAddress    string
+	EmailLogoURL          string
 }
 
 func CreateConfig() *Config {
@@ -73,6 +74,7 @@ func CreateConfig() *Config {
 		SessionTokenDuration:  getEnvOrDefaultDuration("SESSION_TOKEN_DURATION", time.Hour*24),
 		BrevoAPIKey:           os.Getenv("BREVO_API_KEY"),
 		EmailSenderAddress:    os.Getenv("EMAIL_SENDER_ADDRESS"),
+		EmailLogoURL:          getEnvOrDefaultString("EMAIL_LOGO_URL", "https://avatars.githubusercontent.com/u/231922724?s=400&u=5f4eb45fb6dc7cfa42333bfe1dc64a376122e3d0&v=4"),
 	}
 }
 
