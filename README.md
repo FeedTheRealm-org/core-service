@@ -182,7 +182,7 @@ http://localhost:8000/swagger/index.html
 Script to seed items wiht its sprites and categories. It is needed to have under the directory /client/Assets the asset called "6000FantasyIcons" like /client/Assets6000FantasyIcons. the scripts loads the .png from that folder automatically.
 
 ```sh
-#~/Documents/tpf/feed_the_realm/services$ 
+#~/Documents/tpf/feed_the_realm/services$
 ./scripts/seed_items.sh ../client http://localhost:8000
 ```
 

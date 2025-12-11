@@ -10,7 +10,6 @@ import (
 	item_errors "github.com/FeedTheRealm-org/core-service/internal/items-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/items-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/items-service/services/item"
-	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )

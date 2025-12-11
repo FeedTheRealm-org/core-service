@@ -17,7 +17,7 @@ type ModelsPublishListResponse struct {
 type ModelResponse struct {
 	ModelID uuid.UUID `json:"model_id"`
 	Name    string    `json:"name"`
-	
+
 }
 
 type ModelsListResponse struct {
