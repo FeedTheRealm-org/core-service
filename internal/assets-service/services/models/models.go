@@ -32,24 +32,31 @@ func (ms *modelsService) PublishModels(worldId uuid.UUID, models []models.Model)
 	}
 
 	for i := range models {
+		models[i].WorldID = worldId
+
 		// Create the bucket directory and paths
 		baseDir := fmt.Sprintf("bucket/worlds/%s/models/%s", worldId, models[i].ModelID)
 		if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
 			return nil, fmt.Errorf("failed creating directory: %w", err)
 		}
+
+		// Save model to bucket
 		modelPath := filepath.Join(baseDir, "model"+filepath.Ext(models[i].ModelFile.Filename))
-		materialPath := filepath.Join(baseDir, "material"+filepath.Ext(models[i].MaterialFile.Filename))
-		// Save to bucket
 		if err := saveUploadedFile(models[i].ModelFile, modelPath); err != nil {
 			return nil, fmt.Errorf("failed saving model file: %w", err)
 		}
+		models[i].ModelURL = modelPath
+
+		if models[i].MaterialFile == nil {
+			continue
+		}
+		// Save material file if provided
+		materialPath := filepath.Join(baseDir, "material"+filepath.Ext(models[i].MaterialFile.Filename))
 		if err := saveUploadedFile(models[i].MaterialFile, materialPath); err != nil {
 			return nil, fmt.Errorf("failed saving material file: %w", err)
 		}
 		// Update model URLs and world ID
-		models[i].ModelURL = modelPath
 		models[i].MaterialURL = materialPath
-		models[i].WorldID = worldId
 	}
 	// Save to DB
 	PublishedModels, err := ms.modelsRepository.PublishModels(models)

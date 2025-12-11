@@ -8,12 +8,11 @@ import (
 )
 
 type Model struct {
-	Id          uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	WorldID     uuid.UUID `gorm:"type:uuid;not null;index"`
 	ModelID     uuid.UUID `gorm:"type:uuid;not null"`
-	WorldID     uuid.UUID `gorm:"type:uuid;not null"`
 	Name        string    `gorm:"type:text;not null"`
 	ModelURL    string    `gorm:"type:text;not null"`
-	MaterialURL string    `gorm:"type:text;not null"`
+	MaterialURL string    `gorm:"type:text"`
 	CreatedAt   time.Time `gorm:"autoCreateTime"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime"`
 	// These fields are used only during upload and are not stored in DB

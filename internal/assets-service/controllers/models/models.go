@@ -164,14 +164,13 @@ func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
 // @Failure 500 {object} map[string]interface{} "Internal server error - failed to save models"
 // @Router /assets/models [post]
 func (mc *modelsController) UploadModelsByWorldId(c *gin.Context) {
-
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
 		return
 	}
 
-	worldIDStr := c.PostForm("world_id")
+	worldIDStr := c.Param("world_id")
 	if worldIDStr == "" {
 		_ = c.Error(errors.NewNotFoundError("world_id is required"))
 		return
@@ -183,14 +182,7 @@ func (mc *modelsController) UploadModelsByWorldId(c *gin.Context) {
 		return
 	}
 
-	form := c.Request.MultipartForm
-	if form == nil || len(form.File) == 0 {
-		_ = c.Error(errors.NewBadRequestError("no files uploaded"))
-		return
-	}
-
 	modelsRequest := []models.Model{}
-
 	for i := 0; ; i++ {
 		name := c.PostForm(fmt.Sprintf("models[%d].name", i))
 		if name == "" {
@@ -214,8 +206,7 @@ func (mc *modelsController) UploadModelsByWorldId(c *gin.Context) {
 		}
 		materialFile, err := c.FormFile(fmt.Sprintf("models[%d].material_file", i))
 		if err != nil {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("material_file is required for model %d", i)))
-			return
+			materialFile = nil // Material file is optional
 		}
 		// Collect metadata and file headers
 		modelsRequest = append(modelsRequest, models.Model{
