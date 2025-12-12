@@ -7,8 +7,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
 	assets_errors "github.com/FeedTheRealm-org/core-service/internal/assets-service/errors"
-	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
-	"github.com/FeedTheRealm-org/core-service/internal/assets-service/services/item-sprites"
+	itemsprites "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/item-sprites"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/gin-gonic/gin"
@@ -29,18 +28,6 @@ func NewItemSpritesController(conf *config.Config, service itemsprites.ItemSprit
 }
 
 func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
-	categoryIdStr := c.PostForm("category_id")
-	if categoryIdStr == "" {
-		_ = c.Error(errors.NewBadRequestError("category_id is required"))
-		return
-	}
-
-	categoryId, err := uuid.Parse(categoryIdStr)
-	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid category_id format"))
-		return
-	}
-
 	reqFile, err := c.FormFile("sprite")
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("failed to get sprite file from request: " + err.Error()))
@@ -58,50 +45,25 @@ func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
 		return
 	}
 
-	sprite, err := isc.service.UploadSprite(categoryId, reqFile)
+	sprite, err := isc.service.UploadSprite(reqFile)
 	if err != nil {
-		if _, ok := err.(*assets_errors.ItemCategoryNotFound); ok {
-			_ = c.Error(errors.NewBadRequestError(err.Error()))
-			return
-		}
 		_ = c.Error(err)
 		return
 	}
 
 	res := &dtos.ItemSpriteResponse{
-		Id:         sprite.Id,
-		CategoryId: sprite.CategoryId,
-		Url:        sprite.Url,
-		CreatedAt:  sprite.CreatedAt,
-		UpdatedAt:  sprite.UpdatedAt,
+		Id:        sprite.Id,
+		Url:       sprite.Url,
+		CreatedAt: sprite.CreatedAt,
+		UpdatedAt: sprite.UpdatedAt,
 	}
 
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
 func (isc *itemSpritesController) GetAllItemSprites(c *gin.Context) {
-	// Optional category filter
-	categoryIdStr := c.Query("category_id")
-
-	var sprites []models.ItemSprite
-	var err error
-
-	if categoryIdStr != "" {
-		categoryId, parseErr := uuid.Parse(categoryIdStr)
-		if parseErr != nil {
-			_ = c.Error(errors.NewBadRequestError("invalid category_id format"))
-			return
-		}
-		sprites, err = isc.service.GetSpritesByCategory(categoryId)
-	} else {
-		sprites, err = isc.service.GetAllSprites()
-	}
-
+	sprites, err := isc.service.GetAllSprites()
 	if err != nil {
-		if _, ok := err.(*assets_errors.ItemCategoryNotFound); ok {
-			_ = c.Error(errors.NewBadRequestError(err.Error()))
-			return
-		}
 		_ = c.Error(err)
 		return
 	}
@@ -109,11 +71,10 @@ func (isc *itemSpritesController) GetAllItemSprites(c *gin.Context) {
 	responseSprites := make([]dtos.ItemSpriteResponse, len(sprites))
 	for i, sprite := range sprites {
 		responseSprites[i] = dtos.ItemSpriteResponse{
-			Id:         sprite.Id,
-			CategoryId: sprite.CategoryId,
-			Url:        sprite.Url,
-			CreatedAt:  sprite.CreatedAt,
-			UpdatedAt:  sprite.UpdatedAt,
+			Id:        sprite.Id,
+			Url:       sprite.Url,
+			CreatedAt: sprite.CreatedAt,
+			UpdatedAt: sprite.UpdatedAt,
 		}
 	}
 
@@ -170,26 +131,4 @@ func (isc *itemSpritesController) DeleteItemSprite(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, gin.H{"message": "sprite deleted successfully"})
 }
 
-func (isc *itemSpritesController) GetItemCategories(c *gin.Context) {
-	categories, err := isc.service.GetAllCategories()
-	if err != nil {
-		_ = c.Error(err)
-		return
-	}
-
-	responseCategories := make([]dtos.ItemCategoryResponse, len(categories))
-	for i, cat := range categories {
-		responseCategories[i] = dtos.ItemCategoryResponse{
-			Id:        cat.Id,
-			Name:      cat.Name,
-			CreatedAt: cat.CreatedAt,
-			UpdatedAt: cat.UpdatedAt,
-		}
-	}
-
-	res := &dtos.ItemCategoriesListResponse{
-		Categories: responseCategories,
-	}
-
-	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
-}
+// (Item sprite categories endpoint removed)

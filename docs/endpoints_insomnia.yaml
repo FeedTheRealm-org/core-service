@@ -294,7 +294,6 @@ collection:
             {
               "name": "Health Potion",
               "description": "Restores 50 HP",
-              "category_id": "00000000-0000-0000-0000-000000000001",
               "sprite_id": "00000000-0000-0000-0000-000000000000"
             }
         headers:
@@ -328,13 +327,11 @@ collection:
                 {
                   "name": "Health Potion",
                   "description": "Restores 50 HP",
-                  "category_id": "00000000-0000-0000-0000-000000000001",
                   "sprite_id": "00000000-0000-0000-0000-000000000000"
                 },
                 {
                   "name": "Mana Potion",
                   "description": "Restores 50 MP",
-                  "category_id": "00000000-0000-0000-0000-000000000001",
                   "sprite_id": "00000000-0000-0000-0000-000000000001"
                 }
               ]
@@ -405,6 +402,35 @@ collection:
           sortKey: -1732558805000
         method: DELETE
         headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/00000000-0000-0000-0000-000000000000/sprite
+        name: UpdateItemSprite
+        meta:
+          id: req_items_update_sprite
+          created: 1732558806001
+          modified: 1732558806001
+          isPrivate: false
+          description: "Update an item's sprite after creation"
+          sortKey: -1732558805100
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "sprite_id": "00000000-0000-0000-0000-000000000000"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
           - name: User-Agent
             value: insomnia/12.0.0
         settings:
@@ -522,11 +548,6 @@ collection:
               disabled: false
               type: file
               fileName: /path/to/sprite.png
-            - id: pair_items_sprite_category
-              name: category_id
-              value: "00000000-0000-0000-0000-000000000001"
-              description: "Category UUID"
-              disabled: false
         headers:
           - name: Content-Type
             value: multipart/form-data
@@ -547,29 +568,8 @@ collection:
           created: 1732558812000
           modified: 1732558812000
           isPrivate: false
-          description: "Get all item sprites (optional category filter via query param)"
+          description: "Get all item sprites"
           sortKey: -1732558812000
-        method: GET
-        headers:
-          - name: User-Agent
-            value: insomnia/12.0.0
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-      - url: localhost:8000/assets/sprites/items?category_id=00000000-0000-0000-0000-000000000001
-        name: GetItemSpritesByCategory
-        meta:
-          id: req_items_get_sprites_by_category
-          created: 1732558813000
-          modified: 1732558813000
-          isPrivate: false
-          description: "Get item sprites filtered by category"
-          sortKey: -1732558813000
         method: GET
         headers:
           - name: User-Agent
@@ -613,27 +613,6 @@ collection:
           description: "Delete an item sprite by ID"
           sortKey: -1732558815000
         method: DELETE
-        headers:
-          - name: User-Agent
-            value: insomnia/12.0.0
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-      - url: localhost:8000/assets/sprites/items/categories
-        name: GetItemCategories
-        meta:
-          id: req_items_get_categories_from_assets
-          created: 1732558816000
-          modified: 1732558816000
-          isPrivate: false
-          description: "Get all item categories (read-only from assets-service)"
-          sortKey: -1732558816000
-        method: GET
         headers:
           - name: User-Agent
             value: insomnia/12.0.0

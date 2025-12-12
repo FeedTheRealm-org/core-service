@@ -730,6 +730,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/items/{id}/sprite": {
+            "patch": {
+                "description": "Updates the sprite associated to an item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "items-service"
+                ],
+                "summary": "UpdateItemSprite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Sprite data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdateItemSpriteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item updated",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemMetadataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid item ID or bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Item not found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/players/character": {
             "patch": {
                 "description": "Updates the name and bio of the session player character",
@@ -1026,15 +1085,10 @@ const docTemplate = `{
         "dtos.CreateItemRequest": {
             "type": "object",
             "required": [
-                "category_id",
                 "description",
-                "name",
-                "sprite_id"
+                "name"
             ],
             "properties": {
-                "category_id": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },
@@ -1069,9 +1123,6 @@ const docTemplate = `{
         "dtos.ItemMetadataResponse": {
             "type": "object",
             "properties": {
-                "category_id": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1220,6 +1271,17 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dtos.SpriteResponse"
                     }
+                }
+            }
+        },
+        "dtos.UpdateItemSpriteRequest": {
+            "type": "object",
+            "required": [
+                "sprite_id"
+            ],
+            "properties": {
+                "sprite_id": {
+                    "type": "string"
                 }
             }
         },

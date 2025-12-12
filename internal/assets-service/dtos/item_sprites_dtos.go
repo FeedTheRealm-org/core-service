@@ -13,27 +13,13 @@ type UploadItemSpriteRequest struct {
 
 // ItemSpriteResponse represents an item sprite response.
 type ItemSpriteResponse struct {
-	Id         uuid.UUID `json:"id"`
-	CategoryId uuid.UUID `json:"category_id"`
-	Url        string    `json:"url"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	Id        uuid.UUID `json:"id"`
+	Url       string    `json:"url"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // ItemSpritesListResponse represents a list of item sprites.
 type ItemSpritesListResponse struct {
 	Sprites []ItemSpriteResponse `json:"sprites"`
-}
-
-// ItemCategoryResponse represents an item category (read from items-service).
-type ItemCategoryResponse struct {
-	Id        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// ItemCategoriesListResponse represents a list of item categories.
-type ItemCategoriesListResponse struct {
-	Categories []ItemCategoryResponse `json:"categories"`
 }

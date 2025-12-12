@@ -45,8 +45,6 @@ definitions:
     type: object
   dtos.CreateItemRequest:
     properties:
-      category_id:
-        type: string
       description:
         type: string
       name:
@@ -54,10 +52,8 @@ definitions:
       sprite_id:
         type: string
     required:
-    - category_id
     - description
     - name
-    - sprite_id
     type: object
   dtos.ErrorResponse:
     properties:
@@ -74,8 +70,6 @@ definitions:
     type: object
   dtos.ItemMetadataResponse:
     properties:
-      category_id:
-        type: string
       created_at:
         type: string
       description:
@@ -172,6 +166,13 @@ definitions:
         items:
           $ref: '#/definitions/dtos.SpriteResponse'
         type: array
+    type: object
+  dtos.UpdateItemSpriteRequest:
+    properties:
+      sprite_id:
+        type: string
+    required:
+    - sprite_id
     type: object
   dtos.VerifyAccountRequestDTO:
     properties:
@@ -661,6 +662,45 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: GetItemById
+      tags:
+      - items-service
+  /items/{id}/sprite:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the sprite associated to an item
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Sprite data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateItemSpriteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item updated
+          schema:
+            $ref: '#/definitions/dtos.ItemMetadataResponse'
+        "400":
+          description: Invalid item ID or bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Item not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UpdateItemSprite
       tags:
       - items-service
   /items/batch:

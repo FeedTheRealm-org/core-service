@@ -1,7 +1,5 @@
 BEGIN;
 
-DROP TABLE IF EXISTS item_sprites;
 DROP TABLE IF EXISTS items;
-DROP TABLE IF EXISTS item_categories;
 
 COMMIT;

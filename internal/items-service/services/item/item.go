@@ -53,14 +53,6 @@ func (is *itemService) GetAllItems() ([]models.Item, error) {
 	return items, nil
 }
 
-func (is *itemService) GetItemsByCategory(categoryId uuid.UUID) ([]models.Item, error) {
-	items, err := is.itemRepository.GetItemsByCategory(categoryId)
-	if err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 func (is *itemService) DeleteItem(id uuid.UUID) error {
 	if err := is.itemRepository.DeleteItem(id); err != nil {
 		return err
@@ -71,4 +63,14 @@ func (is *itemService) DeleteItem(id uuid.UUID) error {
 
 func (is *itemService) ClearAllItems() error {
 	return is.itemRepository.DeleteAll()
+}
+
+func (is *itemService) UpdateItemSprite(id uuid.UUID, spriteId uuid.UUID) error {
+	item, err := is.itemRepository.GetItemById(id)
+	if err != nil {
+		return err
+	}
+
+	item.SpriteId = spriteId
+	return is.itemRepository.UpdateItem(item)
 }

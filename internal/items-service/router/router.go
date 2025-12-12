@@ -11,14 +11,12 @@ import (
 func SetupItemsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 	// Initialize repositories
 	itemRepository := item_repo.NewItemRepository(conf, db)
-	itemCategoryRepository := item_repo.NewItemCategoryRepository(conf, db)
 
 	// Initialize services
 	itemService := item_service.NewItemService(conf, itemRepository)
-	itemCategoryService := item_service.NewItemCategoryService(conf, itemCategoryRepository)
 
 	// Initialize controller
-	itemController := item_controller.NewItemController(conf, itemService, itemCategoryService)
+	itemController := item_controller.NewItemController(conf, itemService)
 
 	// API routes for item metadata
 	apiGroup := r.Group("/items")
@@ -28,11 +26,6 @@ func SetupItemsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 		apiGroup.GET("/metadata", itemController.GetItemsMetadata)
 		apiGroup.GET("/:id", itemController.GetItemById)
 		apiGroup.DELETE("/:id", itemController.DeleteItem)
-
-		// Category routes
-		apiGroup.POST("/categories", itemController.CreateItemCategory)
-		apiGroup.GET("/categories", itemController.GetItemCategories)
-		apiGroup.DELETE("/categories/:id", itemController.DeleteItemCategory)
-
+		apiGroup.PATCH("/:id/sprite", itemController.UpdateItemSprite)
 	}
 }

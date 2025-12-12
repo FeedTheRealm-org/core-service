@@ -15,17 +15,15 @@ import (
 )
 
 type itemController struct {
-	conf                *config.Config
-	itemService         item.ItemService
-	itemCategoryService item.ItemCategoryService
+	conf        *config.Config
+	itemService item.ItemService
 }
 
 // NewItemController creates a new instance of ItemController.
-func NewItemController(conf *config.Config, itemService item.ItemService, itemCategoryService item.ItemCategoryService) ItemController {
+func NewItemController(conf *config.Config, itemService item.ItemService) ItemController {
 	return &itemController{
-		conf:                conf,
-		itemService:         itemService,
-		itemCategoryService: itemCategoryService,
+		conf:        conf,
+		itemService: itemService,
 	}
 }
 
@@ -63,23 +61,12 @@ func (ic *itemController) CreateItem(ctx *gin.Context) {
 		return
 	}
 
-	// Validate that category exists
-	_, err := ic.itemCategoryService.GetCategoryById(req.CategoryId)
-	if err != nil {
-		if _, ok := err.(*item_errors.ItemCategoryNotFound); ok {
-			_ = ctx.Error(errors.NewBadRequestError(err.Error()))
-			return
-		}
-		_ = ctx.Error(err)
-		return
-	}
-
 	newItem := &models.Item{
 		Name:        req.Name,
 		Description: req.Description,
-		CategoryId:  req.CategoryId,
-		SpriteId:    req.SpriteId,
 	}
+	// Only set SpriteId if provided (zero UUID means no sprite yet)
+	newItem.SpriteId = req.SpriteId
 
 	if err := ic.itemService.CreateItem(newItem); err != nil {
 		if _, ok := err.(*item_errors.ItemAlreadyExists); ok {
@@ -94,7 +81,6 @@ func (ic *itemController) CreateItem(ctx *gin.Context) {
 		Id:          newItem.Id,
 		Name:        newItem.Name,
 		Description: newItem.Description,
-		CategoryId:  newItem.CategoryId,
 		SpriteId:    newItem.SpriteId,
 		CreatedAt:   newItem.CreatedAt,
 		UpdatedAt:   newItem.UpdatedAt,
@@ -143,9 +129,8 @@ func (ic *itemController) CreateItemsBatch(ctx *gin.Context) {
 		items[i] = models.Item{
 			Name:        itemReq.Name,
 			Description: itemReq.Description,
-			CategoryId:  itemReq.CategoryId,
-			SpriteId:    itemReq.SpriteId,
 		}
+		items[i].SpriteId = itemReq.SpriteId
 	}
 
 	if err := ic.itemService.CreateItems(items); err != nil {
@@ -160,7 +145,6 @@ func (ic *itemController) CreateItemsBatch(ctx *gin.Context) {
 			Id:          item.Id,
 			Name:        item.Name,
 			Description: item.Description,
-			CategoryId:  item.CategoryId,
 			SpriteId:    item.SpriteId,
 			CreatedAt:   item.CreatedAt,
 			UpdatedAt:   item.UpdatedAt,
@@ -200,7 +184,6 @@ func (ic *itemController) GetItemsMetadata(ctx *gin.Context) {
 			Id:          item.Id,
 			Name:        item.Name,
 			Description: item.Description,
-			CategoryId:  item.CategoryId,
 			SpriteId:    item.SpriteId,
 			CreatedAt:   item.CreatedAt,
 			UpdatedAt:   item.UpdatedAt,
@@ -252,10 +235,68 @@ func (ic *itemController) GetItemById(ctx *gin.Context) {
 		Id:          item.Id,
 		Name:        item.Name,
 		Description: item.Description,
-		CategoryId:  item.CategoryId,
 		SpriteId:    item.SpriteId,
 		CreatedAt:   item.CreatedAt,
 		UpdatedAt:   item.UpdatedAt,
+	}
+
+	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
+}
+
+// @Summary UpdateItemSprite
+// @Description Updates the sprite associated to an item
+// @Tags items-service
+// @Accept   json
+// @Produce  json
+// @Param id path string true "Item UUID"
+// @Param request body dtos.UpdateItemSpriteRequest true "Sprite data"
+// @Success 200  {object}  dtos.ItemMetadataResponse "Item updated"
+// @Failure 400  {object}  dtos.ErrorResponse "Invalid item ID or bad request body"
+// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
+// @Failure 404  {object}  dtos.ErrorResponse "Item not found"
+// @Router /items/{id}/sprite [patch]
+func (ic *itemController) UpdateItemSprite(ctx *gin.Context) {
+	// _, err := common_handlers.GetUserIDFromSession(ctx)
+	// if err != nil {
+	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
+
+	itemIdStr := ctx.Param("id")
+	itemId, err := uuid.Parse(itemIdStr)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid item ID format"))
+		return
+	}
+
+	req := &dtos.UpdateItemSpriteRequest{}
+	if err := ctx.ShouldBindJSON(req); err != nil {
+		_ = ctx.Error(errors.NewBadRequestError(err.Error()))
+		return
+	}
+
+	if err := ic.itemService.UpdateItemSprite(itemId, req.SpriteId); err != nil {
+		if _, ok := err.(*item_errors.ItemNotFound); ok {
+			_ = ctx.Error(errors.NewNotFoundError("item not found"))
+			return
+		}
+		_ = ctx.Error(err)
+		return
+	}
+
+	updatedItem, err := ic.itemService.GetItemById(itemId)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	res := &dtos.ItemMetadataResponse{
+		Id:          updatedItem.Id,
+		Name:        updatedItem.Name,
+		Description: updatedItem.Description,
+		SpriteId:    updatedItem.SpriteId,
+		CreatedAt:   updatedItem.CreatedAt,
+		UpdatedAt:   updatedItem.UpdatedAt,
 	}
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
@@ -302,87 +343,4 @@ func (ic *itemController) DeleteItem(ctx *gin.Context) {
 	}
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, gin.H{"message": "item deleted successfully"})
-}
-
-// CreateItemCategory creates a new item category.
-func (ic *itemController) CreateItemCategory(ctx *gin.Context) {
-	req := &dtos.CreateItemCategoryRequest{}
-	if err := ctx.ShouldBindJSON(req); err != nil {
-		_ = ctx.Error(errors.NewBadRequestError(err.Error()))
-		return
-	}
-
-	if len(req.Name) < 3 || len(req.Name) > 32 {
-		_ = ctx.Error(errors.NewBadRequestError("category name must be between 3 and 32 characters"))
-		return
-	}
-
-	category, err := ic.itemCategoryService.CreateCategory(req.Name)
-	if err != nil {
-		if _, ok := err.(*item_errors.ItemCategoryConflict); ok {
-			_ = ctx.Error(errors.NewConflictError("category name already exists"))
-			return
-		}
-		_ = ctx.Error(err)
-		return
-	}
-
-	res := &dtos.ItemCategoryResponse{
-		Id:        category.Id,
-		Name:      category.Name,
-		CreatedAt: category.CreatedAt,
-		UpdatedAt: category.UpdatedAt,
-	}
-
-	common_handlers.HandleSuccessResponse(ctx, http.StatusCreated, res)
-}
-
-// GetItemCategories retrieves all item categories.
-func (ic *itemController) GetItemCategories(ctx *gin.Context) {
-	categories, err := ic.itemCategoryService.GetAllCategories()
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
-	responseCategories := make([]dtos.ItemCategoryResponse, len(categories))
-	for i, cat := range categories {
-		responseCategories[i] = dtos.ItemCategoryResponse{
-			Id:        cat.Id,
-			Name:      cat.Name,
-			CreatedAt: cat.CreatedAt,
-			UpdatedAt: cat.UpdatedAt,
-		}
-	}
-
-	res := &dtos.ItemCategoriesListResponse{
-		Categories: responseCategories,
-	}
-
-	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
-}
-
-// DeleteItemCategory deletes an item category by ID.
-func (ic *itemController) DeleteItemCategory(ctx *gin.Context) {
-	categoryIdStr := ctx.Param("id")
-	categoryId, err := uuid.Parse(categoryIdStr)
-	if err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("invalid category ID format"))
-		return
-	}
-
-	if err := ic.itemCategoryService.DeleteCategory(categoryId); err != nil {
-		if _, ok := err.(*item_errors.ItemCategoryNotFound); ok {
-			_ = ctx.Error(errors.NewNotFoundError(err.Error()))
-			return
-		}
-		if categoryInUse, ok := err.(*item_errors.ItemCategoryInUse); ok {
-			_ = ctx.Error(errors.NewBadRequestError(categoryInUse.Error()))
-			return
-		}
-		_ = ctx.Error(err)
-		return
-	}
-
-	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, gin.H{"message": "category deleted successfully"})
 }

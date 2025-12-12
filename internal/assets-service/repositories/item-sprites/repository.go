@@ -16,16 +16,6 @@ type ItemSpritesRepository interface {
 	// GetAllSprites retrieves all item sprites.
 	GetAllSprites() ([]models.ItemSprite, error)
 
-	// GetSpritesByCategory retrieves all sprites for a specific category.
-	GetSpritesByCategory(categoryId uuid.UUID) ([]models.ItemSprite, error)
-
 	// DeleteSprite deletes a sprite by its ID.
 	DeleteSprite(id uuid.UUID) error
-
-	// Category validation methods (reads from items-service table)
-	// GetCategoryById retrieves a category by ID for validation.
-	GetCategoryById(id uuid.UUID) (*models.ItemCategory, error)
-
-	// GetAllCategories retrieves all item categories.
-	GetAllCategories() ([]models.ItemCategory, error)
 }

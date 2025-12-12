@@ -19,30 +19,12 @@ type ItemService interface {
 	// GetAllItems retrieves all items.
 	GetAllItems() ([]models.Item, error)
 
-	// GetItemsByCategory retrieves all items of a specific category.
-	GetItemsByCategory(categoryId uuid.UUID) ([]models.Item, error)
-
 	// DeleteItem deletes an item by its ID.
 	DeleteItem(id uuid.UUID) error
 
 	// ClearAllItems deletes all items (for testing only).
 	ClearAllItems() error
-}
 
-// ItemCategoryService defines the interface for item category-related business logic operations.
-type ItemCategoryService interface {
-	// CreateCategory creates a new item category.
-	CreateCategory(name string) (*models.ItemCategory, error)
-
-	// GetCategoryById retrieves a category by its ID.
-	GetCategoryById(id uuid.UUID) (*models.ItemCategory, error)
-
-	// GetAllCategories retrieves all categories.
-	GetAllCategories() ([]models.ItemCategory, error)
-
-	// DeleteCategory deletes a category by its ID.
-	DeleteCategory(id uuid.UUID) error
-
-	// ClearAllCategories deletes all categories (for testing only).
-	ClearAllCategories() error
+	// UpdateItemSprite updates the sprite associated to an item.
+	UpdateItemSprite(id uuid.UUID, spriteId uuid.UUID) error
 }

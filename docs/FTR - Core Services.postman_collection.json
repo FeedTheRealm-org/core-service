@@ -484,7 +484,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"Health Potion\",\n  \"description\": \"Restores 50 HP\",\n  \"category_id\": \"00000000-0000-0000-0000-000000000001\",\n  \"sprite_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+							"raw": "{\n  \"name\": \"Health Potion\",\n  \"description\": \"Restores 50 HP\",\n  \"sprite_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -525,7 +525,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"items\": [\n    {\n      \"name\": \"Health Potion\",\n      \"description\": \"Restores 50 HP\",\n      \"category_id\": \"00000000-0000-0000-0000-000000000001\",\n      \"sprite_id\": \"00000000-0000-0000-0000-000000000000\"\n    },\n    {\n      \"name\": \"Mana Potion\",\n      \"description\": \"Restores 50 MP\",\n      \"category_id\": \"00000000-0000-0000-0000-000000000001\",\n      \"sprite_id\": \"00000000-0000-0000-0000-000000000001\"\n    }\n  ]\n}",
+							"raw": "{\n  \"items\": [\n    {\n      \"name\": \"Health Potion\",\n      \"description\": \"Restores 50 HP\",\n      \"sprite_id\": \"00000000-0000-0000-0000-000000000000\"\n    },\n    {\n      \"name\": \"Mana Potion\",\n      \"description\": \"Restores 50 MP\",\n      \"sprite_id\": \"00000000-0000-0000-0000-000000000001\"\n    }\n  ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -628,6 +628,49 @@
 							"path": [
 								"items",
 								"00000000-0000-0000-0000-000000000000"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateItemSprite",
+					"protocolProfileBehavior": {
+						"followRedirects": true,
+						"disableUrlEncoding": false,
+						"disableCookies": false
+					},
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "User-Agent",
+								"value": "insomnia/12.0.0"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sprite_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8000/items/00000000-0000-0000-0000-000000000000/sprite",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"items",
+								"00000000-0000-0000-0000-000000000000",
+								"sprite"
 							]
 						}
 					},
@@ -771,11 +814,6 @@
 									"key": "sprite",
 									"type": "file",
 									"src": "/path/to/sprite.png"
-								},
-								{
-									"key": "category_id",
-									"value": "00000000-0000-0000-0000-000000000001",
-									"type": "text"
 								}
 							]
 						},

@@ -8,18 +8,7 @@ from typing import Dict, List, Optional, Tuple
 import requests
 
 
-def fetch_item_categories(server_url: str) -> List[Dict]:
-    url = f"{server_url}/items/categories"
-    resp = requests.get(url)
-    if resp.status_code != 200:
-        print(f"Failed to fetch item categories: {resp.status_code}")
-        print(resp.text)
-        return []
-    data = resp.json().get("data", {})
-    return data.get("categories", [])
-
-
-def upload_item_sprite(server_url: str, file_path: Path, category_id: str) -> Optional[Dict]:
+def upload_item_sprite(server_url: str, file_path: Path) -> Optional[Dict]:
     url = f"{server_url}/assets/sprites/items"
 
     ext = file_path.suffix.lower()
@@ -28,8 +17,7 @@ def upload_item_sprite(server_url: str, file_path: Path, category_id: str) -> Op
     try:
         with open(file_path, "rb") as f:
             files = {"sprite": (file_path.name, f, mime_type)}
-            data = {"category_id": category_id}
-            resp = requests.post(url, files=files, data=data)
+            resp = requests.post(url, files=files)
 
         if resp.status_code in (200, 201):
             sprite = resp.json().get("data", {})
@@ -45,12 +33,11 @@ def upload_item_sprite(server_url: str, file_path: Path, category_id: str) -> Op
         return None
 
 
-def create_item(server_url: str, name: str, description: str, category_id: str, sprite_id: str) -> Optional[Dict]:
+def create_item(server_url: str, name: str, description: str, sprite_id: str) -> Optional[Dict]:
     url = f"{server_url}/items"
     payload = {
         "name": name,
         "description": description,
-        "category_id": category_id,
         "sprite_id": sprite_id,
     }
 
@@ -93,18 +80,8 @@ def seed_items_with_sprites(server_url: str, icons_root: Path, weapons_count: in
         print(f"Error: {icons_root} is not a valid directory")
         return
 
-    categories = fetch_item_categories(server_url)
-    if not categories:
-        print("No item categories found. Please create item categories first.")
-        return
-
-    categories_by_name: Dict[str, Dict] = {c["name"]: c for c in categories}
-
-    print("\nAvailable item categories:")
-    for idx, cat in enumerate(categories, 1):
-        print(f"{idx}. {cat['name']} (ID: {cat['id']})")
-
-    # Map logical category names to their subdirectories and desired counts
+    # Map logical category-like labels to their subdirectories and desired counts.
+    # These labels are now only used for naming/description; there is no backend category.
     category_config = {
         "Weapons": {
             "subdir": icons_root / "MedievalIcons" / "WeponMedieval",
@@ -120,12 +97,6 @@ def seed_items_with_sprites(server_url: str, icons_root: Path, weapons_count: in
     total_items = 0
 
     for cat_name, cfg in category_config.items():
-        if cat_name not in categories_by_name:
-            print(f"\nWarning: item category '{cat_name}' not found in API; skipping.")
-            continue
-
-        cat = categories_by_name[cat_name]
-        cat_id = cat["id"]
         cat_dir: Path = cfg["subdir"]
         desired_count: int = cfg["count"]
 
@@ -148,7 +119,7 @@ def seed_items_with_sprites(server_url: str, icons_root: Path, weapons_count: in
         )
 
         for file_path in chosen_files:
-            sprite = upload_item_sprite(server_url, file_path, cat_id)
+            sprite = upload_item_sprite(server_url, file_path)
             if not sprite:
                 continue
             total_sprites += 1
@@ -156,7 +127,7 @@ def seed_items_with_sprites(server_url: str, icons_root: Path, weapons_count: in
             sprite_id = sprite.get("id")
             item_name, item_desc = build_item_name_and_description(file_path, cat_name)
 
-            item = create_item(server_url, item_name, item_desc, cat_id, sprite_id)
+            item = create_item(server_url, item_name, item_desc, sprite_id)
             if item:
                 total_items += 1
 

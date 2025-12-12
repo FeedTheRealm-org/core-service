@@ -16,15 +16,9 @@ type ItemController interface {
 	// GetItemById retrieves a single item by ID.
 	GetItemById(c *gin.Context)
 
+	// UpdateItemSprite updates the sprite associated to an item.
+	UpdateItemSprite(c *gin.Context)
+
 	// DeleteItem deletes an item by ID.
 	DeleteItem(c *gin.Context)
-
-	// CreateItemCategory creates a new item category.
-	CreateItemCategory(c *gin.Context)
-
-	// GetItemCategories retrieves all item categories.
-	GetItemCategories(c *gin.Context)
-
-	// DeleteItemCategory deletes an item category by ID.
-	DeleteItemCategory(c *gin.Context)
 }

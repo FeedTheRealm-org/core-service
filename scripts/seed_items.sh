@@ -26,11 +26,6 @@ if [ ! -d "$ICONS_PATH" ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-echo "Seeding default item categories..."
-python3 "$SCRIPT_DIR/create_item_categories.py" "$SERVER_URL"
-
-echo
 echo "Seeding 5 Weapons and 5 Armor items with sprites from $ICONS_PATH ..."
 python3 "$SCRIPT_DIR/seed_items_with_sprites.py" "$SERVER_URL" "$ICONS_PATH" 5 5
 

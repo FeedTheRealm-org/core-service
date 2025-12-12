@@ -7,7 +7,7 @@ type ItemSpritesController interface {
 	// UploadItemSprite handles sprite file upload for items.
 	UploadItemSprite(c *gin.Context)
 
-	// GetAllItemSprites retrieves all item sprites (with optional category filter).
+	// GetAllItemSprites retrieves all item sprites.
 	GetAllItemSprites(c *gin.Context)
 
 	// DownloadItemSprite handles sprite file download by ID.
@@ -15,7 +15,4 @@ type ItemSpritesController interface {
 
 	// DeleteItemSprite deletes a sprite by ID.
 	DeleteItemSprite(c *gin.Context)
-
-	// GetItemCategories retrieves all item categories.
-	GetItemCategories(c *gin.Context)
 }

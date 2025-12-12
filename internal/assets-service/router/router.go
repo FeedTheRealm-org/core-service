@@ -40,7 +40,6 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 	itemSpritesGroup.GET("", itemSpritesController.GetAllItemSprites)
 	itemSpritesGroup.GET("/:sprite_id", itemSpritesController.DownloadItemSprite)
 	itemSpritesGroup.DELETE("/:sprite_id", itemSpritesController.DeleteItemSprite)
-	itemSpritesGroup.GET("/categories", itemSpritesController.GetItemCategories)
 
 	/* Model Endpoints */
 

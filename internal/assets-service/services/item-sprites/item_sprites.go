@@ -9,7 +9,7 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
-	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/item-sprites"
+	itemsprites "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/item-sprites"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 )
@@ -27,13 +27,7 @@ func NewItemSpritesService(conf *config.Config, repository itemsprites.ItemSprit
 	}
 }
 
-func (iss *itemSpritesService) UploadSprite(categoryId uuid.UUID, fileHeader *multipart.FileHeader) (*models.ItemSprite, error) {
-	// Validate category exists and get category name for directory
-	category, err := iss.repository.GetCategoryById(categoryId)
-	if err != nil {
-		return nil, err
-	}
-
+func (iss *itemSpritesService) UploadSprite(fileHeader *multipart.FileHeader) (*models.ItemSprite, error) {
 	// Open the uploaded file
 	file, err := fileHeader.Open()
 	if err != nil {
@@ -48,8 +42,8 @@ func (iss *itemSpritesService) UploadSprite(categoryId uuid.UUID, fileHeader *mu
 	spriteUniqueUrl := uuid.New().String()
 	filename := fmt.Sprintf("%s%s", spriteUniqueUrl, ext)
 
-	// Create directory path: ./bucket/sprites/items/{category_name}/
-	dirPath := filepath.Join("./bucket/sprites/items", category.Name)
+	// Create directory path: ./bucket/sprites/items/
+	dirPath := filepath.Join("./bucket/sprites/items")
 	filePath := filepath.Join(dirPath, filename)
 
 	// Create directory if it doesn't exist
@@ -73,8 +67,7 @@ func (iss *itemSpritesService) UploadSprite(categoryId uuid.UUID, fileHeader *mu
 
 	// Save sprite metadata to database
 	sprite := &models.ItemSprite{
-		CategoryId: categoryId,
-		Url:        filePath,
+		Url: filePath,
 	}
 	if err := iss.repository.CreateSprite(sprite); err != nil {
 		// Clean up the file if database insertion fails
@@ -82,8 +75,7 @@ func (iss *itemSpritesService) UploadSprite(categoryId uuid.UUID, fileHeader *mu
 		return nil, err
 	}
 
-	logger.Logger.Infof("Item sprite uploaded: %s (ID: %s, Category: %s)",
-		filename, sprite.Id, category.Name)
+	logger.Logger.Infof("Item sprite uploaded: %s (ID: %s)", filename, sprite.Id)
 	return sprite, nil
 }
 
@@ -93,16 +85,6 @@ func (iss *itemSpritesService) GetSpriteById(id uuid.UUID) (*models.ItemSprite, 
 
 func (iss *itemSpritesService) GetAllSprites() ([]models.ItemSprite, error) {
 	return iss.repository.GetAllSprites()
-}
-
-func (iss *itemSpritesService) GetSpritesByCategory(categoryId uuid.UUID) ([]models.ItemSprite, error) {
-	// Validate category exists
-	_, err := iss.repository.GetCategoryById(categoryId)
-	if err != nil {
-		return nil, err
-	}
-
-	return iss.repository.GetSpritesByCategory(categoryId)
 }
 
 func (iss *itemSpritesService) GetSpriteFile(id uuid.UUID) (string, error) {
@@ -135,6 +117,4 @@ func (iss *itemSpritesService) DeleteSprite(id uuid.UUID) error {
 	return nil
 }
 
-func (iss *itemSpritesService) GetAllCategories() ([]models.ItemCategory, error) {
-	return iss.repository.GetAllCategories()
-}
+// (Item sprite categories removed)

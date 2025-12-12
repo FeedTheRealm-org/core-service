@@ -47,38 +47,9 @@ func (isr *itemSpritesRepository) GetAllSprites() ([]models.ItemSprite, error) {
 	return sprites, nil
 }
 
-func (isr *itemSpritesRepository) GetSpritesByCategory(categoryId uuid.UUID) ([]models.ItemSprite, error) {
-	var sprites []models.ItemSprite
-	if err := isr.db.Conn.Where("category_id = ?", categoryId).Find(&sprites).Error; err != nil {
-		return nil, err
-	}
-	return sprites, nil
-}
-
 func (isr *itemSpritesRepository) DeleteSprite(id uuid.UUID) error {
 	if err := isr.db.Conn.Delete(&models.ItemSprite{}, id).Error; err != nil {
 		return err
 	}
 	return nil
-}
-
-// GetCategoryById reads from items-service table for validation
-func (isr *itemSpritesRepository) GetCategoryById(id uuid.UUID) (*models.ItemCategory, error) {
-	var category models.ItemCategory
-	if err := isr.db.Conn.Where("id = ?", id).First(&category).Error; err != nil {
-		if errors.IsRecordNotFound(err) {
-			return nil, assets_errors.NewItemCategoryNotFound(id.String())
-		}
-		return nil, err
-	}
-	return &category, nil
-}
-
-// GetAllCategories reads all categories from items-service table
-func (isr *itemSpritesRepository) GetAllCategories() ([]models.ItemCategory, error) {
-	var categories []models.ItemCategory
-	if err := isr.db.Conn.Find(&categories).Error; err != nil {
-		return nil, err
-	}
-	return categories, nil
 }
