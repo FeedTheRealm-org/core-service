@@ -2,9 +2,9 @@ package itemsprites
 
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
-	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	assets_errors "github.com/FeedTheRealm-org/core-service/internal/assets-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
+	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/google/uuid"
 )
 
