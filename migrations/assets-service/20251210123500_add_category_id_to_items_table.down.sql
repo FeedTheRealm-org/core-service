@@ -1,6 +1,0 @@
-BEGIN;
-
-ALTER TABLE items DROP CONSTRAINT IF EXISTS fk_items_category;
-ALTER TABLE items DROP COLUMN IF EXISTS category_id;
-
-COMMIT;

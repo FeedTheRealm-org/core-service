@@ -191,6 +191,6 @@ Script to seed items wiht its sprites and categories. It is needed to have under
 You can reset from database and erase all items, item categories and item sprites by using the next script.
 
 ```sh
-sudo chmod +x /scripts/reset_items_data.sh
+sudo chmod +x scripts/reset_items_data.sh
 ./scripts/reset_items_data.sh
 ```
