@@ -6,8 +6,11 @@ import "github.com/gin-gonic/gin"
 type ModelsController interface {
 
 	// DownloadSpriteData handles the download of sprite file.
-	DownloadModelsByWorldId(c *gin.Context)
+	DownloadModel(c *gin.Context)
+
+	// RetrieveWorldAssetIds retrieves asset IDs associated with a specific world.
+	ListAssets(c *gin.Context)
 
 	// UploadSpriteData handles the upload of sprite file.
-	UploadModelsByWorldId(c *gin.Context)
+	UploadModels(c *gin.Context)
 }

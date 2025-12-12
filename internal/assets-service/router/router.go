@@ -33,7 +33,7 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 	modelsService := models_service.NewModelsService(conf, modelsRepo)
 	modelsController := models_controller.NewModelsController(conf, modelsService)
 	modelsGroup := g.Group("/models")
-	modelsGroup.GET("/:world_id", modelsController.DownloadModelsByWorldId)
-	modelsGroup.POST("/:world_id", modelsController.UploadModelsByWorldId)
-
+	modelsGroup.GET("/:world_id", modelsController.ListAssets)
+	modelsGroup.GET("/:world_id/:model_id", modelsController.DownloadModel)
+	modelsGroup.POST("/:world_id", modelsController.UploadModels)
 }
