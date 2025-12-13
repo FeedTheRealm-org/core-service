@@ -19,11 +19,11 @@ build: down # Build containers
 .PHONY: build
 
 up: down # Build and start containers
-	docker compose -f $(COMPOSE_BASE) up -d
+	docker compose -f $(COMPOSE_BASE) up
 .PHONY: up
 
 up-build: down # Build and start containers
-	docker compose -f $(COMPOSE_BASE) up -d --build
+	docker compose -f $(COMPOSE_BASE) up --build
 .PHONY: up-build
 
 dev: # Execute a bash shell in the development app container
@@ -33,22 +33,23 @@ dev: # Execute a bash shell in the development app container
 	docker compose -f $(COMPOSE_DEV) down
 .PHONY: dev
 
-exec-test: # Execute all tests
+test: # Execute all tests
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
 	docker compose -f $(COMPOSE_TEST) build
 	docker compose -f $(COMPOSE_TEST) up -d --remove-orphans
 	docker compose -f $(COMPOSE_TEST) exec -T app sh run_tests.sh
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
-.PHONY: exec-test
+.PHONY: test
 
-delete-volumes: # Delete all Docker volumes
-	docker volume rm $$(docker volume ls -q)
-.PHONY: delete-volumes
+clean: # Remove all containers and images
+	docker compose -f $(COMPOSE_BASE) down -v --rmi all --remove-orphans
+	docker compose -f $(COMPOSE_DEV) down -v --rmi all --remove-orphans
+.PHONY: clean
 
-swag-init: # Generate Swagger documentation
+swagger: # Generate Swagger documentation
 	swag init -g cmd/main.go -o ./swagger
-.PHONY: swag-init
+.PHONY: swagger
 
-migrate-create: # Create a new database migration. Usage: make migrate-create service=your_service name=your_migration_name
+migration: # Create a new database migration. Usage: make migration service=your_service name=your_migration_name
 	migrate create -ext sql -dir migrations/$(service) $(name)
-.PHONY: migrate-create
+.PHONY: migration

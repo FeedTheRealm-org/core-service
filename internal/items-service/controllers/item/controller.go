@@ -16,15 +16,9 @@ type ItemController interface {
 	// GetItemById retrieves a single item by ID.
 	GetItemById(c *gin.Context)
 
+	// UpdateItemSprite updates the sprite associated to an item.
+	UpdateItemSprite(c *gin.Context)
+
 	// DeleteItem deletes an item by ID.
 	DeleteItem(c *gin.Context)
-
-	// UploadItemSprite handles sprite file upload for items.
-	UploadItemSprite(c *gin.Context)
-
-	// DownloadItemSprite handles sprite file download by ID (with optional category query param).
-	DownloadItemSprite(c *gin.Context)
-
-	// DeleteItemSprite deletes a sprite by ID.
-	DeleteItemSprite(c *gin.Context)
 }

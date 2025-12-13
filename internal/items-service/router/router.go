@@ -11,14 +11,12 @@ import (
 func SetupItemsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 	// Initialize repositories
 	itemRepository := item_repo.NewItemRepository(conf, db)
-	itemSpriteRepository := item_repo.NewItemSpriteRepository(conf, db)
 
 	// Initialize services
 	itemService := item_service.NewItemService(conf, itemRepository)
-	itemSpriteService := item_service.NewItemSpriteService(conf, itemSpriteRepository)
 
 	// Initialize controller
-	itemController := item_controller.NewItemController(conf, itemService, itemSpriteService)
+	itemController := item_controller.NewItemController(conf, itemService)
 
 	// API routes for item metadata
 	apiGroup := r.Group("/items")
@@ -28,14 +26,6 @@ func SetupItemsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 		apiGroup.GET("/metadata", itemController.GetItemsMetadata)
 		apiGroup.GET("/:id", itemController.GetItemById)
 		apiGroup.DELETE("/:id", itemController.DeleteItem)
-	}
-
-	// Assets routes for item sprites
-	assetsGroup := r.Group("/assets/sprites/items")
-	{
-		assetsGroup.POST("", itemController.UploadItemSprite)
-		// Download by ID (optionally filtered by category via query param)
-		assetsGroup.GET("/:sprite_id", itemController.DownloadItemSprite)
-		assetsGroup.DELETE("/:sprite_id", itemController.DeleteItemSprite)
+		apiGroup.PATCH("/:id/sprite", itemController.UpdateItemSprite)
 	}
 }

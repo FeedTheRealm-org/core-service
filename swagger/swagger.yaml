@@ -45,8 +45,6 @@ definitions:
     type: object
   dtos.CreateItemRequest:
     properties:
-      category:
-        type: string
       description:
         type: string
       name:
@@ -54,10 +52,8 @@ definitions:
       sprite_id:
         type: string
     required:
-    - category
     - description
     - name
-    - sprite_id
     type: object
   dtos.ErrorResponse:
     properties:
@@ -74,8 +70,6 @@ definitions:
     type: object
   dtos.ItemMetadataResponse:
     properties:
-      category:
-        type: string
       created_at:
         type: string
       description:
@@ -91,8 +85,6 @@ definitions:
     type: object
   dtos.ItemSpriteResponse:
     properties:
-      category:
-        type: string
       created_at:
         type: string
       id:
@@ -101,6 +93,13 @@ definitions:
         type: string
       url:
         type: string
+    type: object
+  dtos.ItemSpritesListResponse:
+    properties:
+      sprites:
+        items:
+          $ref: '#/definitions/dtos.ItemSpriteResponse'
+        type: array
     type: object
   dtos.ItemsListResponse:
     properties:
@@ -185,6 +184,13 @@ definitions:
         items:
           $ref: '#/definitions/dtos.SpriteResponse'
         type: array
+    type: object
+  dtos.UpdateItemSpriteRequest:
+    properties:
+      sprite_id:
+        type: string
+    required:
+    - sprite_id
     type: object
   dtos.VerifyAccountRequestDTO:
     properties:
@@ -491,26 +497,37 @@ paths:
       tags:
       - assets-service
   /assets/sprites/items:
+    get:
+      description: Retrieves all item sprites.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of item sprites
+          schema:
+            $ref: '#/definitions/dtos.ItemSpritesListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetAllItemSprites
+      tags:
+      - assets-service
     post:
       consumes:
       - multipart/form-data
-      description: Uploads a sprite file for items
+      description: Uploads a new item sprite.
       parameters:
-      - description: Sprite file
+      - description: Item sprite file (PNG or JPEG)
         in: formData
         name: sprite
         required: true
         type: file
-      - description: Category (armor/weapon/consumable)
-        in: formData
-        name: category
-        required: true
-        type: string
       produces:
       - application/json
       responses:
         "201":
-          description: Uploaded sprite
+          description: Uploaded item sprite
           schema:
             $ref: '#/definitions/dtos.ItemSpriteResponse'
         "400":
@@ -523,26 +540,25 @@ paths:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: UploadItemSprite
       tags:
-      - items-service
+      - assets-service
   /assets/sprites/items/{sprite_id}:
     delete:
-      description: Deletes a sprite by its ID and removes the file from disk
+      description: Deletes an item sprite by its ID.
       parameters:
-      - description: Sprite UUID
+      - description: Item sprite ID
         in: path
         name: sprite_id
         required: true
         type: string
-      produces:
-      - application/json
       responses:
         "200":
           description: Sprite deleted successfully
           schema:
-            additionalProperties: true
+            additionalProperties:
+              type: string
             type: object
         "400":
-          description: Invalid sprite ID
+          description: Bad request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "401":
@@ -555,29 +571,24 @@ paths:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: DeleteItemSprite
       tags:
-      - items-service
+      - assets-service
     get:
-      description: Downloads a sprite file by sprite ID (optionally filtered by category
-        via query param)
+      description: Downloads an item sprite by its ID.
       parameters:
-      - description: Sprite UUID
+      - description: Item sprite ID
         in: path
         name: sprite_id
         required: true
-        type: string
-      - description: Category (armor/weapon/consumable) - optional validation
-        in: query
-        name: category
         type: string
       produces:
       - application/octet-stream
       responses:
         "200":
-          description: Sprite file
+          description: Item sprite file
           schema:
             type: file
         "400":
-          description: Invalid sprite ID or category mismatch
+          description: Bad request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "401":
@@ -590,7 +601,7 @@ paths:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: DownloadItemSprite
       tags:
-      - items-service
+      - assets-service
   /auth/login:
     post:
       consumes:
@@ -775,6 +786,45 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: GetItemById
+      tags:
+      - items-service
+  /items/{id}/sprite:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the sprite associated to an item
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Sprite data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateItemSpriteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item updated
+          schema:
+            $ref: '#/definitions/dtos.ItemMetadataResponse'
+        "400":
+          description: Invalid item ID or bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Item not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UpdateItemSprite
       tags:
       - items-service
   /items/batch:
