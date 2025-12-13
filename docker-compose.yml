@@ -12,8 +12,11 @@ services:
       - DB_PORT=5432
       - DB_NAME=postgres
       - DB_SHOULD_MIGRATE=true
-      - SESSION_TOKEN_SECRET_KEY=prod_secret_key
-      - SESSION_TOKEN_DURATION=1h
+      - SESSION_TOKEN_SECRET_KEY=dev_secret_key
+      - SESSION_TOKEN_DURATION=24h
+      - BREVO_API_KEY=${BREVO_API_KEY}
+      - EMAIL_SENDER_ADDRESS=${EMAIL_SENDER_ADDRESS}
+      - ALLOW_DB_RESET=true
     depends_on:
       prod_db:
         condition: service_healthy
