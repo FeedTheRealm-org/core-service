@@ -11,6 +11,7 @@ services:
       - DB_HOST=prod_db
       - DB_PORT=5432
       - DB_NAME=postgres
+      - DB_SHOULD_MIGRATE=true
       - SESSION_TOKEN_SECRET_KEY=prod_secret_key
       - SESSION_TOKEN_DURATION=1h
     depends_on:
