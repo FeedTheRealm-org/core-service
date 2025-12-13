@@ -83,6 +83,24 @@ definitions:
       updated_at:
         type: string
     type: object
+  dtos.ItemSpriteResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      updated_at:
+        type: string
+      url:
+        type: string
+    type: object
+  dtos.ItemSpritesListResponse:
+    properties:
+      sprites:
+        items:
+          $ref: '#/definitions/dtos.ItemSpriteResponse'
+        type: array
+    type: object
   dtos.ItemsListResponse:
     properties:
       items:
@@ -476,6 +494,112 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: GetSpritesListByCategory
+      tags:
+      - assets-service
+  /assets/sprites/items:
+    get:
+      description: Retrieves all item sprites.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of item sprites
+          schema:
+            $ref: '#/definitions/dtos.ItemSpritesListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetAllItemSprites
+      tags:
+      - assets-service
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads a new item sprite.
+      parameters:
+      - description: Item sprite file (PNG or JPEG)
+        in: formData
+        name: sprite
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Uploaded item sprite
+          schema:
+            $ref: '#/definitions/dtos.ItemSpriteResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UploadItemSprite
+      tags:
+      - assets-service
+  /assets/sprites/items/{sprite_id}:
+    delete:
+      description: Deletes an item sprite by its ID.
+      parameters:
+      - description: Item sprite ID
+        in: path
+        name: sprite_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Sprite deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Sprite not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: DeleteItemSprite
+      tags:
+      - assets-service
+    get:
+      description: Downloads an item sprite by its ID.
+      parameters:
+      - description: Item sprite ID
+        in: path
+        name: sprite_id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Item sprite file
+          schema:
+            type: file
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Sprite not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: DownloadItemSprite
       tags:
       - assets-service
   /auth/login:

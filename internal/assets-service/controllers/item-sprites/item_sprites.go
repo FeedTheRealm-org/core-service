@@ -27,6 +27,16 @@ func NewItemSpritesController(conf *config.Config, service itemsprites.ItemSprit
 	}
 }
 
+// @Summary UploadItemSprite
+// @Description Uploads a new item sprite.
+// @Tags assets-service
+// @Accept multipart/form-data
+// @Produce json
+// @Param sprite formData file true "Item sprite file (PNG or JPEG)"
+// @Success 201 {object} dtos.ItemSpriteResponse "Uploaded item sprite"
+// @Failure 400 {object} dtos.ErrorResponse "Bad request"
+// @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
+// @Router /assets/sprites/items [post]
 func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
 	reqFile, err := c.FormFile("sprite")
 	if err != nil {
@@ -61,6 +71,13 @@ func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
+// @Summary GetAllItemSprites
+// @Description Retrieves all item sprites.
+// @Tags assets-service
+// @Produce json
+// @Success 200 {object} dtos.ItemSpritesListResponse "List of item sprites"
+// @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
+// @Router /assets/sprites/items [get]
 func (isc *itemSpritesController) GetAllItemSprites(c *gin.Context) {
 	sprites, err := isc.service.GetAllSprites()
 	if err != nil {
@@ -85,6 +102,16 @@ func (isc *itemSpritesController) GetAllItemSprites(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
+// @Summary DownloadItemSprite
+// @Description Downloads an item sprite by its ID.
+// @Tags assets-service
+// @Produce octet-stream
+// @Param sprite_id path string true "Item sprite ID"
+// @Success 200 {file} file "Item sprite file"
+// @Failure 400 {object} dtos.ErrorResponse "Bad request"
+// @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
+// @Failure 404 {object} dtos.ErrorResponse "Sprite not found"
+// @Router /assets/sprites/items/{sprite_id} [get]
 func (isc *itemSpritesController) DownloadItemSprite(c *gin.Context) {
 	spriteIdStr := c.Param("sprite_id")
 	spriteId, err := uuid.Parse(spriteIdStr)
@@ -111,6 +138,15 @@ func (isc *itemSpritesController) DownloadItemSprite(c *gin.Context) {
 	c.File(sprite.Url)
 }
 
+// @Summary DeleteItemSprite
+// @Description Deletes an item sprite by its ID.
+// @Tags assets-service
+// @Param sprite_id path string true "Item sprite ID"
+// @Success 200 {object} map[string]string "Sprite deleted successfully"
+// @Failure 400 {object} dtos.ErrorResponse "Bad request"
+// @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
+// @Failure 404 {object} dtos.ErrorResponse "Sprite not found"
+// @Router /assets/sprites/items/{sprite_id} [delete]
 func (isc *itemSpritesController) DeleteItemSprite(c *gin.Context) {
 	spriteIdStr := c.Param("sprite_id")
 	spriteId, err := uuid.Parse(spriteIdStr)
