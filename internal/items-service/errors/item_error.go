@@ -17,21 +17,6 @@ func NewItemNotFound(message string) *ItemNotFound {
 	}
 }
 
-// ItemSpriteNotFound represents an error when an item sprite is not found.
-type ItemSpriteNotFound struct {
-	Message string
-}
-
-func (e *ItemSpriteNotFound) Error() string {
-	return e.Message
-}
-
-func NewItemSpriteNotFound(message string) *ItemSpriteNotFound {
-	return &ItemSpriteNotFound{
-		Message: message,
-	}
-}
-
 // InvalidCategory represents an error when an invalid category is provided.
 type InvalidCategory struct {
 	Category string

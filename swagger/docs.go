@@ -455,8 +455,32 @@ const docTemplate = `{
             }
         },
         "/assets/sprites/items": {
+            "get": {
+                "description": "Retrieves all item sprites.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "GetAllItemSprites",
+                "responses": {
+                    "200": {
+                        "description": "List of item sprites",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemSpritesListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
-                "description": "Uploads a sprite file for items",
+                "description": "Uploads a new item sprite.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -464,28 +488,21 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "items-service"
+                    "assets-service"
                 ],
                 "summary": "UploadItemSprite",
                 "parameters": [
                     {
                         "type": "file",
-                        "description": "Sprite file",
+                        "description": "Item sprite file (PNG or JPEG)",
                         "name": "sprite",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Category (armor/weapon/consumable)",
-                        "name": "category",
                         "in": "formData",
                         "required": true
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Uploaded sprite",
+                        "description": "Uploaded item sprite",
                         "schema": {
                             "$ref": "#/definitions/dtos.ItemSpriteResponse"
                         }
@@ -507,38 +524,32 @@ const docTemplate = `{
         },
         "/assets/sprites/items/{sprite_id}": {
             "get": {
-                "description": "Downloads a sprite file by sprite ID (optionally filtered by category via query param)",
+                "description": "Downloads an item sprite by its ID.",
                 "produces": [
                     "application/octet-stream"
                 ],
                 "tags": [
-                    "items-service"
+                    "assets-service"
                 ],
                 "summary": "DownloadItemSprite",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Sprite UUID",
+                        "description": "Item sprite ID",
                         "name": "sprite_id",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Category (armor/weapon/consumable) - optional validation",
-                        "name": "category",
-                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Sprite file",
+                        "description": "Item sprite file",
                         "schema": {
                             "type": "file"
                         }
                     },
                     "400": {
-                        "description": "Invalid sprite ID or category mismatch",
+                        "description": "Bad request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -558,18 +569,15 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Deletes a sprite by its ID and removes the file from disk",
-                "produces": [
-                    "application/json"
-                ],
+                "description": "Deletes an item sprite by its ID.",
                 "tags": [
-                    "items-service"
+                    "assets-service"
                 ],
                 "summary": "DeleteItemSprite",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Sprite UUID",
+                        "description": "Item sprite ID",
                         "name": "sprite_id",
                         "in": "path",
                         "required": true
@@ -580,11 +588,13 @@ const docTemplate = `{
                         "description": "Sprite deleted successfully",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": true
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
-                        "description": "Invalid sprite ID",
+                        "description": "Bad request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -994,6 +1004,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/items/{id}/sprite": {
+            "patch": {
+                "description": "Updates the sprite associated to an item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "items-service"
+                ],
+                "summary": "UpdateItemSprite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Sprite data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdateItemSpriteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item updated",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemMetadataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid item ID or bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Item not found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/players/character": {
             "patch": {
                 "description": "Updates the name and bio of the session player character",
@@ -1290,15 +1359,10 @@ const docTemplate = `{
         "dtos.CreateItemRequest": {
             "type": "object",
             "required": [
-                "category",
                 "description",
-                "name",
-                "sprite_id"
+                "name"
             ],
             "properties": {
-                "category": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },
@@ -1333,9 +1397,6 @@ const docTemplate = `{
         "dtos.ItemMetadataResponse": {
             "type": "object",
             "properties": {
-                "category": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1359,9 +1420,6 @@ const docTemplate = `{
         "dtos.ItemSpriteResponse": {
             "type": "object",
             "properties": {
-                "category": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1373,6 +1431,17 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.ItemSpritesListResponse": {
+            "type": "object",
+            "properties": {
+                "sprites": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ItemSpriteResponse"
+                    }
                 }
             }
         },
@@ -1504,6 +1573,17 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dtos.SpriteResponse"
                     }
+                }
+            }
+        },
+        "dtos.UpdateItemSpriteRequest": {
+            "type": "object",
+            "required": [
+                "sprite_id"
+            ],
+            "properties": {
+                "sprite_id": {
+                    "type": "string"
                 }
             }
         },

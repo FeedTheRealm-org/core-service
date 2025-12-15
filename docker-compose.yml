@@ -3,16 +3,22 @@ services:
     build:
       context: .
       target: prod
+    env_file:
+      - .env
     ports:
       - "8000:8000"
     environment:
+      - SERVER_ENVIRONMENT=production
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - DB_HOST=prod_db
       - DB_PORT=5432
       - DB_NAME=postgres
-      - SESSION_TOKEN_SECRET_KEY=prod_secret_key
-      - SESSION_TOKEN_DURATION=1h
+      - DB_SHOULD_MIGRATE=true
+      - SESSION_TOKEN_SECRET_KEY=dev_secret_key
+      - SESSION_TOKEN_DURATION=24h
+      - BREVO_API_KEY=${BREVO_API_KEY}
+      - EMAIL_SENDER_ADDRESS=${EMAIL_SENDER_ADDRESS}
     depends_on:
       prod_db:
         condition: service_healthy

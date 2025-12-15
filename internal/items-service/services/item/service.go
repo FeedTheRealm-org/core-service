@@ -1,8 +1,6 @@
 package item
 
 import (
-	"mime/multipart"
-
 	"github.com/FeedTheRealm-org/core-service/internal/items-service/models"
 	"github.com/google/uuid"
 )
@@ -21,27 +19,12 @@ type ItemService interface {
 	// GetAllItems retrieves all items.
 	GetAllItems() ([]models.Item, error)
 
-	// GetItemsByCategory retrieves all items of a specific category.
-	GetItemsByCategory(category string) ([]models.Item, error)
-
 	// DeleteItem deletes an item by its ID.
 	DeleteItem(id uuid.UUID) error
-}
 
-// ItemSpriteService defines the interface for item sprite-related business logic operations.
-type ItemSpriteService interface {
-	// UploadSprite uploads a sprite file and saves its metadata.
-	UploadSprite(category string, file *multipart.FileHeader) (*models.ItemSprite, error)
+	// ClearAllItems deletes all items (for testing only).
+	ClearAllItems() error
 
-	// GetSpriteById retrieves a sprite by its ID.
-	GetSpriteById(id uuid.UUID) (*models.ItemSprite, error)
-
-	// GetSpritesByCategory retrieves all sprites of a specific category.
-	GetSpritesByCategory(category string) ([]models.ItemSprite, error)
-
-	// GetSpriteFile retrieves the file path for a sprite.
-	GetSpriteFile(id uuid.UUID) (string, error)
-
-	// DeleteSprite deletes a sprite by its ID.
-	DeleteSprite(id uuid.UUID) error
+	// UpdateItemSprite updates the sprite associated to an item.
+	UpdateItemSprite(id uuid.UUID, spriteId uuid.UUID) error
 }

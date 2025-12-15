@@ -44,3 +44,33 @@ func NewCategoryConflict(details string) *CategoryConflict {
 		details: details,
 	}
 }
+
+// ItemSpriteNotFound is returned when a requested item sprite cannot be found.
+type ItemSpriteNotFound struct {
+	details string
+}
+
+func (e *ItemSpriteNotFound) Error() string {
+	return e.details
+}
+
+func NewItemSpriteNotFound(details string) *ItemSpriteNotFound {
+	return &ItemSpriteNotFound{
+		details: details,
+	}
+}
+
+// ItemCategoryNotFound is returned when a requested item category cannot be found.
+type ItemCategoryNotFound struct {
+	CategoryId string
+}
+
+func (e *ItemCategoryNotFound) Error() string {
+	return "Category with ID " + e.CategoryId + " does not exist"
+}
+
+func NewItemCategoryNotFound(categoryId string) *ItemCategoryNotFound {
+	return &ItemCategoryNotFound{
+		CategoryId: categoryId,
+	}
+}

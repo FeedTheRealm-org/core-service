@@ -1,6 +1,9 @@
 package item
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	item_errors "github.com/FeedTheRealm-org/core-service/internal/items-service/errors"
@@ -57,9 +60,9 @@ func (ir *itemRepository) GetAllItems() ([]models.Item, error) {
 	return items, nil
 }
 
-func (ir *itemRepository) GetItemsByCategory(category string) ([]models.Item, error) {
+func (ir *itemRepository) GetItemsByCategory(categoryId uuid.UUID) ([]models.Item, error) {
 	var items []models.Item
-	if err := ir.db.Conn.Where("category = ?", category).Find(&items).Error; err != nil {
+	if err := ir.db.Conn.Where("category_id = ?", categoryId).Find(&items).Error; err != nil {
 		return nil, err
 	}
 	return items, nil
@@ -77,4 +80,11 @@ func (ir *itemRepository) DeleteItem(id uuid.UUID) error {
 		return err
 	}
 	return nil
+}
+
+func (ir *itemRepository) DeleteAll() error {
+	if os.Getenv("ALLOW_DB_RESET") != "true" {
+		return fmt.Errorf("forbidden: database reset not allowed")
+	}
+	return ir.db.Conn.Exec("DELETE FROM items").Error
 }

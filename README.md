@@ -176,3 +176,21 @@ Once staring up the project, go to this link to test out the endpoints:
 # In this case, if locally starting the project, this is the url
 http://localhost:8000/swagger/index.html
 ```
+
+## Seed items with sprites
+
+Script to seed items wiht its sprites and categories. It is needed to have under the directory /client/Assets the asset called "6000FantasyIcons" like /client/Assets6000FantasyIcons. the scripts loads the .png from that folder automatically.
+
+```sh
+#~/Documents/tpf/feed_the_realm/services$
+./scripts/seed_items.sh ../client http://localhost:8000
+```
+
+## Reset items Database
+
+You can reset from database and erase all items, item categories and item sprites by using the next script.
+
+```sh
+sudo chmod +x scripts/reset_items_data.sh
+./scripts/reset_items_data.sh
+```

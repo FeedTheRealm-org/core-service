@@ -1,11 +1,8 @@
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS items (
+CREATE TABLE IF NOT EXISTS item_sprites (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    description TEXT NOT NULL,
-    category TEXT NOT NULL,
-    sprite_id UUID NOT NULL,
+    url TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

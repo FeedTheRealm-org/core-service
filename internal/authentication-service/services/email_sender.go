@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
 	"os"
@@ -114,10 +115,10 @@ func (s *emailSenderService) SendVerificationEmail(toEmail string, verifyCode st
 		_ = resp.Body.Close()
 		return err
 	}
+	defer resp.Body.Close()
 
-	err = resp.Body.Close()
-	if err != nil {
-		return err
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to send verification email, status code: %d", resp.StatusCode)
 	}
 
 	return nil
