@@ -249,14 +249,9 @@ paths:
       consumes:
       - multipart/form-data
       description: Upload multiple 3D models with their materials to a specific world.
-        Supports FBX, OBJ model files and various material formats.
+        Supports GLB, FBX, OBJ model files and various material formats. Material
+        files are optional.
       parameters:
-      - description: World ID
-        format: uuid
-        in: formData
-        name: world_id
-        required: true
-        type: string
       - description: Name of the first model
         in: formData
         name: models[0].name
@@ -268,15 +263,14 @@ paths:
         name: models[0].model_id
         required: true
         type: string
-      - description: 3D model file (FBX, OBJ, etc.)
+      - description: 3D model file (GLB, FBX, OBJ, etc.)
         in: formData
         name: models[0].model_file
         required: true
         type: file
-      - description: Material file (MAT, MTL, etc.)
+      - description: Material file (optional)
         in: formData
         name: models[0].material_file
-        required: true
         type: file
       - description: Name of the second model
         in: formData
@@ -291,7 +285,7 @@ paths:
         in: formData
         name: models[1].model_file
         type: file
-      - description: Material file for second model
+      - description: Material file for second model (optional)
         in: formData
         name: models[1].material_file
         type: file
@@ -317,15 +311,18 @@ paths:
           schema:
             additionalProperties: true
             type: object
+      security:
+      - BearerAuth: []
       summary: Upload world models
       tags:
       - Models
   /assets/models/{world_id}:
-    get:
+    post:
       consumes:
-      - application/json
-      description: Downloads all 3D models and their materials for a specific world
-        as a ZIP archive
+      - multipart/form-data
+      description: Upload multiple 3D models with their materials to a specific world.
+        Supports GLB, FBX, OBJ model files and various material formats. Material
+        files are optional.
       parameters:
       - description: World ID
         format: uuid
@@ -333,15 +330,52 @@ paths:
         name: world_id
         required: true
         type: string
+      - description: Name of the first model
+        in: formData
+        name: models[0].name
+        required: true
+        type: string
+      - description: Unique ID for the first model
+        format: uuid
+        in: formData
+        name: models[0].model_id
+        required: true
+        type: string
+      - description: 3D model file (GLB, FBX, OBJ, etc.)
+        in: formData
+        name: models[0].model_file
+        required: true
+        type: file
+      - description: Material file (optional)
+        in: formData
+        name: models[0].material_file
+        type: file
+      - description: Name of the second model
+        in: formData
+        name: models[1].name
+        type: string
+      - description: Unique ID for the second model
+        format: uuid
+        in: formData
+        name: models[1].model_id
+        type: string
+      - description: 3D model file for second model
+        in: formData
+        name: models[1].model_file
+        type: file
+      - description: Material file for second model (optional)
+        in: formData
+        name: models[1].material_file
+        type: file
       produces:
-      - application/zip
+      - application/json
       responses:
-        "200":
-          description: ZIP file containing all models and materials
+        "201":
+          description: Successfully uploaded models
           schema:
-            type: file
+            $ref: '#/definitions/dtos.ModelsPublishListResponse'
         "400":
-          description: Bad request - invalid world_id format
+          description: Bad request - missing required fields or invalid format
           schema:
             additionalProperties: true
             type: object
@@ -350,8 +384,49 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "500":
+          description: Internal server error - failed to save models
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload world models
+      tags:
+      - Models
+  /assets/models/{world_id}/assets/{model_id}/model:
+    get:
+      consumes:
+      - application/json
+      description: Downloads a single 3D model file (GLB) for a specific asset in
+        a world
+      parameters:
+      - description: World ID
+        format: uuid
+        in: path
+        name: world_id
+        required: true
+        type: string
+      - description: Asset ID
+        format: uuid
+        in: path
+        name: model_id
+        required: true
+        type: string
+      produces:
+      - application/gltf-binary
+      responses:
+        "200":
+          description: GLB model file
+          schema:
+            type: file
+        "400":
+          description: Bad request - missing world_id or model_id
+          schema:
+            additionalProperties: true
+            type: object
         "404":
-          description: Not found - no models found for this world
+          description: Not found - model file not found for this asset
           schema:
             additionalProperties: true
             type: object
@@ -360,7 +435,9 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Download world models
+      security:
+      - BearerAuth: []
+      summary: Download model file
       tags:
       - Models
   /assets/sprites:

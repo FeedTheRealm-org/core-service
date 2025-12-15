@@ -83,11 +83,11 @@ func (mc *modelsController) ListAssets(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /assets/models/{world_id}/assets/{model_id}/model [get]
 func (mc *modelsController) DownloadModel(c *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(c)
-	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
+	// _, err := common_handlers.GetUserIDFromSession(c)
+	// if err != nil {
+	// 	_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+	// 	return
+	// }
 	worldID := c.Param("world_id")
 	assetID := c.Param("model_id")
 
