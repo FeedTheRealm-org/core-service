@@ -17,7 +17,12 @@ const docTemplate = `{
     "paths": {
         "/assets/models": {
             "post": {
-                "description": "Upload multiple 3D models with their materials to a specific world. Supports FBX, OBJ model files and various material formats.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload multiple 3D models with their materials to a specific world. Supports GLB, FBX, OBJ model files and various material formats. Material files are optional.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -29,14 +34,6 @@ const docTemplate = `{
                 ],
                 "summary": "Upload world models",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "World ID",
-                        "name": "world_id",
-                        "in": "formData",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "Name of the first model",
@@ -54,17 +51,16 @@ const docTemplate = `{
                     },
                     {
                         "type": "file",
-                        "description": "3D model file (FBX, OBJ, etc.)",
+                        "description": "3D model file (GLB, FBX, OBJ, etc.)",
                         "name": "models[0].model_file",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "file",
-                        "description": "Material file (MAT, MTL, etc.)",
+                        "description": "Material file (optional)",
                         "name": "models[0].material_file",
-                        "in": "formData",
-                        "required": true
+                        "in": "formData"
                     },
                     {
                         "type": "string",
@@ -87,7 +83,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "file",
-                        "description": "Material file for second model",
+                        "description": "Material file for second model (optional)",
                         "name": "models[1].material_file",
                         "in": "formData"
                     }
@@ -124,18 +120,23 @@ const docTemplate = `{
             }
         },
         "/assets/models/{world_id}": {
-            "get": {
-                "description": "Downloads all 3D models and their materials for a specific world as a ZIP archive",
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload multiple 3D models with their materials to a specific world. Supports GLB, FBX, OBJ model files and various material formats. Material files are optional.",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
-                    "application/zip"
+                    "application/json"
                 ],
                 "tags": [
                     "Models"
                 ],
-                "summary": "Download world models",
+                "summary": "Upload world models",
                 "parameters": [
                     {
                         "type": "string",
@@ -144,17 +145,70 @@ const docTemplate = `{
                         "name": "world_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the first model",
+                        "name": "models[0].name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Unique ID for the first model",
+                        "name": "models[0].model_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "3D model file (GLB, FBX, OBJ, etc.)",
+                        "name": "models[0].model_file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Material file (optional)",
+                        "name": "models[0].material_file",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the second model",
+                        "name": "models[1].name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Unique ID for the second model",
+                        "name": "models[1].model_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "3D model file for second model",
+                        "name": "models[1].model_file",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Material file for second model (optional)",
+                        "name": "models[1].material_file",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "ZIP file containing all models and materials",
+                    "201": {
+                        "description": "Successfully uploaded models",
                         "schema": {
-                            "type": "file"
+                            "$ref": "#/definitions/dtos.ModelsPublishListResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad request - invalid world_id format",
+                        "description": "Bad request - missing required fields or invalid format",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -167,8 +221,68 @@ const docTemplate = `{
                             "additionalProperties": true
                         }
                     },
+                    "500": {
+                        "description": "Internal server error - failed to save models",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/models/{world_id}/assets/{model_id}/model": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Downloads a single 3D model file (GLB) for a specific asset in a world",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/gltf-binary"
+                ],
+                "tags": [
+                    "Models"
+                ],
+                "summary": "Download model file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "World ID",
+                        "name": "world_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Asset ID",
+                        "name": "model_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "GLB model file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - missing world_id or model_id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
                     "404": {
-                        "description": "Not found - no models found for this world",
+                        "description": "Not found - model file not found for this asset",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
