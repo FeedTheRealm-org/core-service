@@ -1,5 +1,6 @@
-README = README.md
-README_TMP = README.tmp
+COMPOSE_BASE := docker-compose.yml
+COMPOSE_DEV := docker-compose.dev.yml
+COMPOSE_TEST := docker-compose.test.yml
 
 help: # Show this help message
 	@awk -F'#' '/^[^[:space:]].*:/ && !/^\.PHONY/ { \
@@ -9,40 +10,46 @@ help: # Show this help message
 	}' Makefile
 .PHONY: help
 
-update-tree-structure: # Update the project tree structure file
-	@awk '/## Structure/{exit} {print}' $(README) > $(README_TMP)
-	@cat $(README_TMP) > $(README)
-	@rm $(README_TMP)
-	@printf '\n## Structure\n\n' >> $(README)
-	@printf 'Se tiene la siguiente estructura base, donde cada microservicio que forma parte del monolith se separa del resto para eventualmente escalar la arquitectura,\n' >> $(README)
-	@printf 'en cada uno los controladores, servicios y repositorios se ponen en sus correspontientes carpetas.\n\n' >> $(README)
-	@printf '%s\n' '- **Crear su archivo separado para la interfaz y otro para la implementacion**.' >> $(README)
-	@printf '%s\n\n' '- **No utilizar dependencias de un servicio en otro (no cross-imports)**.' >> $(README)
-	@echo '```bash' >> $(README)
-	@tree -d --noreport >> $(README)
-	@echo '```' >> $(README)
-.PHONY: update-tree-structure
+down: # Stop and remove containers
+	docker compose -f $(COMPOSE_BASE) down
+.PHONY: down
 
-docker-down-dev: # Stop and remove development containers
-	docker compose -f docker-compose.dev.yml down
-.PHONY: docker-down-dev
+build: down # Build containers
+	docker compose -f $(COMPOSE_BASE) build
+.PHONY: build
 
-docker-build-dev: docker-down-dev # Build development containers
-	docker compose -f docker-compose.dev.yml build
-.PHONY: docker-build-dev
+up: down # Build and start containers
+	docker compose -f $(COMPOSE_BASE) up
+.PHONY: up
 
-docker-up-dev: docker-build-dev # Start development containers
-	docker compose -f docker-compose.dev.yml up -d
-.PHONY: docker-up-dev
+up-build: down # Build and start containers
+	docker compose -f $(COMPOSE_BASE) up --build
+.PHONY: up-build
 
-docker-exec-app-dev: docker-up-dev # Execute a bash shell in the development app container
-	docker compose -f docker-compose.dev.yml exec -T app go run ./cmd/migrate/main.go up
-	docker compose -f docker-compose.dev.yml exec -it app /bin/bash
-.PHONY: docker-exec-app-dev
+dev: # Execute a bash shell in the development app container
+	docker compose -f $(COMPOSE_DEV) up -d --build
+	docker compose -f $(COMPOSE_DEV) exec app swag init -g cmd/main.go -o ./swagger
+	-docker compose -f $(COMPOSE_DEV) exec -it app /bin/bash
+	docker compose -f $(COMPOSE_DEV) down
+.PHONY: dev
 
-exec-test: # Build and run test containers, execute tests, and clean up
-	docker compose -f docker-compose.test.yml build
-	docker compose -f docker-compose.test.yml up -d
-	docker compose -f docker-compose.test.yml exec -T app sh run_tests.sh
-	docker compose -f docker-compose.test.yml down -v
-.PHONY: exec-test
+test: # Execute all tests
+	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
+	docker compose -f $(COMPOSE_TEST) build
+	docker compose -f $(COMPOSE_TEST) up -d --remove-orphans
+	docker compose -f $(COMPOSE_TEST) exec -T app sh run_tests.sh
+	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
+.PHONY: test
+
+clean: # Remove all containers and images
+	docker compose -f $(COMPOSE_BASE) down -v --rmi all --remove-orphans
+	docker compose -f $(COMPOSE_DEV) down -v --rmi all --remove-orphans
+.PHONY: clean
+
+swagger: # Generate Swagger documentation
+	swag init -g cmd/main.go -o ./swagger
+.PHONY: swagger
+
+migration: # Create a new database migration. Usage: make migration service=your_service name=your_migration_name
+	migrate create -ext sql -dir migrations/$(service) $(name)
+.PHONY: migration

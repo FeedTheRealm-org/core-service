@@ -1,0 +1,9 @@
+hair
+eye-back
+face-hair
+cloth
+foot-boot
+armor
+helmet
+cape
+q

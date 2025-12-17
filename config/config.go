@@ -6,31 +6,113 @@ import (
 	"time"
 )
 
+type EnvironmentType int
+
+const (
+	Development EnvironmentType = iota
+	Testing
+	Production
+)
+
+type ServerConfig struct {
+	Port            int
+	ShutdownTimeout time.Duration
+	Environment     EnvironmentType
+}
+
+type DatabaseConfig struct {
+	Username          string
+	Password          string
+	Host              string
+	Port              int
+	Database          string
+	ConnectionRetries int
+	ShouldMigrate     bool
+}
+
+type AssetsConfig struct {
+	MaxUploadSizeBytes int64
+}
+
 type Config struct {
+	Server                *ServerConfig
+	DB                    *DatabaseConfig
+	Assets                *AssetsConfig
 	SessionTokenSecretKey string
 	SessionTokenDuration  time.Duration
-	Dbc                   *DatabaseConfig
+	BrevoAPIKey           string
+	EmailSenderAddress    string
+	EmailLogoURL          string
 }
 
 func CreateConfig() *Config {
-	port, err := strconv.Atoi(os.Getenv("DB_PORT"))
-	if err != nil {
-		port = 5432
+	dbc := &DatabaseConfig{
+		Username:          getEnvOrDefaultString("DB_USERNAME", "postgres"),
+		Password:          getEnvOrDefaultString("DB_PASSWORD", "postgres"),
+		Host:              getEnvOrDefaultString("DB_HOST", "localhost"),
+		Port:              getEnvOrDefaultInt("DB_PORT", 5432),
+		Database:          getEnvOrDefaultString("DB_NAME", "core_service"),
+		ConnectionRetries: getEnvOrDefaultInt("DB_CONNECTION_RETRIES", 10),
+		ShouldMigrate:     getEnvOrDefaultString("DB_SHOULD_MIGRATE", "false") == "true",
 	}
 
-	SessionTokenDuration, err := time.ParseDuration(os.Getenv("SESSION_TOKEN_DURATION"))
+	assetsConf := &AssetsConfig{
+		MaxUploadSizeBytes: int64(getEnvOrDefaultInt("ASSETS_MAX_UPLOAD_SIZE_BYTES", 20*1024*1024)),
+	}
 
-	dbc := NewDatabaseConfig(
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		port,
-		os.Getenv("DB_NAME"),
-	)
+	serverConf := &ServerConfig{
+		Port:            getEnvOrDefaultInt("SERVER_PORT", 8000),
+		ShutdownTimeout: getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
+		Environment:     getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
+	}
 
 	return &Config{
+		Server:                serverConf,
+		DB:                    dbc,
+		Assets:                assetsConf,
 		SessionTokenSecretKey: os.Getenv("SESSION_TOKEN_SECRET_KEY"),
-		SessionTokenDuration:  SessionTokenDuration,
-		Dbc:                   dbc,
+		SessionTokenDuration:  getEnvOrDefaultDuration("SESSION_TOKEN_DURATION", time.Hour*24),
+		BrevoAPIKey:           os.Getenv("BREVO_API_KEY"),
+		EmailSenderAddress:    os.Getenv("EMAIL_SENDER_ADDRESS"),
+		EmailLogoURL:          getEnvOrDefaultString("EMAIL_LOGO_URL", "https://avatars.githubusercontent.com/u/231922724?s=400&u=5f4eb45fb6dc7cfa42333bfe1dc64a376122e3d0&v=4"),
+	}
+}
+
+/* --- ENV Getters --- */
+
+func getEnvOrDefaultString(key string, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}
+
+func getEnvOrDefaultInt(key string, defaultValue int) int {
+	value, err := strconv.Atoi(os.Getenv(key))
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
+func getEnvOrDefaultDuration(key string, defaultValue time.Duration) time.Duration {
+	value, err := time.ParseDuration(os.Getenv(key))
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
+func getEnvironmentType(env string) EnvironmentType {
+	switch env {
+	case "development":
+		return Development
+	case "testing":
+		return Testing
+	case "production":
+		return Production
+	default:
+		return Development
 	}
 }

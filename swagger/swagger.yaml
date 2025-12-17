@@ -1,0 +1,1103 @@
+basePath: /
+definitions:
+  dtos.AddSpriteCategoryRequest:
+    properties:
+      category_name:
+        type: string
+    required:
+    - category_name
+    type: object
+  dtos.CharacterInfoResponse:
+    properties:
+      category_sprites:
+        additionalProperties:
+          type: string
+        type: object
+      character_bio:
+        type: string
+      character_name:
+        type: string
+      created_at:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dtos.CreateAccountRequestDTO:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  dtos.CreateAccountResponseDTO:
+    properties:
+      email:
+        type: string
+    type: object
+  dtos.CreateItemBatchRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dtos.CreateItemRequest'
+        type: array
+    required:
+    - items
+    type: object
+  dtos.CreateItemRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      sprite_id:
+        type: string
+    required:
+    - description
+    - name
+    type: object
+  dtos.ErrorResponse:
+    properties:
+      detail:
+        type: string
+      instance:
+        type: string
+      status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  dtos.ItemMetadataResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      sprite_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dtos.ItemSpriteResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      updated_at:
+        type: string
+      url:
+        type: string
+    type: object
+  dtos.ItemSpritesListResponse:
+    properties:
+      sprites:
+        items:
+          $ref: '#/definitions/dtos.ItemSpriteResponse'
+        type: array
+    type: object
+  dtos.ItemsListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dtos.ItemMetadataResponse'
+        type: array
+    type: object
+  dtos.LoginAccountRequestDTO:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  dtos.LoginAccountResponseDTO:
+    properties:
+      access_token:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dtos.ModelPublishResponse:
+    properties:
+      model_id:
+        type: string
+      name:
+        type: string
+    type: object
+  dtos.ModelsPublishListResponse:
+    properties:
+      models:
+        items:
+          $ref: '#/definitions/dtos.ModelPublishResponse'
+        type: array
+      world_id:
+        type: string
+    required:
+    - world_id
+    type: object
+  dtos.PatchCharacterInfoRequest:
+    properties:
+      category_sprites:
+        additionalProperties:
+          type: string
+        type: object
+      character_bio:
+        type: string
+      character_name:
+        type: string
+    type: object
+  dtos.SpriteCategoryListResponse:
+    properties:
+      category_list:
+        items:
+          $ref: '#/definitions/dtos.SpriteCategoryResponse'
+        type: array
+    type: object
+  dtos.SpriteCategoryResponse:
+    properties:
+      category_id:
+        type: string
+      category_name:
+        type: string
+    type: object
+  dtos.SpriteResponse:
+    properties:
+      sprite_id:
+        type: string
+      sprite_url:
+        type: string
+    type: object
+  dtos.SpritesListResponse:
+    properties:
+      sprites_list:
+        items:
+          $ref: '#/definitions/dtos.SpriteResponse'
+        type: array
+    type: object
+  dtos.UpdateItemSpriteRequest:
+    properties:
+      sprite_id:
+        type: string
+    required:
+    - sprite_id
+    type: object
+  dtos.VerifyAccountRequestDTO:
+    properties:
+      code:
+        type: string
+      email:
+        type: string
+    type: object
+  dtos.VerifyAccountResponseDTO:
+    properties:
+      email:
+        type: string
+      verified:
+        type: boolean
+    type: object
+  dtos.WorldRequest:
+    properties:
+      data: {}
+      file_name:
+        type: string
+    type: object
+  dtos.WorldResponse:
+    properties:
+      created_at:
+        type: string
+      data:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  dtos.WorldsListResponse:
+    properties:
+      amount:
+        type: integer
+      limit:
+        type: integer
+      offset:
+        type: integer
+      worlds:
+        items:
+          $ref: '#/definitions/dtos.WorldResponse'
+        type: array
+    type: object
+info:
+  contact: {}
+  description: |-
+    This service manages all backend interactions for the feed the realm clients.
+
+    ⚠️ NOTE: All 2xx responses are wrapped in a 'Data envelope'.
+    Example: { "data": { "id": "123", "name": "Alice" } }
+  title: FeedTheRealm Core Service API
+  version: 0.1.0
+paths:
+  /assets/models:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload multiple 3D models with their materials to a specific world.
+        Supports GLB, FBX, OBJ model files and various material formats. Material
+        files are optional.
+      parameters:
+      - description: Name of the first model
+        in: formData
+        name: models[0].name
+        required: true
+        type: string
+      - description: Unique ID for the first model
+        format: uuid
+        in: formData
+        name: models[0].model_id
+        required: true
+        type: string
+      - description: 3D model file (GLB, FBX, OBJ, etc.)
+        in: formData
+        name: models[0].model_file
+        required: true
+        type: file
+      - description: Material file (optional)
+        in: formData
+        name: models[0].material_file
+        type: file
+      - description: Name of the second model
+        in: formData
+        name: models[1].name
+        type: string
+      - description: Unique ID for the second model
+        format: uuid
+        in: formData
+        name: models[1].model_id
+        type: string
+      - description: 3D model file for second model
+        in: formData
+        name: models[1].model_file
+        type: file
+      - description: Material file for second model (optional)
+        in: formData
+        name: models[1].material_file
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully uploaded models
+          schema:
+            $ref: '#/definitions/dtos.ModelsPublishListResponse'
+        "400":
+          description: Bad request - missing required fields or invalid format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing JWT token
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error - failed to save models
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload world models
+      tags:
+      - Models
+  /assets/models/{world_id}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload multiple 3D models with their materials to a specific world.
+        Supports GLB, FBX, OBJ model files and various material formats. Material
+        files are optional.
+      parameters:
+      - description: World ID
+        format: uuid
+        in: path
+        name: world_id
+        required: true
+        type: string
+      - description: Name of the first model
+        in: formData
+        name: models[0].name
+        required: true
+        type: string
+      - description: Unique ID for the first model
+        format: uuid
+        in: formData
+        name: models[0].model_id
+        required: true
+        type: string
+      - description: 3D model file (GLB, FBX, OBJ, etc.)
+        in: formData
+        name: models[0].model_file
+        required: true
+        type: file
+      - description: Material file (optional)
+        in: formData
+        name: models[0].material_file
+        type: file
+      - description: Name of the second model
+        in: formData
+        name: models[1].name
+        type: string
+      - description: Unique ID for the second model
+        format: uuid
+        in: formData
+        name: models[1].model_id
+        type: string
+      - description: 3D model file for second model
+        in: formData
+        name: models[1].model_file
+        type: file
+      - description: Material file for second model (optional)
+        in: formData
+        name: models[1].material_file
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully uploaded models
+          schema:
+            $ref: '#/definitions/dtos.ModelsPublishListResponse'
+        "400":
+          description: Bad request - missing required fields or invalid format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing JWT token
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error - failed to save models
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload world models
+      tags:
+      - Models
+  /assets/models/{world_id}/assets/{model_id}/model:
+    get:
+      consumes:
+      - application/json
+      description: Downloads a single 3D model file (GLB) for a specific asset in
+        a world
+      parameters:
+      - description: World ID
+        format: uuid
+        in: path
+        name: world_id
+        required: true
+        type: string
+      - description: Asset ID
+        format: uuid
+        in: path
+        name: model_id
+        required: true
+        type: string
+      produces:
+      - application/gltf-binary
+      responses:
+        "200":
+          description: GLB model file
+          schema:
+            type: file
+        "400":
+          description: Bad request - missing world_id or model_id
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - model file not found for this asset
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Download model file
+      tags:
+      - Models
+  /assets/sprites:
+    put:
+      consumes:
+      - multipart/form-data
+      description: Uploads a sprite file.
+      parameters:
+      - description: Sprite file
+        in: formData
+        name: sprite
+        required: true
+        type: file
+      - description: Category ID
+        in: formData
+        name: category_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Uploaded sprite
+          schema:
+            $ref: '#/definitions/dtos.SpriteResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UploadSpriteData
+      tags:
+      - assets-service
+  /assets/sprites/{sprite_id}:
+    get:
+      description: Downloads the sprite file for a given sprite UUID.
+      parameters:
+      - description: Sprite UUID
+        in: path
+        name: sprite_id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Sprite file
+          schema:
+            type: file
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: DownloadSpriteData
+      tags:
+      - assets-service
+  /assets/sprites/categories:
+    get:
+      description: Retrieves the list of existing categories UUIDs.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Category list
+          schema:
+            $ref: '#/definitions/dtos.SpriteCategoryListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetCategoriesList
+      tags:
+      - assets-service
+    post:
+      consumes:
+      - application/json
+      description: Adds a new sprite category.
+      parameters:
+      - description: Category data
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AddSpriteCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created category
+          schema:
+            $ref: '#/definitions/dtos.SpriteCategoryResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: AddCategory
+      tags:
+      - assets-service
+  /assets/sprites/categories/{category_id}:
+    get:
+      description: Retrieves the list of existing sprites UUIDs for a given category
+        UUID.
+      parameters:
+      - description: Category UUID
+        in: path
+        name: category_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sprite list
+          schema:
+            $ref: '#/definitions/dtos.SpritesListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetSpritesListByCategory
+      tags:
+      - assets-service
+  /assets/sprites/items:
+    get:
+      description: Retrieves all item sprites.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of item sprites
+          schema:
+            $ref: '#/definitions/dtos.ItemSpritesListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetAllItemSprites
+      tags:
+      - assets-service
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads a new item sprite.
+      parameters:
+      - description: Item sprite file (PNG or JPEG)
+        in: formData
+        name: sprite
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Uploaded item sprite
+          schema:
+            $ref: '#/definitions/dtos.ItemSpriteResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UploadItemSprite
+      tags:
+      - assets-service
+  /assets/sprites/items/{sprite_id}:
+    delete:
+      description: Deletes an item sprite by its ID.
+      parameters:
+      - description: Item sprite ID
+        in: path
+        name: sprite_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Sprite deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Sprite not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: DeleteItemSprite
+      tags:
+      - assets-service
+    get:
+      description: Downloads an item sprite by its ID.
+      parameters:
+      - description: Item sprite ID
+        in: path
+        name: sprite_id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Item sprite file
+          schema:
+            type: file
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Sprite not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: DownloadItemSprite
+      tags:
+      - assets-service
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Log in an existing user
+      parameters:
+      - description: Login data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.LoginAccountRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful login
+          schema:
+            $ref: '#/definitions/dtos.LoginAccountResponseDTO'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Login
+      tags:
+      - authentication-service
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: Signup data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateAccountRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful login
+          schema:
+            $ref: '#/definitions/dtos.CreateAccountResponseDTO'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Sign up
+      tags:
+      - authentication-service
+  /auth/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify a user account with email verification code
+      parameters:
+      - description: Verification data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.VerifyAccountRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful verification (Wrapped in data envelope)
+          schema:
+            $ref: '#/definitions/dtos.VerifyAccountResponseDTO'
+        "400":
+          description: Bad request or invalid code
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Verify Account
+      tags:
+      - authentication-service
+  /items:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new game item with metadata
+      parameters:
+      - description: Item data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Item created
+          schema:
+            $ref: '#/definitions/dtos.ItemMetadataResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "409":
+          description: Item already exists
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: CreateItem
+      tags:
+      - items-service
+  /items/{id}:
+    delete:
+      description: Deletes an item by its ID
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid item ID
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Item not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: DeleteItem
+      tags:
+      - items-service
+    get:
+      description: Retrieves a single item by its ID
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item metadata
+          schema:
+            $ref: '#/definitions/dtos.ItemMetadataResponse'
+        "400":
+          description: Invalid item ID
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Item not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetItemById
+      tags:
+      - items-service
+  /items/{id}/sprite:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the sprite associated to an item
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Sprite data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateItemSpriteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Item updated
+          schema:
+            $ref: '#/definitions/dtos.ItemMetadataResponse'
+        "400":
+          description: Invalid item ID or bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Item not found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UpdateItemSprite
+      tags:
+      - items-service
+  /items/batch:
+    post:
+      consumes:
+      - application/json
+      description: Creates multiple game items at once
+      parameters:
+      - description: Batch of items
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateItemBatchRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Items created
+          schema:
+            $ref: '#/definitions/dtos.ItemsListResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: CreateItemsBatch
+      tags:
+      - items-service
+  /items/metadata:
+    get:
+      description: Retrieves all items metadata (for Unity client initialization)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Items list
+          schema:
+            $ref: '#/definitions/dtos.ItemsListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetItemsMetadata
+      tags:
+      - items-service
+  /players/character:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the name and bio of the session player character
+      parameters:
+      - description: Character Info data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.PatchCharacterInfoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated correctly
+          schema:
+            $ref: '#/definitions/dtos.CharacterInfoResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: PatchCharacterInfo
+      tags:
+      - players-service
+  /players/character/:id:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the name and bio of the session player character
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Character info retrieved correctly
+          schema:
+            $ref: '#/definitions/dtos.CharacterInfoResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetCharacterInfo
+      tags:
+      - players-service
+  /world:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of worlds
+      parameters:
+      - description: Pagination offset (starting index)
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: Pagination limit (max 100)
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - description: Filter worlds by name (case-insensitive partial match)
+        in: query
+        name: filter
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Worlds list retrieved correctly
+          schema:
+            $ref: '#/definitions/dtos.WorldsListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetWorldsList
+      tags:
+      - world-service
+    post:
+      consumes:
+      - application/json
+      description: Publishes a new world with the provided information
+      parameters:
+      - description: World Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.WorldRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Published correctly
+          schema:
+            $ref: '#/definitions/dtos.WorldResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: PublishWorld
+      tags:
+      - world-service
+  /world/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the name and data of the session player world
+      parameters:
+      - description: World ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: World info retrieved correctly
+          schema:
+            $ref: '#/definitions/dtos.WorldResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetWorld
+      tags:
+      - world-service
+  /world/reset-database:
+    delete:
+      consumes:
+      - application/json
+      description: Clears all data in the database, this is only meant for testing
+        and development environments
+      produces:
+      - application/json
+      responses: {}
+      summary: ResetDatabase
+      tags:
+      - world-service
+swagger: "2.0"

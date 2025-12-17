@@ -1,11 +1,15 @@
 package repositories
 
-type User struct {
-	Email        string
-	PasswordHash string
-}
+import (
+	"time"
+
+	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/models"
+	"github.com/google/uuid"
+)
 
 type AccountRepository interface {
-	GetAccountByEmail(email string) (*User, error)
-	CreateAccount(user *User) error
+	GetAccountById(id uuid.UUID) (*models.User, error)
+	GetAccountByEmail(email string) (*models.User, error)
+	CreateAccount(user *models.User, verificationCode string) error
+	VerifyAccount(user *models.User, code string, currentTime time.Time) error
 }

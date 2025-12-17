@@ -26,6 +26,7 @@ func TestMain(m *testing.M) {
 		ScenarioInitializer: func(sc *godog.ScenarioContext) {
 			InitializeScenarioForAccount(sc)
 			InitializeScenarioForLogin(sc)
+			InitializeScenarioForVerification(sc)
 		},
 		Options: &opts,
 	}.Run()

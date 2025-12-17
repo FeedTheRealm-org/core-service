@@ -1,0 +1,653 @@
+type: spec.insomnia.rest/5.0
+name: FTR - Core Services
+meta:
+  id: wrk_6b1757df1d5041c1a4d3150824fd8134
+  created: 1762719294133
+  modified: 1762719294133
+  description: ""
+collection:
+  - name: Assets/Sprites
+    meta:
+      id: fld_f399cbdb5f2d4d5da02aeb588fe14d53
+      created: 1762719329200
+      modified: 1762719346645
+      sortKey: -1762719329200
+      description: ""
+    children:
+      - url: localhost:8000/assets/sprites/categories
+        name: GetCategories
+        meta:
+          id: req_aa5fba6e90e34a4eb38e3c412f935ae3
+          created: 1762719352194
+          modified: 1762721099265
+          isPrivate: false
+          description: ""
+          sortKey: -1762719352194
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/assets/sprites/categories/de6e29ad-4cfd-49f5-9cb0-c306f23e6b74
+        name: GetSpritesByCategory
+        meta:
+          id: req_fd1e90f7f36e4217822ca98796b3b452
+          created: 1762719566824
+          modified: 1763176886259
+          isPrivate: false
+          description: ""
+          sortKey: -1762719352144
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/assets/sprites/c3396495-bd59-4f42-ab86-c3313e2973ad
+        name: GetSpriteData
+        meta:
+          id: req_147c154ecfa442d7a539b321071a4f09
+          created: 1762719578552
+          modified: 1763166483620
+          isPrivate: false
+          description: ""
+          sortKey: -1762719352094
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/assets/sprites
+        name: UploadSprite
+        meta:
+          id: req_db2b9bf595714652955f725edabfe4ca
+          created: 1762719588484
+          modified: 1763162865472
+          isPrivate: false
+          description: ""
+          sortKey: -1762719352044
+        method: PUT
+        body:
+          mimeType: multipart/form-data
+          params:
+            - id: pair_a77e5b4e086642da95ae5ecaf8e77c65
+              name: sprite
+              value: ""
+              description: ""
+              disabled: false
+              type: file
+              fileName: /home/maxo/Desktop/feed_the_realm/client/Assets/SPUM/Resources/Addons/Legacy/0_Unit/0_Sprite/0_Hair/Hair_3.png
+            - id: pair_a79b625d47624ded833d2f713f001ba2
+              name: category_id
+              value: 7bd0bc26-feba-4230-894d-bc97461b0e2f
+              description: ""
+              disabled: false
+        headers:
+          - name: Content-Type
+            value: multipart/form-data
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/assets/sprites/categories
+        name: AddCategory
+        meta:
+          id: req_cbb7e947f2184df2bef0a93aa4f06e63
+          created: 1762719596438
+          modified: 1762722420782
+          isPrivate: false
+          description: ""
+          sortKey: -1762719352069
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"category_name": "hair"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Auth
+    meta:
+      id: fld_eb59e59cffe54e9f9d5c9eeea974058c
+      created: 1762720660210
+      modified: 1762720660210
+      sortKey: -1762720660210
+      description: ""
+    children:
+      - url: localhost:8000/auth/login
+        name: Login
+        meta:
+          id: req_aef8fee84da14c99af2d23284692930d
+          created: 1762720662766
+          modified: 1763162770725
+          isPrivate: false
+          description: ""
+          sortKey: -1762720662766
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"email": "maxi18wars@gmail.com",
+            	"password": "qwerty123"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/auth/signup
+        name: Signup
+        meta:
+          id: req_e51e68127528411ab8881065ce6b0299
+          created: 1762720697825
+          modified: 1762720811564
+          isPrivate: false
+          description: ""
+          sortKey: -1762720007480
+        method: POST
+        body:
+          mimeType: application/json
+          text: ""
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/auth/verify
+        name: Verify
+        meta:
+          id: req_52514cd2d0a94a9aa8bec50ab80e02b4
+          created: 1762720708966
+          modified: 1762720813911
+          isPrivate: false
+          description: ""
+          sortKey: -1762720007380
+        method: POST
+        body:
+          mimeType: application/json
+          text: ""
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Players/Character
+    meta:
+      id: fld_f8e598b3aa704f4f89810221562c69c0
+      created: 1762720929044
+      modified: 1763162869846
+      sortKey: -1762719994705
+      description: ""
+    children:
+      - url: localhost:8000/player/character
+        name: GetCharacterInfo
+        meta:
+          id: req_ee48e52c6261438f8d4b5e4c1b467f67
+          created: 1762720938559
+          modified: 1763162784042
+          isPrivate: false
+          description: ""
+          sortKey: -1762720938559
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+            id: pair_073c1715ea4c41448f02089666821b0c
+          - id: pair_6e0fbd41665b4eaa9ee8d34c650f06d1
+            name: Authorization
+            value: Bearer
+              eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjMyNDkxNzEsImlzcyI6MTc2MzE2Mjc3MSwidXNlcklEIjoiMzljNDcwZDQtYWZmZC00NmI2LWFhZjgtODQxMTZmZmZhYWY3In0.Kp35BwbB1XAZf834Fj_fGiXhQwIeLACm6zPA3AZ8nvE
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Items
+    meta:
+      id: fld_items_service_collection
+      created: 1732558800000
+      modified: 1732558800000
+      sortKey: -1762719994600
+      description: "Items service endpoints"
+    children:
+      - url: localhost:8000/items
+        name: CreateItem
+        meta:
+          id: req_items_create_item
+          created: 1732558801000
+          modified: 1732558801000
+          isPrivate: false
+          description: "Create a new item"
+          sortKey: -1732558801000
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "name": "Health Potion",
+              "description": "Restores 50 HP",
+              "sprite_id": "00000000-0000-0000-0000-000000000000"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/batch
+        name: CreateItemsBatch
+        meta:
+          id: req_items_create_batch
+          created: 1732558802000
+          modified: 1732558802000
+          isPrivate: false
+          description: "Create multiple items at once"
+          sortKey: -1732558802000
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "items": [
+                {
+                  "name": "Health Potion",
+                  "description": "Restores 50 HP",
+                  "sprite_id": "00000000-0000-0000-0000-000000000000"
+                },
+                {
+                  "name": "Mana Potion",
+                  "description": "Restores 50 MP",
+                  "sprite_id": "00000000-0000-0000-0000-000000000001"
+                }
+              ]
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/metadata
+        name: GetItemsMetadata
+        meta:
+          id: req_items_get_metadata
+          created: 1732558803000
+          modified: 1732558803000
+          isPrivate: false
+          description: "Get all items metadata"
+          sortKey: -1732558803000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/00000000-0000-0000-0000-000000000000
+        name: GetItemById
+        meta:
+          id: req_items_get_by_id
+          created: 1732558804000
+          modified: 1732558804000
+          isPrivate: false
+          description: "Get a specific item by ID"
+          sortKey: -1732558804000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/00000000-0000-0000-0000-000000000000
+        name: DeleteItem
+        meta:
+          id: req_items_delete
+          created: 1732558805000
+          modified: 1732558805000
+          isPrivate: false
+          description: "Delete an item by ID"
+          sortKey: -1732558805000
+        method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/00000000-0000-0000-0000-000000000000/sprite
+        name: UpdateItemSprite
+        meta:
+          id: req_items_update_sprite
+          created: 1732558806001
+          modified: 1732558806001
+          isPrivate: false
+          description: "Update an item's sprite after creation"
+          sortKey: -1732558805100
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "sprite_id": "00000000-0000-0000-0000-000000000000"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Items/Categories
+    meta:
+      id: fld_items_categories_collection
+      created: 1732558806000
+      modified: 1732558806000
+      sortKey: -1762719994580
+      description: "Item categories endpoints"
+    children:
+      - url: localhost:8000/items/categories
+        name: CreateItemCategory
+        meta:
+          id: req_items_create_category
+          created: 1732558807000
+          modified: 1732558807000
+          isPrivate: false
+          description: "Create a new item category"
+          sortKey: -1732558807000
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "name": "consumable"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/categories
+        name: GetItemCategories
+        meta:
+          id: req_items_get_categories
+          created: 1732558808000
+          modified: 1732558808000
+          isPrivate: false
+          description: "Get all item categories"
+          sortKey: -1732558808000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/items/categories/00000000-0000-0000-0000-000000000001
+        name: DeleteItemCategory
+        meta:
+          id: req_items_delete_category
+          created: 1732558809000
+          modified: 1732558809000
+          isPrivate: false
+          description: "Delete an item category by ID (fails if in use)"
+          sortKey: -1732558809000
+        method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Items/Sprites
+    meta:
+      id: fld_items_sprites_collection
+      created: 1732558810000
+      modified: 1732558810000
+      sortKey: -1762719994550
+      description: "Item sprites endpoints (managed by assets-service)"
+    children:
+      - url: localhost:8000/assets/sprites/items
+        name: UploadItemSprite
+        meta:
+          id: req_items_upload_sprite
+          created: 1732558811000
+          modified: 1732558811000
+          isPrivate: false
+          description: "Upload a sprite for an item"
+          sortKey: -1732558811000
+        method: POST
+        body:
+          mimeType: multipart/form-data
+          params:
+            - id: pair_items_sprite_file
+              name: sprite
+              value: ""
+              description: "Sprite image file"
+              disabled: false
+              type: file
+              fileName: /path/to/sprite.png
+        headers:
+          - name: Content-Type
+            value: multipart/form-data
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/assets/sprites/items
+        name: GetAllItemSprites
+        meta:
+          id: req_items_get_all_sprites
+          created: 1732558812000
+          modified: 1732558812000
+          isPrivate: false
+          description: "Get all item sprites"
+          sortKey: -1732558812000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/assets/sprites/items/00000000-0000-0000-0000-000000000000
+        name: DownloadItemSprite
+        meta:
+          id: req_items_download_sprite
+          created: 1732558814000
+          modified: 1732558814000
+          isPrivate: false
+          description: "Download item sprite by ID"
+          sortKey: -1732558814000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/assets/sprites/items/00000000-0000-0000-0000-000000000000
+        name: DeleteItemSprite
+        meta:
+          id: req_items_delete_sprite
+          created: 1732558815000
+          modified: 1732558815000
+          isPrivate: false
+          description: "Delete an item sprite by ID"
+          sortKey: -1732558815000
+        method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_343b47a5f3746e09637ff8567354db26e052f44f
+    created: 1762719294136
+    modified: 1762719294136
+  cookies:
+    - id: 4c42e78b-c127-4486-910f-fb132ab6ed2d
+      key: Authorization
+      value: Bearer
+        eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjI4MDcyNDgsImlzcyI6MTc2MjcyMDg0OCwidXNlcklEIjoiN2JiOGE0MTktOWY3Ni00NWY0LTg0Y2MtMWYwNGI0N2QwNzk4In0.2eDBu8bAyj86ZQjvw7aQm5D3FSvpJLDyEYaZ08c5VAw
+      domain: localhost:8080
+      path: /
+      secure: false
+      httpOnly: false
+environments:
+  name: Base Environment
+  meta:
+    id: env_343b47a5f3746e09637ff8567354db26e052f44f
+    created: 1762719294136
+    modified: 1762719294136
+    isPrivate: false
+spec:
+  meta:
+    id: spc_30821d4a7a5b43abaff209a188770c38
+    created: 1762719294135
+    modified: 1763162507747

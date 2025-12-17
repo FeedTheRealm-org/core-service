@@ -1,6 +1,5 @@
 name: CI/CD for core-service
 on:
-  push:
   pull_request:
 jobs:
   docker-compose:

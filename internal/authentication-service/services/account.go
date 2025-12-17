@@ -1,19 +1,23 @@
 package services
 
 import (
+	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
+	code_generator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/code-generator"
 	validator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/credential-validation"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
-	jwt "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/session-token"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
 )
 
 type accountService struct {
 	conf *config.Config
 	repo repositories.AccountRepository
-	jwt  *jwt.JWTManager
+	jwt  *session.JWTManager
 }
 
 type AccountNotFoundError struct{}
@@ -52,7 +56,25 @@ func (e *AccountSessionInvalid) Error() string {
 	return "Session is invalid"
 }
 
-type AccountInvalidFormat struct{
+type AccountNotVerifiedError struct{}
+
+func (e *AccountNotVerifiedError) Error() string {
+	return "Account not verified"
+}
+
+type InvalidVerificationCodeError struct{}
+
+func (e *InvalidVerificationCodeError) Error() string {
+	return "Invalid verification code"
+}
+
+type VerificationCodeExpiredError struct{}
+
+func (e *VerificationCodeExpiredError) Error() string {
+	return "Verification code has expired"
+}
+
+type AccountInvalidFormat struct {
 	Msg string
 }
 
@@ -60,15 +82,16 @@ func (e *AccountInvalidFormat) Error() string {
 	return "Account format is invalid"
 }
 
-func NewAccountService(conf *config.Config, repo repositories.AccountRepository) AccountService {
+func NewAccountService(conf *config.Config, repo repositories.AccountRepository, jwtManager *session.JWTManager) AccountService {
 	return &accountService{
 		conf: conf,
 		repo: repo,
-		jwt:  jwt.NewJWTManager(conf.SessionTokenSecretKey, conf.SessionTokenDuration),
+		jwt:  jwtManager,
 	}
 }
 
-func (s *accountService) GetUserByEmail(email string) (*repositories.User, error) {
+func (s *accountService) GetUserByEmail(email string) (*models.User, error) {
+	email = strings.ToLower(email)
 	user, err := s.repo.GetAccountByEmail(email)
 	if err != nil {
 		return nil, &AccountNotFoundError{}
@@ -77,21 +100,22 @@ func (s *accountService) GetUserByEmail(email string) (*repositories.User, error
 	return user, nil
 }
 
-func (s *accountService) CreateAccount(email string, password string) (*repositories.User, error) {
+func (s *accountService) CreateAccount(email string, password string) (*models.User, string, error) {
+	email = strings.ToLower(email)
 	existingUser, err := s.repo.GetAccountByEmail(email)
 	if err == nil && existingUser != nil {
-		return nil, &AccountAlreadyExistsError{}
+		return nil, "", &AccountAlreadyExistsError{}
 	}
 
 	err = validator.IsValidEmail(email)
 	if err != nil {
 		if _, ok := err.(*validator.EmptyEmailError); ok {
-			return nil, &AccountInvalidFormat{
+			return nil, "", &AccountInvalidFormat{
 				Msg: "Empty email",
 			}
 		}
 
-		return nil, &AccountInvalidFormat{
+		return nil, "", &AccountInvalidFormat{
 			Msg: "Invalid email",
 		}
 	}
@@ -99,78 +123,114 @@ func (s *accountService) CreateAccount(email string, password string) (*reposito
 	err = validator.IsValidPassword(password)
 	if err != nil {
 		if _, ok := err.(*validator.EmptyPasswordError); ok {
-			return nil, &AccountInvalidFormat{
+			return nil, "", &AccountInvalidFormat{
 				Msg: "Empty password",
 			}
 		}
 
 		if _, ok := err.(*validator.PasswordTooShortError); ok {
-			return nil, &AccountInvalidFormat{
+			return nil, "", &AccountInvalidFormat{
 				Msg: "Password is too short",
 			}
 		}
 
 		if _, ok := err.(*validator.PasswordNoLetterError); ok {
-			return nil, &AccountInvalidFormat{
+			return nil, "", &AccountInvalidFormat{
 				Msg: "Password must contain at least one letter",
 			}
 		}
 
 		if _, ok := err.(*validator.PasswordNoNumberError); ok {
-			return nil, &AccountInvalidFormat{
+			return nil, "", &AccountInvalidFormat{
 				Msg: "Password must contain at least one number",
 			}
 		}
 
-		return nil, &AccountInvalidFormat{
+		return nil, "", &AccountInvalidFormat{
 			Msg: "Invalid password",
 		}
 	}
 
 	hashedPassword, err := hashing.HashPassword(password)
 	if err != nil {
-		return nil, &AccountFailedToCreateError{}
+		return nil, "", &AccountFailedToCreateError{}
 	}
 
-	user := &repositories.User{
-		Email:        email,
-		PasswordHash: string(hashedPassword),
+	functionGenerator := rand.Int
+	if s.conf.Server.Environment == config.Testing {
+		functionGenerator = code_generator.StaticGenerateCode
 	}
 
-	err = s.repo.CreateAccount(user)
+	user := &models.User{
+		Email:    email,
+		Password: string(hashedPassword),
+	}
+
+	verificationCode := code_generator.GenerateCode(functionGenerator)
+	err = s.repo.CreateAccount(user, verificationCode)
 	if err != nil {
-		return nil, &AccountFailedToCreateError{}
+		return nil, "", &AccountFailedToCreateError{}
 	}
 
-	return user, nil
+	return user, verificationCode, nil
 }
 
-func (s *accountService) LoginAccount(email string, password string) (string, error) {
+func (s *accountService) LoginAccount(email string, password string) (*models.User, string, error) {
+	email = strings.ToLower(email)
 	user, err := s.repo.GetAccountByEmail(email)
 	if err != nil {
-		return "", &AccountNotFoundError{}
+		return nil, "", &AccountNotFoundError{}
 	}
 
-	isPasswordValid := hashing.VerifyPassword(user.PasswordHash, password)
+	isPasswordValid := hashing.VerifyPassword(user.Password, password)
 	if !isPasswordValid {
-		return "", &AccountNotFoundError{}
+		return nil, "", &AccountNotFoundError{}
 	}
 
-	token, err := s.jwt.GenerateToken(user.Email)
+	if !user.Verified {
+		return nil, "", &AccountNotVerifiedError{}
+	}
+
+	token, err := s.jwt.GenerateToken(user.Id.String())
 	if err != nil {
-		return "", &AccountFailedToCreateTokenError{}
+		return nil, "", &AccountFailedToCreateTokenError{}
 	}
 
-	return token, nil
+	return user, token, nil
 }
 
 func (s *accountService) ValidateSessionToken(token string) error {
-	if err := s.jwt.IsValidateToken(token, time.Now()); err != nil {
-		if _, ok := err.(*jwt.JWTExpiredTokenError); ok {
+	if _, err := s.jwt.IsValidateToken(token, time.Now()); err != nil {
+		if _, ok := err.(*session.JWTExpiredTokenError); ok {
 			return &AccountSessionExpired{}
 		}
 		return &AccountSessionInvalid{}
 	}
 
 	return nil
+}
+
+func (s *accountService) VerifyAccount(email string, code string) (bool, error) {
+	email = strings.ToLower(email)
+	user, err := s.repo.GetAccountByEmail(email)
+	if err != nil {
+		return false, &AccountNotFoundError{}
+	}
+
+	currentTime := time.Now()
+	err = s.repo.VerifyAccount(user, code, currentTime)
+	if err != nil {
+		if _, ok := err.(*repositories.AccountNotFoundError); ok {
+			return false, &AccountNotFoundError{}
+		}
+		if _, ok := err.(*repositories.AccountNotVerifiedError); ok {
+			return false, &InvalidVerificationCodeError{}
+		}
+		if _, ok := err.(*repositories.AccountVerificationExpired); ok {
+			return false, &VerificationCodeExpiredError{}
+		}
+		return false, err
+	}
+
+	return true, nil
 }

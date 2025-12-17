@@ -1,0 +1,1658 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This service manages all backend interactions for the feed the realm clients.\n\n⚠️ NOTE: All 2xx responses are wrapped in a 'Data envelope'.\nExample: { \"data\": { \"id\": \"123\", \"name\": \"Alice\" } }",
+        "title": "FeedTheRealm Core Service API",
+        "contact": {},
+        "version": "0.1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/assets/models": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload multiple 3D models with their materials to a specific world. Supports GLB, FBX, OBJ model files and various material formats. Material files are optional.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Models"
+                ],
+                "summary": "Upload world models",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the first model",
+                        "name": "models[0].name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Unique ID for the first model",
+                        "name": "models[0].model_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "3D model file (GLB, FBX, OBJ, etc.)",
+                        "name": "models[0].model_file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Material file (optional)",
+                        "name": "models[0].material_file",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the second model",
+                        "name": "models[1].name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Unique ID for the second model",
+                        "name": "models[1].model_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "3D model file for second model",
+                        "name": "models[1].model_file",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Material file for second model (optional)",
+                        "name": "models[1].material_file",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully uploaded models",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ModelsPublishListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - missing required fields or invalid format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing JWT token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - failed to save models",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/models/{world_id}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload multiple 3D models with their materials to a specific world. Supports GLB, FBX, OBJ model files and various material formats. Material files are optional.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Models"
+                ],
+                "summary": "Upload world models",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "World ID",
+                        "name": "world_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the first model",
+                        "name": "models[0].name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Unique ID for the first model",
+                        "name": "models[0].model_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "3D model file (GLB, FBX, OBJ, etc.)",
+                        "name": "models[0].model_file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Material file (optional)",
+                        "name": "models[0].material_file",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the second model",
+                        "name": "models[1].name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Unique ID for the second model",
+                        "name": "models[1].model_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "3D model file for second model",
+                        "name": "models[1].model_file",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Material file for second model (optional)",
+                        "name": "models[1].material_file",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully uploaded models",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ModelsPublishListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - missing required fields or invalid format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing JWT token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - failed to save models",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/models/{world_id}/assets/{model_id}/model": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Downloads a single 3D model file (GLB) for a specific asset in a world",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/gltf-binary"
+                ],
+                "tags": [
+                    "Models"
+                ],
+                "summary": "Download model file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "World ID",
+                        "name": "world_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Asset ID",
+                        "name": "model_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "GLB model file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - missing world_id or model_id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - model file not found for this asset",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/sprites": {
+            "put": {
+                "description": "Uploads a sprite file.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "UploadSpriteData",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Sprite file",
+                        "name": "sprite",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "category_id",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Uploaded sprite",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SpriteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/sprites/categories": {
+            "get": {
+                "description": "Retrieves the list of existing categories UUIDs.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "GetCategoriesList",
+                "responses": {
+                    "200": {
+                        "description": "Category list",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SpriteCategoryListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Adds a new sprite category.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "AddCategory",
+                "parameters": [
+                    {
+                        "description": "Category data",
+                        "name": "category",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.AddSpriteCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created category",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SpriteCategoryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/sprites/categories/{category_id}": {
+            "get": {
+                "description": "Retrieves the list of existing sprites UUIDs for a given category UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "GetSpritesListByCategory",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category UUID",
+                        "name": "category_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sprite list",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SpritesListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/sprites/items": {
+            "get": {
+                "description": "Retrieves all item sprites.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "GetAllItemSprites",
+                "responses": {
+                    "200": {
+                        "description": "List of item sprites",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemSpritesListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Uploads a new item sprite.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "UploadItemSprite",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Item sprite file (PNG or JPEG)",
+                        "name": "sprite",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Uploaded item sprite",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemSpriteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/sprites/items/{sprite_id}": {
+            "get": {
+                "description": "Downloads an item sprite by its ID.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "DownloadItemSprite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item sprite ID",
+                        "name": "sprite_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item sprite file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Sprite not found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes an item sprite by its ID.",
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "DeleteItemSprite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item sprite ID",
+                        "name": "sprite_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sprite deleted successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Sprite not found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/sprites/{sprite_id}": {
+            "get": {
+                "description": "Downloads the sprite file for a given sprite UUID.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "DownloadSpriteData",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sprite UUID",
+                        "name": "sprite_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sprite file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Log in an existing user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Login",
+                "parameters": [
+                    {
+                        "description": "Login data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.LoginAccountRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful login",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.LoginAccountResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/signup": {
+            "post": {
+                "description": "Create a new user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Sign up",
+                "parameters": [
+                    {
+                        "description": "Signup data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateAccountRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful login",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateAccountResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/verify": {
+            "post": {
+                "description": "Verify a user account with email verification code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Verify Account",
+                "parameters": [
+                    {
+                        "description": "Verification data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.VerifyAccountRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful verification (Wrapped in data envelope)",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.VerifyAccountResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request or invalid code",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/items": {
+            "post": {
+                "description": "Creates a new game item with metadata",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "items-service"
+                ],
+                "summary": "CreateItem",
+                "parameters": [
+                    {
+                        "description": "Item data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Item created",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemMetadataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Item already exists",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/items/batch": {
+            "post": {
+                "description": "Creates multiple game items at once",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "items-service"
+                ],
+                "summary": "CreateItemsBatch",
+                "parameters": [
+                    {
+                        "description": "Batch of items",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreateItemBatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Items created",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemsListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/items/metadata": {
+            "get": {
+                "description": "Retrieves all items metadata (for Unity client initialization)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "items-service"
+                ],
+                "summary": "GetItemsMetadata",
+                "responses": {
+                    "200": {
+                        "description": "Items list",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemsListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/items/{id}": {
+            "get": {
+                "description": "Retrieves a single item by its ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "items-service"
+                ],
+                "summary": "GetItemById",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item metadata",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemMetadataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid item ID",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Item not found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes an item by its ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "items-service"
+                ],
+                "summary": "DeleteItem",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item deleted successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid item ID",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Item not found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/items/{id}/sprite": {
+            "patch": {
+                "description": "Updates the sprite associated to an item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "items-service"
+                ],
+                "summary": "UpdateItemSprite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Sprite data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdateItemSpriteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item updated",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemMetadataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid item ID or bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Item not found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/players/character": {
+            "patch": {
+                "description": "Updates the name and bio of the session player character",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "players-service"
+                ],
+                "summary": "PatchCharacterInfo",
+                "parameters": [
+                    {
+                        "description": "Character Info data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.PatchCharacterInfoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated correctly",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/players/character/:id": {
+            "get": {
+                "description": "Retrieves the name and bio of the session player character",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "players-service"
+                ],
+                "summary": "GetCharacterInfo",
+                "responses": {
+                    "200": {
+                        "description": "Character info retrieved correctly",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/world": {
+            "get": {
+                "description": "Retrieves a paginated list of worlds",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "GetWorldsList",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Pagination offset (starting index)",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Pagination limit (max 100)",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter worlds by name (case-insensitive partial match)",
+                        "name": "filter",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Worlds list retrieved correctly",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldsListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Publishes a new world with the provided information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "PublishWorld",
+                "parameters": [
+                    {
+                        "description": "World Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Published correctly",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/world/reset-database": {
+            "delete": {
+                "description": "Clears all data in the database, this is only meant for testing and development environments",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "ResetDatabase",
+                "responses": {}
+            }
+        },
+        "/world/{id}": {
+            "get": {
+                "description": "Retrieves the name and data of the session player world",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "GetWorld",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "World info retrieved correctly",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dtos.AddSpriteCategoryRequest": {
+            "type": "object",
+            "required": [
+                "category_name"
+            ],
+            "properties": {
+                "category_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.CharacterInfoResponse": {
+            "type": "object",
+            "properties": {
+                "category_sprites": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "character_bio": {
+                    "type": "string"
+                },
+                "character_name": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.CreateAccountRequestDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.CreateAccountResponseDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.CreateItemBatchRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.CreateItemRequest"
+                    }
+                }
+            }
+        },
+        "dtos.CreateItemRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sprite_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "detail": {
+                    "type": "string"
+                },
+                "instance": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ItemMetadataResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sprite_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ItemSpriteResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ItemSpritesListResponse": {
+            "type": "object",
+            "properties": {
+                "sprites": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ItemSpriteResponse"
+                    }
+                }
+            }
+        },
+        "dtos.ItemsListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ItemMetadataResponse"
+                    }
+                }
+            }
+        },
+        "dtos.LoginAccountRequestDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.LoginAccountResponseDTO": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ModelPublishResponse": {
+            "type": "object",
+            "properties": {
+                "model_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ModelsPublishListResponse": {
+            "type": "object",
+            "required": [
+                "world_id"
+            ],
+            "properties": {
+                "models": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ModelPublishResponse"
+                    }
+                },
+                "world_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.PatchCharacterInfoRequest": {
+            "type": "object",
+            "properties": {
+                "category_sprites": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "character_bio": {
+                    "type": "string"
+                },
+                "character_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.SpriteCategoryListResponse": {
+            "type": "object",
+            "properties": {
+                "category_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.SpriteCategoryResponse"
+                    }
+                }
+            }
+        },
+        "dtos.SpriteCategoryResponse": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "string"
+                },
+                "category_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.SpriteResponse": {
+            "type": "object",
+            "properties": {
+                "sprite_id": {
+                    "type": "string"
+                },
+                "sprite_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.SpritesListResponse": {
+            "type": "object",
+            "properties": {
+                "sprites_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.SpriteResponse"
+                    }
+                }
+            }
+        },
+        "dtos.UpdateItemSpriteRequest": {
+            "type": "object",
+            "required": [
+                "sprite_id"
+            ],
+            "properties": {
+                "sprite_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.VerifyAccountRequestDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.VerifyAccountResponseDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "verified": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dtos.WorldRequest": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "file_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.WorldResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.WorldsListResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "worlds": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.WorldResponse"
+                    }
+                }
+            }
+        }
+    }
+}

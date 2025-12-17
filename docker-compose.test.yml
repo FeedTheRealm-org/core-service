@@ -7,20 +7,23 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - SERVER_ENVIRONMENT=testing
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - DB_HOST=test_db
       - DB_PORT=5432
       - DB_NAME=postgres
+      - DB_SHOULD_MIGRATE=true
       - SESSION_TOKEN_SECRET_KEY=test_secret_key
       - SESSION_TOKEN_DURATION=1h
+      - ALLOW_DB_RESET=true
     depends_on:
       test_db:
         condition: service_healthy
     networks:
       - app-network
   test_db:
-    image: postgres:18
+    image: postgres:17-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
