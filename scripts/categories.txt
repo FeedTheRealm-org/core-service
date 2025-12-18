@@ -1,8 +1,5 @@
-ArmorBody
 ArmorHelmet
-ArmorArmR
-ArmorSleeveR
-ArmorHandR
+ArmorBody
 ArmorLegR
 Hair
 Beard

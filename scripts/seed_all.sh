@@ -16,8 +16,5 @@ echo "Seeding assets..."
 echo -e "1\npng\ny\n" | ./scripts/upload_assets.py http://localhost:8000 "$FTR_CLIENT_PATH/Assets/HeroEditor4D/FantasyHeroes/Sprites/Equipment/Armor/Basic" > /dev/null
 echo -e "2\npng\ny\n" | ./scripts/upload_assets.py http://localhost:8000 "$FTR_CLIENT_PATH/Assets/HeroEditor4D/FantasyHeroes/Sprites/Equipment/Armor/Basic" > /dev/null
 echo -e "3\npng\ny\n" | ./scripts/upload_assets.py http://localhost:8000 "$FTR_CLIENT_PATH/Assets/HeroEditor4D/FantasyHeroes/Sprites/Equipment/Armor/Basic" > /dev/null
-echo -e "4\npng\ny\n" | ./scripts/upload_assets.py http://localhost:8000 "$FTR_CLIENT_PATH/Assets/HeroEditor4D/FantasyHeroes/Sprites/Equipment/Armor/Basic" > /dev/null
-echo -e "5\npng\ny\n" | ./scripts/upload_assets.py http://localhost:8000 "$FTR_CLIENT_PATH/Assets/HeroEditor4D/FantasyHeroes/Sprites/Equipment/Armor/Basic" > /dev/null
-echo -e "6\npng\ny\n" | ./scripts/upload_assets.py http://localhost:8000 "$FTR_CLIENT_PATH/Assets/HeroEditor4D/FantasyHeroes/Sprites/Equipment/Armor/Basic" > /dev/null
 
 echo "Done."
