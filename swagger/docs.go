@@ -1613,6 +1613,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {},
+                "description": {
+                    "type": "string"
+                },
                 "file_name": {
                     "type": "string"
                 }
@@ -1625,6 +1628,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "data": {
+                    "type": "string"
+                },
+                "description": {
                     "type": "string"
                 },
                 "id": {
