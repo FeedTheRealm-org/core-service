@@ -69,9 +69,10 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 	}
 
 	worldData := &models.WorldData{
-		UserId: userId,
-		Name:   req.FileName,
-		Data:   datatypes.JSON(bytes),
+		UserId:      userId,
+		Name:        req.FileName,
+		Description: req.Description,
+		Data:        datatypes.JSON(bytes),
 	}
 
 	createdWorld, err := c.worldService.PublishWorld(worldData)
@@ -86,12 +87,13 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 	}
 
 	response := &dtos.WorldResponse{
-		ID:        createdWorld.ID.String(),
-		UserId:    createdWorld.UserId.String(),
-		Name:      createdWorld.Name,
-		Data:      string(createdWorld.Data),
-		CreatedAt: createdWorld.CreatedAt,
-		UpdatedAt: createdWorld.UpdatedAt,
+		ID:          createdWorld.ID.String(),
+		UserId:      createdWorld.UserId.String(),
+		Name:        createdWorld.Name,
+		Description: createdWorld.Description,
+		Data:        string(createdWorld.Data),
+		CreatedAt:   createdWorld.CreatedAt,
+		UpdatedAt:   createdWorld.UpdatedAt,
 	}
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusCreated, response)
@@ -137,12 +139,13 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 	}
 
 	res := &dtos.WorldResponse{
-		ID:        worldInfo.ID.String(),
-		UserId:    worldInfo.UserId.String(),
-		Name:      worldInfo.Name,
-		Data:      string(worldInfo.Data),
-		CreatedAt: worldInfo.CreatedAt,
-		UpdatedAt: worldInfo.UpdatedAt,
+		ID:          worldInfo.ID.String(),
+		UserId:      worldInfo.UserId.String(),
+		Name:        worldInfo.Name,
+		Description: worldInfo.Description,
+		Data:        string(worldInfo.Data),
+		CreatedAt:   worldInfo.CreatedAt,
+		UpdatedAt:   worldInfo.UpdatedAt,
 	}
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
@@ -199,12 +202,13 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 	resList := make([]dtos.WorldResponse, 0, len(worldsList))
 	for _, worldInfo := range worldsList {
 		resList = append(resList, dtos.WorldResponse{
-			ID:        worldInfo.ID.String(),
-			UserId:    worldInfo.UserId.String(),
-			Name:      worldInfo.Name,
-			Data:      string(worldInfo.Data),
-			CreatedAt: worldInfo.CreatedAt,
-			UpdatedAt: worldInfo.UpdatedAt,
+			ID:          worldInfo.ID.String(),
+			UserId:      worldInfo.UserId.String(),
+			Name:        worldInfo.Name,
+			Description: worldInfo.Description,
+			Data:        string(worldInfo.Data),
+			CreatedAt:   worldInfo.CreatedAt,
+			UpdatedAt:   worldInfo.UpdatedAt,
 		})
 	}
 	res := &dtos.WorldsListResponse{

@@ -1606,6 +1606,9 @@
             "type": "object",
             "properties": {
                 "data": {},
+                "description": {
+                    "type": "string"
+                },
                 "file_name": {
                     "type": "string"
                 }
@@ -1618,6 +1621,9 @@
                     "type": "string"
                 },
                 "data": {
+                    "type": "string"
+                },
+                "description": {
                     "type": "string"
                 },
                 "id": {

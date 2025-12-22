@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE IF EXISTS world_data
+  DROP COLUMN IF EXISTS description;
+
+COMMIT;

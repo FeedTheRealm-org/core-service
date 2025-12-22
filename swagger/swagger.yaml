@@ -209,6 +209,8 @@ definitions:
   dtos.WorldRequest:
     properties:
       data: {}
+      description:
+        type: string
       file_name:
         type: string
     type: object
@@ -217,6 +219,8 @@ definitions:
       created_at:
         type: string
       data:
+        type: string
+      description:
         type: string
       id:
         type: string

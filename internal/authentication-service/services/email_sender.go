@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
+
 	"github.com/FeedTheRealm-org/core-service/config"
 )
 
@@ -112,10 +114,14 @@ func (s *emailSenderService) SendVerificationEmail(toEmail string, verifyCode st
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		_ = resp.Body.Close()
 		return err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			logger.Logger.Warnf("SendVerificationEmail: failed to close response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to send verification email, status code: %d", resp.StatusCode)
