@@ -200,6 +200,11 @@ func (s *accountService) LoginAccount(email string, password string) (*models.Us
 }
 
 func (s *accountService) ValidateSessionToken(token string) error {
+	// If a fixed server token is configured and matches the provided token, is a valid session.
+	if s.conf != nil && s.conf.ServerFixedToken != "" && token == s.conf.ServerFixedToken {
+		return nil
+	}
+
 	if _, err := s.jwt.IsValidateToken(token, time.Now()); err != nil {
 		if _, ok := err.(*session.JWTExpiredTokenError); ok {
 			return &AccountSessionExpired{}

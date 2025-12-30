@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -167,6 +168,14 @@ func TestAccount_ValidateSessionToken_InvalidToken(t *testing.T) {
 
 	err := accountService.ValidateSessionToken(invalidToken)
 	assert.NotNil(t, err, "expected error on validating invalid session token")
+}
+
+func TestAccount_ValidateSessionToken_FixedServerToken(t *testing.T) {
+	fixedToken := os.Getenv("SERVER_FIXED_TOKEN")
+	assert.NotEmpty(t, fixedToken, "expected fixed server token to be set in env")
+
+	err := accountService.ValidateSessionToken(fixedToken)
+	assert.Nil(t, err, "expected no error when validating fixed server token")
 }
 
 func TestAccount_ValidateSessionToken_ExpiredToken(t *testing.T) {

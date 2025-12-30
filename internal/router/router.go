@@ -18,7 +18,7 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 
 	// Setup global middleware
 	r.Use(middleware.ErrorHandlerMiddleware())
-	r.Use(middleware.JWTAuthMiddleware(jwtManager))
+	r.Use(middleware.JWTAuthMiddleware(jwtManager, conf.ServerFixedToken))
 
 	// Setup service routers
 	r.NoRoute(common_handlers.NotFoundController)
