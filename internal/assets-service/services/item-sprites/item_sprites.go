@@ -27,56 +27,48 @@ func NewItemSpritesService(conf *config.Config, repository itemsprites.ItemSprit
 	}
 }
 
-func (iss *itemSpritesService) UploadSprite(fileHeader *multipart.FileHeader) (*models.ItemSprite, error) {
-	// Open the uploaded file
-	file, err := fileHeader.Open()
-	if err != nil {
-		return nil, err
+func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID, files []*multipart.FileHeader) ([]*models.ItemSprite, error) {
+	if len(ids) != len(files) {
+		return nil, fmt.Errorf("number of ids and files must match")
 	}
-	defer func() {
-		_ = file.Close()
-	}()
+	var result []*models.ItemSprite
+	for i, fileHeader := range files {
+		id := ids[i]
+		file, err := fileHeader.Open()
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
 
-	// Generate unique filename
-	ext := filepath.Ext(fileHeader.Filename)
-	spriteUniqueUrl := uuid.New().String()
-	filename := fmt.Sprintf("%s%s", spriteUniqueUrl, ext)
+		ext := filepath.Ext(fileHeader.Filename)
+		filename := fmt.Sprintf("%s%s", id.String(), ext)
+		dirPath := filepath.Join("bucket", "worlds", worldID.String(), "items")
+		filePath := filepath.Join(dirPath, filename)
+		if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
+			return nil, err
+		}
+		destFile, err := os.Create(filePath)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := io.Copy(destFile, file); err != nil {
+			destFile.Close()
+			return nil, err
+		}
+		destFile.Close()
 
-	// Create directory path: ./bucket/sprites/items/
-	dirPath := filepath.Join("./bucket/sprites/items")
-	filePath := filepath.Join(dirPath, filename)
-
-	// Create directory if it doesn't exist
-	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
-		return nil, err
+		sprite := &models.ItemSprite{
+			Id:  id,
+			Url: filePath,
+		}
+		if err := iss.repository.CreateSprite(sprite); err != nil {
+			_ = os.Remove(filePath)
+			return nil, err
+		}
+		logger.Logger.Infof("Item sprite uploaded: %s (ID: %s)", filename, sprite.Id)
+		result = append(result, sprite)
 	}
-
-	// Create destination file
-	destFile, err := os.Create(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = destFile.Close()
-	}()
-
-	// Copy uploaded file to destination
-	if _, err := io.Copy(destFile, file); err != nil {
-		return nil, err
-	}
-
-	// Save sprite metadata to database
-	sprite := &models.ItemSprite{
-		Url: filePath,
-	}
-	if err := iss.repository.CreateSprite(sprite); err != nil {
-		// Clean up the file if database insertion fails
-		_ = os.Remove(filePath)
-		return nil, err
-	}
-
-	logger.Logger.Infof("Item sprite uploaded: %s (ID: %s)", filename, sprite.Id)
-	return sprite, nil
+	return result, nil
 }
 
 func (iss *itemSpritesService) GetSpriteById(id uuid.UUID) (*models.ItemSprite, error) {

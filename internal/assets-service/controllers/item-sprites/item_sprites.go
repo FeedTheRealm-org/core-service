@@ -27,47 +27,77 @@ func NewItemSpritesController(conf *config.Config, service itemsprites.ItemSprit
 	}
 }
 
-// @Summary UploadItemSprite
-// @Description Uploads a new item sprite.
+// @Summary UploadItemSprites
+// @Description Uploads multiple item sprites. Each sprite must have a provided ID.
 // @Tags assets-service
 // @Accept multipart/form-data
 // @Produce json
-// @Param sprite formData file true "Item sprite file (PNG or JPEG)"
-// @Success 201 {object} dtos.ItemSpriteResponse "Uploaded item sprite"
+// @Param world_id path string true "World ID" format(uuid)
+// @Param ids[] formData string true "Sprite IDs (UUIDs), one per file"
+// @Param sprites[] formData file true "Item sprite files (PNG o JPEG)"
+// @Success 201 {object} dtos.ItemSpritesListResponse "Uploaded item sprites"
 // @Failure 400 {object} dtos.ErrorResponse "Bad request"
 // @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /assets/sprites/items [post]
+// @Router /assets/sprites/items/{world_id} [post]
 func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
-	reqFile, err := c.FormFile("sprite")
+	worldIDStr := c.Param("world_id")
+	if worldIDStr == "" {
+		_ = c.Error(errors.NewBadRequestError("world_id is required"))
+		return
+	}
+	worldID, err := uuid.Parse(worldIDStr)
 	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("failed to get sprite file from request: " + err.Error()))
+		_ = c.Error(errors.NewBadRequestError("invalid world_id format"))
 		return
 	}
-
-	if reqFile.Size > isc.conf.Assets.MaxUploadSizeBytes {
-		_ = c.Error(errors.NewBadRequestError("file size exceeds the limit"))
+	form, err := c.MultipartForm()
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid multipart form: " + err.Error()))
 		return
 	}
-
-	contentType := reqFile.Header.Get("Content-Type")
-	if contentType != "image/png" && contentType != "image/jpeg" {
-		_ = c.Error(errors.NewBadRequestError("file must be PNG or JPEG format"))
+	idStrs := form.Value["ids[]"]
+	files := form.File["sprites[]"]
+	if len(idStrs) == 0 || len(files) == 0 || len(idStrs) != len(files) {
+		_ = c.Error(errors.NewBadRequestError("must provide the same number of ids[] and sprites[]"))
 		return
 	}
-
-	sprite, err := isc.service.UploadSprite(reqFile)
+	var ids []uuid.UUID
+	for _, s := range idStrs {
+		id, err := uuid.Parse(s)
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError("invalid UUID in ids[]: " + s))
+			return
+		}
+		ids = append(ids, id)
+	}
+	for _, f := range files {
+		if f.Size > isc.conf.Assets.MaxUploadSizeBytes {
+			_ = c.Error(errors.NewBadRequestError("file size exceeds the limit"))
+			return
+		}
+		contentType := f.Header.Get("Content-Type")
+		if contentType != "image/png" && contentType != "image/jpeg" {
+			_ = c.Error(errors.NewBadRequestError("file must be PNG or JPEG format"))
+			return
+		}
+	}
+	sprites, err := isc.service.UploadSprites(worldID, ids, files)
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
-
-	res := &dtos.ItemSpriteResponse{
-		Id:        sprite.Id,
-		Url:       sprite.Url,
-		CreatedAt: sprite.CreatedAt,
-		UpdatedAt: sprite.UpdatedAt,
+	responseSprites := make([]dtos.ItemSpriteResponse, len(sprites))
+	for i, sprite := range sprites {
+		responseSprites[i] = dtos.ItemSpriteResponse{
+			Id:        sprite.Id,
+			Url:       sprite.Url,
+			CreatedAt: sprite.CreatedAt,
+			UpdatedAt: sprite.UpdatedAt,
+		}
 	}
-
+	res := &dtos.ItemSpritesListResponse{
+		Sprites: responseSprites,
+	}
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 

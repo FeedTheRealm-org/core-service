@@ -478,48 +478,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Uploads a new item sprite.",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "UploadItemSprite",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "Item sprite file (PNG or JPEG)",
-                        "name": "sprite",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Uploaded item sprite",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ItemSpriteResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
             }
         },
         "/assets/sprites/items/{sprite_id}": {
@@ -607,6 +565,65 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Sprite not found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/sprites/items/{world_id}": {
+            "post": {
+                "description": "Uploads multiple item sprites. Each sprite must have a provided ID.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "UploadItemSprites",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "World ID",
+                        "name": "world_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sprite IDs (UUIDs), one per file",
+                        "name": "ids[]",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Item sprite files (PNG o JPEG)",
+                        "name": "sprites[]",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Uploaded item sprites",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemSpritesListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
