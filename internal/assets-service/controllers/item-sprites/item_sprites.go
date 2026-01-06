@@ -1,6 +1,8 @@
 package itemsprites
 
 import (
+	"fmt"
+	"mime/multipart"
 	"net/http"
 	"os"
 
@@ -55,22 +57,27 @@ func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
 		_ = c.Error(errors.NewBadRequestError("invalid multipart form: " + err.Error()))
 		return
 	}
-	idStrs := form.Value["ids[]"]
-	files := form.File["sprites[]"]
-	if len(idStrs) == 0 || len(files) == 0 || len(idStrs) != len(files) {
-		_ = c.Error(errors.NewBadRequestError("must provide the same number of ids[] and sprites[]"))
-		return
-	}
 	var ids []uuid.UUID
-	for _, s := range idStrs {
-		id, err := uuid.Parse(s)
-		if err != nil {
-			_ = c.Error(errors.NewBadRequestError("invalid UUID in ids[]: " + s))
+	var files []*multipart.FileHeader
+	i := 1
+	for {
+		idKey := fmt.Sprintf("id[%d]", i)
+		spriteKey := fmt.Sprintf("sprite[%d]", i)
+		idVals, idOk := form.Value[idKey]
+		spriteFiles, spriteOk := form.File[spriteKey]
+		if !idOk && !spriteOk {
+			break // No más pares
+		}
+		if !idOk || !spriteOk || len(idVals) == 0 || len(spriteFiles) == 0 {
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("Missing id[%d] or sprite[%d]", i, i)))
 			return
 		}
-		ids = append(ids, id)
-	}
-	for _, f := range files {
+		id, err := uuid.Parse(idVals[0])
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid UUID in id[%d]: %s", i, idVals[0])))
+			return
+		}
+		f := spriteFiles[0]
 		if f.Size > isc.conf.Assets.MaxUploadSizeBytes {
 			_ = c.Error(errors.NewBadRequestError("file size exceeds the limit"))
 			return
@@ -80,6 +87,13 @@ func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
 			_ = c.Error(errors.NewBadRequestError("file must be PNG or JPEG format"))
 			return
 		}
+		ids = append(ids, id)
+		files = append(files, f)
+		i++
+	}
+	if len(ids) == 0 || len(files) == 0 || len(ids) != len(files) {
+		_ = c.Error(errors.NewBadRequestError("must provide at least one id_N and sprite_N pair, and all pairs must be complete"))
+		return
 	}
 	sprites, err := isc.service.UploadSprites(worldID, ids, files)
 	if err != nil {

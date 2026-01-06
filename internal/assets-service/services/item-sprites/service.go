@@ -10,6 +10,7 @@ import (
 // ItemSpritesService defines the interface for item sprite-related business logic operations.
 type ItemSpritesService interface {
 	// UploadSprites uploads multiple sprite files with provided IDs for a given world and saves their metadata.
+	// The ids/files must be paired as id_N/sprite_N from the form.
 	UploadSprites(worldID uuid.UUID, ids []uuid.UUID, files []*multipart.FileHeader) ([]*models.ItemSprite, error)
 
 	// GetSpriteById retrieves a sprite by its ID.
