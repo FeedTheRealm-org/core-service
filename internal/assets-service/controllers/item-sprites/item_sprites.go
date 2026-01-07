@@ -52,51 +52,58 @@ func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
 		_ = c.Error(errors.NewBadRequestError("invalid world_id format"))
 		return
 	}
-	form, err := c.MultipartForm()
-	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid multipart form: " + err.Error()))
-		return
-	}
 	var ids []uuid.UUID
 	var files []*multipart.FileHeader
-	i := 1
+	i := 0
 	for {
+		i++
 		idKey := fmt.Sprintf("id[%d]", i)
 		spriteKey := fmt.Sprintf("sprite[%d]", i)
-		idVals, idOk := form.Value[idKey]
-		spriteFiles, spriteOk := form.File[spriteKey]
-		if !idOk && !spriteOk {
-			break // No más pares
+		idVal := c.PostForm(idKey)
+		if idVal == "" {
+			break
 		}
-		if !idOk || !spriteOk || len(idVals) == 0 || len(spriteFiles) == 0 {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("Missing id[%d] or sprite[%d]", i, i)))
-			return
-		}
-		id, err := uuid.Parse(idVals[0])
+		spriteFile, err := c.FormFile(spriteKey)
 		if err != nil {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid UUID in id[%d]: %s", i, idVals[0])))
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("Missing sprite file for id[%d]", i)))
 			return
 		}
-		f := spriteFiles[0]
-		if f.Size > isc.conf.Assets.MaxUploadSizeBytes {
+		id, err := uuid.Parse(idVal)
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid UUID in id[%d]: %s", i, idVal)))
+			return
+		}
+		if spriteFile.Size > isc.conf.Assets.MaxUploadSizeBytes {
 			_ = c.Error(errors.NewBadRequestError("file size exceeds the limit"))
 			return
 		}
-		contentType := f.Header.Get("Content-Type")
-		if contentType != "image/png" && contentType != "image/jpeg" {
-			_ = c.Error(errors.NewBadRequestError("file must be PNG or JPEG format"))
+		contentType := spriteFile.Header.Get("Content-Type")
+		if contentType != "image/png" && contentType != "image/jpeg" && contentType != "application/octet-stream" {
+			_ = c.Error(errors.NewBadRequestError("file must be PNG, JPEG, or octet-stream format"))
 			return
 		}
 		ids = append(ids, id)
-		files = append(files, f)
-		i++
+		files = append(files, spriteFile)
 	}
 	if len(ids) == 0 || len(files) == 0 || len(ids) != len(files) {
-		_ = c.Error(errors.NewBadRequestError("must provide at least one id_N and sprite_N pair, and all pairs must be complete"))
+		_ = c.Error(errors.NewBadRequestError("must provide at least one id[N] and sprite[N] pair, and all pairs must be complete"))
 		return
+	}
+	seen := make(map[uuid.UUID]struct{})
+	for _, id := range ids {
+		if _, exists := seen[id]; exists {
+			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("duplicate id detected: %s", id)})
+			return
+		}
+		seen[id] = struct{}{}
 	}
 	sprites, err := isc.service.UploadSprites(worldID, ids, files)
 	if err != nil {
+		errMsg := err.Error()
+		if errMsg != "" && (contains(errMsg, "duplicate key") || contains(errMsg, "duplicated key") || contains(errMsg, "UNIQUE constraint failed") || contains(errMsg, "Error 1062")) {
+			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": "sprite id already exists in database"})
+			return
+		}
 		_ = c.Error(err)
 		return
 	}
@@ -211,4 +218,6 @@ func (isc *itemSpritesController) DeleteItemSprite(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, gin.H{"message": "sprite deleted successfully"})
 }
 
-// (Item sprite categories endpoint removed)
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || (len(s) > len(substr) && (s[:len(substr)] == substr || contains(s[1:], substr))))
+}
