@@ -7,8 +7,8 @@ import (
 
 // ItemSpritesRepository defines the interface for item sprites-related database operations.
 type ItemSpritesRepository interface {
-	// CreateSprite creates a new item sprite in the database.
-	CreateSprite(sprite *models.ItemSprite) error
+	// UpsertSprite inserts or updates an item sprite in the database.
+	UpsertSprite(sprite *models.ItemSprite) error
 
 	// GetSpriteById retrieves a sprite by its ID.
 	GetSpriteById(id uuid.UUID) (*models.ItemSprite, error)

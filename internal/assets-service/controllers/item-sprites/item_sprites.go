@@ -89,21 +89,18 @@ func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
 		_ = c.Error(errors.NewBadRequestError("must provide at least one id[N] and sprite[N] pair, and all pairs must be complete"))
 		return
 	}
+	// Check for duplicate IDs in the same request
 	seen := make(map[uuid.UUID]struct{})
 	for _, id := range ids {
 		if _, exists := seen[id]; exists {
-			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("duplicate id detected: %s", id)})
+			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("duplicate id detected in request: %s", id)})
 			return
 		}
 		seen[id] = struct{}{}
 	}
+
 	sprites, err := isc.service.UploadSprites(worldID, ids, files)
 	if err != nil {
-		errMsg := err.Error()
-		if errMsg != "" && (contains(errMsg, "duplicate key") || contains(errMsg, "duplicated key") || contains(errMsg, "UNIQUE constraint failed") || contains(errMsg, "Error 1062")) {
-			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": "sprite id already exists in database"})
-			return
-		}
 		_ = c.Error(err)
 		return
 	}
@@ -216,8 +213,4 @@ func (isc *itemSpritesController) DeleteItemSprite(c *gin.Context) {
 	}
 
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, gin.H{"message": "sprite deleted successfully"})
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || (len(s) > len(substr) && (s[:len(substr)] == substr || contains(s[1:], substr))))
 }

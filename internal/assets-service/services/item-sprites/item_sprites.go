@@ -61,7 +61,7 @@ func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID,
 			Id:  id,
 			Url: filePath,
 		}
-		if err := iss.repository.CreateSprite(sprite); err != nil {
+		if err := iss.repository.UpsertSprite(sprite); err != nil {
 			_ = os.Remove(filePath)
 			return nil, err
 		}

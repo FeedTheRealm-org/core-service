@@ -788,8 +788,9 @@
 		{
 			"name": "Items/Sprites",
 			"item": [
-				{
-					"name": "UploadItemSprite",
+				   {
+					   "name": "UploadItemSprite",
+					   "description": "Upload one or more item sprites. If a sprite with the same ID already exists, it will be overwritten (idempotent/overwrite behavior). Duplicate IDs in the same request will return 409 Conflict.",
 					"protocolProfileBehavior": {
 						"followRedirects": true,
 						"disableUrlEncoding": false,
