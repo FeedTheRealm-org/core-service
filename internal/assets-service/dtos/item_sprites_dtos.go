@@ -1,14 +1,16 @@
 package dtos
 
 import (
+	"mime/multipart"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-// UploadItemSpriteRequest represents the multipart form request for uploading item sprites.
-type UploadItemSpriteRequest struct {
-	CategoryId uuid.UUID `form:"category_id" binding:"required"`
+// UploadItemSpritesRequest representa el form-data para carga múltiple de sprites de items.
+type UploadItemSpritesRequest struct {
+	Ids     []uuid.UUID             `form:"ids[]" binding:"required"`
+	Sprites []*multipart.FileHeader `form:"sprites[]" binding:"required"`
 }
 
 // ItemSpriteResponse represents an item sprite response.

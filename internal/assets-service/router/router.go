@@ -36,7 +36,7 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 	itemSpritesController := itemsprites_controller.NewItemSpritesController(conf, itemSpritesService)
 
 	itemSpritesGroup := g.Group("/sprites/items")
-	itemSpritesGroup.POST("", itemSpritesController.UploadItemSprite)
+	itemSpritesGroup.POST(":world_id", itemSpritesController.UploadItemSprite)
 	itemSpritesGroup.GET("", itemSpritesController.GetAllItemSprites)
 	itemSpritesGroup.GET("/:sprite_id", itemSpritesController.DownloadItemSprite)
 	itemSpritesGroup.DELETE("/:sprite_id", itemSpritesController.DeleteItemSprite)

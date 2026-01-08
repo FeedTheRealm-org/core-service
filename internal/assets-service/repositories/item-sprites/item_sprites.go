@@ -6,6 +6,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/google/uuid"
+	"gorm.io/gorm/clause"
 )
 
 type itemSpritesRepository struct {
@@ -21,8 +22,14 @@ func NewItemSpritesRepository(conf *config.Config, db *config.DB) ItemSpritesRep
 	}
 }
 
-func (isr *itemSpritesRepository) CreateSprite(sprite *models.ItemSprite) error {
-	if err := isr.db.Conn.Create(sprite).Error; err != nil {
+func (isr *itemSpritesRepository) UpsertSprite(sprite *models.ItemSprite) error {
+	if err := isr.db.Conn.
+		Clauses(
+			clause.OnConflict{
+				Columns:   []clause.Column{{Name: "id"}},
+				DoUpdates: clause.AssignmentColumns([]string{"url", "updated_at"}),
+			},
+		).Create(sprite).Error; err != nil {
 		return err
 	}
 	return nil

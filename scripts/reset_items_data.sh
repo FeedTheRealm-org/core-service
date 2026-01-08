@@ -1,35 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Reset items, item_sprites and item_categories data in the DB (development only)
-# Also optionally deletes files under ./bucket/sprites/items
+# Reset items and their sprites via HTTP API (development only)
+# - Fetches ALL items from /items/metadata
+# - Deletes each referenced item sprite via /assets/sprites/items/{sprite_id}
+# - Deletes each item via /items/{id}
+# - Optionally deletes local files under ./bucket/sprites/items
 
-USAGE="Usage: $0 [--docker] [--delete-files] [--db-url <postgres://...>]\n
-Options:\n  --docker         Run DB commands inside docker-compose dev_db container (default)\n  --no-docker      Use local psql and pass DB URL via --db-url\n  --delete-files   Also delete the files under ./bucket/sprites/items (prompt required)\n  --db-url <url>   When using --no-docker, provide the DATABASE_URL for psql\n  -y               Skip confirmation prompt (dangerous)\n"
+USAGE="Usage: $0 [--base-url <http://host:port>] [--delete-files] [-y]\n
+Options:\n  --base-url <url>  Base URL of core-service API (default: http://localhost:8000)\n  --delete-files    Also delete the files under ./bucket/sprites/items (prompt required)\n  -y                Skip confirmation prompt (dangerous)\n"
 
-USE_DOCKER=true
+BASE_URL="http://localhost:8000"
 DELETE_FILES=false
-DB_URL=""
 SKIP_PROMPT=false
 
 # Parse args
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --docker)
-      USE_DOCKER=true
-      shift
-      ;;
-    --no-docker)
-      USE_DOCKER=false
-      shift
+    --base-url)
+      BASE_URL="$2"
+      shift 2
       ;;
     --delete-files)
       DELETE_FILES=true
       shift
-      ;;
-    --db-url)
-      DB_URL="$2"
-      shift 2
       ;;
     -y)
       SKIP_PROMPT=true
@@ -47,17 +41,18 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-SQL=$(cat <<'SQL'
-BEGIN;
-DELETE FROM items;
-DELETE FROM item_sprites;
-DELETE FROM item_categories;
-COMMIT;
-SQL
-)
+if ! command -v curl >/dev/null 2>&1; then
+  echo "Error: curl is required to run this script" >&2
+  exit 1
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: jq is required to run this script" >&2
+  exit 1
+fi
 
 if [ "$SKIP_PROMPT" = false ]; then
-  echo "This will delete ALL records in tables: items, item_sprites, item_categories."
+  echo "This will delete ALL items and their associated sprites using the HTTP API at: $BASE_URL."
   if [ "$DELETE_FILES" = true ]; then
     echo "It will also DELETE files under './bucket/sprites/items' on disk."
   fi
@@ -68,17 +63,54 @@ if [ "$SKIP_PROMPT" = false ]; then
   fi
 fi
 
-if [ "$USE_DOCKER" = true ]; then
-  echo "Running reset against dev_db container via docker-compose..."
-  docker compose -f docker-compose.dev.yml exec -T dev_db psql -v ON_ERROR_STOP=1 -U postgres -d postgres -c "$SQL"
+echo "Fetching items from $BASE_URL/items/metadata ..."
+ITEMS_JSON=$(curl -fsS "$BASE_URL/items/metadata")
+
+# Extract item IDs and sprite IDs from response (wrapped in .data)
+ITEM_IDS=$(echo "$ITEMS_JSON" | jq -r '.data.items[]?.id' 2>/dev/null || true)
+SPRITE_IDS=$(echo "$ITEMS_JSON" | jq -r '.data.items[]?.sprite_id' 2>/dev/null | grep -v '^00000000-0000-0000-0000-000000000000$' | sort -u || true)
+
+if [ -z "${ITEM_IDS:-}" ]; then
+  echo "No items found. Nothing to delete from API."
 else
-  if [ -z "$DB_URL" ]; then
-    echo "Error: --db-url is required when using --no-docker"
-    exit 1
+  if [ -n "${SPRITE_IDS:-}" ]; then
+    echo "Deleting sprites referenced by items..."
+    while IFS= read -r SPRITE_ID; do
+      [ -z "$SPRITE_ID" ] && continue
+      echo "- Deleting sprite $SPRITE_ID ..."
+      if ! curl -fsS -X DELETE "$BASE_URL/assets/sprites/items/$SPRITE_ID" >/dev/null; then
+        echo "  Warning: failed to delete sprite $SPRITE_ID (might not exist)" >&2
+      fi
+    done <<< "$SPRITE_IDS"
+  else
+    echo "No sprite IDs referenced by items. Skipping sprite deletion."
   fi
-  echo "Running reset against DB: $DB_URL"
-  # Use psql with provided DB_URL
-  psql "$DB_URL" -v ON_ERROR_STOP=1 -c "$SQL"
+
+  echo "Deleting items..."
+  while IFS= read -r ITEM_ID; do
+    [ -z "$ITEM_ID" ] && continue
+    echo "- Deleting item $ITEM_ID ..."
+    if ! curl -fsS -X DELETE "$BASE_URL/items/$ITEM_ID" >/dev/null; then
+      echo "  Warning: failed to delete item $ITEM_ID (might not exist)" >&2
+    fi
+  done <<< "$ITEM_IDS"
+fi
+
+echo "Fetching all item sprites from $BASE_URL/assets/sprites/items ..."
+ALL_SPRITES_JSON=$(curl -fsS "$BASE_URL/assets/sprites/items")
+REMAINING_SPRITE_IDS=$(echo "$ALL_SPRITES_JSON" | jq -r '.data.sprites[]?.id' 2>/dev/null || true)
+
+if [ -z "${REMAINING_SPRITE_IDS:-}" ]; then
+  echo "No remaining sprites found (or already deleted)."
+else
+  echo "Deleting remaining sprites (orphans or already removed in previous step)..."
+  while IFS= read -r SPRITE_ID; do
+    [ -z "$SPRITE_ID" ] && continue
+    echo "- Deleting sprite $SPRITE_ID ..."
+    if ! curl -fsS -X DELETE "$BASE_URL/assets/sprites/items/$SPRITE_ID" >/dev/null; then
+      echo "  Warning: failed to delete sprite $SPRITE_ID (might not exist)" >&2
+    fi
+  done <<< "$REMAINING_SPRITE_IDS"
 fi
 
 if [ "$DELETE_FILES" = true ]; then
@@ -86,6 +118,7 @@ if [ "$DELETE_FILES" = true ]; then
     read -p "Also delete files under ./bucket/sprites/items? Type 'YES' to continue: " CONFIRM2
     if [ "$CONFIRM2" != "YES" ]; then
       echo "Skipping file deletion"
+      echo "Reset via API completed"
       exit 0
     fi
   fi
@@ -94,4 +127,4 @@ if [ "$DELETE_FILES" = true ]; then
   echo "Deleted files under ./bucket/sprites/items"
 fi
 
-echo "Reset completed"
+echo "Reset via API completed"

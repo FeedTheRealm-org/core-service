@@ -43,6 +43,7 @@ type Config struct {
 	BrevoAPIKey           string
 	EmailSenderAddress    string
 	EmailLogoURL          string
+	ServerFixedToken      string
 }
 
 func CreateConfig() *Config {
@@ -75,6 +76,7 @@ func CreateConfig() *Config {
 		BrevoAPIKey:           os.Getenv("BREVO_API_KEY"),
 		EmailSenderAddress:    os.Getenv("EMAIL_SENDER_ADDRESS"),
 		EmailLogoURL:          getEnvOrDefaultString("EMAIL_LOGO_URL", "https://avatars.githubusercontent.com/u/231922724?s=400&u=5f4eb45fb6dc7cfa42333bfe1dc64a376122e3d0&v=4"),
+		ServerFixedToken:      os.Getenv("SERVER_FIXED_TOKEN"),
 	}
 }
 

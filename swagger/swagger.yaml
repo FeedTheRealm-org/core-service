@@ -594,34 +594,6 @@ paths:
       summary: GetAllItemSprites
       tags:
       - assets-service
-    post:
-      consumes:
-      - multipart/form-data
-      description: Uploads a new item sprite.
-      parameters:
-      - description: Item sprite file (PNG or JPEG)
-        in: formData
-        name: sprite
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Uploaded item sprite
-          schema:
-            $ref: '#/definitions/dtos.ItemSpriteResponse'
-        "400":
-          description: Bad request
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: UploadItemSprite
-      tags:
-      - assets-service
   /assets/sprites/items/{sprite_id}:
     delete:
       description: Deletes an item sprite by its ID.
@@ -681,6 +653,47 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: DownloadItemSprite
+      tags:
+      - assets-service
+  /assets/sprites/items/{world_id}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads multiple item sprites. Each sprite must have a provided
+        ID.
+      parameters:
+      - description: World ID
+        format: uuid
+        in: path
+        name: world_id
+        required: true
+        type: string
+      - description: Sprite IDs (UUIDs), one per file
+        in: formData
+        name: ids[]
+        required: true
+        type: string
+      - description: Item sprite files (PNG o JPEG)
+        in: formData
+        name: sprites[]
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Uploaded item sprites
+          schema:
+            $ref: '#/definitions/dtos.ItemSpritesListResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UploadItemSprites
       tags:
       - assets-service
   /auth/login:
