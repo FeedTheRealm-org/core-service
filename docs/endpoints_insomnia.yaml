@@ -643,6 +643,130 @@ collection:
             send: true
             store: true
           rebuildPath: true
+  - name: World
+    meta:
+      id: fld_world_service_collection
+      created: 1732558820000
+      modified: 1732558820000
+      sortKey: -1762719994500
+      description: "World service endpoints"
+    children:
+      - url: localhost:8000/world
+        name: StoreWorldData
+        meta:
+          id: req_world_store
+          created: 1732558821000
+          modified: 1732558821000
+          isPrivate: false
+          description: "Create a new world"
+          sortKey: -1732558821000
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "name": "My World",
+              "description": "A new world",
+              "other_field": "value"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/world/{id}
+        name: GetWorldData
+        meta:
+          id: req_world_get
+          created: 1732558822000
+          modified: 1732558822000
+          isPrivate: false
+          description: "Get world data by ID"
+          sortKey: -1732558822000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/world?offset=0&limit=10&filter=
+        name: GetWorldsList
+        meta:
+          id: req_worlds_list
+          created: 1732558823000
+          modified: 1732558823000
+          isPrivate: false
+          description: "Get paginated list of worlds"
+          sortKey: -1732558823000
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: localhost:8000/world/clear
+        name: ClearDatabase
+      - url: localhost:8000/world/{id}
+        name: UpdateWorld
+        meta:
+          id: req_world_update
+          created: 1732558825000
+          modified: 1732558825000
+          isPrivate: false
+          description: "Update world data and description"
+          sortKey: -1732558825000
+        method: PUT
+        body:
+          mimeType: application/json
+        headers:
+          - name: Content-Type
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+        meta:
+          id: req_world_clear
+          created: 1732558824000
+          modified: 1732558824000
+          isPrivate: false
+          description: "Clear world database (if allowed)"
+          sortKey: -1732558824000
+        method: POST
+        headers:
+          - name: User-Agent
+            value: insomnia/12.0.0
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
 cookieJar:
   name: Default Jar
   meta:

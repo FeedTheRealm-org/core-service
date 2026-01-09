@@ -3,11 +3,13 @@ package world
 import (
 	"errors"
 	"os"
+	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	world_errors "github.com/FeedTheRealm-org/core-service/internal/world-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/models"
 	"github.com/google/uuid"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -40,6 +42,27 @@ func (r *worldRepository) GetWorldData(worldID uuid.UUID) (*models.WorldData, er
 		}
 		return nil, err
 	}
+	return &wd, nil
+}
+
+// UpdateWorldData updates the Data and Description of an existing world and refreshes UpdatedAt.
+func (r *worldRepository) UpdateWorldData(worldID uuid.UUID, data []byte, description string) (*models.WorldData, error) {
+	var wd models.WorldData
+	if err := r.db.Conn.First(&wd, "id = ?", worldID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, world_errors.NewWorldNotFound(err.Error())
+		}
+		return nil, err
+	}
+
+	wd.Data = datatypes.JSON(data)
+	wd.Description = description
+	wd.UpdatedAt = time.Now().UTC()
+
+	if err := r.db.Conn.Save(&wd).Error; err != nil {
+		return nil, err
+	}
+
 	return &wd, nil
 }
 

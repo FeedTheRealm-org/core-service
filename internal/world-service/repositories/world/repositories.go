@@ -13,6 +13,9 @@ type WorldRepository interface {
 	// GetWorldData retrieves information for a specific world.
 	GetWorldData(worldID uuid.UUID) (*models.WorldData, error)
 
+	// UpdateWorldData updates the data and description for an existing world.
+	UpdateWorldData(worldID uuid.UUID, data []byte, description string) (*models.WorldData, error)
+
 	// GetWorldsList retrieves a paginated list of worlds.
 	GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error)
 

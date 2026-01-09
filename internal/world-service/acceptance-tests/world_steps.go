@@ -35,12 +35,20 @@ type world struct {
 	ID        string `json:"id"`
 	UserID    string `json:"user_id"`
 	Name      string `json:"name"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+type worldFull struct {
+	ID        string `json:"id"`
+	UserID    string `json:"user_id"`
+	Name      string `json:"name"`
 	Data      string `json:"data"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
 type worldResponse struct {
-	Data world `json:"data"`
+	Data worldFull `json:"data"`
 }
 
 type worldsListResponse struct {
@@ -166,10 +174,6 @@ func otherPlayersShouldSeeTheWorldInListings() error {
 	}
 	if got.UserID != expect.UserID {
 		return fmt.Errorf("user_id mismatch: expected %s, got %s", expect.UserID, got.UserID)
-	}
-
-	if err := compareJSON(got.Data, expect.Data); err != nil {
-		return fmt.Errorf("data mismatch: %w", err)
 	}
 
 	return nil

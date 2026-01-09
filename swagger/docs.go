@@ -1170,6 +1170,13 @@ const docTemplate = `{
                 "summary": "GetWorldsList",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "type": "integer",
                         "description": "Pagination offset (starting index)",
                         "name": "offset",
@@ -1218,6 +1225,13 @@ const docTemplate = `{
                 ],
                 "summary": "PublishWorld",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "description": "World Data",
                         "name": "request",
@@ -1282,6 +1296,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "World ID",
                         "name": "id",
                         "in": "path",
@@ -1293,6 +1314,64 @@ const docTemplate = `{
                         "description": "World info retrieved correctly",
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates the data and description of an existing world",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "UpdateWorld",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "World ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "World Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "World updated correctly",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body or invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
@@ -1626,6 +1705,29 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.WorldMetadata": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.WorldRequest": {
             "type": "object",
             "properties": {
@@ -1679,7 +1781,7 @@ const docTemplate = `{
                 "worlds": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dtos.WorldResponse"
+                        "$ref": "#/definitions/dtos.WorldMetadata"
                     }
                 }
             }

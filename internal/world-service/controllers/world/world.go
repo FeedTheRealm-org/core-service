@@ -36,6 +36,7 @@ func NewWorldController(conf *config.Config, characterService world.WorldService
 // @Tags world-service
 // @Accept   json
 // @Produce  json
+// @Param Authorization header string true "Bearer token for authentication"
 // @Param   request body dtos.WorldRequest true "World Data"
 // @Success 201  {object}  dtos.WorldResponse "Published correctly"
 // @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
@@ -104,6 +105,7 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 // @Tags world-service
 // @Accept   json
 // @Produce  json
+// @Param Authorization header string true "Bearer token for authentication"
 // @Param id  path string true "World ID"
 // @Success 200  {object}  dtos.WorldResponse "World info retrieved correctly"
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
@@ -156,6 +158,7 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 // @Tags world-service
 // @Accept   json
 // @Produce  json
+// @Param Authorization header string true "Bearer token for authentication"
 // @Param offset query int true "Pagination offset (starting index)"
 // @Param limit  query int true "Pagination limit (max 100)"
 // @Param filter query string false "Filter worlds by name (case-insensitive partial match)"
@@ -199,14 +202,14 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 		return
 	}
 
-	resList := make([]dtos.WorldResponse, 0, len(worldsList))
+	// Build a metadata-only list (do not include full world Data)
+	resList := make([]dtos.WorldMetadata, 0, len(worldsList))
 	for _, worldInfo := range worldsList {
-		resList = append(resList, dtos.WorldResponse{
+		resList = append(resList, dtos.WorldMetadata{
 			ID:          worldInfo.ID.String(),
 			UserId:      worldInfo.UserId.String(),
 			Name:        worldInfo.Name,
 			Description: worldInfo.Description,
-			Data:        string(worldInfo.Data),
 			CreatedAt:   worldInfo.CreatedAt,
 			UpdatedAt:   worldInfo.UpdatedAt,
 		})
@@ -216,6 +219,72 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 		Total:  len(resList),
 		Limit:  limit,
 		Offset: offset,
+	}
+
+	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
+}
+
+// @Summary UpdateWorld
+// @Description Updates the data and description of an existing world
+// @Tags world-service
+// @Accept   json
+// @Produce  json
+// @Param Authorization header string true "Bearer token for authentication"
+// @Param id  path string true "World ID"
+// @Param   request body dtos.WorldRequest true "World Data"
+// @Success 200  {object}  dtos.WorldResponse "World updated correctly"
+// @Failure 400  {object}  dtos.ErrorResponse "Bad request body or invalid ID"
+// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
+// @Router /world/{id} [put]
+func (c *worldController) UpdateWorld(ctx *gin.Context) {
+	_, err := common_handlers.GetUserIDFromSession(ctx)
+	if err != nil {
+		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	worldId := ctx.Param("id")
+	if worldId == "" {
+		_ = ctx.Error(errors.NewBadRequestError("World ID is required"))
+		return
+	}
+
+	parsedWorldId, err := uuid.Parse(worldId)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + worldId))
+		return
+	}
+
+	var req dtos.WorldRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid JSON payload: " + err.Error()))
+		return
+	}
+
+	bytes, err := json.Marshal(req.Data)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("failed to marshal world data: " + err.Error()))
+		return
+	}
+
+	updatedWorld, err := c.worldService.UpdateWorld(parsedWorldId, bytes, req.Description)
+	if err != nil {
+		if _, ok := err.(*world_errors.WorldInfoNotFound); ok {
+			_ = ctx.Error(errors.NewNotFoundError("world info not found"))
+			return
+		}
+		_ = ctx.Error(err)
+		return
+	}
+
+	res := &dtos.WorldResponse{
+		ID:          updatedWorld.ID.String(),
+		UserId:      updatedWorld.UserId.String(),
+		Name:        updatedWorld.Name,
+		Description: updatedWorld.Description,
+		Data:        string(updatedWorld.Data),
+		CreatedAt:   updatedWorld.CreatedAt,
+		UpdatedAt:   updatedWorld.UpdatedAt,
 	}
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)

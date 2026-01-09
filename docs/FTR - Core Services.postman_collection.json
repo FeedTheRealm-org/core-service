@@ -134,7 +134,87 @@
 						}
 					},
 					"response": []
-				}
+				},
+				{
+									"name": "World",
+									"item": [
+										{
+											"name": "StoreWorldData",
+											"request": {
+												"method": "POST",
+												"header": [
+													{ "key": "Content-Type", "value": "application/json" },
+													{ "key": "User-Agent", "value": "insomnia/12.0.0" }
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"name\": \"My World\",\n  \"description\": \"A new world\",\n  \"other_field\": \"value\"\n}",
+													"options": { "raw": { "language": "json" } }
+												},
+												"url": {
+													"raw": "localhost:8000/world",
+													"host": ["localhost"],
+													"port": "8000",
+													"path": ["world"]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "GetWorldData",
+											"request": {
+												"method": "GET",
+												"header": [
+													{ "key": "User-Agent", "value": "insomnia/12.0.0" }
+												],
+												"url": {
+													"raw": "localhost:8000/world/:id",
+													"host": ["localhost"],
+													"port": "8000",
+													"path": ["world", ":id"]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "GetWorldsList",
+											"request": {
+												"method": "GET",
+												"header": [
+													{ "key": "User-Agent", "value": "insomnia/12.0.0" }
+												],
+												"url": {
+													"raw": "localhost:8000/world?offset=0&limit=10&filter=",
+													"host": ["localhost"],
+													"port": "8000",
+													"path": ["world"],
+													"query": [
+														{ "key": "offset", "value": "0" },
+														{ "key": "limit", "value": "10" },
+														{ "key": "filter", "value": "" }
+													]
+												}
+											},
+											"response": []
+										},
+										{
+											"name": "ClearDatabase",
+											"request": {
+												"method": "POST",
+												"header": [
+													{ "key": "User-Agent", "value": "insomnia/12.0.0" }
+												],
+												"url": {
+													"raw": "localhost:8000/world/clear",
+													"host": ["localhost"],
+													"port": "8000",
+													"path": ["world", "clear"]
+												}
+											},
+											"response": []
+										}
+									]
+								}
 			]
 		},
 		{
