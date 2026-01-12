@@ -726,8 +726,6 @@ collection:
           rebuildPath: true
       - url: localhost:8000/world/clear
         name: ClearDatabase
-      - url: localhost:8000/world/{id}
-        name: UpdateWorld
         meta:
           id: req_world_update
           created: 1732558825000
@@ -740,6 +738,7 @@ collection:
           mimeType: application/json
         headers:
           - name: Content-Type
+            value: application/json
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -748,6 +747,8 @@ collection:
             send: true
             store: true
           rebuildPath: true
+      - url: localhost:8000/world/{id}
+        name: UpdateWorld
         meta:
           id: req_world_clear
           created: 1732558824000

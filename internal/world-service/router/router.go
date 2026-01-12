@@ -19,8 +19,8 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 
 	worldGroup.POST("", worldController.PublishWorld)
 	worldGroup.GET("", worldController.GetWorldsList)
-	worldGroup.PUT(":id", worldController.UpdateWorld)
-	worldGroup.GET(":id", worldController.GetWorld)
+	worldGroup.PUT("/:id", worldController.UpdateWorld)
+	worldGroup.GET("/:id", worldController.GetWorld)
 	if os.Getenv("ALLOW_DB_RESET") == "true" {
 		worldGroup.DELETE("/reset-database", worldController.ResetDatabase)
 	}

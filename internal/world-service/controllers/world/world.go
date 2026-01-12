@@ -237,7 +237,7 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /world/{id} [put]
 func (c *worldController) UpdateWorld(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
+	userId, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {
 		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
 		return
@@ -255,6 +255,21 @@ func (c *worldController) UpdateWorld(ctx *gin.Context) {
 		return
 	}
 
+	// Ownership check: fetch world and compare userId
+	worldInfo, err := c.worldService.GetWorld(parsedWorldId)
+	if err != nil {
+		if _, ok := err.(*world_errors.WorldInfoNotFound); ok {
+			_ = ctx.Error(errors.NewNotFoundError("world info not found"))
+			return
+		}
+		_ = ctx.Error(err)
+		return
+	}
+	if worldInfo.UserId != userId {
+		_ = ctx.Error(errors.NewUnauthorizedError("user does not own this world"))
+		return
+	}
+
 	var req dtos.WorldRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		_ = ctx.Error(errors.NewBadRequestError("invalid JSON payload: " + err.Error()))
@@ -267,7 +282,7 @@ func (c *worldController) UpdateWorld(ctx *gin.Context) {
 		return
 	}
 
-	updatedWorld, err := c.worldService.UpdateWorld(parsedWorldId, bytes, req.Description)
+	updatedWorld, err := c.worldService.UpdateWorld(parsedWorldId, userId, bytes, req.Description)
 	if err != nil {
 		if _, ok := err.(*world_errors.WorldInfoNotFound); ok {
 			_ = ctx.Error(errors.NewNotFoundError("world info not found"))

@@ -45,8 +45,8 @@ func (r *worldRepository) GetWorldData(worldID uuid.UUID) (*models.WorldData, er
 	return &wd, nil
 }
 
-// UpdateWorldData updates the Data and Description of an existing world and refreshes UpdatedAt.
-func (r *worldRepository) UpdateWorldData(worldID uuid.UUID, data []byte, description string) (*models.WorldData, error) {
+// UpdateWorldData updates the Data and Description of an existing world and refreshes UpdatedAt, only if owned by userId.
+func (r *worldRepository) UpdateWorldData(worldID uuid.UUID, userId uuid.UUID, data []byte, description string) (*models.WorldData, error) {
 	var wd models.WorldData
 	if err := r.db.Conn.First(&wd, "id = ?", worldID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -54,15 +54,15 @@ func (r *worldRepository) UpdateWorldData(worldID uuid.UUID, data []byte, descri
 		}
 		return nil, err
 	}
-
+	if wd.UserId != userId {
+		return nil, errors.New("forbidden: user does not own this world")
+	}
 	wd.Data = datatypes.JSON(data)
 	wd.Description = description
 	wd.UpdatedAt = time.Now().UTC()
-
 	if err := r.db.Conn.Save(&wd).Error; err != nil {
 		return nil, err
 	}
-
 	return &wd, nil
 }
 
