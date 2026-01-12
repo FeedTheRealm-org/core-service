@@ -28,6 +28,10 @@ func (cs *worldService) GetWorld(worldID uuid.UUID) (*models.WorldData, error) {
 	return cs.worldRepository.GetWorldData(worldID)
 }
 
+func (cs *worldService) UpdateWorld(worldID uuid.UUID, userId uuid.UUID, data []byte, description string) (*models.WorldData, error) {
+	return cs.worldRepository.UpdateWorldData(worldID, userId, data, description)
+}
+
 func (cs *worldService) GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error) {
 	return cs.worldRepository.GetWorldsList(offset, limit, filter)
 }
