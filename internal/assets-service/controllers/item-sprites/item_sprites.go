@@ -1,6 +1,8 @@
 package itemsprites
 
 import (
+	"fmt"
+	"mime/multipart"
 	"net/http"
 	"os"
 
@@ -27,47 +29,93 @@ func NewItemSpritesController(conf *config.Config, service itemsprites.ItemSprit
 	}
 }
 
-// @Summary UploadItemSprite
-// @Description Uploads a new item sprite.
+// @Summary UploadItemSprites
+// @Description Uploads multiple item sprites. Each sprite must have a provided ID.
 // @Tags assets-service
 // @Accept multipart/form-data
 // @Produce json
-// @Param sprite formData file true "Item sprite file (PNG or JPEG)"
-// @Success 201 {object} dtos.ItemSpriteResponse "Uploaded item sprite"
+// @Param world_id path string true "World ID" format(uuid)
+// @Param ids[] formData string true "Sprite IDs (UUIDs), one per file"
+// @Param sprites[] formData file true "Item sprite files (PNG o JPEG)"
+// @Success 201 {object} dtos.ItemSpritesListResponse "Uploaded item sprites"
 // @Failure 400 {object} dtos.ErrorResponse "Bad request"
 // @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /assets/sprites/items [post]
+// @Router /assets/sprites/items/{world_id} [post]
 func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
-	reqFile, err := c.FormFile("sprite")
+	worldIDStr := c.Param("world_id")
+	if worldIDStr == "" {
+		_ = c.Error(errors.NewBadRequestError("world_id is required"))
+		return
+	}
+	worldID, err := uuid.Parse(worldIDStr)
 	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("failed to get sprite file from request: " + err.Error()))
+		_ = c.Error(errors.NewBadRequestError("invalid world_id format"))
 		return
 	}
-
-	if reqFile.Size > isc.conf.Assets.MaxUploadSizeBytes {
-		_ = c.Error(errors.NewBadRequestError("file size exceeds the limit"))
+	var ids []uuid.UUID
+	var files []*multipart.FileHeader
+	i := 0
+	for {
+		i++
+		idKey := fmt.Sprintf("id[%d]", i)
+		spriteKey := fmt.Sprintf("sprite[%d]", i)
+		idVal := c.PostForm(idKey)
+		if idVal == "" {
+			break
+		}
+		spriteFile, err := c.FormFile(spriteKey)
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("Missing sprite file for id[%d]", i)))
+			return
+		}
+		id, err := uuid.Parse(idVal)
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid UUID in id[%d]: %s", i, idVal)))
+			return
+		}
+		if spriteFile.Size > isc.conf.Assets.MaxUploadSizeBytes {
+			_ = c.Error(errors.NewBadRequestError("file size exceeds the limit"))
+			return
+		}
+		contentType := spriteFile.Header.Get("Content-Type")
+		if contentType != "image/png" && contentType != "image/jpeg" && contentType != "application/octet-stream" {
+			_ = c.Error(errors.NewBadRequestError("file must be PNG, JPEG, or octet-stream format"))
+			return
+		}
+		ids = append(ids, id)
+		files = append(files, spriteFile)
+	}
+	if len(ids) == 0 || len(files) == 0 || len(ids) != len(files) {
+		_ = c.Error(errors.NewBadRequestError("must provide at least one id[N] and sprite[N] pair, and all pairs must be complete"))
 		return
 	}
-
-	contentType := reqFile.Header.Get("Content-Type")
-	if contentType != "image/png" && contentType != "image/jpeg" {
-		_ = c.Error(errors.NewBadRequestError("file must be PNG or JPEG format"))
-		return
+	// Check for duplicate IDs in the same request
+	seen := make(map[uuid.UUID]struct{})
+	for _, id := range ids {
+		if _, exists := seen[id]; exists {
+			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("duplicate id detected in request: %s", id)})
+			return
+		}
+		seen[id] = struct{}{}
 	}
 
-	sprite, err := isc.service.UploadSprite(reqFile)
+	sprites, err := isc.service.UploadSprites(worldID, ids, files)
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
-
-	res := &dtos.ItemSpriteResponse{
-		Id:        sprite.Id,
-		Url:       sprite.Url,
-		CreatedAt: sprite.CreatedAt,
-		UpdatedAt: sprite.UpdatedAt,
+	responseSprites := make([]dtos.ItemSpriteResponse, len(sprites))
+	for i, sprite := range sprites {
+		responseSprites[i] = dtos.ItemSpriteResponse{
+			Id:        sprite.Id,
+			Url:       sprite.Url,
+			CreatedAt: sprite.CreatedAt,
+			UpdatedAt: sprite.UpdatedAt,
+		}
 	}
-
+	res := &dtos.ItemSpritesListResponse{
+		Sprites: responseSprites,
+	}
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
@@ -166,5 +214,3 @@ func (isc *itemSpritesController) DeleteItemSprite(c *gin.Context) {
 
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, gin.H{"message": "sprite deleted successfully"})
 }
-
-// (Item sprite categories endpoint removed)

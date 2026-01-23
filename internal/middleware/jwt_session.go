@@ -12,7 +12,7 @@ import (
 // JWTAuthMiddleware parses the JWT token included in the request header,
 // and populates the gin context with it. If it cant find the header or
 // cant decode the token it passes to the next middleware without setting anything.
-func JWTAuthMiddleware(jwtManager *session.JWTManager) gin.HandlerFunc {
+func JWTAuthMiddleware(jwtManager *session.JWTManager, fixedToken string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer c.Next()
 
@@ -23,6 +23,16 @@ func JWTAuthMiddleware(jwtManager *session.JWTManager) gin.HandlerFunc {
 		c.Set("includedJWT", true)
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+		// If a fixed server token is configured and matches the provided token,
+		// treat it as a valid session without further validation.
+		// set a dummy userID so that helpers like
+		// GetUserIDFromSession don't fail when parsing it, which allows
+		// read-only endpoints that only check for a valid session to work.
+		if fixedToken != "" && tokenString == fixedToken {
+			c.Set("userID", "00000000-0000-0000-0000-000000000000")
+			return
+		}
 
 		claims, err := jwtManager.IsValidateToken(tokenString, time.Now())
 		if err != nil {

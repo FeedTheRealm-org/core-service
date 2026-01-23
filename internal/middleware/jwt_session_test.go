@@ -16,7 +16,7 @@ import (
 // TestJWTAuth_NoAuthHeader tests the JWT authentication middleware
 // when no Authorization header is provided.
 func TestJWTAuth_NoAuthHeader(t *testing.T) {
-	r := setupRouterJWT("testsecret")
+	r := setupRouterJWT("testsecret", "")
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	w := httptest.NewRecorder()
@@ -31,7 +31,7 @@ func TestJWTAuth_NoAuthHeader(t *testing.T) {
 func TestJWTAuth_ValidToken(t *testing.T) {
 	secret := "testsecret"
 	token := createTestToken(secret, "12345", time.Now().Add(time.Hour))
-	r := setupRouterJWT(secret)
+	r := setupRouterJWT(secret, "")
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -47,7 +47,7 @@ func TestJWTAuth_ValidToken(t *testing.T) {
 func TestJWTAuth_ExpiredToken(t *testing.T) {
 	secret := "testsecret"
 	token := createTestToken(secret, "expired", time.Now().Add(-time.Hour))
-	r := setupRouterJWT(secret)
+	r := setupRouterJWT(secret, "")
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -72,13 +72,13 @@ func createTestToken(secret, userID string, expiration time.Time) string {
 }
 
 // setupRouterJWT initializes a Gin router with the JWT authentication middleware.
-func setupRouterJWT(secret string) *gin.Engine {
+func setupRouterJWT(secret string, fixedToken string) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	jwtManager := session.NewJWTManager(secret, time.Hour)
 	logger.InitLogger(false)
 
 	r := gin.New()
-	r.Use(middleware.JWTAuthMiddleware(jwtManager)) // Include Auth middleware
+	r.Use(middleware.JWTAuthMiddleware(jwtManager, fixedToken)) // Include Auth middleware
 	r.GET("/test", func(c *gin.Context) {
 		userID := c.GetString("userID")
 		invalidJWT := c.GetBool("invalidJWT")
@@ -93,4 +93,22 @@ func setupRouterJWT(secret string) *gin.Engine {
 	})
 
 	return r
+}
+
+// TestJWTAuth_FixedToken verifies that when a fixed server token is configured
+// the middleware treats it as a valid session without attempting JWT parsing.
+func TestJWTAuth_FixedToken(t *testing.T) {
+	secret := "testsecret"
+	fixedToken := "fixed-server-token"
+	r := setupRouterJWT(secret, fixedToken)
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+fixedToken)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	// No userID is set for the fixed token, but the session is
+	// considered valid, so the handler returns empty body with 200.
+	assert.Equal(t, "", w.Body.String())
 }

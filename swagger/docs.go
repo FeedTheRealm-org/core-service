@@ -478,48 +478,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Uploads a new item sprite.",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "UploadItemSprite",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "Item sprite file (PNG or JPEG)",
-                        "name": "sprite",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Uploaded item sprite",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ItemSpriteResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
             }
         },
         "/assets/sprites/items/{sprite_id}": {
@@ -607,6 +565,65 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Sprite not found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/sprites/items/{world_id}": {
+            "post": {
+                "description": "Uploads multiple item sprites. Each sprite must have a provided ID.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "UploadItemSprites",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "World ID",
+                        "name": "world_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sprite IDs (UUIDs), one per file",
+                        "name": "ids[]",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Item sprite files (PNG o JPEG)",
+                        "name": "sprites[]",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Uploaded item sprites",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemSpritesListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -1153,6 +1170,13 @@ const docTemplate = `{
                 "summary": "GetWorldsList",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "type": "integer",
                         "description": "Pagination offset (starting index)",
                         "name": "offset",
@@ -1201,6 +1225,13 @@ const docTemplate = `{
                 ],
                 "summary": "PublishWorld",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "description": "World Data",
                         "name": "request",
@@ -1265,6 +1296,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "World ID",
                         "name": "id",
                         "in": "path",
@@ -1276,6 +1314,64 @@ const docTemplate = `{
                         "description": "World info retrieved correctly",
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates the data and description of an existing world",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "UpdateWorld",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "World ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "World Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "World updated correctly",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body or invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
@@ -1609,10 +1705,36 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.WorldMetadata": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.WorldRequest": {
             "type": "object",
             "properties": {
                 "data": {},
+                "description": {
+                    "type": "string"
+                },
                 "file_name": {
                     "type": "string"
                 }
@@ -1625,6 +1747,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "data": {
+                    "type": "string"
+                },
+                "description": {
                     "type": "string"
                 },
                 "id": {
@@ -1656,7 +1781,7 @@ const docTemplate = `{
                 "worlds": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dtos.WorldResponse"
+                        "$ref": "#/definitions/dtos.WorldMetadata"
                     }
                 }
             }

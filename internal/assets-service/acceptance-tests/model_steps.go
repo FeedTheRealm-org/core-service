@@ -41,16 +41,23 @@ type world struct {
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
+type worldMetadata struct {
+	ID        string `json:"id"`
+	UserID    string `json:"user_id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
 type worldResponse struct {
 	Data world `json:"data"`
 }
 
 type worldsListResponse struct {
 	Data struct {
-		Worlds []world `json:"worlds"`
-		Amount int     `json:"amount"`
-		Limit  int     `json:"limit"`
-		Offset int     `json:"offset"`
+		Worlds []worldMetadata `json:"worlds"`
+		Amount int             `json:"amount"`
+		Limit  int             `json:"limit"`
+		Offset int             `json:"offset"`
 	} `json:"data"`
 }
 
@@ -148,7 +155,7 @@ func otherPlayersShouldSeeTheWorldInListings() error {
 		return fmt.Errorf("failed to fetch worlds list: %w", err)
 	}
 
-	var found *world
+	var found *worldMetadata
 	for _, w := range listResp.Data.Worlds {
 		if w.ID == response.Data.ID {
 			found = &w
@@ -168,10 +175,6 @@ func otherPlayersShouldSeeTheWorldInListings() error {
 	}
 	if got.UserID != expect.UserID {
 		return fmt.Errorf("user_id mismatch: expected %s, got %s", expect.UserID, got.UserID)
-	}
-
-	if err := compareJSON(got.Data, expect.Data); err != nil {
-		return fmt.Errorf("data mismatch: %w", err)
 	}
 
 	return nil

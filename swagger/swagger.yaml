@@ -206,9 +206,26 @@ definitions:
       verified:
         type: boolean
     type: object
+  dtos.WorldMetadata:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
   dtos.WorldRequest:
     properties:
       data: {}
+      description:
+        type: string
       file_name:
         type: string
     type: object
@@ -217,6 +234,8 @@ definitions:
       created_at:
         type: string
       data:
+        type: string
+      description:
         type: string
       id:
         type: string
@@ -237,7 +256,7 @@ definitions:
         type: integer
       worlds:
         items:
-          $ref: '#/definitions/dtos.WorldResponse'
+          $ref: '#/definitions/dtos.WorldMetadata'
         type: array
     type: object
 info:
@@ -590,34 +609,6 @@ paths:
       summary: GetAllItemSprites
       tags:
       - assets-service
-    post:
-      consumes:
-      - multipart/form-data
-      description: Uploads a new item sprite.
-      parameters:
-      - description: Item sprite file (PNG or JPEG)
-        in: formData
-        name: sprite
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Uploaded item sprite
-          schema:
-            $ref: '#/definitions/dtos.ItemSpriteResponse'
-        "400":
-          description: Bad request
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: UploadItemSprite
-      tags:
-      - assets-service
   /assets/sprites/items/{sprite_id}:
     delete:
       description: Deletes an item sprite by its ID.
@@ -677,6 +668,47 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: DownloadItemSprite
+      tags:
+      - assets-service
+  /assets/sprites/items/{world_id}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads multiple item sprites. Each sprite must have a provided
+        ID.
+      parameters:
+      - description: World ID
+        format: uuid
+        in: path
+        name: world_id
+        required: true
+        type: string
+      - description: Sprite IDs (UUIDs), one per file
+        in: formData
+        name: ids[]
+        required: true
+        type: string
+      - description: Item sprite files (PNG o JPEG)
+        in: formData
+        name: sprites[]
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Uploaded item sprites
+          schema:
+            $ref: '#/definitions/dtos.ItemSpritesListResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UploadItemSprites
       tags:
       - assets-service
   /auth/login:
@@ -1006,6 +1038,11 @@ paths:
       - application/json
       description: Retrieves a paginated list of worlds
       parameters:
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
       - description: Pagination offset (starting index)
         in: query
         name: offset
@@ -1039,6 +1076,11 @@ paths:
       - application/json
       description: Publishes a new world with the provided information
       parameters:
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
       - description: World Data
         in: body
         name: request
@@ -1069,6 +1111,11 @@ paths:
       - application/json
       description: Retrieves the name and data of the session player world
       parameters:
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
       - description: World ID
         in: path
         name: id
@@ -1086,6 +1133,45 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: GetWorld
+      tags:
+      - world-service
+    put:
+      consumes:
+      - application/json
+      description: Updates the data and description of an existing world
+      parameters:
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: World ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: World Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.WorldRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: World updated correctly
+          schema:
+            $ref: '#/definitions/dtos.WorldResponse'
+        "400":
+          description: Bad request body or invalid ID
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UpdateWorld
       tags:
       - world-service
   /world/reset-database:
