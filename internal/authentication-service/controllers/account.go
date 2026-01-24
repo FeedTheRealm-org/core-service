@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/FeedTheRealm-org/core-service/config"
-	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/dtos"
+	dtos "github.com/FeedTheRealm-org/core-service/internal/authentication-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	common_dtos "github.com/FeedTheRealm-org/core-service/internal/dtos"
@@ -369,5 +369,88 @@ func (ec *accountController) VerifyAccount(c *gin.Context) {
 			Email:    req.Email,
 			Verified: verified,
 		},
+	})
+}
+
+// @Summary Refresh verification code
+// @Description Request a new verification code to be sent to the user's email
+// @Tags authentication-service
+// @Accept   json
+// @Produce  json
+// @Param   request body dtos.RefreshVerificationRequestDTO true "Refresh verification data"
+// @Success 200  {object}  dtos.RefreshVerificationResponseDTO "Refresh requested"
+// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
+// @Failure 500  {object}  dtos.ErrorResponse "Internal server error"
+// @Router /auth/refresh [post]
+func (ec *accountController) RefreshVerification(c *gin.Context) {
+	req := dtos.RefreshVerificationRequestDTO{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Logger.Errorf("RefreshVerification: failed to bind JSON: %v", err)
+		c.JSON(400, common_dtos.ErrorResponse{
+			Type:     "validation",
+			Title:    "Invalid request body",
+			Status:   400,
+			Detail:   "The request body is not valid JSON.",
+			Instance: c.Request.RequestURI,
+		})
+		return
+	}
+
+	if req.Email == "" {
+		logger.Logger.Info("RefreshVerification: missing email")
+		c.JSON(400, common_dtos.ErrorResponse{
+			Type:     "validation",
+			Title:    "Email is required",
+			Status:   400,
+			Detail:   "You must provide an email address to refresh the verification code.",
+			Instance: c.Request.RequestURI,
+		})
+		return
+	}
+
+	newCode, err := ec.accountService.RefreshVerificationCode(req.Email)
+	if err != nil {
+		if _, ok := err.(*services.AccountNotFoundError); ok {
+			logger.Logger.Infof("RefreshVerification: account not found for email=%s", req.Email)
+			c.JSON(404, common_dtos.ErrorResponse{
+				Type:     "not_found",
+				Title:    "Account not found",
+				Status:   404,
+				Detail:   "No account exists with the provided email address.",
+				Instance: c.Request.RequestURI,
+			})
+			return
+		}
+
+		if _, ok := err.(*services.AccountAlreadyVerifiedError); ok {
+			logger.Logger.Infof("RefreshVerification: account already verified for email=%s", req.Email)
+			c.JSON(400, common_dtos.ErrorResponse{
+				Type:     "validation",
+				Title:    "Account already verified",
+				Status:   400,
+				Detail:   "The account is already verified; no verification code will be generated.",
+				Instance: c.Request.RequestURI,
+			})
+			return
+		}
+
+		logger.Logger.Errorf("RefreshVerification: service error for email=%s: %v", req.Email, err)
+		c.JSON(500, common_dtos.ErrorResponse{
+			Type:     "server",
+			Title:    "Internal server error",
+			Status:   500,
+			Detail:   "An unexpected error occurred.",
+			Instance: c.Request.RequestURI,
+		})
+		return
+	}
+
+	if err := ec.emailService.SendVerificationEmail(req.Email, newCode); err != nil {
+		logger.Logger.Errorf("RefreshVerification: failed to send verification email to email=%s: %v", req.Email, err)
+	}
+
+	logger.Logger.Infof("RefreshVerification: verification code refreshed for email=%s", req.Email)
+	c.JSON(200, common_dtos.DataEnvelope[dtos.RefreshVerificationResponseDTO]{
+		Data: dtos.RefreshVerificationResponseDTO(req),
 	})
 }

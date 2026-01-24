@@ -33,3 +33,11 @@ type VerifyAccountResponseDTO struct {
 	Email    string `json:"email"`
 	Verified bool   `json:"verified"`
 }
+
+type RefreshVerificationRequestDTO struct {
+	Email string `json:"email"`
+}
+
+type RefreshVerificationResponseDTO struct {
+	Email string `json:"email"`
+}
