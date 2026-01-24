@@ -85,6 +85,7 @@ func (ar *accountRepository) CreateAccount(user *models.User, verificationCode s
 		accountVerfication := &models.AccountVerification{
 			UserId:           user.Id,
 			VerificationCode: verificationCode,
+			Attempts:         0,
 		}
 		if err := tx.Create(accountVerfication).Error; err != nil {
 			return &DatabaseError{message: err.Error()}
@@ -106,6 +107,18 @@ func (ar *accountRepository) VerifyAccount(user *models.User, code string, curre
 	if accountActivation.ExpiresAt.Before(currentTime) {
 		return &AccountVerificationExpired{}
 	} else if accountActivation.VerificationCode != code {
+		accountActivation.Attempts += 1
+		if err := ar.db.Conn.Model(&models.AccountVerification{}).Where("user_id = ?", user.Id).Update("attempts", accountActivation.Attempts).Error; err != nil {
+			return &DatabaseError{message: err.Error()}
+		}
+
+		if accountActivation.Attempts >= 3 {
+			if err := ar.db.Conn.Delete(&accountActivation).Error; err != nil {
+				return &DatabaseError{message: err.Error()}
+			}
+			return &AccountNotVerifiedError{}
+		}
+
 		return &AccountNotVerifiedError{}
 	}
 
