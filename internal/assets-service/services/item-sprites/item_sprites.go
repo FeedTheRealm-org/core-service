@@ -38,7 +38,11 @@ func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID,
 		if err != nil {
 			return nil, err
 		}
-		defer file.Close()
+		defer func() {
+			if cerr := file.Close(); cerr != nil {
+				logger.Logger.Warnf("failed to close uploaded file: %v", cerr)
+			}
+		}()
 
 		ext := filepath.Ext(fileHeader.Filename)
 		filename := fmt.Sprintf("%s%s", id.String(), ext)
@@ -52,10 +56,14 @@ func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID,
 			return nil, err
 		}
 		if _, err := io.Copy(destFile, file); err != nil {
-			destFile.Close()
+			if cerr := destFile.Close(); cerr != nil {
+				logger.Logger.Warnf("failed to close dest file after copy error: %v", cerr)
+			}
 			return nil, err
 		}
-		destFile.Close()
+		if cerr := destFile.Close(); cerr != nil {
+			logger.Logger.Warnf("failed to close dest file: %v", cerr)
+		}
 
 		sprite := &models.ItemSprite{
 			Id:  id,
