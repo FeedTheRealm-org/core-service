@@ -106,7 +106,9 @@ func (ar *accountRepository) VerifyAccount(user *models.User, code string, curre
 
 	if accountActivation.ExpiresAt.Before(currentTime) {
 		return &AccountVerificationExpired{}
-	} else if accountActivation.VerificationCode != code {
+	}
+
+	if accountActivation.VerificationCode != code {
 		accountActivation.Attempts += 1
 		if err := ar.db.Conn.Model(&models.AccountVerification{}).Where("user_id = ?", user.Id).Update("attempts", accountActivation.Attempts).Error; err != nil {
 			return &DatabaseError{message: err.Error()}
