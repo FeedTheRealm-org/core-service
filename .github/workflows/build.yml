@@ -19,5 +19,5 @@ jobs:
 
       - name: Build & Push Docker Image
         run: |
-          docker build -t ghcr.io/FeedTheRealm-org/core-service:${{ env.IMAGE_TAG }} .
-          docker push ghcr.io/FeedTheRealm-org/core-service:${{ env.IMAGE_TAG }}
+          docker build -t ghcr.io/feedtherealm-org/core-service:${{ env.IMAGE_TAG }} .
+          docker push ghcr.io/feedtherealm-org/core-service:${{ env.IMAGE_TAG }}
