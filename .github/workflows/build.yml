@@ -1,23 +1,26 @@
 name: Build
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+    outputs:
+      image_tag:
+        value: ${{ jobs.build.outputs.image_tag }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.tag.outputs.image_tag }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Set Image Tag
-        run: echo "IMAGE_TAG=$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        id: tag
+        run: echo "image_tag=$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Login to GitHub Container Registry
+      - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
 
-      - name: Build & Push Docker Image
+      - name: Build & Push
         run: |
-          docker build -t ghcr.io/feedtherealm-org/core-service:${{ env.IMAGE_TAG }} .
-          docker push ghcr.io/feedtherealm-org/core-service:${{ env.IMAGE_TAG }}
+          docker build -t ghcr.io/feedtherealm-org/core-service:${{ steps.tag.outputs.image_tag }} .
+          docker push ghcr.io/feedtherealm-org/core-service:${{ steps.tag.outputs.image_tag }}

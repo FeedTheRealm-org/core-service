@@ -1,13 +1,13 @@
 name: Deploy
 on:
-  workflow_run:
-    workflows: ["Build"]
-    types:
-      - completed
+  workflow_call:
+    inputs:
+      image_tag:
+        required: true
+        type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v6
+      - run: echo "Deploying image ${{ inputs.image_tag }}"
