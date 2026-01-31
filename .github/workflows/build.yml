@@ -22,5 +22,5 @@ jobs:
 
       - name: Build & Push
         run: |
-          docker build -t ghcr.io/feedtherealm-org/core-service:${{ steps.tag.outputs.image_tag }} .
+          docker build --target prod -t ghcr.io/feedtherealm-org/core-service:${{ steps.tag.outputs.image_tag }} .
           docker push ghcr.io/feedtherealm-org/core-service:${{ steps.tag.outputs.image_tag }}
