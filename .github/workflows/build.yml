@@ -1,0 +1,23 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Set Image Tag
+        run: echo "IMAGE_TAG=$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+
+      - name: Build & Push Docker Image
+        run: |
+          docker build -t ghcr.io/FeedTheRealm-org/core-service:${{ env.IMAGE_TAG }} .
+          docker push ghcr.io/FeedTheRealm-org/core-service:${{ env.IMAGE_TAG }}
