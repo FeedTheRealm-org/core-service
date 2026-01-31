@@ -111,11 +111,12 @@ func (db *DB) runMigrations() error {
 /* --- UTILS --- */
 
 func generateURL(dbc *DatabaseConfig) string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		dbc.Username,
-		dbc.Password,
-		dbc.Host,
-		dbc.Port,
-		dbc.Database,
+	sslMode := "sslmode=disable"
+	if dbc.SSLCertPath != "" {
+		sslMode = fmt.Sprintf("sslmode=verify-ca&sslrootcert=%s", dbc.SSLCertPath)
+	}
+	return fmt.Sprintf("%s?%s",
+		dbc.URL,
+		sslMode,
 	)
 }

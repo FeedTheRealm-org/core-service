@@ -1,3 +1,4 @@
 main
 .env
-bucket
+bucket/
+certs/

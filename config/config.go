@@ -21,11 +21,8 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	Username          string
-	Password          string
-	Host              string
-	Port              int
-	Database          string
+	URL               string
+	SSLCertPath       string
 	ConnectionRetries int
 	ShouldMigrate     bool
 }
@@ -48,11 +45,8 @@ type Config struct {
 
 func CreateConfig() *Config {
 	dbc := &DatabaseConfig{
-		Username:          getEnvOrDefaultString("DB_USERNAME", "postgres"),
-		Password:          getEnvOrDefaultString("DB_PASSWORD", "postgres"),
-		Host:              getEnvOrDefaultString("DB_HOST", "localhost"),
-		Port:              getEnvOrDefaultInt("DB_PORT", 5432),
-		Database:          getEnvOrDefaultString("DB_NAME", "core_service"),
+		URL:               os.Getenv("DATABASE_URL"),
+		SSLCertPath:       os.Getenv("DATABASE_SSL_CERT_PATH"),
 		ConnectionRetries: getEnvOrDefaultInt("DB_CONNECTION_RETRIES", 10),
 		ShouldMigrate:     getEnvOrDefaultString("DB_SHOULD_MIGRATE", "false") == "true",
 	}

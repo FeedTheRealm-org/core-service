@@ -9,11 +9,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=dev_db
-      - DB_PORT=5432
-      - DB_NAME=postgres
+      - DATABASE_URL=postgresql://postgres:postgres@dev_db:5432/postgres
       - DB_SHOULD_MIGRATE=true
       - SESSION_TOKEN_SECRET_KEY=dev_secret_key
       - SESSION_TOKEN_DURATION=24h
@@ -27,6 +23,7 @@ services:
       - dev-app-network
     volumes:
       - .:/usr/src/app
+
   dev_db:
     image: postgres:17-alpine
     environment:
@@ -44,8 +41,10 @@ services:
       - db-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+
 networks:
   dev-app-network:
     driver: bridge
+
 volumes:
   db-data:
