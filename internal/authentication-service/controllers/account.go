@@ -194,7 +194,11 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 	}
 
 	logger.Logger.Info("CheckSessionExpiration: session token is valid")
-	common_handlers.HandleSuccessResponse(c, http.StatusOK, gin.H{"message": "Session is valid"})
+
+	res := &dtos.CheckSessionResponseDTO{
+		Message: "Session is valid",
+	}
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
 // @Summary Verify Account
