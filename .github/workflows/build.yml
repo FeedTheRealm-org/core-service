@@ -1,6 +1,15 @@
 name: Build
 on:
   workflow_call:
+    secrets:
+      AWS_ROLE_ARN:
+        required: true
+      AWS_REGION:
+        required: true
+      ECR_REGISTRY:
+        required: true
+      ECR_REPOSITORY:
+        required: true
     outputs:
       image_tag:
         value: ${{ jobs.build.outputs.image_tag }}
