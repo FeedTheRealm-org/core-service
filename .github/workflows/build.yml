@@ -8,8 +8,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write # OIDC required
+      contents: read
+
     outputs:
       image_tag: ${{ steps.tag.outputs.image_tag }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -17,10 +23,18 @@ jobs:
         id: tag
         run: echo "image_tag=$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Login to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build & Push
         run: |
-          docker build --target prod -t ghcr.io/feedtherealm-org/core-service:${{ steps.tag.outputs.image_tag }} .
-          docker push ghcr.io/feedtherealm-org/core-service:${{ steps.tag.outputs.image_tag }}
+          IMAGE_URI=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ steps.tag.outputs.image_tag }}
+
+          docker build --target prod -t $IMAGE_URI .
+          docker push $IMAGE_URI
