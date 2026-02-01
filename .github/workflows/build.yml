@@ -32,13 +32,6 @@ jobs:
         id: tag
         run: echo "image_tag=$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Debug GitHub identity
-        run: |
-          echo "GITHUB_REPOSITORY=$GITHUB_REPOSITORY"
-          echo "GITHUB_REF=$GITHUB_REF"
-          echo "GITHUB_REF_TYPE=$GITHUB_REF_TYPE"
-          echo "GITHUB_EVENT_NAME=$GITHUB_EVENT_NAME"
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
