@@ -35,18 +35,18 @@ jobs:
       - name: Deploy core-service via SSM
         run: |
           aws ssm send-command \
-          --document-name "AWS-RunShellScript" \
-          --instance-ids ${{ secrets.INSTANCE_IDS }} \
-          --comment "Deploy core-service" \
-          --parameters 'commands=[
-            "set -e",
-            "SERVICE=core-service",
-            "IMAGE=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ inputs.image_tag }}",
-            "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
-            "docker pull $IMAGE",
-            "docker stop $SERVICE || true",
-            "docker rm $SERVICE || true",
-            "aws ssm get-parameters-by-path --path "/core-service/" --with-decryption --region ${{ secrets.AWS_REGION }} --query "Parameters[*].[Name,Value]" --output text | sed "s#/core-service/##g; s#\t#=#g" > /tmp/core_service_env",
-            "docker run -d --restart always --name $SERVICE -p 80:80 --env-file /tmp/core_service_env $IMAGE",
-            "rm /tmp/core_service_env"
-          ]'
+            --document-name "AWS-RunShellScript" \
+            --instance-ids ${{ secrets.INSTANCE_IDS }} \
+            --comment "Deploy core-service" \
+            --parameters '{"commands": [
+              "set -e",
+              "SERVICE=core-service",
+              "IMAGE=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ inputs.image_tag }}",
+              "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
+              "docker pull $IMAGE",
+              "docker stop $SERVICE || true",
+              "docker rm $SERVICE || true",
+              "aws ssm get-parameters-by-path --path \"/core-service/\" --with-decryption --region ${{ secrets.AWS_REGION }} --query \"Parameters[*].[Name,Value]\" --output text | sed \"s#/core-service/##g; s#\\t#=#g\" > /tmp/core_service_env",
+              "docker run -d --restart always --name $SERVICE -p 80:80 --env-file /tmp/core_service_env $IMAGE",
+              "rm /tmp/core_service_env"
+            ]}'
