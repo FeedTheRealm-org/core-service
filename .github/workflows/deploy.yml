@@ -33,15 +33,15 @@ jobs:
       - name: Deploy core-service via SSM
         run: |
           aws ssm send-command \
-            --document-name "AWS-RunShellScript" \
-            --targets "Key=tag:Name,Values=core-runner" \
-            --comment "Deploy core-service" \
-            --parameters 'commands=[
-              "set -e",
-              "SERVICE=core-service",
-              "IMAGE=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ inputs.image_tag }}",
-              "docker pull $IMAGE",
-              "docker stop $SERVICE || true",
-              "docker rm $SERVICE || true",
-              "docker run -d --restart always --name $SERVICE -p 80:80 $IMAGE"
-            ]'
+          --document-name "AWS-RunShellScript" \
+          --targets '[{"Key":"tag:Name","Values":["core-runner"]}]' \
+          --comment "Deploy core-service" \
+          --parameters 'commands=[
+            "set -e",
+            "SERVICE=core-service",
+            "IMAGE=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ inputs.image_tag }}",
+            "docker pull $IMAGE",
+            "docker stop $SERVICE || true",
+            "docker rm $SERVICE || true",
+            "docker run -d --restart always --name $SERVICE -p 80:80 $IMAGE"
+          ]'
