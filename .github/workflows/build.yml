@@ -10,6 +10,8 @@ on:
         required: true
       ECR_REPOSITORY:
         required: true
+      SUPABASE_CERT:
+        required: true
     outputs:
       image_tag:
         value: ${{ jobs.build.outputs.image_tag }}
@@ -40,6 +42,11 @@ jobs:
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Write Supabase CA cert
+        run: |
+          mkdir -p certs
+          echo "${{ secrets.SUPABASE_CERT }}" | base64 --decode > certs/supabase-ca.crt
 
       - name: Build & Push
         run: |

@@ -12,6 +12,7 @@ jobs:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
       ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      SUPABASE_CERT: ${{ secrets.SUPABASE_CERT }}
 
   deploy:
     needs: build
