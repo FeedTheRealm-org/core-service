@@ -46,5 +46,7 @@ jobs:
             "docker pull $IMAGE",
             "docker stop $SERVICE || true",
             "docker rm $SERVICE || true",
-            "docker run -d --restart always --name $SERVICE -p 80:80 $IMAGE"
+            "aws ssm get-parameters-by-path --path "/core-service/" --with-decryption --region ${{ secrets.AWS_REGION }} --query "Parameters[*].[Name,Value]" --output text | sed "s#/core-service/##g; s#\t#=#g" > /tmp/core_service_env",
+            "docker run -d --restart always --name $SERVICE -p 80:80 --env-file /tmp/core_service_env $IMAGE",
+            "rm /tmp/core_service_env"
           ]'
