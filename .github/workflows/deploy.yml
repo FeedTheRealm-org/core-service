@@ -10,6 +10,8 @@ on:
         required: true
       ECR_REPOSITORY:
         required: true
+      INSTANCE_IDS:
+        required: true
     inputs:
       image_tag:
         required: true
@@ -34,7 +36,7 @@ jobs:
         run: |
           aws ssm send-command \
           --document-name "AWS-RunShellScript" \
-          --targets '[{"Key":"tag:Name","Values":["core-runner"]}]' \
+          --instance-ids ${{ secrets.INSTANCE_IDS }} \
           --comment "Deploy core-service" \
           --parameters 'commands=[
             "set -e",

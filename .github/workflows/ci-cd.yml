@@ -22,5 +22,6 @@ jobs:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
       ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      INSTANCE_IDS: ${{ secrets.INSTANCE_IDS }}
     with:
       image_tag: ${{ needs.build.outputs.image_tag }}
