@@ -30,7 +30,7 @@ COPY certs /certs
 COPY migrations ./migrations
 COPY --from=builder /usr/local/bin/app /usr/local/bin/app
 
-EXPOSE 8080
+EXPOSE 8000
 
 CMD ["app"]
 
