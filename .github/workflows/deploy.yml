@@ -9,5 +9,30 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
-      - run: echo "Deploying image ${{ inputs.image_tag }}"
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy core-service via SSM
+        run: |
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:Name,Values=shared-ec2-runner" \
+            --comment "Deploy core-service" \
+            --parameters 'commands=[
+              "set -e",
+              "SERVICE=core-service",
+              "IMAGE=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ inputs.image_tag }}",
+              "docker pull $IMAGE",
+              "docker stop $SERVICE || true",
+              "docker rm $SERVICE || true",
+              "docker run -d --restart always --name $SERVICE -p 80:80 $IMAGE"
+            ]'
