@@ -34,7 +34,7 @@ jobs:
         run: |
           aws ssm send-command \
             --document-name "AWS-RunShellScript" \
-            --targets "Key=tag:Name,Values=shared-ec2-runner" \
+            --targets "Key=tag:Name,Values=core-runner" \
             --comment "Deploy core-service" \
             --parameters 'commands=[
               "set -e",
