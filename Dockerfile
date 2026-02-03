@@ -13,7 +13,9 @@ FROM deps AS builder
 WORKDIR /usr/src/app
 
 COPY --from=deps /go/pkg /go/pkg
-COPY . .
+COPY ./internal ./internal
+COPY ./cmd ./cmd
+COPY ./config ./config
 
 RUN swag init --generalInfo cmd/main.go --output ./swagger
 
@@ -24,6 +26,8 @@ FROM builder AS prod
 
 WORKDIR /usr/src/app
 
+COPY certs /certs
+COPY migrations ./migrations
 COPY --from=builder /usr/local/bin/app /usr/local/bin/app
 
 EXPOSE 8080
