@@ -712,6 +712,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/refresh": {
+            "post": {
+                "description": "Request a new verification code to be sent to the user's email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Refresh verification code",
+                "parameters": [
+                    {
+                        "description": "Refresh verification data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RefreshVerificationRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Refresh requested",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RefreshVerificationResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/signup": {
             "post": {
                 "description": "Create a new user account",
@@ -1624,6 +1670,22 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "character_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.RefreshVerificationRequestDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.RefreshVerificationResponseDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
                     "type": "string"
                 }
             }

@@ -33,7 +33,9 @@ func CreateStartEmailSenderService() {
 }
 
 func TestMain(m *testing.M) {
-	os.Setenv("SERVER_FIXED_TOKEN", "test-fixed-token")
+	if err := os.Setenv("SERVER_FIXED_TOKEN", "test-fixed-token"); err != nil {
+		panic(err)
+	}
 	CreateStartAccountService()
 	CreateStartEmailSenderService()
 	os.Exit(m.Run())
