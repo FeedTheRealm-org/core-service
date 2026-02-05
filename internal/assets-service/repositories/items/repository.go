@@ -1,4 +1,4 @@
-package itemsprites
+package items
 
 import (
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"

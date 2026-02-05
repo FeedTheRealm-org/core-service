@@ -1,4 +1,4 @@
-package sprites
+package cosmetics
 
 import (
 	"net/http"
@@ -8,7 +8,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
 	assets_errors "github.com/FeedTheRealm-org/core-service/internal/assets-service/errors"
-	"github.com/FeedTheRealm-org/core-service/internal/assets-service/services/sprites"
+	"github.com/FeedTheRealm-org/core-service/internal/assets-service/services/cosmetics"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/gin-gonic/gin"
@@ -17,11 +17,11 @@ import (
 
 type spritesController struct {
 	conf           *config.Config
-	spritesService sprites.SpritesService
+	spritesService cosmetics.SpritesService
 }
 
 // NewSpritesController creates a new instance of SpritesController.
-func NewSpritesController(conf *config.Config, spritesService sprites.SpritesService) SpritesController {
+func NewSpritesController(conf *config.Config, spritesService cosmetics.SpritesService) SpritesController {
 	return &spritesController{
 		conf:           conf,
 		spritesService: spritesService,

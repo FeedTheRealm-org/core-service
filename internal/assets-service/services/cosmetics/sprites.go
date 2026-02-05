@@ -1,4 +1,4 @@
-package sprites
+package cosmetics
 
 import (
 	"fmt"
@@ -7,19 +7,19 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
-	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/sprites"
+	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/cosmetics"
 	"github.com/google/uuid"
 )
 
 type spritesService struct {
 	conf *config.Config
 
-	spritesRepository sprites.SpritesRepository
+	spritesRepository cosmetics.SpritesRepository
 	bucketRepo        bucket.BucketRepository
 }
 
 // NewSpritesService creates a new instance of SpritesService.
-func NewSpritesService(conf *config.Config, spritesRepository sprites.SpritesRepository, bucketRepo bucket.BucketRepository) SpritesService {
+func NewSpritesService(conf *config.Config, spritesRepository cosmetics.SpritesRepository, bucketRepo bucket.BucketRepository) SpritesService {
 	return &spritesService{
 		conf:              conf,
 		spritesRepository: spritesRepository,
@@ -50,7 +50,7 @@ func (ss *spritesService) AddCategory(category string) (*models.Category, error)
 func (ss *spritesService) UploadSpriteData(category uuid.UUID, spriteData multipart.File, ext string) (*models.Sprite, error) {
 	spriteUniqueUrl := uuid.New().String()
 
-	filePath := fmt.Sprintf("/characters/%s%s", spriteUniqueUrl, ext)
+	filePath := fmt.Sprintf("/cosmetics/%s%s", spriteUniqueUrl, ext)
 	if err := ss.bucketRepo.UploadFile(filePath, "image/png", spriteData); err != nil {
 		return nil, err
 	}

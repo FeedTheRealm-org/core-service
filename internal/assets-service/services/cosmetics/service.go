@@ -1,4 +1,4 @@
-package sprites
+package cosmetics
 
 import (
 	"mime/multipart"

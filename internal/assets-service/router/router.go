@@ -2,16 +2,16 @@ package router
 
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
-	itemsprites_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/item-sprites"
+	cosmetics_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/cosmetics"
+	items_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/items"
 	models_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/models"
-	sprites_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/sprites"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
-	itemsprites_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/item-sprites"
+	cosmetics_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/cosmetics"
+	items_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/items"
 	models_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/models"
-	sprites_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/sprites"
-	itemsprites_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/item-sprites"
+	cosmetics_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/cosmetics"
+	items_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/items"
 	models_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/models"
-	sprites_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/sprites"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,11 +28,11 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 		return err
 	}
 
-	spritesRepo := sprites_repo.NewSpritesRepository(conf, db)
-	spritesService := sprites_service.NewSpritesService(conf, spritesRepo, spritesBucketRepo)
-	spritesController := sprites_controller.NewSpritesController(conf, spritesService)
+	spritesRepo := cosmetics_repo.NewSpritesRepository(conf, db)
+	spritesService := cosmetics_service.NewSpritesService(conf, spritesRepo, spritesBucketRepo)
+	spritesController := cosmetics_controller.NewSpritesController(conf, spritesService)
 
-	spritesGroup := g.Group("/sprites")
+	spritesGroup := g.Group("/sprites/cosmetics")
 	spritesGroup.GET("/categories", spritesController.GetCategoriesList)
 	spritesGroup.GET("/categories/:id", spritesController.GetSpritesListByCategory)
 	spritesGroup.GET("/:id", spritesController.DownloadSpriteData)
@@ -42,9 +42,9 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 	spritesGroup.PUT("", spritesController.UploadSpriteData)
 
 	/* Item Sprites Endpoints */
-	itemSpritesRepo := itemsprites_repo.NewItemSpritesRepository(conf, db)
-	itemSpritesService := itemsprites_service.NewItemSpritesService(conf, itemSpritesRepo, spritesBucketRepo)
-	itemSpritesController := itemsprites_controller.NewItemSpritesController(conf, itemSpritesService)
+	itemSpritesRepo := items_repo.NewItemSpritesRepository(conf, db)
+	itemSpritesService := items_service.NewItemSpritesService(conf, itemSpritesRepo, spritesBucketRepo)
+	itemSpritesController := items_controller.NewItemSpritesController(conf, itemSpritesService)
 
 	itemSpritesGroup := g.Group("/sprites/items")
 	itemSpritesGroup.POST(":world_id", itemSpritesController.UploadItemSprite)

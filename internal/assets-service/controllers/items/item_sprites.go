@@ -1,4 +1,4 @@
-package itemsprites
+package items
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
 	assets_errors "github.com/FeedTheRealm-org/core-service/internal/assets-service/errors"
-	itemsprites "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/item-sprites"
+	"github.com/FeedTheRealm-org/core-service/internal/assets-service/services/items"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/gin-gonic/gin"
@@ -18,11 +18,11 @@ import (
 
 type itemSpritesController struct {
 	conf    *config.Config
-	service itemsprites.ItemSpritesService
+	service items.ItemSpritesService
 }
 
 // NewItemSpritesController creates a new instance of ItemSpritesController.
-func NewItemSpritesController(conf *config.Config, service itemsprites.ItemSpritesService) ItemSpritesController {
+func NewItemSpritesController(conf *config.Config, service items.ItemSpritesService) ItemSpritesController {
 	return &itemSpritesController{
 		conf:    conf,
 		service: service,

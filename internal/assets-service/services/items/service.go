@@ -1,4 +1,4 @@
-package itemsprites
+package items
 
 import (
 	"mime/multipart"

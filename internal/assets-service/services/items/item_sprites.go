@@ -1,4 +1,4 @@
-package itemsprites
+package items
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
-	itemsprites "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/item-sprites"
+	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/items"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 )
@@ -17,12 +17,12 @@ import (
 type itemSpritesService struct {
 	conf *config.Config
 
-	repository itemsprites.ItemSpritesRepository
+	repository items.ItemSpritesRepository
 	bucketRepo bucket.BucketRepository
 }
 
 // NewItemSpritesService creates a new instance of ItemSpritesService.
-func NewItemSpritesService(conf *config.Config, repository itemsprites.ItemSpritesRepository, bucketRepo bucket.BucketRepository) ItemSpritesService {
+func NewItemSpritesService(conf *config.Config, repository items.ItemSpritesRepository, bucketRepo bucket.BucketRepository) ItemSpritesService {
 	return &itemSpritesService{
 		conf:       conf,
 		repository: repository,

@@ -1,4 +1,4 @@
-package sprites
+package cosmetics
 
 import "github.com/gin-gonic/gin"
 

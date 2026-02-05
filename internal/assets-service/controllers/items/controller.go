@@ -1,4 +1,4 @@
-package itemsprites
+package items
 
 import "github.com/gin-gonic/gin"
 

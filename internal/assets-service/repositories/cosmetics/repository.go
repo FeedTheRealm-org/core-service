@@ -1,4 +1,4 @@
-package sprites
+package cosmetics
 
 import (
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
