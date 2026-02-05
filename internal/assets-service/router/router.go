@@ -28,39 +28,43 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 		return err
 	}
 
+	/* Cosmetics endpoints */
+
 	spritesRepo := cosmetics_repo.NewSpritesRepository(conf, db)
 	spritesService := cosmetics_service.NewSpritesService(conf, spritesRepo, spritesBucketRepo)
 	spritesController := cosmetics_controller.NewSpritesController(conf, spritesService)
 
-	spritesGroup := g.Group("/sprites/cosmetics")
+	spritesGroup := g.Group("/cosmetics")
 	spritesGroup.GET("/categories", spritesController.GetCategoriesList)
-	spritesGroup.GET("/categories/:id", spritesController.GetSpritesListByCategory)
-	spritesGroup.GET("/:id", spritesController.DownloadSpriteData)
+	spritesGroup.GET("/categories/:id", spritesController.GetCosmeticsListByCategory)
+	spritesGroup.GET(":id", spritesController.GetCosmeticById)
+	spritesGroup.PUT("/categories/:id", spritesController.UploadCosmetics)
 
-	/* TODO: PROTECT THESE ENDPOINTS: */
-	spritesGroup.POST("/categories", spritesController.AddCategory)
-	spritesGroup.PUT("", spritesController.UploadSpriteData)
+	/* Items Endpoints */
+	itemsRepo := items_repo.NewItemSpritesRepository(conf, db)
+	itemsService := items_service.NewItemSpritesService(conf, itemsRepo, spritesBucketRepo)
+	itemsController := items_controller.NewItemSpritesController(conf, itemsService)
 
-	/* Item Sprites Endpoints */
-	itemSpritesRepo := items_repo.NewItemSpritesRepository(conf, db)
-	itemSpritesService := items_service.NewItemSpritesService(conf, itemSpritesRepo, spritesBucketRepo)
-	itemSpritesController := items_controller.NewItemSpritesController(conf, itemSpritesService)
+	itemsGroup := g.Group("/items")
+	spritesGroup.GET("/categories", spritesController.GetCategoriesList)
+	itemsGroup.GET("/categories/:id", itemsController.GetItemsListByCategory)
+	itemsGroup.GET(":id", itemsController.GetItemById)
+	itemsGroup.PUT("/categories/:id", itemsController.UploadItems)
 
-	itemSpritesGroup := g.Group("/sprites/items")
-	itemSpritesGroup.POST(":world_id", itemSpritesController.UploadItemSprite)
-	itemSpritesGroup.GET("", itemSpritesController.GetAllItemSprites)
-	itemSpritesGroup.GET("/:sprite_id", itemSpritesController.DownloadItemSprite)
-	itemSpritesGroup.DELETE("/:sprite_id", itemSpritesController.DeleteItemSprite)
-
-	/* Model Endpoints */
+	/* Models Endpoints */
 
 	modelsRepo := models_repo.NewModelsRepository(conf, db)
 	modelsService := models_service.NewModelsService(conf, modelsRepo, modelsBucketRepo)
 	modelsController := models_controller.NewModelsController(conf, modelsService)
+
 	modelsGroup := g.Group("/models")
-	modelsGroup.GET("/:world_id", modelsController.ListAssets)
-	modelsGroup.GET("/:world_id/:model_id", modelsController.DownloadModel)
-	modelsGroup.POST("/:world_id", modelsController.UploadModels)
+	modelsGroup.GET("/world/:world_id", modelsController.GetModelsList)
+	modelsGroup.PUT("/world/:world_id", modelsController.UploadModels)
+
+	/* ADMIN ONLY */
+	spritesGroup.POST("/categories", spritesController.AddCategory)
+	itemsGroup.POST("/categories", itemsGroup.AddCategory)
+	// TODO: DELETE CATEGORIES/SPRITES/MODELS
 
 	return nil
 }

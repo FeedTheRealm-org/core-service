@@ -11,9 +11,6 @@ type SpritesController interface {
 	// GetSpritesList retrieves a list of sprites for a given category.
 	GetSpritesListByCategory(c *gin.Context)
 
-	// DownloadSpriteData handles the download of sprite file.
-	DownloadSpriteData(c *gin.Context)
-
 	// AddCategory handles the addition of a new sprite category.
 	AddCategory(c *gin.Context)
 

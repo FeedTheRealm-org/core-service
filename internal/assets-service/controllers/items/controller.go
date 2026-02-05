@@ -10,9 +10,6 @@ type ItemSpritesController interface {
 	// GetAllItemSprites retrieves all item sprites.
 	GetAllItemSprites(c *gin.Context)
 
-	// DownloadItemSprite handles sprite file download by ID.
-	DownloadItemSprite(c *gin.Context)
-
 	// DeleteItemSprite deletes a sprite by ID.
 	DeleteItemSprite(c *gin.Context)
 }
