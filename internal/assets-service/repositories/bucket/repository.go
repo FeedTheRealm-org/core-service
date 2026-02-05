@@ -6,7 +6,7 @@ import (
 
 // BucketRepository defines the interface for bucket operations.
 type BucketRepository interface {
-	UploadFile(fileName string, file multipart.File) error
+	UploadFile(fileName, mimeType string, file multipart.File) error
 
-	DownloadFile(fileName string) multipart.File
+	DeleteFile(fileName string) error
 }

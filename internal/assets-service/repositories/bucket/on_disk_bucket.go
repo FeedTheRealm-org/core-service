@@ -1,26 +1,55 @@
 package bucket
 
 import (
+	"fmt"
 	"mime/multipart"
+	"os"
+	"path/filepath"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 )
 
+const localBucketFolder = "./local_buckets"
+
 type onDiskBucketRepository struct {
-	conf *config.Config
+	bucketName string
+	bucketPath string
+	conf       *config.Config
 }
 
-// NewItemSpritesRepository creates a new instance of ItemSpritesRepository.
-func NewOnDiskBucketRepository(conf *config.Config) BucketRepository {
-	return &onDiskBucketRepository{
-		conf: conf,
+// NewOnDiskBucketRepository creates a new instance of the bucket repository connected to on-disk storage.
+func NewOnDiskBucketRepository(bucketName string, conf *config.Config) (BucketRepository, error) {
+	r := &onDiskBucketRepository{
+		bucketName: bucketName,
+		bucketPath: fmt.Sprintf("%s/%s", localBucketFolder, bucketName),
+		conf:       conf,
 	}
+
+	if err := os.MkdirAll(r.bucketPath, os.ModePerm); err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
-func (r *onDiskBucketRepository) UploadFile(fileName string, file multipart.File) error {
+func (r *onDiskBucketRepository) UploadFile(filePath, mimeType string, file multipart.File) error {
+	destPath := filepath.Join(r.bucketPath, filePath)
+
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
 	return nil
 }
 
-func (r *onDiskBucketRepository) DownloadFile(fileName string) multipart.File {
+func (r *onDiskBucketRepository) DeleteFile(filePath string) error {
+	destPath := filepath.Join(r.bucketPath, filePath)
+
+	if err := os.Remove(destPath); err != nil {
+		return err
+	}
+
 	return nil
 }
