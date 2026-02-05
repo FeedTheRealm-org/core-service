@@ -5,6 +5,7 @@ import (
 	itemsprites_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/item-sprites"
 	models_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/models"
 	sprites_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/sprites"
+	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
 	itemsprites_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/item-sprites"
 	models_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/models"
 	sprites_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/sprites"
@@ -14,11 +15,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
+func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	g := r.Group("/assets")
 
+	spritesBucketRepo, err := bucket.NewOnDiskBucketRepository("sprites", conf)
+	if err != nil {
+		return err
+	}
+
+	modelsBucketRepo, err := bucket.NewOnDiskBucketRepository("models", conf)
+	if err != nil {
+		return err
+	}
+
 	spritesRepo := sprites_repo.NewSpritesRepository(conf, db)
-	spritesService := sprites_service.NewSpritesService(conf, spritesRepo)
+	spritesService := sprites_service.NewSpritesService(conf, spritesRepo, spritesBucketRepo)
 	spritesController := sprites_controller.NewSpritesController(conf, spritesService)
 
 	spritesGroup := g.Group("/sprites")
@@ -32,7 +43,7 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 
 	/* Item Sprites Endpoints */
 	itemSpritesRepo := itemsprites_repo.NewItemSpritesRepository(conf, db)
-	itemSpritesService := itemsprites_service.NewItemSpritesService(conf, itemSpritesRepo)
+	itemSpritesService := itemsprites_service.NewItemSpritesService(conf, itemSpritesRepo, spritesBucketRepo)
 	itemSpritesController := itemsprites_controller.NewItemSpritesController(conf, itemSpritesService)
 
 	itemSpritesGroup := g.Group("/sprites/items")
@@ -44,10 +55,12 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 	/* Model Endpoints */
 
 	modelsRepo := models_repo.NewModelsRepository(conf, db)
-	modelsService := models_service.NewModelsService(conf, modelsRepo)
+	modelsService := models_service.NewModelsService(conf, modelsRepo, modelsBucketRepo)
 	modelsController := models_controller.NewModelsController(conf, modelsService)
 	modelsGroup := g.Group("/models")
 	modelsGroup.GET("/:world_id", modelsController.ListAssets)
 	modelsGroup.GET("/:world_id/:model_id", modelsController.DownloadModel)
 	modelsGroup.POST("/:world_id", modelsController.UploadModels)
+
+	return nil
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
+func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	jwtManager := session.NewJWTManager(conf.SessionTokenSecretKey, conf.SessionTokenDuration)
 
 	// Setup global middleware
@@ -23,13 +23,29 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
 	// Setup service routers
 	r.NoRoute(common_handlers.NotFoundController)
 
-	authRouter.SetupAuthenticationServiceRouter(r, conf, db, jwtManager)
-	playersRouter.SetupPlayerServiceRouter(r, conf, db)
-	worldRouter.SetupWorldServiceRouter(r, conf, db)
-	assetsRouter.SetupAssetsServiceRouter(r, conf, db)
-	itemsRouter.SetupItemsServiceRouter(r, conf, db)
+	if err := authRouter.SetupAuthenticationServiceRouter(r, conf, db, jwtManager); err != nil {
+		return err
+	}
+
+	if err := playersRouter.SetupPlayerServiceRouter(r, conf, db); err != nil {
+		return err
+	}
+
+	if err := worldRouter.SetupWorldServiceRouter(r, conf, db); err != nil {
+		return err
+	}
+
+	if err := assetsRouter.SetupAssetsServiceRouter(r, conf, db); err != nil {
+		return err
+	}
+
+	if err := itemsRouter.SetupItemsServiceRouter(r, conf, db); err != nil {
+		return err
+	}
 
 	if conf.Server.Environment != config.Production {
 		SetupSwaggerRouter(r)
 	}
+
+	return nil
 }

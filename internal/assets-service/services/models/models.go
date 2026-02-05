@@ -2,27 +2,27 @@ package models
 
 import (
 	"fmt"
-	"io"
-	"mime/multipart"
-	"os"
-	"path/filepath"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
+	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
 	repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/models"
 	"github.com/google/uuid"
 )
 
 type modelsService struct {
-	conf             *config.Config
+	conf *config.Config
+
 	modelsRepository repo.ModelsRepository
+	bucketRepo       bucket.BucketRepository
 }
 
 // NewModelsService creates a new instance of ModelsService.
-func NewModelsService(conf *config.Config, modelsRepository repo.ModelsRepository) ModelsService {
+func NewModelsService(conf *config.Config, modelsRepository repo.ModelsRepository, bucketRepo bucket.BucketRepository) ModelsService {
 	return &modelsService{
 		conf:             conf,
 		modelsRepository: modelsRepository,
+		bucketRepo:       bucketRepo,
 	}
 }
 
@@ -34,31 +34,20 @@ func (ms *modelsService) PublishModels(worldId uuid.UUID, models []models.Model)
 	for i := range models {
 		models[i].WorldID = worldId
 
-		// Create the bucket directory and paths
-		baseDir := fmt.Sprintf("bucket/worlds/%s/models/%s", worldId, models[i].ModelID)
-		if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
-			return nil, fmt.Errorf("failed creating directory: %w", err)
+		file, err := models[i].ModelFile.Open()
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
+
+		filePath := fmt.Sprintf("/worlds/%s/models/%s/model.glb", worldId, models[i].ModelID)
+		if err := ms.bucketRepo.UploadFile(filePath, models[i].ModelFile.Header.Get("Content-Type"), file); err != nil {
+			return nil, fmt.Errorf("failed uploading model file to bucket: %w", err)
 		}
 
-		// Save model to bucket
-		modelPath := filepath.Join(baseDir, "model"+filepath.Ext(models[i].ModelFile.Filename))
-		if err := saveUploadedFile(models[i].ModelFile, modelPath); err != nil {
-			return nil, fmt.Errorf("failed saving model file: %w", err)
-		}
-		models[i].ModelURL = modelPath
-
-		if models[i].MaterialFile == nil {
-			continue
-		}
-		// Save material file if provided
-		materialPath := filepath.Join(baseDir, "material"+filepath.Ext(models[i].MaterialFile.Filename))
-		if err := saveUploadedFile(models[i].MaterialFile, materialPath); err != nil {
-			return nil, fmt.Errorf("failed saving material file: %w", err)
-		}
-		// Update model URLs and world ID
-		models[i].MaterialURL = materialPath
+		models[i].ModelURL = filePath
 	}
-	// Save to DB
+
 	PublishedModels, err := ms.modelsRepository.PublishModels(models)
 	if err != nil {
 		return nil, fmt.Errorf("failed publishing models: %w", err)
@@ -73,25 +62,4 @@ func (ms *modelsService) GetModelsByWorld(worldId uuid.UUID) ([]models.Model, er
 		return nil, fmt.Errorf("failed to get models by world: %w", err)
 	}
 	return modelsList, nil
-}
-
-func saveUploadedFile(fileHeader *multipart.FileHeader, path string) error {
-	in, err := fileHeader.Open()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = in.Close()
-	}()
-
-	out, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = out.Close()
-	}()
-
-	_, err = io.Copy(out, in)
-	return err
 }

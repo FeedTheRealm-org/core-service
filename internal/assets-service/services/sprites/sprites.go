@@ -2,27 +2,28 @@ package sprites
 
 import (
 	"fmt"
-	"io"
 	"mime/multipart"
-	"os"
-	"path/filepath"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
+	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/sprites"
 	"github.com/google/uuid"
 )
 
 type spritesService struct {
-	conf              *config.Config
+	conf *config.Config
+
 	spritesRepository sprites.SpritesRepository
+	bucketRepo        bucket.BucketRepository
 }
 
 // NewSpritesService creates a new instance of SpritesService.
-func NewSpritesService(conf *config.Config, spritesRepository sprites.SpritesRepository) SpritesService {
+func NewSpritesService(conf *config.Config, spritesRepository sprites.SpritesRepository, bucketRepo bucket.BucketRepository) SpritesService {
 	return &spritesService{
 		conf:              conf,
 		spritesRepository: spritesRepository,
+		bucketRepo:        bucketRepo,
 	}
 }
 
@@ -49,23 +50,8 @@ func (ss *spritesService) AddCategory(category string) (*models.Category, error)
 func (ss *spritesService) UploadSpriteData(category uuid.UUID, spriteData multipart.File, ext string) (*models.Sprite, error) {
 	spriteUniqueUrl := uuid.New().String()
 
-	filename := fmt.Sprintf("%s%s", spriteUniqueUrl, ext)
-	dirPath := "./bucket/sprites"
-	filePath := filepath.Join(dirPath, filename)
-
-	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
-		return nil, err
-	}
-
-	destFile, err := os.Create(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = destFile.Close()
-	}()
-
-	if _, err := io.Copy(destFile, spriteData); err != nil {
+	filePath := fmt.Sprintf("/characters/%s%s", spriteUniqueUrl, ext)
+	if err := ss.bucketRepo.UploadFile(filePath, "image/png", spriteData); err != nil {
 		return nil, err
 	}
 

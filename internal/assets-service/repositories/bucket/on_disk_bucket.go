@@ -2,6 +2,7 @@ package bucket
 
 import (
 	"fmt"
+	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
@@ -39,7 +40,13 @@ func (r *onDiskBucketRepository) UploadFile(filePath, mimeType string, file mult
 	if err != nil {
 		return err
 	}
-	defer destFile.Close()
+	defer func() {
+		_ = destFile.Close()
+	}()
+
+	if _, err := io.Copy(destFile, file); err != nil {
+		return err
+	}
 
 	return nil
 }

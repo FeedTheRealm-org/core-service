@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB, jwtManager *session.JWTManager) {
+func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB, jwtManager *session.JWTManager) error {
 	g := r.Group("/auth")
 	accountRepo, err := repositories.NewAccountRepository(conf, db)
 	if err != nil {
@@ -25,4 +25,6 @@ func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config, db *co
 	g.POST("/login", accountController.LoginAccount)
 	g.POST("/verify", accountController.VerifyAccount)
 	g.GET("/check-session", accountController.CheckSessionExpiration)
+
+	return nil
 }

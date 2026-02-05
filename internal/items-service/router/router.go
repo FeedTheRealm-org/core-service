@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupItemsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
+func SetupItemsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	// Initialize repositories
 	itemRepository := item_repo.NewItemRepository(conf, db)
 
@@ -28,4 +28,6 @@ func SetupItemsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 		apiGroup.DELETE("/:id", itemController.DeleteItem)
 		apiGroup.PATCH("/:id/sprite", itemController.UpdateItemSprite)
 	}
+
+	return nil
 }

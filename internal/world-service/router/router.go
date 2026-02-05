@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
+func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	worldGroup := r.Group("/world")
 
 	worldRepo := world_repo.NewWorldRepository(conf, db)
@@ -24,4 +24,6 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 	if os.Getenv("ALLOW_DB_RESET") == "true" {
 		worldGroup.DELETE("/reset-database", worldController.ResetDatabase)
 	}
+
+	return nil
 }

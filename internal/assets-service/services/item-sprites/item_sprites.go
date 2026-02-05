@@ -2,28 +2,31 @@ package itemsprites
 
 import (
 	"fmt"
-	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
+	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
 	itemsprites "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/item-sprites"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 )
 
 type itemSpritesService struct {
-	conf       *config.Config
+	conf *config.Config
+
 	repository itemsprites.ItemSpritesRepository
+	bucketRepo bucket.BucketRepository
 }
 
 // NewItemSpritesService creates a new instance of ItemSpritesService.
-func NewItemSpritesService(conf *config.Config, repository itemsprites.ItemSpritesRepository) ItemSpritesService {
+func NewItemSpritesService(conf *config.Config, repository itemsprites.ItemSpritesRepository, bucketRepo bucket.BucketRepository) ItemSpritesService {
 	return &itemSpritesService{
 		conf:       conf,
 		repository: repository,
+		bucketRepo: bucketRepo,
 	}
 }
 
@@ -31,6 +34,7 @@ func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID,
 	if len(ids) != len(files) {
 		return nil, fmt.Errorf("number of ids and files must match")
 	}
+
 	var result []*models.ItemSprite
 	for i, fileHeader := range files {
 		id := ids[i]
@@ -41,21 +45,10 @@ func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID,
 		defer file.Close()
 
 		ext := filepath.Ext(fileHeader.Filename)
-		filename := fmt.Sprintf("%s%s", id.String(), ext)
-		dirPath := filepath.Join("bucket", "worlds", worldID.String(), "items")
-		filePath := filepath.Join(dirPath, filename)
-		if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
+		filePath := fmt.Sprintf("/items/worlds/%s/%s%s", worldID.String(), id.String(), ext)
+		if err := iss.bucketRepo.UploadFile(filePath, fileHeader.Header.Get("Content-Type"), file); err != nil {
 			return nil, err
 		}
-		destFile, err := os.Create(filePath)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := io.Copy(destFile, file); err != nil {
-			destFile.Close()
-			return nil, err
-		}
-		destFile.Close()
 
 		sprite := &models.ItemSprite{
 			Id:  id,
@@ -65,7 +58,9 @@ func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID,
 			_ = os.Remove(filePath)
 			return nil, err
 		}
-		logger.Logger.Infof("Item sprite uploaded: %s (ID: %s)", filename, sprite.Id)
+
+		logger.Logger.Infof("Item sprite uploaded: %s (ID: %s)", filePath, sprite.Id)
+
 		result = append(result, sprite)
 	}
 	return result, nil
@@ -88,25 +83,19 @@ func (iss *itemSpritesService) GetSpriteFile(id uuid.UUID) (string, error) {
 }
 
 func (iss *itemSpritesService) DeleteSprite(id uuid.UUID) error {
-	// Get sprite to get file path
 	sprite, err := iss.repository.GetSpriteById(id)
 	if err != nil {
 		return err
 	}
 
-	// Delete from database
 	if err := iss.repository.DeleteSprite(id); err != nil {
 		return err
 	}
 
-	// Delete file from disk
-	if err := os.Remove(sprite.Url); err != nil {
-		logger.Logger.Warnf("Failed to delete sprite file %s: %v", sprite.Url, err)
-		// Don't fail the request - database record is already deleted
+	if err := iss.bucketRepo.DeleteFile(sprite.Url); err != nil {
+		logger.Logger.Warnf("Failed to delete sprite file from bucket %s: %v", sprite.Url, err)
 	}
 
-	logger.Logger.Infof("Item sprite deleted: %s", id)
+	logger.Logger.Infof("Item sprite deleted: %s (ID: %s)", sprite.Url, id)
 	return nil
 }
-
-// (Item sprite categories removed)
