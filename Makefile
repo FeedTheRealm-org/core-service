@@ -1,6 +1,8 @@
 COMPOSE_DEV := docker-compose.dev.yml
 COMPOSE_TEST := docker-compose.test.yml
 
+EXEC_APP := go run cmd/main.go
+
 help: # Show this help message
 	@awk -F'#' '/^[^[:space:]].*:/ && !/^\.PHONY/ { \
 		target = $$1; \
@@ -18,7 +20,8 @@ build: down # Build containers
 .PHONY: build
 
 up: down # Build and start containers
-	docker compose -f $(COMPOSE_DEV) up
+	docker compose -f $(COMPOSE_DEV) up -d
+	docker compose exec -f $(COMPOSE_DEV) app $(EXEC_APP)
 .PHONY: up
 
 up-build: down # Build and start containers
