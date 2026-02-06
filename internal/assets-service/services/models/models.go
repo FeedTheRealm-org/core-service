@@ -43,12 +43,12 @@ func (ms *modelsService) PublishModels(worldId uuid.UUID, models []models.Model)
 			_ = file.Close()
 		}()
 
-		filePath := fmt.Sprintf("/worlds/%s/models/%s/model.glb", worldId, models[i].ModelID)
+		filePath := fmt.Sprintf("/worlds/%s/models/%s/model.glb", worldId, models[i].Id)
 		if err := ms.bucketRepo.UploadFile(filePath, models[i].ModelFile.Header.Get("Content-Type"), file); err != nil {
 			return nil, fmt.Errorf("failed uploading model file to bucket: %w", err)
 		}
 
-		models[i].ModelURL = filePath
+		models[i].Url = filePath
 	}
 
 	PublishedModels, err := ms.modelsRepository.PublishModels(models)

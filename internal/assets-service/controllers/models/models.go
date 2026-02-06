@@ -56,8 +56,7 @@ func (mc *modelsController) ListAssets(c *gin.Context) {
 	modelResponseList := make([]dtos.ModelResponse, len(modelsList))
 	for i, model := range modelsList {
 		modelResponseList[i] = dtos.ModelResponse{
-			ModelID: model.ModelID,
-			Name:    model.Name,
+			ModelID: model.Id,
 		}
 	}
 
@@ -182,16 +181,10 @@ func (mc *modelsController) UploadModels(c *gin.Context) {
 			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("model_file is required for model %d", i)))
 			return
 		}
-		materialFile, err := c.FormFile(fmt.Sprintf("models[%d].material_file", i))
-		if err != nil {
-			materialFile = nil // Material file is optional
-		}
 		// Collect metadata and file headers
 		modelsRequest = append(modelsRequest, models.Model{
-			Name:         name,
-			ModelID:      modelID,
-			ModelFile:    modelFile,
-			MaterialFile: materialFile,
+			Id:        modelID,
+			ModelFile: modelFile,
 		})
 	}
 
@@ -209,8 +202,7 @@ func (mc *modelsController) UploadModels(c *gin.Context) {
 	modelResponses := make([]dtos.ModelPublishResponse, len(savedModels))
 	for i, model := range savedModels {
 		modelResponses[i] = dtos.ModelPublishResponse{
-			ModelID: model.ModelID,
-			Name:    model.Name,
+			ModelID: model.Id,
 		}
 	}
 
