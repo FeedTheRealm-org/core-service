@@ -5,7 +5,7 @@ import sys
 import time
 
 def fetch_categories(server_url, auth_token=None):
-    url = f"{server_url}/assets/sprites/categories"
+    url = f"{server_url}/assets/cosmetics/categories"
     headers = {'Authorization': f'Bearer {auth_token}'} if auth_token else {}
 
     try:
@@ -32,7 +32,7 @@ def fetch_categories(server_url, auth_token=None):
         return None
 
 def add_category(server_url, category_name, auth_token=None):
-    url = f"{server_url}/assets/sprites/categories"
+    url = f"{server_url}/assets/cosmetics/categories"
     headers = {'Content-Type': 'application/json'}
     if auth_token:
         headers['Authorization'] = f'Bearer {auth_token}'

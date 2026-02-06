@@ -3,12 +3,12 @@ set -euo pipefail
 
 # Reset items and their sprites via HTTP API (development only)
 # - Fetches ALL items from /items/metadata
-# - Deletes each referenced item sprite via /assets/sprites/items/{sprite_id}
+# - Deletes each referenced item sprite via /assets/cosmetics/items/{sprite_id}
 # - Deletes each item via /items/{id}
-# - Optionally deletes local files under ./bucket/sprites/items
+# - Optionally deletes local files under ./bucket/cosmetics/items
 
 USAGE="Usage: $0 [--base-url <http://host:port>] [--delete-files] [-y]\n
-Options:\n  --base-url <url>  Base URL of core-service API (default: http://localhost:8000)\n  --delete-files    Also delete the files under ./bucket/sprites/items (prompt required)\n  -y                Skip confirmation prompt (dangerous)\n"
+Options:\n  --base-url <url>  Base URL of core-service API (default: http://localhost:8000)\n  --delete-files    Also delete the files under ./bucket/cosmetics/items (prompt required)\n  -y                Skip confirmation prompt (dangerous)\n"
 
 BASE_URL="http://localhost:8000"
 DELETE_FILES=false
@@ -54,7 +54,7 @@ fi
 if [ "$SKIP_PROMPT" = false ]; then
   echo "This will delete ALL items and their associated sprites using the HTTP API at: $BASE_URL."
   if [ "$DELETE_FILES" = true ]; then
-    echo "It will also DELETE files under './bucket/sprites/items' on disk."
+    echo "It will also DELETE files under './bucket/cosmetics/items' on disk."
   fi
   read -p "Type 'YES' to continue: " CONFIRM
   if [ "$CONFIRM" != "YES" ]; then
@@ -78,7 +78,7 @@ else
     while IFS= read -r SPRITE_ID; do
       [ -z "$SPRITE_ID" ] && continue
       echo "- Deleting sprite $SPRITE_ID ..."
-      if ! curl -fsS -X DELETE "$BASE_URL/assets/sprites/items/$SPRITE_ID" >/dev/null; then
+      if ! curl -fsS -X DELETE "$BASE_URL/assets/cosmetics/items/$SPRITE_ID" >/dev/null; then
         echo "  Warning: failed to delete sprite $SPRITE_ID (might not exist)" >&2
       fi
     done <<< "$SPRITE_IDS"
@@ -96,8 +96,8 @@ else
   done <<< "$ITEM_IDS"
 fi
 
-echo "Fetching all item sprites from $BASE_URL/assets/sprites/items ..."
-ALL_SPRITES_JSON=$(curl -fsS "$BASE_URL/assets/sprites/items")
+echo "Fetching all item sprites from $BASE_URL/assets/cosmetics/items ..."
+ALL_SPRITES_JSON=$(curl -fsS "$BASE_URL/assets/cosmetics/items")
 REMAINING_SPRITE_IDS=$(echo "$ALL_SPRITES_JSON" | jq -r '.data.sprites[]?.id' 2>/dev/null || true)
 
 if [ -z "${REMAINING_SPRITE_IDS:-}" ]; then
@@ -107,7 +107,7 @@ else
   while IFS= read -r SPRITE_ID; do
     [ -z "$SPRITE_ID" ] && continue
     echo "- Deleting sprite $SPRITE_ID ..."
-    if ! curl -fsS -X DELETE "$BASE_URL/assets/sprites/items/$SPRITE_ID" >/dev/null; then
+    if ! curl -fsS -X DELETE "$BASE_URL/assets/cosmetics/items/$SPRITE_ID" >/dev/null; then
       echo "  Warning: failed to delete sprite $SPRITE_ID (might not exist)" >&2
     fi
   done <<< "$REMAINING_SPRITE_IDS"
@@ -115,16 +115,16 @@ fi
 
 if [ "$DELETE_FILES" = true ]; then
   if [ "$SKIP_PROMPT" = false ]; then
-    read -p "Also delete files under ./bucket/sprites/items? Type 'YES' to continue: " CONFIRM2
+    read -p "Also delete files under ./bucket/cosmetics/items? Type 'YES' to continue: " CONFIRM2
     if [ "$CONFIRM2" != "YES" ]; then
       echo "Skipping file deletion"
       echo "Reset via API completed"
       exit 0
     fi
   fi
-  echo "Deleting files under ./bucket/sprites/items..."
-  rm -rf ./bucket/sprites/items/* || true
-  echo "Deleted files under ./bucket/sprites/items"
+  echo "Deleting files under ./bucket/cosmetics/items..."
+  rm -rf ./bucket/cosmetics/items/* || true
+  echo "Deleted files under ./bucket/cosmetics/items"
 fi
 
 echo "Reset via API completed"
