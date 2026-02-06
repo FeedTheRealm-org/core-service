@@ -18,5 +18,4 @@ func (Category[T]) TableName() string {
 	return "categories"
 }
 
-type ItemCategory = Category[Item]
 type ModelCategory = Category[Model]
