@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  dtos.AddSpriteCategoryRequest:
+  dtos.AddCosmeticCategoryRequest:
     properties:
       category_name:
         type: string
@@ -21,6 +21,34 @@ definitions:
         type: string
       updated_at:
         type: string
+    type: object
+  dtos.CosmeticCategoryListResponse:
+    properties:
+      category_list:
+        items:
+          $ref: '#/definitions/dtos.CosmeticCategoryResponse'
+        type: array
+    type: object
+  dtos.CosmeticCategoryResponse:
+    properties:
+      category_id:
+        type: string
+      category_name:
+        type: string
+    type: object
+  dtos.CosmeticResponse:
+    properties:
+      cosmetic_id:
+        type: string
+      cosmetic_url:
+        type: string
+    type: object
+  dtos.CosmeticsListResponse:
+    properties:
+      cosmetics_list:
+        items:
+          $ref: '#/definitions/dtos.CosmeticResponse'
+        type: array
     type: object
   dtos.CreateAccountRequestDTO:
     properties:
@@ -157,34 +185,6 @@ definitions:
       character_name:
         type: string
     type: object
-  dtos.SpriteCategoryListResponse:
-    properties:
-      category_list:
-        items:
-          $ref: '#/definitions/dtos.SpriteCategoryResponse'
-        type: array
-    type: object
-  dtos.SpriteCategoryResponse:
-    properties:
-      category_id:
-        type: string
-      category_name:
-        type: string
-    type: object
-  dtos.SpriteResponse:
-    properties:
-      sprite_id:
-        type: string
-      sprite_url:
-        type: string
-    type: object
-  dtos.SpritesListResponse:
-    properties:
-      sprites_list:
-        items:
-          $ref: '#/definitions/dtos.SpriteResponse'
-        type: array
-    type: object
   dtos.UpdateItemSpriteRequest:
     properties:
       sprite_id:
@@ -269,6 +269,110 @@ info:
   title: FeedTheRealm Core Service API
   version: 0.1.0
 paths:
+  /assets/cosmetics:
+    put:
+      consumes:
+      - multipart/form-data
+      description: Uploads a cosmetic file.
+      parameters:
+      - description: Cosmetic file
+        in: formData
+        name: cosmetic
+        required: true
+        type: file
+      - description: Category ID
+        in: formData
+        name: category_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Uploaded cosmetic
+          schema:
+            $ref: '#/definitions/dtos.CosmeticResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: UploadCosmeticData
+      tags:
+      - assets-service
+  /assets/cosmetics/categories:
+    get:
+      description: Retrieves the list of existing categories UUIDs.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Category list
+          schema:
+            $ref: '#/definitions/dtos.CosmeticCategoryListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetCategoriesList
+      tags:
+      - assets-service
+    post:
+      consumes:
+      - application/json
+      description: Adds a new cosmetic category.
+      parameters:
+      - description: Category data
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AddCosmeticCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created category
+          schema:
+            $ref: '#/definitions/dtos.CosmeticCategoryResponse'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: AddCategory
+      tags:
+      - assets-service
+  /assets/cosmetics/categories/{category_id}:
+    get:
+      description: Retrieves the list of existing cosmetics UUIDs for a given category
+        UUID.
+      parameters:
+      - description: Category UUID
+        in: path
+        name: category_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cosmetic list
+          schema:
+            $ref: '#/definitions/dtos.CosmeticsListResponse'
+        "401":
+          description: Invalid credentials or invalid JWT token
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: GetCosmeticsListByCategory
+      tags:
+      - assets-service
   /assets/models:
     post:
       consumes:
@@ -465,133 +569,6 @@ paths:
       summary: Download model file
       tags:
       - Models
-  /assets/sprites:
-    put:
-      consumes:
-      - multipart/form-data
-      description: Uploads a sprite file.
-      parameters:
-      - description: Sprite file
-        in: formData
-        name: sprite
-        required: true
-        type: file
-      - description: Category ID
-        in: formData
-        name: category_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Uploaded sprite
-          schema:
-            $ref: '#/definitions/dtos.SpriteResponse'
-        "400":
-          description: Bad request body
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: UploadSpriteData
-      tags:
-      - assets-service
-  /assets/sprites/{sprite_id}:
-    get:
-      description: Downloads the sprite file for a given sprite UUID.
-      parameters:
-      - description: Sprite UUID
-        in: path
-        name: sprite_id
-        required: true
-        type: string
-      produces:
-      - application/octet-stream
-      responses:
-        "200":
-          description: Sprite file
-          schema:
-            type: file
-        "401":
-          description: Invalid credentials or invalid JWT token
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: DownloadSpriteData
-      tags:
-      - assets-service
-  /assets/sprites/categories:
-    get:
-      description: Retrieves the list of existing categories UUIDs.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Category list
-          schema:
-            $ref: '#/definitions/dtos.SpriteCategoryListResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: GetCategoriesList
-      tags:
-      - assets-service
-    post:
-      consumes:
-      - application/json
-      description: Adds a new sprite category.
-      parameters:
-      - description: Category data
-        in: body
-        name: category
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.AddSpriteCategoryRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created category
-          schema:
-            $ref: '#/definitions/dtos.SpriteCategoryResponse'
-        "400":
-          description: Bad request body
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: AddCategory
-      tags:
-      - assets-service
-  /assets/sprites/categories/{category_id}:
-    get:
-      description: Retrieves the list of existing sprites UUIDs for a given category
-        UUID.
-      parameters:
-      - description: Category UUID
-        in: path
-        name: category_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Sprite list
-          schema:
-            $ref: '#/definitions/dtos.SpritesListResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      summary: GetSpritesListByCategory
-      tags:
-      - assets-service
   /assets/sprites/items:
     get:
       description: Retrieves all item sprites.
