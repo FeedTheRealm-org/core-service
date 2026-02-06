@@ -30,19 +30,22 @@ func NewItemSpritesService(conf *config.Config, repository items.ItemSpritesRepo
 	}
 }
 
-func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID, files []*multipart.FileHeader) ([]*models.ItemSprite, error) {
+func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID, files []*multipart.FileHeader) ([]*models.Item, error) {
 	if len(ids) != len(files) {
 		return nil, fmt.Errorf("number of ids and files must match")
 	}
 
-	var result []*models.ItemSprite
+	var result []*models.Item
 	for i, fileHeader := range files {
 		id := ids[i]
 		file, err := fileHeader.Open()
 		if err != nil {
 			return nil, err
 		}
-		defer file.Close()
+
+		defer func() {
+			_ = file.Close()
+		}()
 
 		ext := filepath.Ext(fileHeader.Filename)
 		filePath := fmt.Sprintf("/items/worlds/%s/%s%s", worldID.String(), id.String(), ext)
@@ -50,7 +53,7 @@ func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID,
 			return nil, err
 		}
 
-		sprite := &models.ItemSprite{
+		sprite := &models.Item{
 			Id:  id,
 			Url: filePath,
 		}
@@ -66,11 +69,11 @@ func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID,
 	return result, nil
 }
 
-func (iss *itemSpritesService) GetSpriteById(id uuid.UUID) (*models.ItemSprite, error) {
+func (iss *itemSpritesService) GetSpriteById(id uuid.UUID) (*models.Item, error) {
 	return iss.repository.GetSpriteById(id)
 }
 
-func (iss *itemSpritesService) GetAllSprites() ([]models.ItemSprite, error) {
+func (iss *itemSpritesService) GetAllSprites() ([]models.Item, error) {
 	return iss.repository.GetAllSprites()
 }
 

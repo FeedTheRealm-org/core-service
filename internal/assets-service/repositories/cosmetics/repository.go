@@ -5,15 +5,17 @@ import (
 	"github.com/google/uuid"
 )
 
-// SpritesRepository defines the interface for sprites-related database operations.
-type SpritesRepository interface {
-	GetCategoriesList() ([]*models.Category, error)
+// CosmeticsRepository defines the interface for cosmetics-related database operations.
+type CosmeticsRepository interface {
+	GetCategoriesList() ([]*models.CosmeticCategory, error)
 
-	GetSpritesListByCategory(category uuid.UUID) ([]*models.Sprite, error)
+	GetCosmeticsListByCategory(category uuid.UUID) ([]*models.Cosmetic, error)
 
-	GetSpriteById(spriteId uuid.UUID) (*models.Sprite, error)
+	GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error)
 
-	AddCategory(category string) (*models.Category, error)
+	AddCategory(category string) (*models.CosmeticCategory, error)
 
-	CreateSprite(category uuid.UUID, sprite *models.Sprite) error
+	GetCategoryById(categoryId uuid.UUID) (*models.CosmeticCategory, error)
+
+	CreateCosmetic(category uuid.UUID, cosmetic *models.Cosmetic) error
 }

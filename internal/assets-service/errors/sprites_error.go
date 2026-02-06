@@ -1,16 +1,16 @@
 package errors
 
-// SpriteNotFound is returned when a requested sprite cannot be found.
-type SpriteNotFound struct {
+// CosmeticNotFound is returned when a requested sprite cannot be found.
+type CosmeticNotFound struct {
 	details string
 }
 
-func (e *SpriteNotFound) Error() string {
+func (e *CosmeticNotFound) Error() string {
 	return e.details
 }
 
-func NewSpriteNotFound(details string) *SpriteNotFound {
-	return &SpriteNotFound{
+func NewCosmeticNotFound(details string) *CosmeticNotFound {
+	return &CosmeticNotFound{
 		details: details,
 	}
 }

@@ -36,6 +36,11 @@ func NewOnDiskBucketRepository(bucketName string, conf *config.Config) (BucketRe
 func (r *onDiskBucketRepository) UploadFile(filePath, mimeType string, file multipart.File) error {
 	destPath := filepath.Join(r.bucketPath, filePath)
 
+	dir := filepath.Dir(destPath)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("creating directories: %w", err)
+	}
+
 	destFile, err := os.Create(destPath)
 	if err != nil {
 		return err

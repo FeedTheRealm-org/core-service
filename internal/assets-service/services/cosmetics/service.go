@@ -7,20 +7,19 @@ import (
 	"github.com/google/uuid"
 )
 
-type SpritesService interface {
-
+type CosmeticsService interface {
 	// GetCategoriesList retrieves a list of sprite categories.
-	GetCategoriesList() ([]*models.Category, error)
+	GetCategoriesList() ([]*models.CosmeticCategory, error)
 
-	// GetSpritesListByCategory retrieves a list of sprites for a given category.
-	GetSpritesListByCategory(category uuid.UUID) ([]*models.Sprite, error)
+	// GetCosmeticsListByCategory retrieves a list of cosmetics for a given category.
+	GetCosmeticsListByCategory(category uuid.UUID) ([]*models.Cosmetic, error)
 
-	// GetSpriteUrl handles the retrieval of sprite file URL.
-	GetSpriteUrl(spriteId uuid.UUID) (string, error)
+	// GetCosmeticById handles the retrieval of a cosmetic by its ID.
+	GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error)
 
-	// AddCategory handles the addition of a new sprite category.
-	AddCategory(category string) (*models.Category, error)
+	// UploadCosmeticData handles the upload of cosmetic file.
+	UploadCosmeticData(category uuid.UUID, cosmeticData multipart.File, ext string) (*models.Cosmetic, error)
 
-	// UploadSpriteData handles the upload of sprite file.
-	UploadSpriteData(category uuid.UUID, spriteData multipart.File, ext string) (*models.Sprite, error)
+	// AddCategory handles the addition of a new cosmetic category.
+	AddCategory(category string) (*models.CosmeticCategory, error)
 }

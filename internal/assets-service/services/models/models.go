@@ -38,7 +38,10 @@ func (ms *modelsService) PublishModels(worldId uuid.UUID, models []models.Model)
 		if err != nil {
 			return nil, err
 		}
-		defer file.Close()
+
+		defer func() {
+			_ = file.Close()
+		}()
 
 		filePath := fmt.Sprintf("/worlds/%s/models/%s/model.glb", worldId, models[i].ModelID)
 		if err := ms.bucketRepo.UploadFile(filePath, models[i].ModelFile.Header.Get("Content-Type"), file); err != nil {

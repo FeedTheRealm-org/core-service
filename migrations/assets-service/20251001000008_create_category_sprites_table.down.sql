@@ -1,5 +1,5 @@
-BEGIN;
+-- BEGIN;
 
-DROP TABLE IF EXISTS category_sprites;
+-- DROP TABLE IF EXISTS category_sprites;
 
-COMMIT;
+-- COMMIT;

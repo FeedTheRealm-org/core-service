@@ -22,7 +22,7 @@ func NewItemSpritesRepository(conf *config.Config, db *config.DB) ItemSpritesRep
 	}
 }
 
-func (isr *itemSpritesRepository) UpsertSprite(sprite *models.ItemSprite) error {
+func (isr *itemSpritesRepository) UpsertSprite(sprite *models.Item) error {
 	if err := isr.db.Conn.
 		Clauses(
 			clause.OnConflict{
@@ -35,8 +35,8 @@ func (isr *itemSpritesRepository) UpsertSprite(sprite *models.ItemSprite) error 
 	return nil
 }
 
-func (isr *itemSpritesRepository) GetSpriteById(id uuid.UUID) (*models.ItemSprite, error) {
-	var sprite models.ItemSprite
+func (isr *itemSpritesRepository) GetSpriteById(id uuid.UUID) (*models.Item, error) {
+	var sprite models.Item
 	if err := isr.db.Conn.Where("id = ?", id).First(&sprite).Error; err != nil {
 		if errors.IsRecordNotFound(err) {
 			return nil, assets_errors.NewItemSpriteNotFound("item sprite not found")
@@ -46,8 +46,8 @@ func (isr *itemSpritesRepository) GetSpriteById(id uuid.UUID) (*models.ItemSprit
 	return &sprite, nil
 }
 
-func (isr *itemSpritesRepository) GetAllSprites() ([]models.ItemSprite, error) {
-	var sprites []models.ItemSprite
+func (isr *itemSpritesRepository) GetAllSprites() ([]models.Item, error) {
+	var sprites []models.Item
 	if err := isr.db.Conn.Find(&sprites).Error; err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (isr *itemSpritesRepository) GetAllSprites() ([]models.ItemSprite, error) {
 }
 
 func (isr *itemSpritesRepository) DeleteSprite(id uuid.UUID) error {
-	if err := isr.db.Conn.Delete(&models.ItemSprite{}, id).Error; err != nil {
+	if err := isr.db.Conn.Delete(&models.Item{}, id).Error; err != nil {
 		return err
 	}
 	return nil

@@ -11,56 +11,61 @@ import (
 	"github.com/google/uuid"
 )
 
-type spritesService struct {
+type cosmeticsService struct {
 	conf *config.Config
 
-	spritesRepository cosmetics.SpritesRepository
-	bucketRepo        bucket.BucketRepository
+	cosmeticsRepository cosmetics.CosmeticsRepository
+	bucketRepo          bucket.BucketRepository
 }
 
-// NewSpritesService creates a new instance of SpritesService.
-func NewSpritesService(conf *config.Config, spritesRepository cosmetics.SpritesRepository, bucketRepo bucket.BucketRepository) SpritesService {
-	return &spritesService{
-		conf:              conf,
-		spritesRepository: spritesRepository,
-		bucketRepo:        bucketRepo,
+// NewCosmeticsService creates a new instance of CosmeticsService.
+func NewCosmeticsService(conf *config.Config, cosmeticsRepository cosmetics.CosmeticsRepository, bucketRepo bucket.BucketRepository) CosmeticsService {
+	return &cosmeticsService{
+		conf:                conf,
+		cosmeticsRepository: cosmeticsRepository,
+		bucketRepo:          bucketRepo,
 	}
 }
 
-func (ss *spritesService) GetCategoriesList() ([]*models.Category, error) {
-	return ss.spritesRepository.GetCategoriesList()
+func (ss *cosmeticsService) GetCategoriesList() ([]*models.CosmeticCategory, error) {
+	return ss.cosmeticsRepository.GetCategoriesList()
 }
 
-func (ss *spritesService) GetSpritesListByCategory(category uuid.UUID) ([]*models.Sprite, error) {
-	return ss.spritesRepository.GetSpritesListByCategory(category)
+func (ss *cosmeticsService) GetCosmeticsListByCategory(category uuid.UUID) ([]*models.Cosmetic, error) {
+	return ss.cosmeticsRepository.GetCosmeticsListByCategory(category)
 }
 
-func (ss *spritesService) GetSpriteUrl(spriteId uuid.UUID) (string, error) {
-	sprite, err := ss.spritesRepository.GetSpriteById(spriteId)
+func (ss *cosmeticsService) GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error) {
+	cosmetic, err := ss.cosmeticsRepository.GetCosmeticById(cosmeticId)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return sprite.Url, nil
+	return cosmetic, nil
 }
 
-func (ss *spritesService) AddCategory(category string) (*models.Category, error) {
-	return ss.spritesRepository.AddCategory(category)
+func (ss *cosmeticsService) AddCategory(category string) (*models.CosmeticCategory, error) {
+	return ss.cosmeticsRepository.AddCategory(category)
 }
 
-func (ss *spritesService) UploadSpriteData(category uuid.UUID, spriteData multipart.File, ext string) (*models.Sprite, error) {
-	spriteUniqueUrl := uuid.New().String()
+func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticData multipart.File, ext string) (*models.Cosmetic, error) {
+	cosmeticUniqueUrl := uuid.New().String()
 
-	filePath := fmt.Sprintf("/cosmetics/%s%s", spriteUniqueUrl, ext)
-	if err := ss.bucketRepo.UploadFile(filePath, "image/png", spriteData); err != nil {
+	category, err := ss.cosmeticsRepository.GetCategoryById(categoryId)
+	if err != nil {
 		return nil, err
 	}
 
-	sprite := &models.Sprite{
+	filePath := fmt.Sprintf("/%s/%s%s", category.Name, cosmeticUniqueUrl, ext)
+	if err := ss.bucketRepo.UploadFile(filePath, "image/png", cosmeticData); err != nil {
+		return nil, err
+	}
+
+	cosmetic := &models.Cosmetic{
 		Url: filePath,
 	}
-	if err := ss.spritesRepository.CreateSprite(category, sprite); err != nil {
+	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, cosmetic); err != nil {
 		return nil, err
 	}
 
-	return sprite, nil
+	return cosmetic, nil
 }
