@@ -6,6 +6,11 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
 	cosmetics_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/cosmetics"
 	cosmetics_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/cosmetics"
+
+	items_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/items"
+	items_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/items"
+	items_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/items"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,6 +30,21 @@ func SetupEndpointsForCosmeticsService(conf *config.Config, db *config.DB, g *gi
 	cosmeticsGroup.POST("/categories", cosmeticsController.AddCategory)
 }
 
+func SetupEndpointsForItemsService(conf *config.Config, db *config.DB, g *gin.RouterGroup, itemsBucketRepo bucket.BucketRepository) {
+	itemsRepo := items_repo.NewItemRepository(conf, db)
+	itemsService := items_service.NewItemService(conf, itemsRepo, itemsBucketRepo)
+	itemsController := items_controller.NewItemController(conf, itemsService)
+
+	/* Items Endpoints */
+	itemsGroup := g.Group("/items")
+	itemsGroup.GET("/categories/:id", itemsController.GetItemsListByCategory)
+	itemsGroup.GET(":id", itemsController.GetItemById)
+	itemsGroup.PUT("/categories/:id", itemsController.UploadItems)
+
+	/* ADMIN ONLY */
+	itemsGroup.POST("/categories", itemsController.AddCategory)
+}
+
 func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	g := r.Group("/assets")
 
@@ -33,23 +53,16 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 		return err
 	}
 
-	// worldBucketRepo, err := bucket.NewOnDiskBucketRepository("world", conf)
-	// if err != nil {
-	// 	return err
-	// }
+	worldBucketRepo, err := bucket.NewOnDiskBucketRepository("world", conf)
+	if err != nil {
+		return err
+	}
 
 	/* Cosmetics endpoints */
 	SetupEndpointsForCosmeticsService(conf, db, g, cosmeticsBucketRepo)
 
-	/* Items Endpoints */
-	// itemsRepo := items_repo.NewItemSpritesRepository(conf, db)
-	// itemsService := items_service.NewItemSpritesService(conf, itemsRepo, worldBucketRepo)
-	// itemsController := items_controller.NewItemSpritesController(conf, itemsService)
-
-	// itemsGroup := g.Group("/items")
-	// itemsGroup.GET("/categories/:id", itemsController.GetItemsListByCategory)
-	// itemsGroup.GET(":id", itemsController.GetItemById)
-	// itemsGroup.PUT("/categories/:id", itemsController.UploadItems)
+	/* Items endpoints */
+	SetupEndpointsForItemsService(conf, db, g, worldBucketRepo)
 
 	// /* Models Endpoints */
 	// modelsRepo := models_repo.NewModelsRepository(conf, db)

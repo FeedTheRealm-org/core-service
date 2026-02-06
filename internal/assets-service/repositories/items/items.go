@@ -9,54 +9,80 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type itemSpritesRepository struct {
+type itemRepository struct {
 	conf *config.Config
 	db   *config.DB
 }
 
-// NewItemSpritesRepository creates a new instance of ItemSpritesRepository.
-func NewItemSpritesRepository(conf *config.Config, db *config.DB) ItemSpritesRepository {
-	return &itemSpritesRepository{
+// NewItemRepository creates a new instance of ItemRepository.
+func NewItemRepository(conf *config.Config, db *config.DB) ItemRepository {
+	return &itemRepository{
 		conf: conf,
 		db:   db,
 	}
 }
 
-func (isr *itemSpritesRepository) UpsertSprite(sprite *models.Item) error {
+func (isr *itemRepository) UpsertItem(item *models.Item) error {
 	if err := isr.db.Conn.
 		Clauses(
 			clause.OnConflict{
 				Columns:   []clause.Column{{Name: "id"}},
 				DoUpdates: clause.AssignmentColumns([]string{"url", "updated_at"}),
 			},
-		).Create(sprite).Error; err != nil {
+		).Create(item).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (isr *itemSpritesRepository) GetSpriteById(id uuid.UUID) (*models.Item, error) {
-	var sprite models.Item
-	if err := isr.db.Conn.Where("id = ?", id).First(&sprite).Error; err != nil {
+func (isr *itemRepository) GetItemById(id uuid.UUID) (*models.Item, error) {
+	var item models.Item
+	if err := isr.db.Conn.Where("id = ?", id).First(&item).Error; err != nil {
 		if errors.IsRecordNotFound(err) {
 			return nil, assets_errors.NewItemSpriteNotFound("item sprite not found")
 		}
 		return nil, err
 	}
-	return &sprite, nil
+	return &item, nil
 }
 
-func (isr *itemSpritesRepository) GetAllSprites() ([]models.Item, error) {
-	var sprites []models.Item
-	if err := isr.db.Conn.Find(&sprites).Error; err != nil {
+func (isr *itemRepository) GetAllItems() ([]*models.Item, error) {
+	var items []*models.Item
+	if err := isr.db.Conn.Find(&items).Error; err != nil {
 		return nil, err
 	}
-	return sprites, nil
+	return items, nil
 }
 
-func (isr *itemSpritesRepository) DeleteSprite(id uuid.UUID) error {
+func (isr *itemRepository) GetItemsListByCategory(categoryId uuid.UUID) ([]*models.Item, error) {
+	var items []*models.Item
+	if err := isr.db.Conn.Where("category_id = ?", categoryId).Find(&items).Error; err != nil {
+		if errors.IsRecordNotFound(err) {
+			return nil, assets_errors.NewCategoryNotFound("category not found")
+		}
+		return nil, err
+	}
+	return items, nil
+}
+
+func (isr *itemRepository) DeleteSprite(id uuid.UUID) error {
 	if err := isr.db.Conn.Delete(&models.Item{}, id).Error; err != nil {
 		return err
 	}
 	return nil
+}
+
+func (isr *itemRepository) AddCategory(name string) (*models.ItemCategory, error) {
+	category := &models.ItemCategory{
+		Name: name,
+	}
+
+	if err := isr.db.Conn.Create(category).Error; err != nil {
+		if errors.IsDuplicateEntryError(err) {
+			return nil, assets_errors.NewCategoryConflict(err.Error())
+		}
+		return nil, err
+	}
+
+	return category, nil
 }

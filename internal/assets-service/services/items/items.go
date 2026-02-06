@@ -14,23 +14,23 @@ import (
 	"github.com/google/uuid"
 )
 
-type itemSpritesService struct {
+type itemService struct {
 	conf *config.Config
 
-	repository items.ItemSpritesRepository
+	repository items.ItemRepository
 	bucketRepo bucket.BucketRepository
 }
 
-// NewItemSpritesService creates a new instance of ItemSpritesService.
-func NewItemSpritesService(conf *config.Config, repository items.ItemSpritesRepository, bucketRepo bucket.BucketRepository) ItemSpritesService {
-	return &itemSpritesService{
+// NewItemService creates a new instance of ItemService.
+func NewItemService(conf *config.Config, repository items.ItemRepository, bucketRepo bucket.BucketRepository) ItemService {
+	return &itemService{
 		conf:       conf,
 		repository: repository,
 		bucketRepo: bucketRepo,
 	}
 }
 
-func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID, files []*multipart.FileHeader) ([]*models.Item, error) {
+func (is *itemService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID, files []*multipart.FileHeader) ([]*models.Item, error) {
 	if len(ids) != len(files) {
 		return nil, fmt.Errorf("number of ids and files must match")
 	}
@@ -49,56 +49,56 @@ func (iss *itemSpritesService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID,
 
 		ext := filepath.Ext(fileHeader.Filename)
 		filePath := fmt.Sprintf("/items/worlds/%s/%s%s", worldID.String(), id.String(), ext)
-		if err := iss.bucketRepo.UploadFile(filePath, fileHeader.Header.Get("Content-Type"), file); err != nil {
+		if err := is.bucketRepo.UploadFile(filePath, fileHeader.Header.Get("Content-Type"), file); err != nil {
 			return nil, err
 		}
 
-		sprite := &models.Item{
+		item := &models.Item{
 			Id:  id,
 			Url: filePath,
 		}
-		if err := iss.repository.UpsertSprite(sprite); err != nil {
+		if err := is.repository.UpsertItem(item); err != nil {
 			_ = os.Remove(filePath)
 			return nil, err
 		}
 
-		logger.Logger.Infof("Item sprite uploaded: %s (ID: %s)", filePath, sprite.Id)
+		logger.Logger.Infof("Item sprite uploaded: %s (ID: %s)", filePath, item.Id)
 
-		result = append(result, sprite)
+		result = append(result, item)
 	}
 	return result, nil
 }
 
-func (iss *itemSpritesService) GetSpriteById(id uuid.UUID) (*models.Item, error) {
-	return iss.repository.GetSpriteById(id)
+func (is *itemService) GetItemById(id uuid.UUID) (*models.Item, error) {
+	return is.repository.GetItemById(id)
 }
 
-func (iss *itemSpritesService) GetAllSprites() ([]models.Item, error) {
-	return iss.repository.GetAllSprites()
+func (is *itemService) GetItemsListByCategory(categoryId uuid.UUID) ([]*models.Item, error) {
+	return is.repository.GetItemsListByCategory(categoryId)
 }
 
-func (iss *itemSpritesService) GetSpriteFile(id uuid.UUID) (string, error) {
-	sprite, err := iss.repository.GetSpriteById(id)
-	if err != nil {
-		return "", err
-	}
-	return sprite.Url, nil
+func (is *itemService) GetAllItems() ([]*models.Item, error) {
+	return is.repository.GetAllItems()
 }
 
-func (iss *itemSpritesService) DeleteSprite(id uuid.UUID) error {
-	sprite, err := iss.repository.GetSpriteById(id)
+func (is *itemService) DeleteSprite(id uuid.UUID) error {
+	sprite, err := is.repository.GetItemById(id)
 	if err != nil {
 		return err
 	}
 
-	if err := iss.repository.DeleteSprite(id); err != nil {
+	if err := is.repository.DeleteSprite(id); err != nil {
 		return err
 	}
 
-	if err := iss.bucketRepo.DeleteFile(sprite.Url); err != nil {
+	if err := is.bucketRepo.DeleteFile(sprite.Url); err != nil {
 		logger.Logger.Warnf("Failed to delete sprite file from bucket %s: %v", sprite.Url, err)
 	}
 
 	logger.Logger.Infof("Item sprite deleted: %s (ID: %s)", sprite.Url, id)
 	return nil
+}
+
+func (is *itemService) AddCategory(name string) (*models.ItemCategory, error) {
+	return is.repository.AddCategory(name)
 }

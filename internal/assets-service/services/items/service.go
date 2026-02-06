@@ -7,21 +7,19 @@ import (
 	"github.com/google/uuid"
 )
 
-// ItemSpritesService defines the interface for item sprite-related business logic operations.
-type ItemSpritesService interface {
+// ItemService defines the interface for item-related business logic operations.
+type ItemService interface {
 	// UploadSprites uploads or overwrites multiple sprite files with provided IDs for a given world and saves their metadata.
 	// The ids/files must be paired as id_N/sprite_N from the form. Existing sprites with the same ID will be overwritten.
 	UploadSprites(worldID uuid.UUID, ids []uuid.UUID, files []*multipart.FileHeader) ([]*models.Item, error)
 
-	// GetSpriteById retrieves a sprite by its ID.
-	GetSpriteById(id uuid.UUID) (*models.Item, error)
+	// GetItemById retrieves an item by its ID.
+	GetItemById(id uuid.UUID) (*models.Item, error)
 
-	// GetAllSprites retrieves all item sprites.
-	GetAllSprites() ([]models.Item, error)
+	GetItemsListByCategory(categoryId uuid.UUID) ([]*models.Item, error)
 
-	// GetSpriteFile retrieves the file path for a sprite.
-	GetSpriteFile(id uuid.UUID) (string, error)
+	// GetAllItems retrieves all items.
+	GetAllItems() ([]*models.Item, error)
 
-	// DeleteSprite deletes a sprite by its ID and removes the file.
-	DeleteSprite(id uuid.UUID) error
+	AddCategory(name string) (*models.ItemCategory, error)
 }

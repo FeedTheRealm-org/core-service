@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
-	"os"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
@@ -16,17 +15,64 @@ import (
 	"github.com/google/uuid"
 )
 
-type itemSpritesController struct {
+type itemController struct {
 	conf    *config.Config
-	service items.ItemSpritesService
+	service items.ItemService
 }
 
-// NewItemSpritesController creates a new instance of ItemSpritesController.
-func NewItemSpritesController(conf *config.Config, service items.ItemSpritesService) ItemSpritesController {
-	return &itemSpritesController{
+// NewItemController creates a new instance of ItemController.
+func NewItemController(conf *config.Config, service items.ItemService) ItemController {
+	return &itemController{
 		conf:    conf,
 		service: service,
 	}
+}
+
+func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
+	categoryId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid category_id: " + err.Error()))
+		return
+	}
+
+	itemsList, err := ic.service.GetItemsListByCategory(categoryId)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.ItemListResponse{
+		Items: make([]dtos.ItemResponse, len(itemsList)),
+	}
+	for idx, item := range itemsList {
+		res.Items[idx] = dtos.ItemResponse{
+			Id:  item.Id,
+			Url: item.Url,
+		}
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
+}
+
+func (ic *itemController) GetItemById(c *gin.Context) {
+	itemId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid item_id: " + err.Error()))
+		return
+	}
+
+	item, err := ic.service.GetItemById(itemId)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.ItemResponse{
+		Id:  item.Id,
+		Url: item.Url,
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
 // @Summary UploadItemSprites
@@ -35,13 +81,13 @@ func NewItemSpritesController(conf *config.Config, service items.ItemSpritesServ
 // @Accept multipart/form-data
 // @Produce json
 // @Param world_id path string true "World ID" format(uuid)
-// @Param ids[] formData string true "Sprite IDs (UUIDs), one per file"
+// @Param ids[] formData string true "Item IDs (UUIDs), one per file"
 // @Param sprites[] formData file true "Item sprite files (PNG o JPEG)"
-// @Success 201 {object} dtos.ItemSpritesListResponse "Uploaded item sprites"
+// @Success 201 {object} dtos.ItemListResponse "Uploaded item sprites"
 // @Failure 400 {object} dtos.ErrorResponse "Bad request"
 // @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/sprites/items/{world_id} [post]
-func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
+func (ic *itemController) UploadItems(c *gin.Context) {
 	worldIDStr := c.Param("world_id")
 	if worldIDStr == "" {
 		_ = c.Error(errors.NewBadRequestError("world_id is required"))
@@ -73,7 +119,7 @@ func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
 			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid UUID in id[%d]: %s", i, idVal)))
 			return
 		}
-		if spriteFile.Size > isc.conf.Assets.MaxUploadSizeBytes {
+		if spriteFile.Size > ic.conf.Assets.MaxUploadSizeBytes {
 			_ = c.Error(errors.NewBadRequestError("file size exceeds the limit"))
 			return
 		}
@@ -99,118 +145,51 @@ func (isc *itemSpritesController) UploadItemSprite(c *gin.Context) {
 		seen[id] = struct{}{}
 	}
 
-	sprites, err := isc.service.UploadSprites(worldID, ids, files)
+	sprites, err := ic.service.UploadSprites(worldID, ids, files)
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
-	responseSprites := make([]dtos.ItemSpriteResponse, len(sprites))
+	responseSprites := make([]dtos.ItemResponse, len(sprites))
 	for i, sprite := range sprites {
-		responseSprites[i] = dtos.ItemSpriteResponse{
+		responseSprites[i] = dtos.ItemResponse{
 			Id:        sprite.Id,
 			Url:       sprite.Url,
 			CreatedAt: sprite.CreatedAt,
 			UpdatedAt: sprite.UpdatedAt,
 		}
 	}
-	res := &dtos.ItemSpritesListResponse{
-		Sprites: responseSprites,
+	res := &dtos.ItemListResponse{
+		Items: responseSprites,
 	}
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
-// @Summary GetAllItemSprites
-// @Description Retrieves all item sprites.
-// @Tags assets-service
-// @Produce json
-// @Success 200 {object} dtos.ItemSpritesListResponse "List of item sprites"
-// @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /assets/sprites/items [get]
-func (isc *itemSpritesController) GetAllItemSprites(c *gin.Context) {
-	sprites, err := isc.service.GetAllSprites()
-	if err != nil {
-		_ = c.Error(err)
+func (ic *itemController) AddCategory(c *gin.Context) {
+	req := &dtos.AddItemCategoryRequest{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		_ = c.Error(errors.NewBadRequestError(err.Error()))
 		return
 	}
 
-	responseSprites := make([]dtos.ItemSpriteResponse, len(sprites))
-	for i, sprite := range sprites {
-		responseSprites[i] = dtos.ItemSpriteResponse{
-			Id:        sprite.Id,
-			Url:       sprite.Url,
-			CreatedAt: sprite.CreatedAt,
-			UpdatedAt: sprite.UpdatedAt,
-		}
-	}
-
-	res := &dtos.ItemSpritesListResponse{
-		Sprites: responseSprites,
-	}
-
-	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
-}
-
-// @Summary DownloadItemSprite
-// @Description Downloads an item sprite by its ID.
-// @Tags assets-service
-// @Produce octet-stream
-// @Param sprite_id path string true "Item sprite ID"
-// @Success 200 {file} file "Item sprite file"
-// @Failure 400 {object} dtos.ErrorResponse "Bad request"
-// @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Failure 404 {object} dtos.ErrorResponse "Sprite not found"
-// @Router /assets/sprites/items/{sprite_id} [get]
-func (isc *itemSpritesController) DownloadItemSprite(c *gin.Context) {
-	spriteIdStr := c.Param("sprite_id")
-	spriteId, err := uuid.Parse(spriteIdStr)
-	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid sprite ID format"))
+	if len(req.CategoryName) < 3 || len(req.CategoryName) > 32 {
+		_ = c.Error(errors.NewBadRequestError("category name must be between 3 and 32 characters"))
 		return
 	}
 
-	sprite, err := isc.service.GetSpriteById(spriteId)
+	category, err := ic.service.AddCategory(req.CategoryName)
 	if err != nil {
-		if _, ok := err.(*assets_errors.ItemSpriteNotFound); ok {
-			_ = c.Error(errors.NewNotFoundError("sprite not found"))
+		if _, ok := err.(*assets_errors.CategoryConflict); ok {
+			_ = c.Error(errors.NewConflictError("item category name already exists"))
 			return
 		}
 		_ = c.Error(err)
 		return
 	}
 
-	if _, err := os.Stat(sprite.Url); os.IsNotExist(err) {
-		_ = c.Error(errors.NewNotFoundError("sprite file not found on disk"))
-		return
+	res := &dtos.ItemCategoryResponse{
+		CategoryId:   category.Id,
+		CategoryName: category.Name,
 	}
-
-	c.File(sprite.Url)
-}
-
-// @Summary DeleteItemSprite
-// @Description Deletes an item sprite by its ID.
-// @Tags assets-service
-// @Param sprite_id path string true "Item sprite ID"
-// @Success 200 {object} map[string]string "Sprite deleted successfully"
-// @Failure 400 {object} dtos.ErrorResponse "Bad request"
-// @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Failure 404 {object} dtos.ErrorResponse "Sprite not found"
-// @Router /assets/sprites/items/{sprite_id} [delete]
-func (isc *itemSpritesController) DeleteItemSprite(c *gin.Context) {
-	spriteIdStr := c.Param("sprite_id")
-	spriteId, err := uuid.Parse(spriteIdStr)
-	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid sprite ID format"))
-		return
-	}
-
-	if err := isc.service.DeleteSprite(spriteId); err != nil {
-		if _, ok := err.(*assets_errors.ItemSpriteNotFound); ok {
-			_ = c.Error(errors.NewNotFoundError("sprite not found"))
-			return
-		}
-		_ = c.Error(err)
-		return
-	}
-
-	common_handlers.HandleSuccessResponse(c, http.StatusOK, gin.H{"message": "sprite deleted successfully"})
+	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
