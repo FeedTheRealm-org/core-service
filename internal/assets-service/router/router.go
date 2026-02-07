@@ -38,9 +38,9 @@ func SetupEndpointsForItemsService(conf *config.Config, db *config.DB, g *gin.Ro
 
 	/* Items Endpoints */
 	itemsGroup := g.Group("/items")
-	itemsGroup.GET("/categories/:id", itemsController.GetItemsListByCategory)
+	itemsGroup.GET("/world/:world_id/categories/:category_id", itemsController.GetItemsListByCategory)
 	itemsGroup.GET(":id", itemsController.GetItemById)
-	itemsGroup.PUT("/categories/:id", itemsController.UploadItems)
+	itemsGroup.PUT("/world/:world_id/categories/:category_id", itemsController.UploadItems)
 
 	/* ADMIN ONLY */
 	itemsGroup.POST("/categories", itemsController.AddCategory)

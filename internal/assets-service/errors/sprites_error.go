@@ -74,3 +74,18 @@ func NewItemCategoryNotFound(categoryId string) *ItemCategoryNotFound {
 		CategoryId: categoryId,
 	}
 }
+
+// WorldNotFound is returned when a requested world cannot be found.
+type WorldNotFound struct {
+	WorldId string
+}
+
+func (e *WorldNotFound) Error() string {
+	return "World with ID " + e.WorldId + " does not exist"
+}
+
+func NewWorldNotFound(worldId string) *WorldNotFound {
+	return &WorldNotFound{
+		WorldId: worldId,
+	}
+}

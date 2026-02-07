@@ -29,13 +29,19 @@ func NewItemController(conf *config.Config, service items.ItemService) ItemContr
 }
 
 func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
-	categoryId, err := uuid.Parse(c.Param("id"))
+	worldId, err := uuid.Parse(c.Param("world_id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
+		return
+	}
+
+	categoryId, err := uuid.Parse(c.Param("category_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid category_id: " + err.Error()))
 		return
 	}
 
-	itemsList, err := ic.service.GetItemsListByCategory(categoryId)
+	itemsList, err := ic.service.GetItemsListByCategory(worldId, categoryId)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -81,21 +87,23 @@ func (ic *itemController) GetItemById(c *gin.Context) {
 // @Accept multipart/form-data
 // @Produce json
 // @Param world_id path string true "World ID" format(uuid)
+// @Param category_id path string true "Category ID" format(uuid)
 // @Param ids[] formData string true "Item IDs (UUIDs), one per file"
 // @Param sprites[] formData file true "Item sprite files (PNG o JPEG)"
 // @Success 201 {object} dtos.ItemListResponse "Uploaded item sprites"
 // @Failure 400 {object} dtos.ErrorResponse "Bad request"
 // @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /assets/sprites/items/{world_id} [post]
+// @Router /assets/sprites/items/{world_id}/{category_id} [post]
 func (ic *itemController) UploadItems(c *gin.Context) {
-	worldIDStr := c.Param("world_id")
-	if worldIDStr == "" {
-		_ = c.Error(errors.NewBadRequestError("world_id is required"))
-		return
-	}
-	worldID, err := uuid.Parse(worldIDStr)
+	worldId, err := uuid.Parse(c.Param("world_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid world_id format"))
+		return
+	}
+
+	categoryId, err := uuid.Parse(c.Param("category_id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid category_id format"))
 		return
 	}
 
@@ -109,6 +117,7 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 
 	var ids []uuid.UUID
 	var files []*multipart.FileHeader
+
 	i := 0
 	for {
 		i++
@@ -154,7 +163,7 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 		seen[id] = struct{}{}
 	}
 
-	sprites, err := ic.service.UploadSprites(worldID, ids, files)
+	sprites, err := ic.service.UploadSprites(worldId, categoryId, ids, files)
 	if err != nil {
 		_ = c.Error(err)
 		return

@@ -54,14 +54,29 @@ func (isr *itemRepository) GetAllItems() ([]*models.Item, error) {
 	return items, nil
 }
 
-func (isr *itemRepository) GetItemsListByCategory(categoryId uuid.UUID) ([]*models.Item, error) {
+func (isr *itemRepository) GetItemsListByCategory(worldid uuid.UUID, categoryId uuid.UUID) ([]*models.Item, error) {
 	var items []*models.Item
+
+	if err := isr.db.Conn.Where("world_id = ?", worldid).Find(&items).Error; err != nil {
+		if errors.IsRecordNotFound(err) {
+			return nil, assets_errors.NewWorldNotFound("category not found")
+		}
+		return nil, err
+	}
+
 	if err := isr.db.Conn.Where("category_id = ?", categoryId).Find(&items).Error; err != nil {
 		if errors.IsRecordNotFound(err) {
 			return nil, assets_errors.NewCategoryNotFound("category not found")
 		}
 		return nil, err
 	}
+
+	if err := isr.db.Conn.
+		Where("world_id = ? AND category_id = ?", worldid, categoryId).
+		Find(&items).Error; err != nil {
+		return nil, err
+	}
+
 	return items, nil
 }
 

@@ -30,7 +30,7 @@ func NewItemService(conf *config.Config, repository items.ItemRepository, bucket
 	}
 }
 
-func (is *itemService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID, files []*multipart.FileHeader) ([]*models.Item, error) {
+func (is *itemService) UploadSprites(worldID uuid.UUID, categoryId uuid.UUID, ids []uuid.UUID, files []*multipart.FileHeader) ([]*models.Item, error) {
 	if len(ids) != len(files) {
 		return nil, fmt.Errorf("number of ids and files must match")
 	}
@@ -48,14 +48,16 @@ func (is *itemService) UploadSprites(worldID uuid.UUID, ids []uuid.UUID, files [
 		}()
 
 		ext := filepath.Ext(fileHeader.Filename)
-		filePath := fmt.Sprintf("/items/worlds/%s/%s%s", worldID.String(), id.String(), ext)
+		filePath := fmt.Sprintf("/items/worlds/%s/categories/%s/%s%s", worldID.String(), categoryId.String(), id.String(), ext)
 		if err := is.bucketRepo.UploadFile(filePath, fileHeader.Header.Get("Content-Type"), file); err != nil {
 			return nil, err
 		}
 
 		item := &models.Item{
-			Id:  id,
-			Url: filePath,
+			Id:         id,
+			Url:        filePath,
+			WorldID:    worldID,
+			CategoryID: categoryId,
 		}
 		if err := is.repository.UpsertItem(item); err != nil {
 			_ = os.Remove(filePath)
@@ -73,8 +75,8 @@ func (is *itemService) GetItemById(id uuid.UUID) (*models.Item, error) {
 	return is.repository.GetItemById(id)
 }
 
-func (is *itemService) GetItemsListByCategory(categoryId uuid.UUID) ([]*models.Item, error) {
-	return is.repository.GetItemsListByCategory(categoryId)
+func (is *itemService) GetItemsListByCategory(worldId uuid.UUID, categoryId uuid.UUID) ([]*models.Item, error) {
+	return is.repository.GetItemsListByCategory(worldId, categoryId)
 }
 
 func (is *itemService) GetAllItems() ([]*models.Item, error) {

@@ -11,12 +11,12 @@ import (
 type ItemService interface {
 	// UploadSprites uploads or overwrites multiple sprite files with provided IDs for a given world and saves their metadata.
 	// The ids/files must be paired as id_N/sprite_N from the form. Existing sprites with the same ID will be overwritten.
-	UploadSprites(worldID uuid.UUID, ids []uuid.UUID, files []*multipart.FileHeader) ([]*models.Item, error)
+	UploadSprites(worldID uuid.UUID, categoryId uuid.UUID, ids []uuid.UUID, files []*multipart.FileHeader) ([]*models.Item, error)
 
 	// GetItemById retrieves an item by its ID.
 	GetItemById(id uuid.UUID) (*models.Item, error)
 
-	GetItemsListByCategory(categoryId uuid.UUID) ([]*models.Item, error)
+	GetItemsListByCategory(worldId uuid.UUID, categoryId uuid.UUID) ([]*models.Item, error)
 
 	// GetAllItems retrieves all items.
 	GetAllItems() ([]*models.Item, error)
