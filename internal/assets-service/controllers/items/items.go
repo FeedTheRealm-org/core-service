@@ -2,7 +2,6 @@ package items
 
 import (
 	"fmt"
-	"mime/multipart"
 	"net/http"
 
 	"github.com/FeedTheRealm-org/core-service/config"
@@ -107,76 +106,39 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 		return
 	}
 
-	// TODO: The fucking controllers shouldn't have business logic.
-	// (i.e. we don't accept GIF files, that's for service layer)
-	/*
-		for sprite in sprites {
-			ic.service.uploadSprite(worldID, categoryId, spriteFile)
-		}
-	*/
+	responseSprites := make([]dtos.ItemResponse, 0)
+	if len(c.Request.Form["ids[]"]) == 0 {
+		_ = c.Error(errors.NewBadRequestError("must provide at least one ids[N] and sprites[N] pair"))
+		return
+	}
 
-	var ids []uuid.UUID
-	var files []*multipart.FileHeader
-
-	i := 0
-	for {
-		i++
-		idKey := fmt.Sprintf("id[%d]", i)
-		spriteKey := fmt.Sprintf("sprite[%d]", i)
-		idVal := c.PostForm(idKey)
-		if idVal == "" {
-			break
+	for i, idStr := range c.Request.Form["ids[]"] {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid id format for id[%d]: %s", i, err.Error())))
+			return
 		}
-		spriteFile, err := c.FormFile(spriteKey)
+
+		spriteFile, err := c.FormFile(fmt.Sprintf("sprites[%d]", i))
 		if err != nil {
 			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("Missing sprite file for id[%d]", i)))
 			return
 		}
-		id, err := uuid.Parse(idVal)
+
+		item, err := ic.service.UploadSprite(worldId, categoryId, id, spriteFile)
 		if err != nil {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid UUID in id[%d]: %s", i, idVal)))
+			_ = c.Error(err)
 			return
 		}
-		if spriteFile.Size > ic.conf.Assets.MaxUploadSizeBytes {
-			_ = c.Error(errors.NewBadRequestError("file size exceeds the limit"))
-			return
-		}
-		contentType := spriteFile.Header.Get("Content-Type")
-		if contentType != "image/png" && contentType != "image/jpeg" && contentType != "application/octet-stream" {
-			_ = c.Error(errors.NewBadRequestError("file must be PNG, JPEG, or octet-stream format"))
-			return
-		}
-		ids = append(ids, id)
-		files = append(files, spriteFile)
-	}
-	if len(ids) == 0 || len(files) == 0 || len(ids) != len(files) {
-		_ = c.Error(errors.NewBadRequestError("must provide at least one id[N] and sprite[N] pair, and all pairs must be complete"))
-		return
-	}
-	// Check for duplicate IDs in the same request
-	seen := make(map[uuid.UUID]struct{})
-	for _, id := range ids {
-		if _, exists := seen[id]; exists {
-			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("duplicate id detected in request: %s", id)})
-			return
-		}
-		seen[id] = struct{}{}
+
+		responseSprites = append(responseSprites, dtos.ItemResponse{
+			Id:        item.Id,
+			Url:       item.Url,
+			CreatedAt: item.CreatedAt,
+			UpdatedAt: item.UpdatedAt,
+		})
 	}
 
-	sprites, err := ic.service.UploadSprites(worldId, categoryId, ids, files)
-	if err != nil {
-		_ = c.Error(err)
-		return
-	}
-	responseSprites := make([]dtos.ItemResponse, len(sprites))
-	for i, sprite := range sprites {
-		responseSprites[i] = dtos.ItemResponse{
-			Id:        sprite.Id,
-			Url:       sprite.Url,
-			CreatedAt: sprite.CreatedAt,
-			UpdatedAt: sprite.UpdatedAt,
-		}
-	}
 	res := &dtos.ItemListResponse{
 		Items: responseSprites,
 	}

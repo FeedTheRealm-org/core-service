@@ -30,45 +30,47 @@ func NewItemService(conf *config.Config, repository items.ItemRepository, bucket
 	}
 }
 
-func (is *itemService) UploadSprites(worldID uuid.UUID, categoryId uuid.UUID, ids []uuid.UUID, files []*multipart.FileHeader) ([]*models.Item, error) {
-	if len(ids) != len(files) {
-		return nil, fmt.Errorf("number of ids and files must match")
+func (is *itemService) UploadSprite(worldID uuid.UUID, categoryId uuid.UUID, id uuid.UUID, fileHeader *multipart.FileHeader) (*models.Item, error) {
+	file, err := fileHeader.Open()
+	if err != nil {
+		return nil, err
 	}
 
-	var result []*models.Item
-	for i, fileHeader := range files {
-		id := ids[i]
-		file, err := fileHeader.Open()
-		if err != nil {
-			return nil, err
+	defer func() {
+		_ = file.Close()
+	}()
+
+	if is.conf != nil {
+		if fileHeader.Size > is.conf.Assets.MaxUploadSizeBytes {
+			return nil, fmt.Errorf("file size exceeds the limit")
 		}
-
-		defer func() {
-			_ = file.Close()
-		}()
-
-		ext := filepath.Ext(fileHeader.Filename)
-		filePath := fmt.Sprintf("/items/worlds/%s/categories/%s/%s%s", worldID.String(), categoryId.String(), id.String(), ext)
-		if err := is.bucketRepo.UploadFile(filePath, fileHeader.Header.Get("Content-Type"), file); err != nil {
-			return nil, err
-		}
-
-		item := &models.Item{
-			Id:         id,
-			Url:        filePath,
-			WorldID:    worldID,
-			CategoryID: categoryId,
-		}
-		if err := is.repository.UpsertItem(item); err != nil {
-			_ = os.Remove(filePath)
-			return nil, err
-		}
-
-		logger.Logger.Infof("Item sprite uploaded: %s (ID: %s)", filePath, item.Id)
-
-		result = append(result, item)
 	}
-	return result, nil
+
+	contentType := fileHeader.Header.Get("Content-Type")
+	if contentType != "image/png" && contentType != "image/jpeg" && contentType != "application/octet-stream" {
+		return nil, fmt.Errorf("file must be PNG, JPEG, or octet-stream format")
+	}
+
+	ext := filepath.Ext(fileHeader.Filename)
+	filePath := fmt.Sprintf("/items/worlds/%s/categories/%s/%s%s", worldID.String(), categoryId.String(), id.String(), ext)
+	if err := is.bucketRepo.UploadFile(filePath, contentType, file); err != nil {
+		return nil, err
+	}
+
+	item := &models.Item{
+		Id:         id,
+		Url:        filePath,
+		WorldID:    worldID,
+		CategoryID: categoryId,
+	}
+	if err := is.repository.UpsertItem(item); err != nil {
+		_ = os.Remove(filePath)
+		return nil, err
+	}
+
+	logger.Logger.Infof("Item sprite uploaded: %s (ID: %s)", filePath, item.Id)
+
+	return item, nil
 }
 
 func (is *itemService) GetItemById(id uuid.UUID) (*models.Item, error) {
