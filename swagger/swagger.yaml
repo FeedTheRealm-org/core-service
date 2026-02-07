@@ -185,6 +185,44 @@ definitions:
       character_name:
         type: string
     type: object
+  dtos.RefreshVerificationRequestDTO:
+    properties:
+      email:
+        type: string
+    type: object
+  dtos.RefreshVerificationResponseDTO:
+    properties:
+      email:
+        type: string
+    type: object
+  dtos.SpriteCategoryListResponse:
+    properties:
+      category_list:
+        items:
+          $ref: '#/definitions/dtos.SpriteCategoryResponse'
+        type: array
+    type: object
+  dtos.SpriteCategoryResponse:
+    properties:
+      category_id:
+        type: string
+      category_name:
+        type: string
+    type: object
+  dtos.SpriteResponse:
+    properties:
+      sprite_id:
+        type: string
+      sprite_url:
+        type: string
+    type: object
+  dtos.SpritesListResponse:
+    properties:
+      sprites_list:
+        items:
+          $ref: '#/definitions/dtos.SpriteResponse'
+        type: array
+    type: object
   dtos.UpdateItemSpriteRequest:
     properties:
       sprite_id:
@@ -716,6 +754,36 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: Login
+      tags:
+      - authentication-service
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Request a new verification code to be sent to the user's email
+      parameters:
+      - description: Refresh verification data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.RefreshVerificationRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Refresh requested
+          schema:
+            $ref: '#/definitions/dtos.RefreshVerificationResponseDTO'
+        "400":
+          description: Bad request body
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Refresh verification code
       tags:
       - authentication-service
   /auth/signup:

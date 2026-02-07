@@ -24,6 +24,7 @@ func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config, db *co
 	g.POST("/signup", accountController.CreateAccount)
 	g.POST("/login", accountController.LoginAccount)
 	g.POST("/verify", accountController.VerifyAccount)
+	g.POST("/refresh", accountController.RefreshVerification)
 	g.GET("/check-session", accountController.CheckSessionExpiration)
 
 	return nil

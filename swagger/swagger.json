@@ -670,6 +670,52 @@
                 }
             }
         },
+        "/auth/refresh": {
+            "post": {
+                "description": "Request a new verification code to be sent to the user's email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Refresh verification code",
+                "parameters": [
+                    {
+                        "description": "Refresh verification data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RefreshVerificationRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Refresh requested",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RefreshVerificationResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/signup": {
             "post": {
                 "description": "Create a new user account",
@@ -1627,6 +1673,66 @@
                 },
                 "character_name": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.RefreshVerificationRequestDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.RefreshVerificationResponseDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.SpriteCategoryListResponse": {
+            "type": "object",
+            "properties": {
+                "category_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.SpriteCategoryResponse"
+                    }
+                }
+            }
+        },
+        "dtos.SpriteCategoryResponse": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "string"
+                },
+                "category_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.SpriteResponse": {
+            "type": "object",
+            "properties": {
+                "sprite_id": {
+                    "type": "string"
+                },
+                "sprite_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.SpritesListResponse": {
+            "type": "object",
+            "properties": {
+                "sprites_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.SpriteResponse"
+                    }
                 }
             }
         },
