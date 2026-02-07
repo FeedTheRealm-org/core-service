@@ -98,6 +98,15 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 		_ = c.Error(errors.NewBadRequestError("invalid world_id format"))
 		return
 	}
+
+	// TODO: The fucking controllers shouldn't have business logic.
+	// (i.e. we don't accept GIF files, that's for service layer)
+	/*
+		for sprite in sprites {
+			ic.service.uploadSprite(worldID, categoryId, spriteFile)
+		}
+	*/
+
 	var ids []uuid.UUID
 	var files []*multipart.FileHeader
 	i := 0
