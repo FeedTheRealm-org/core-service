@@ -29,7 +29,7 @@ func NewModelsController(conf *config.Config, modelService service.ModelsService
 	}
 }
 
-func (mc *modelsController) ListAssets(c *gin.Context) {
+func (mc *modelsController) GetModelsList(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		_ = c.Error(errors.NewUnauthorizedError(err.Error()))

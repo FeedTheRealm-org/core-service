@@ -3,14 +3,15 @@ package router
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	cosmetics_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/cosmetics"
+	items_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/items"
+	models_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/models"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
 	cosmetics_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/cosmetics"
-	cosmetics_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/cosmetics"
-
-	items_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/items"
 	items_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/items"
+	models_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/models"
+	cosmetics_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/cosmetics"
 	items_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/items"
-
+	models_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -45,6 +46,16 @@ func SetupEndpointsForItemsService(conf *config.Config, db *config.DB, g *gin.Ro
 	itemsGroup.POST("/categories", itemsController.AddCategory)
 }
 
+func SetupEndpointsForModelsService(conf *config.Config, db *config.DB, g *gin.RouterGroup, worldBucketRepo bucket.BucketRepository) {
+	modelsRepo := models_repo.NewModelsRepository(conf, db)
+	modelsService := models_service.NewModelsService(conf, modelsRepo, worldBucketRepo)
+	modelsController := models_controller.NewModelsController(conf, modelsService)
+
+	modelsGroup := g.Group("/models")
+	modelsGroup.GET("/world/:world_id", modelsController.GetModelsList)
+	modelsGroup.PUT("/world/:world_id", modelsController.UploadModels)
+}
+
 func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	g := r.Group("/assets")
 
@@ -65,19 +76,7 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 	SetupEndpointsForItemsService(conf, db, g, worldBucketRepo)
 
 	// /* Models Endpoints */
-	// modelsRepo := models_repo.NewModelsRepository(conf, db)
-	// modelsService := models_service.NewModelsService(conf, modelsRepo, worldBucketRepo)
-	// modelsController := models_controller.NewModelsController(conf, modelsService)
-
-	// modelsGroup := g.Group("/models")
-	// modelsGroup.GET("/world/:world_id", modelsController.GetModelsList)
-	// modelsGroup.PUT("/world/:world_id", modelsController.UploadModels)
-
-	// /* ADMIN ONLY */
-	// spritesGroup.POST("/categories", spritesController.AddCategory)
-	// itemsGroup.POST("/categories", itemsController.AddCategory)
-	// modelsGroup.POST("/world/:world_id", modelsController.AddModel)
-	// TODO: DELETE CATEGORIES/SPRITES/MODELS
+	SetupEndpointsForModelsService(conf, db, g, worldBucketRepo)
 
 	return nil
 }

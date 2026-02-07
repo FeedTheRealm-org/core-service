@@ -6,7 +6,7 @@ import "github.com/gin-gonic/gin"
 type ModelsController interface {
 
 	// RetrieveWorldAssetIds retrieves asset IDs associated with a specific world.
-	ListAssets(c *gin.Context)
+	GetModelsList(c *gin.Context)
 
 	// UploadSpriteData handles the upload of sprite file.
 	UploadModels(c *gin.Context)
