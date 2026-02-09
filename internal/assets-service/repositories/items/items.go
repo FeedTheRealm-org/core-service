@@ -22,6 +22,14 @@ func NewItemRepository(conf *config.Config, db *config.DB) ItemRepository {
 	}
 }
 
+func (isr *itemRepository) GetCategoriesList() ([]*models.ItemCategory, error) {
+	var categories []*models.ItemCategory
+	if err := isr.db.Conn.Find(&categories).Error; err != nil {
+		return nil, err
+	}
+	return categories, nil
+}
+
 func (isr *itemRepository) UpsertItem(item *models.Item) error {
 	if err := isr.db.Conn.
 		Clauses(

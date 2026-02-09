@@ -34,3 +34,7 @@ type ItemResponse struct {
 type ItemListResponse struct {
 	Items []ItemResponse `json:"items"`
 }
+
+type ItemCategoryListResponse struct {
+	CategoryList []ItemCategoryResponse `json:"category_list"`
+}

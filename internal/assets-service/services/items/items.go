@@ -30,6 +30,10 @@ func NewItemService(conf *config.Config, repository items.ItemRepository, bucket
 	}
 }
 
+func (is *itemService) GetCategoriesList() ([]*models.ItemCategory, error) {
+	return is.repository.GetCategoriesList()
+}
+
 func (is *itemService) UploadSprite(worldID uuid.UUID, categoryId uuid.UUID, id uuid.UUID, fileHeader *multipart.FileHeader) (*models.Item, error) {
 	file, err := fileHeader.Open()
 	if err != nil {

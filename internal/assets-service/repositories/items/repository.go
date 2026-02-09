@@ -7,6 +7,7 @@ import (
 
 // ItemRepository defines the interface for item-related database operations.
 type ItemRepository interface {
+	GetCategoriesList() ([]*models.ItemCategory, error)
 	// UpsertItem inserts or updates an item in the database.
 	UpsertItem(item *models.Item) error
 

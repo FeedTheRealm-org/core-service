@@ -27,6 +27,26 @@ func NewItemController(conf *config.Config, service items.ItemService) ItemContr
 	}
 }
 
+func (ic *itemController) GetCategoriesList(c *gin.Context) {
+	categories, err := ic.service.GetCategoriesList()
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.ItemCategoryListResponse{
+		CategoryList: make([]dtos.ItemCategoryResponse, len(categories)),
+	}
+	for idx, c := range categories {
+		res.CategoryList[idx] = dtos.ItemCategoryResponse{
+			CategoryId:   c.Id,
+			CategoryName: c.Name,
+		}
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
+}
+
 func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
 	worldId, err := uuid.Parse(c.Param("world_id"))
 	if err != nil {
