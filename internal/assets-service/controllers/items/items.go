@@ -127,19 +127,24 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 	}
 
 	responseSprites := make([]dtos.ItemResponse, 0)
-	if len(c.Request.Form["ids[]"]) == 0 {
-		_ = c.Error(errors.NewBadRequestError("must provide at least one ids[N] and sprites[N] pair"))
-		return
-	}
 
-	for i, idStr := range c.Request.Form["ids[]"] {
-		id, err := uuid.Parse(idStr)
+	i := 0
+	for {
+		i++
+		idKey := fmt.Sprintf("id[%d]", i)
+		idVal := c.PostForm(idKey)
+
+		if idVal == "" {
+			break
+		}
+
+		id, err := uuid.Parse(idVal)
 		if err != nil {
 			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid id format for id[%d]: %s", i, err.Error())))
 			return
 		}
 
-		spriteFile, err := c.FormFile(fmt.Sprintf("sprites[%d]", i))
+		spriteFile, err := c.FormFile(fmt.Sprintf("sprite[%d]", i))
 		if err != nil {
 			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("Missing sprite file for id[%d]", i)))
 			return
@@ -158,6 +163,33 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 			UpdatedAt: item.UpdatedAt,
 		})
 	}
+
+	// for i, idStr := range c.Request.Form["ids[]"] {
+	// 	id, err := uuid.Parse(idStr)
+	// 	if err != nil {
+	// 		_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid id format for id[%d]: %s", i, err.Error())))
+	// 		return
+	// 	}
+
+	// 	spriteFile, err := c.FormFile(fmt.Sprintf("sprites[%d]", i))
+	// 	if err != nil {
+	// 		_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("Missing sprite file for id[%d]", i)))
+	// 		return
+	// 	}
+
+	// 	item, err := ic.service.UploadSprite(worldId, categoryId, id, spriteFile)
+	// 	if err != nil {
+	// 		_ = c.Error(err)
+	// 		return
+	// 	}
+
+	// 	responseSprites = append(responseSprites, dtos.ItemResponse{
+	// 		Id:        item.Id,
+	// 		Url:       item.Url,
+	// 		CreatedAt: item.CreatedAt,
+	// 		UpdatedAt: item.UpdatedAt,
+	// 	})
+	// }
 
 	res := &dtos.ItemListResponse{
 		Items: responseSprites,
