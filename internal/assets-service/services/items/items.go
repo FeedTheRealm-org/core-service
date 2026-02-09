@@ -56,7 +56,7 @@ func (is *itemService) UploadSprite(worldID uuid.UUID, categoryId uuid.UUID, id 
 	}
 
 	ext := filepath.Ext(fileHeader.Filename)
-	filePath := fmt.Sprintf("/items/worlds/%s/categories/%s/%s%s", worldID.String(), categoryId.String(), id.String(), ext)
+	filePath := fmt.Sprintf("/worlds/%s/categories/%s/%s%s", worldID.String(), categoryId.String(), id.String(), ext)
 	if err := is.bucketRepo.UploadFile(filePath, contentType, file); err != nil {
 		return nil, err
 	}
