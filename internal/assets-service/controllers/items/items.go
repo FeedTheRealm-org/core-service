@@ -164,33 +164,6 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 		})
 	}
 
-	// for i, idStr := range c.Request.Form["ids[]"] {
-	// 	id, err := uuid.Parse(idStr)
-	// 	if err != nil {
-	// 		_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid id format for id[%d]: %s", i, err.Error())))
-	// 		return
-	// 	}
-
-	// 	spriteFile, err := c.FormFile(fmt.Sprintf("sprites[%d]", i))
-	// 	if err != nil {
-	// 		_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("Missing sprite file for id[%d]", i)))
-	// 		return
-	// 	}
-
-	// 	item, err := ic.service.UploadSprite(worldId, categoryId, id, spriteFile)
-	// 	if err != nil {
-	// 		_ = c.Error(err)
-	// 		return
-	// 	}
-
-	// 	responseSprites = append(responseSprites, dtos.ItemResponse{
-	// 		Id:        item.Id,
-	// 		Url:       item.Url,
-	// 		CreatedAt: item.CreatedAt,
-	// 		UpdatedAt: item.UpdatedAt,
-	// 	})
-	// }
-
 	res := &dtos.ItemListResponse{
 		Items: responseSprites,
 	}
