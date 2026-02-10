@@ -63,7 +63,7 @@ func (is *itemService) UploadSprite(worldID uuid.UUID, categoryId uuid.UUID, id 
 
 	item := &models.Item{
 		Id:         id,
-		Url:        filePath,
+		Url:        fmt.Sprintf("%s/%s", is.bucketRepo.GetBaseUrl(), filePath),
 		WorldID:    worldID,
 		CategoryID: categoryId,
 	}

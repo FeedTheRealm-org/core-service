@@ -35,6 +35,11 @@ func NewAwsS3BucketRepository(bucketName string, conf *config.Config) (BucketRep
 	return r, nil
 }
 
+func (r *awsS3BucketRepository) GetBaseUrl() string {
+	// TODO: Determinate what base_url use AWS S3
+	return ""
+}
+
 func (r *awsS3BucketRepository) UploadFile(filePath, mimeType string, file multipart.File) error {
 	input := &aws_s3.PutObjectInput{
 		Bucket:      &r.bucketName,

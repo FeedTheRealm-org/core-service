@@ -10,7 +10,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 )
 
-const localBucketFolder = "./local_buckets"
+const localBucketFolder = "local_buckets"
 
 type onDiskBucketRepository struct {
 	bucketName string
@@ -31,6 +31,10 @@ func NewOnDiskBucketRepository(bucketName string, conf *config.Config) (BucketRe
 	}
 
 	return r, nil
+}
+
+func (r *onDiskBucketRepository) GetBaseUrl() string {
+	return fmt.Sprintf("http://%s:%d/%s", r.conf.Server.Hostname, r.conf.Server.Port, r.bucketName)
 }
 
 func (r *onDiskBucketRepository) UploadFile(filePath, mimeType string, file multipart.File) error {

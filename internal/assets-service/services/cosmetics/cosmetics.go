@@ -61,7 +61,7 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticDat
 	}
 
 	cosmetic := &models.Cosmetic{
-		Url: filePath,
+		Url: fmt.Sprintf("%s/%s", ss.bucketRepo.GetBaseUrl(), filePath),
 	}
 	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, cosmetic); err != nil {
 		return nil, err
