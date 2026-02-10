@@ -1,6 +1,6 @@
 BEGIN;
 
-DROP INDEX IF EXISTS idx_models_category_id;
+DROP INDEX IF EXISTS idx_models_world_id;
 DROP TABLE IF EXISTS models;
 
 COMMIT;
