@@ -48,7 +48,7 @@ func (ms *modelsService) PublishModels(worldId uuid.UUID, models []models.Model)
 			return nil, fmt.Errorf("failed uploading model file to bucket: %w", err)
 		}
 
-		models[i].Url = fmt.Sprintf("%s/%s", ms.bucketRepo.GetBaseUrl(), filePath)
+		models[i].Url = fmt.Sprintf("%s%s", ms.bucketRepo.GetBaseUrl(), filePath)
 	}
 
 	PublishedModels, err := ms.modelsRepository.PublishModels(models)
