@@ -1,0 +1,7 @@
+BEGIN;
+
+DROP INDEX IF EXISTS idx_items_world_id;
+DROP INDEX IF EXISTS idx_items_category_id;
+DROP TABLE IF EXISTS items;
+
+COMMIT;

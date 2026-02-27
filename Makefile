@@ -1,6 +1,7 @@
-COMPOSE_BASE := docker-compose.yml
 COMPOSE_DEV := docker-compose.dev.yml
 COMPOSE_TEST := docker-compose.test.yml
+
+EXEC_APP := go run cmd/main.go
 
 help: # Show this help message
 	@awk -F'#' '/^[^[:space:]].*:/ && !/^\.PHONY/ { \
@@ -11,19 +12,20 @@ help: # Show this help message
 .PHONY: help
 
 down: # Stop and remove containers
-	docker compose -f $(COMPOSE_BASE) down
+	docker compose -f $(COMPOSE_DEV) down
 .PHONY: down
 
 build: down # Build containers
-	docker compose -f $(COMPOSE_BASE) build
+	docker compose -f $(COMPOSE_DEV) build
 .PHONY: build
 
 up: down # Build and start containers
-	docker compose -f $(COMPOSE_BASE) up
+	docker compose -f $(COMPOSE_DEV) up -d
+	docker compose -f $(COMPOSE_DEV) exec app $(EXEC_APP)
 .PHONY: up
 
 up-build: down # Build and start containers
-	docker compose -f $(COMPOSE_BASE) up --build
+	docker compose -f $(COMPOSE_DEV) up --build
 .PHONY: up-build
 
 dev: # Execute a bash shell in the development app container

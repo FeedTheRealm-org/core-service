@@ -8,37 +8,37 @@ from typing import Dict, List, Optional, Tuple
 import requests
 
 
-def upload_item_sprite(server_url: str, file_path: Path) -> Optional[Dict]:
-    url = f"{server_url}/assets/sprites/items"
+def upload_item_cosmetic(server_url: str, file_path: Path) -> Optional[Dict]:
+    url = f"{server_url}/assets/cosmetics/items"
 
     ext = file_path.suffix.lower()
     mime_type = "image/png" if ext == ".png" else "image/jpeg"
 
     try:
         with open(file_path, "rb") as f:
-            files = {"sprite": (file_path.name, f, mime_type)}
+            files = {"cosmetic": (file_path.name, f, mime_type)}
             resp = requests.post(url, files=files)
 
         if resp.status_code in (200, 201):
-            sprite = resp.json().get("data", {})
-            print(f"✓ Uploaded sprite: {file_path.name} -> {sprite.get('id')}")
-            return sprite
+            cosmetic = resp.json().get("data", {})
+            print(f"✓ Uploaded cosmetic: {file_path.name} -> {cosmetic.get('id')}")
+            return cosmetic
         else:
             print(
-                f"✗ Failed to upload sprite {file_path.name}: {resp.status_code} - {resp.text[:200]}"
+                f"✗ Failed to upload cosmetic {file_path.name}: {resp.status_code} - {resp.text[:200]}"
             )
             return None
     except Exception as e:
-        print(f"✗ Error uploading sprite {file_path.name}: {e}")
+        print(f"✗ Error uploading cosmetic {file_path.name}: {e}")
         return None
 
 
-def create_item(server_url: str, name: str, description: str, sprite_id: str) -> Optional[Dict]:
+def create_item(server_url: str, name: str, description: str, cosmetic_id: str) -> Optional[Dict]:
     url = f"{server_url}/items"
     payload = {
         "name": name,
         "description": description,
-        "sprite_id": sprite_id,
+        "cosmetic_id": cosmetic_id,
     }
 
     try:
@@ -69,7 +69,7 @@ def build_item_name_and_description(file_path: Path, category_name: str) -> Tupl
     return name, description
 
 
-def seed_items_with_sprites(server_url: str, icons_root: Path, weapons_count: int = 5, armor_count: int = 5) -> None:
+def seed_items_with_cosmetics(server_url: str, icons_root: Path, weapons_count: int = 5, armor_count: int = 5) -> None:
     """Seed 5 random Weapons and 5 random Armor items.
 
     icons_root should point to the base 6000FantasyIcons folder,
@@ -93,7 +93,7 @@ def seed_items_with_sprites(server_url: str, icons_root: Path, weapons_count: in
         },
     }
 
-    total_sprites = 0
+    total_cosmetics = 0
     total_items = 0
 
     for cat_name, cfg in category_config.items():
@@ -119,30 +119,30 @@ def seed_items_with_sprites(server_url: str, icons_root: Path, weapons_count: in
         )
 
         for file_path in chosen_files:
-            sprite = upload_item_sprite(server_url, file_path)
-            if not sprite:
+            cosmetic = upload_item_cosmetic(server_url, file_path)
+            if not cosmetic:
                 continue
-            total_sprites += 1
+            total_cosmetics += 1
 
-            sprite_id = sprite.get("id")
+            cosmetic_id = cosmetic.get("id")
             item_name, item_desc = build_item_name_and_description(file_path, cat_name)
 
-            item = create_item(server_url, item_name, item_desc, sprite_id)
+            item = create_item(server_url, item_name, item_desc, cosmetic_id)
             if item:
                 total_items += 1
 
     print("\n--- Seed Summary ---")
-    print(f"Sprites uploaded: {total_sprites}")
+    print(f"Sprites uploaded: {total_cosmetics}")
     print(f"Items created:   {total_items}")
 
 
 def main() -> None:
     if len(sys.argv) < 3:
         print(
-            "Usage: python seed_items_with_sprites.py <server_url> <icons_root_path> [weapons_count] [armor_count]",
+            "Usage: python seed_items_with_cosmetics.py <server_url> <icons_root_path> [weapons_count] [armor_count]",
         )
         print(
-            "Example: python seed_items_with_sprites.py http://localhost:8000 ./client/Assets/6000FantasyIcons 5 5",
+            "Example: python seed_items_with_cosmetics.py http://localhost:8000 ./client/Assets/6000FantasyIcons 5 5",
         )
         return
 
@@ -167,7 +167,7 @@ def main() -> None:
         except ValueError:
             print("Invalid armor_count, using default 5.")
 
-    seed_items_with_sprites(server_url, icons_root, weapons_count, armor_count)
+    seed_items_with_cosmetics(server_url, icons_root, weapons_count, armor_count)
 
 
 if __name__ == "__main__":

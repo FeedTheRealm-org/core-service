@@ -15,6 +15,7 @@ const (
 )
 
 type ServerConfig struct {
+	Hostname        string
 	Port            int
 	ShutdownTimeout time.Duration
 	Environment     EnvironmentType
@@ -56,6 +57,7 @@ func CreateConfig() *Config {
 	}
 
 	serverConf := &ServerConfig{
+		Hostname:        getEnvOrDefaultString("SERVER_HOSTNAME", "localhost"),
 		Port:            getEnvOrDefaultInt("SERVER_PORT", 8000),
 		ShutdownTimeout: getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
 		Environment:     getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),

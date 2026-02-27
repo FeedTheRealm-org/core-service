@@ -1,16 +1,16 @@
 package errors
 
-// SpriteNotFound is returned when a requested sprite cannot be found.
-type SpriteNotFound struct {
+// CosmeticNotFound is returned when a requested sprite cannot be found.
+type CosmeticNotFound struct {
 	details string
 }
 
-func (e *SpriteNotFound) Error() string {
+func (e *CosmeticNotFound) Error() string {
 	return e.details
 }
 
-func NewSpriteNotFound(details string) *SpriteNotFound {
-	return &SpriteNotFound{
+func NewCosmeticNotFound(details string) *CosmeticNotFound {
+	return &CosmeticNotFound{
 		details: details,
 	}
 }
@@ -72,5 +72,20 @@ func (e *ItemCategoryNotFound) Error() string {
 func NewItemCategoryNotFound(categoryId string) *ItemCategoryNotFound {
 	return &ItemCategoryNotFound{
 		CategoryId: categoryId,
+	}
+}
+
+// WorldNotFound is returned when a requested world cannot be found.
+type WorldNotFound struct {
+	WorldId string
+}
+
+func (e *WorldNotFound) Error() string {
+	return "World with ID " + e.WorldId + " does not exist"
+}
+
+func NewWorldNotFound(worldId string) *WorldNotFound {
+	return &WorldNotFound{
+		WorldId: worldId,
 	}
 }

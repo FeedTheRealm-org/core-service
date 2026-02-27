@@ -45,7 +45,9 @@ func (s *Server) Start() error {
 	}
 
 	r := gin.Default()
-	router.SetupRouter(r, s.conf, s.db)
+	if err := router.SetupRouter(r, s.conf, s.db); err != nil {
+		return err
+	}
 
 	s.srv = &http.Server{
 		Addr:    "0.0.0.0:" + strconv.Itoa(s.conf.Server.Port),

@@ -42,6 +42,17 @@ services:
     ports:
       - "5432:5432"
 
+  buckets:
+    image: python:3.12-alpine
+    command: python -m http.server 8000
+    working_dir: /buckets
+    ports:
+      - "8081:8000"
+    networks:
+      - dev-app-network
+    volumes:
+      - ./local_buckets:/buckets
+
 networks:
   dev-app-network:
     driver: bridge
