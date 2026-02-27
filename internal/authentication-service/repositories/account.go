@@ -85,6 +85,7 @@ func (ar *accountRepository) CreateAccount(user *models.User, verificationCode s
 		accountVerfication := &models.AccountVerification{
 			UserId:           user.Id,
 			VerificationCode: verificationCode,
+			Attempts:         0,
 		}
 		if err := tx.Create(accountVerfication).Error; err != nil {
 			return &DatabaseError{message: err.Error()}
@@ -105,7 +106,21 @@ func (ar *accountRepository) VerifyAccount(user *models.User, code string, curre
 
 	if accountActivation.ExpiresAt.Before(currentTime) {
 		return &AccountVerificationExpired{}
-	} else if accountActivation.VerificationCode != code {
+	}
+
+	if accountActivation.VerificationCode != code {
+		accountActivation.Attempts += 1
+		if err := ar.db.Conn.Model(&models.AccountVerification{}).Where("user_id = ?", user.Id).Update("attempts", accountActivation.Attempts).Error; err != nil {
+			return &DatabaseError{message: err.Error()}
+		}
+
+		if accountActivation.Attempts >= 3 {
+			if err := ar.db.Conn.Delete(&accountActivation).Error; err != nil {
+				return &DatabaseError{message: err.Error()}
+			}
+			return &AccountNotVerifiedError{}
+		}
+
 		return &AccountNotVerifiedError{}
 	}
 
@@ -127,6 +142,41 @@ func (ar *accountRepository) VerifyAccount(user *models.User, code string, curre
 	logger.Logger.Debugf("Current time: %v, Verification expiry time: %v", currentTime, accountActivation.ExpiresAt)
 
 	user.Verified = true
+
+	return nil
+}
+
+func (ar *accountRepository) RefreshVerificationCode(user *models.User, verificationCode string, expiresAt time.Time) error {
+	var accountActivation models.AccountVerification
+
+	if err := ar.db.Conn.Where("user_id = ?", user.Id).First(&accountActivation).Error; err != nil {
+		if errors.IsRecordNotFound(err) {
+			accountVerfication := &models.AccountVerification{
+				UserId:           user.Id,
+				VerificationCode: verificationCode,
+				Attempts:         0,
+				CreatedAt:        time.Now(),
+				ExpiresAt:        expiresAt,
+			}
+			if err := ar.db.Conn.Create(accountVerfication).Error; err != nil {
+				return &DatabaseError{message: err.Error()}
+			}
+			return nil
+		}
+		return &DatabaseError{message: err.Error()}
+	}
+
+	accountActivation.VerificationCode = verificationCode
+	accountActivation.Attempts = 0
+	accountActivation.ExpiresAt = expiresAt
+
+	if err := ar.db.Conn.Model(&models.AccountVerification{}).Where("user_id = ?", user.Id).Updates(map[string]interface{}{
+		"verification_code": accountActivation.VerificationCode,
+		"attempts":          accountActivation.Attempts,
+		"expires_at":        accountActivation.ExpiresAt,
+	}).Error; err != nil {
+		return &DatabaseError{message: err.Error()}
+	}
 
 	return nil
 }

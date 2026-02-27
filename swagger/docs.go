@@ -15,6 +15,162 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/assets/cosmetics": {
+            "put": {
+                "description": "Uploads a cosmetic file.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "UploadCosmeticData",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Cosmetic file",
+                        "name": "cosmetic",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "category_id",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Uploaded cosmetic",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CosmeticResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/cosmetics/categories": {
+            "get": {
+                "description": "Retrieves the list of existing categories UUIDs.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "GetCategoriesList",
+                "responses": {
+                    "200": {
+                        "description": "Category list",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CosmeticCategoryListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Adds a new cosmetic category.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "AddCategory",
+                "parameters": [
+                    {
+                        "description": "Category data",
+                        "name": "category",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.AddCosmeticCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created category",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CosmeticCategoryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/cosmetics/categories/{category_id}": {
+            "get": {
+                "description": "Retrieves the list of existing cosmetics UUIDs for a given category UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "GetCosmeticsListByCategory",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category UUID",
+                        "name": "category_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cosmetic list",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CosmeticsListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/assets/models": {
             "post": {
                 "security": [
@@ -298,281 +454,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/assets/sprites": {
-            "put": {
-                "description": "Uploads a sprite file.",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "UploadSpriteData",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "Sprite file",
-                        "name": "sprite",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Category ID",
-                        "name": "category_id",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Uploaded sprite",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.SpriteResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request body",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/assets/sprites/categories": {
-            "get": {
-                "description": "Retrieves the list of existing categories UUIDs.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "GetCategoriesList",
-                "responses": {
-                    "200": {
-                        "description": "Category list",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.SpriteCategoryListResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Adds a new sprite category.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "AddCategory",
-                "parameters": [
-                    {
-                        "description": "Category data",
-                        "name": "category",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.AddSpriteCategoryRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created category",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.SpriteCategoryResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request body",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/assets/sprites/categories/{category_id}": {
-            "get": {
-                "description": "Retrieves the list of existing sprites UUIDs for a given category UUID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "GetSpritesListByCategory",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Category UUID",
-                        "name": "category_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sprite list",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.SpritesListResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/assets/sprites/items": {
-            "get": {
-                "description": "Retrieves all item sprites.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "GetAllItemSprites",
-                "responses": {
-                    "200": {
-                        "description": "List of item sprites",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ItemSpritesListResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/assets/sprites/items/{sprite_id}": {
-            "get": {
-                "description": "Downloads an item sprite by its ID.",
-                "produces": [
-                    "application/octet-stream"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "DownloadItemSprite",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Item sprite ID",
-                        "name": "sprite_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Item sprite file",
-                        "schema": {
-                            "type": "file"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Sprite not found",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Deletes an item sprite by its ID.",
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "DeleteItemSprite",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Item sprite ID",
-                        "name": "sprite_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sprite deleted successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Sprite not found",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/assets/sprites/items/{world_id}": {
+        "/assets/sprites/items/{world_id}/{category_id}": {
             "post": {
                 "description": "Uploads multiple item sprites. Each sprite must have a provided ID.",
                 "consumes": [
@@ -596,7 +478,15 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Sprite IDs (UUIDs), one per file",
+                        "format": "uuid",
+                        "description": "Category ID",
+                        "name": "category_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Item IDs (UUIDs), one per file",
                         "name": "ids[]",
                         "in": "formData",
                         "required": true
@@ -613,48 +503,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Uploaded item sprites",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ItemSpritesListResponse"
+                            "$ref": "#/definitions/dtos.ItemListResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/assets/sprites/{sprite_id}": {
-            "get": {
-                "description": "Downloads the sprite file for a given sprite UUID.",
-                "produces": [
-                    "application/octet-stream"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "DownloadSpriteData",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Sprite UUID",
-                        "name": "sprite_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sprite file",
-                        "schema": {
-                            "type": "file"
                         }
                     },
                     "401": {
@@ -705,6 +560,52 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Invalid credentials or invalid JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Request a new verification code to be sent to the user's email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Refresh verification code",
+                "parameters": [
+                    {
+                        "description": "Refresh verification data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RefreshVerificationRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Refresh requested",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RefreshVerificationResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request body",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -797,282 +698,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/items": {
-            "post": {
-                "description": "Creates a new game item with metadata",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "items-service"
-                ],
-                "summary": "CreateItem",
-                "parameters": [
-                    {
-                        "description": "Item data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.CreateItemRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Item created",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ItemMetadataResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request body",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Item already exists",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/items/batch": {
-            "post": {
-                "description": "Creates multiple game items at once",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "items-service"
-                ],
-                "summary": "CreateItemsBatch",
-                "parameters": [
-                    {
-                        "description": "Batch of items",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.CreateItemBatchRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Items created",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ItemsListResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request body",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/items/metadata": {
-            "get": {
-                "description": "Retrieves all items metadata (for Unity client initialization)",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "items-service"
-                ],
-                "summary": "GetItemsMetadata",
-                "responses": {
-                    "200": {
-                        "description": "Items list",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ItemsListResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/items/{id}": {
-            "get": {
-                "description": "Retrieves a single item by its ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "items-service"
-                ],
-                "summary": "GetItemById",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Item UUID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Item metadata",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ItemMetadataResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid item ID",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Item not found",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Deletes an item by its ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "items-service"
-                ],
-                "summary": "DeleteItem",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Item UUID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Item deleted successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid item ID",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Item not found",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/items/{id}/sprite": {
-            "patch": {
-                "description": "Updates the sprite associated to an item",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "items-service"
-                ],
-                "summary": "UpdateItemSprite",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Item UUID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Sprite data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.UpdateItemSpriteRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Item updated",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ItemMetadataResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid item ID or bad request body",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Item not found",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -1385,7 +1010,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dtos.AddSpriteCategoryRequest": {
+        "dtos.AddCosmeticCategoryRequest": {
             "type": "object",
             "required": [
                 "category_name"
@@ -1419,6 +1044,50 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.CosmeticCategoryListResponse": {
+            "type": "object",
+            "properties": {
+                "category_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.CosmeticCategoryResponse"
+                    }
+                }
+            }
+        },
+        "dtos.CosmeticCategoryResponse": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "string"
+                },
+                "category_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.CosmeticResponse": {
+            "type": "object",
+            "properties": {
+                "cosmetic_id": {
+                    "type": "string"
+                },
+                "cosmetic_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.CosmeticsListResponse": {
+            "type": "object",
+            "properties": {
+                "cosmetics_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.CosmeticResponse"
+                    }
+                }
+            }
+        },
         "dtos.CreateAccountRequestDTO": {
             "type": "object",
             "properties": {
@@ -1434,38 +1103,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "email": {
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.CreateItemBatchRequest": {
-            "type": "object",
-            "required": [
-                "items"
-            ],
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.CreateItemRequest"
-                    }
-                }
-            }
-        },
-        "dtos.CreateItemRequest": {
-            "type": "object",
-            "required": [
-                "description",
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "sprite_id": {
                     "type": "string"
                 }
             }
@@ -1490,30 +1127,18 @@ const docTemplate = `{
                 }
             }
         },
-        "dtos.ItemMetadataResponse": {
+        "dtos.ItemListResponse": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "sprite_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ItemResponse"
+                    }
                 }
             }
         },
-        "dtos.ItemSpriteResponse": {
+        "dtos.ItemResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -1527,28 +1152,6 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string"
-                }
-            }
-        },
-        "dtos.ItemSpritesListResponse": {
-            "type": "object",
-            "properties": {
-                "sprites": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.ItemSpriteResponse"
-                    }
-                }
-            }
-        },
-        "dtos.ItemsListResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.ItemMetadataResponse"
-                    }
                 }
             }
         },
@@ -1628,57 +1231,18 @@ const docTemplate = `{
                 }
             }
         },
-        "dtos.SpriteCategoryListResponse": {
+        "dtos.RefreshVerificationRequestDTO": {
             "type": "object",
             "properties": {
-                "category_list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.SpriteCategoryResponse"
-                    }
-                }
-            }
-        },
-        "dtos.SpriteCategoryResponse": {
-            "type": "object",
-            "properties": {
-                "category_id": {
-                    "type": "string"
-                },
-                "category_name": {
+                "email": {
                     "type": "string"
                 }
             }
         },
-        "dtos.SpriteResponse": {
+        "dtos.RefreshVerificationResponseDTO": {
             "type": "object",
             "properties": {
-                "sprite_id": {
-                    "type": "string"
-                },
-                "sprite_url": {
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.SpritesListResponse": {
-            "type": "object",
-            "properties": {
-                "sprites_list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.SpriteResponse"
-                    }
-                }
-            }
-        },
-        "dtos.UpdateItemSpriteRequest": {
-            "type": "object",
-            "required": [
-                "sprite_id"
-            ],
-            "properties": {
-                "sprite_id": {
+                "email": {
                     "type": "string"
                 }
             }

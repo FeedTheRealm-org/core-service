@@ -3,6 +3,7 @@ BEGIN;
 CREATE TABLE account_verifications (
     user_id UUID PRIMARY KEY,
     verification_code TEXT NOT NULL DEFAULT '',
+    attempts INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     expires_at TIMESTAMP NOT NULL DEFAULT (NOW() + INTERVAL '10 minutes'),
 

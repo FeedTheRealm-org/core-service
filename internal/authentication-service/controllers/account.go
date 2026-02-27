@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/FeedTheRealm-org/core-service/config"
-	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/dtos"
+	dtos "github.com/FeedTheRealm-org/core-service/internal/authentication-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
-	common_dtos "github.com/FeedTheRealm-org/core-service/internal/dtos"
+	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -40,7 +40,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 	req := &dtos.CreateAccountRequestDTO{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		logger.Logger.Errorf("CreateAccount: failed to bind JSON: %v", err)
-		c.JSON(400, gin.H{"error": err.Error()})
+		_ = c.Error(errors.NewBadRequestError(err.Error()))
 		return
 	}
 
@@ -48,25 +48,13 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 
 	if req.Email == "" {
 		logger.Logger.Info("CreateAccount: missing email")
-		c.JSON(400, common_dtos.ErrorResponse{
-			Type:     "validation",
-			Title:    "Email is required",
-			Status:   400,
-			Detail:   "You must provide an email address to create an account.",
-			Instance: c.Request.RequestURI,
-		})
+		_ = c.Error(errors.NewBadRequestError("You must provide an email address to create an account."))
 		return
 	}
 
 	if req.Password == "" {
 		logger.Logger.Info("CreateAccount: missing password for email=%s", req.Email)
-		c.JSON(400, common_dtos.ErrorResponse{
-			Type:     "validation",
-			Title:    "Password is required",
-			Status:   400,
-			Detail:   "You must provide a password to create an account.",
-			Instance: c.Request.RequestURI,
-		})
+		_ = c.Error(errors.NewBadRequestError("You must provide a password to create an account."))
 		return
 	}
 
@@ -74,36 +62,18 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 	if err != nil {
 		if _, ok := err.(*services.AccountAlreadyExistsError); ok {
 			logger.Logger.Infof("CreateAccount: account already exists for email=%s", req.Email)
-			c.JSON(409, common_dtos.ErrorResponse{
-				Type:     "validation",
-				Title:    "Email is already in use",
-				Status:   409,
-				Detail:   "The email address is already in use by another account.",
-				Instance: c.Request.RequestURI,
-			})
+			_ = c.Error(errors.NewConflictError("The email address is already in use by another account."))
 			return
 		}
 
 		if _, ok := err.(*services.AccountInvalidFormat); ok {
 			logger.Logger.Infof("CreateAccount: invalid account format for email=%s: %v", req.Email, err)
-			c.JSON(400, common_dtos.ErrorResponse{
-				Type:     "validation",
-				Title:    err.(*services.AccountInvalidFormat).Msg,
-				Status:   400,
-				Detail:   "The email address is not valid.",
-				Instance: c.Request.RequestURI,
-			})
+			_ = c.Error(errors.NewBadRequestError("The email address is not valid."))
 			return
 		}
 
 		logger.Logger.Errorf("CreateAccount: service error for email=%s: %v", req.Email, err)
-		c.JSON(500, common_dtos.ErrorResponse{
-			Type:     "server",
-			Title:    "Internal server error",
-			Status:   500,
-			Detail:   "An unexpected error occurred.",
-			Instance: c.Request.RequestURI,
-		})
+		_ = c.Error(errors.NewInternalServerError("An unexpected error occurred."))
 		return
 	}
 
@@ -116,12 +86,11 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 	}
 
 	logger.Logger.Infof("CreateAccount: account created for email=%s", result.Email)
-	c.JSON(201, common_dtos.DataEnvelope[dtos.CreateAccountResponseDTO]{
-		Data: dtos.CreateAccountResponseDTO{
-			Email: result.Email,
-		},
-	})
+	res := &dtos.CreateAccountResponseDTO{
+		Email: result.Email,
+	}
 
+	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
 // @Summary Login
@@ -139,13 +108,7 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Logger.Errorf("LoginAccount: failed to bind JSON: %v", err)
-		c.JSON(400, common_dtos.ErrorResponse{
-			Type:     "validation",
-			Title:    "Invalid request body",
-			Status:   400,
-			Detail:   "The request body is not valid.",
-			Instance: c.Request.RequestURI,
-		})
+		_ = c.Error(errors.NewBadRequestError("The request body is not valid."))
 		return
 	}
 
@@ -153,25 +116,13 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 
 	if req.Email == "" {
 		logger.Logger.Info("LoginAccount: missing email")
-		c.JSON(400, common_dtos.ErrorResponse{
-			Type:     "validation",
-			Title:    "Email is required",
-			Status:   400,
-			Detail:   "You must provide an email address to log in.",
-			Instance: c.Request.RequestURI,
-		})
+		_ = c.Error(errors.NewBadRequestError("You must provide an email address to log in."))
 		return
 	}
 
 	if req.Password == "" {
 		logger.Logger.Info("LoginAccount: missing password for email=%s", req.Email)
-		c.JSON(400, common_dtos.ErrorResponse{
-			Type:     "validation",
-			Title:    "Password is required",
-			Status:   400,
-			Detail:   "You must provide a password to log in.",
-			Instance: c.Request.RequestURI,
-		})
+		_ = c.Error(errors.NewBadRequestError("You must provide a password to log in."))
 		return
 	}
 
@@ -179,25 +130,13 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 	if err != nil {
 		if _, ok := err.(*services.AccountNotFoundError); ok {
 			logger.Logger.Infof("LoginAccount: account not found for email=%s", req.Email)
-			c.JSON(404, common_dtos.ErrorResponse{
-				Type:     "validation",
-				Title:    "Invalid email or password",
-				Status:   404,
-				Detail:   "The email address or password is incorrect.",
-				Instance: c.Request.RequestURI,
-			})
+			_ = c.Error(errors.NewNotFoundError("The email address or password is incorrect."))
 			return
 		}
 
 		if _, ok := err.(*services.AccountNotVerifiedError); ok {
 			logger.Logger.Infof("LoginAccount: account not verified for email=%s", req.Email)
-			c.JSON(403, common_dtos.ErrorResponse{
-				Type:     "validation",
-				Title:    "Please verify your account before logging in",
-				Status:   403,
-				Detail:   "You must verify your email address before you can log in.",
-				Instance: c.Request.RequestURI,
-			})
+			_ = c.Error(errors.NewForbiddenError("You must verify your email address before you can log in."))
 			return
 		}
 
@@ -206,13 +145,7 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 		}
 
 		logger.Logger.Errorf("LoginAccount: service error for email=%s: %v", req.Email, err)
-		c.JSON(500, common_dtos.ErrorResponse{
-			Type:     "server",
-			Title:    "Internal server error",
-			Status:   500,
-			Detail:   "An unexpected error occurred.",
-			Instance: c.Request.RequestURI,
-		})
+		_ = c.Error(errors.NewInternalServerError("An unexpected error occurred."))
 		return
 	}
 
@@ -232,7 +165,7 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
 		logger.Logger.Info("CheckSessionExpiration: missing Authorization header")
-		c.JSON(400, gin.H{"error": "Authorization header required"})
+		_ = c.Error(errors.NewBadRequestError("Authorization header required"))
 		return
 	}
 
@@ -243,7 +176,7 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 
 	if token == "" {
 		logger.Logger.Info("CheckSessionExpiration: missing token in Authorization header")
-		c.JSON(400, gin.H{"error": "Token is required"})
+		_ = c.Error(errors.NewBadRequestError("Token is required"))
 		return
 	}
 
@@ -252,16 +185,20 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 	if err != nil {
 		if _, ok := err.(*services.AccountSessionExpired); ok {
 			logger.Logger.Info("CheckSessionExpiration: session token has expired")
-			c.JSON(401, gin.H{"error": "Session has expired"})
+			_ = c.Error(errors.NewUnauthorizedError("Session has expired"))
 			return
 		}
 		logger.Logger.Errorf("CheckSessionExpiration: service error: %v", err)
-		c.JSON(500, gin.H{"error": "Internal server error"})
+		_ = c.Error(errors.NewInternalServerError("Internal server error"))
 		return
 	}
 
 	logger.Logger.Info("CheckSessionExpiration: session token is valid")
-	c.JSON(200, gin.H{"message": "Session is valid"})
+
+	res := &dtos.CheckSessionResponseDTO{
+		Message: "Session is valid",
+	}
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
 // @Summary Verify Account
@@ -278,13 +215,7 @@ func (ec *accountController) VerifyAccount(c *gin.Context) {
 	req := dtos.VerifyAccountRequestDTO{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Logger.Errorf("VerifyAccount: failed to bind JSON: %v", err)
-		c.JSON(400, common_dtos.ErrorResponse{
-			Type:     "validation",
-			Title:    "Invalid request body",
-			Status:   400,
-			Detail:   "The request body is not valid JSON.",
-			Instance: c.Request.RequestURI,
-		})
+		_ = c.Error(errors.NewBadRequestError("The request body is not valid JSON."))
 		return
 	}
 
@@ -292,25 +223,13 @@ func (ec *accountController) VerifyAccount(c *gin.Context) {
 
 	if req.Email == "" {
 		logger.Logger.Info("VerifyAccount: missing email")
-		c.JSON(400, common_dtos.ErrorResponse{
-			Type:     "validation",
-			Title:    "Email is required",
-			Status:   400,
-			Detail:   "You must provide an email address to verify an account.",
-			Instance: c.Request.RequestURI,
-		})
+		_ = c.Error(errors.NewBadRequestError("You must provide an email address to verify an account."))
 		return
 	}
 
 	if req.Code == "" {
 		logger.Logger.Infof("VerifyAccount: missing verification code for email=%s", req.Email)
-		c.JSON(400, common_dtos.ErrorResponse{
-			Type:     "validation",
-			Title:    "Verification code is required",
-			Status:   400,
-			Detail:   "You must provide a verification code.",
-			Instance: c.Request.RequestURI,
-		})
+		_ = c.Error(errors.NewBadRequestError("You must provide a verification code."))
 		return
 	}
 
@@ -318,56 +237,85 @@ func (ec *accountController) VerifyAccount(c *gin.Context) {
 	if err != nil {
 		if _, ok := err.(*services.AccountNotFoundError); ok {
 			logger.Logger.Infof("VerifyAccount: account not found for email=%s", req.Email)
-			c.JSON(404, common_dtos.ErrorResponse{
-				Type:     "not_found",
-				Title:    "Account not found",
-				Status:   404,
-				Detail:   "No account exists with the provided email address.",
-				Instance: c.Request.RequestURI,
-			})
+			_ = c.Error(errors.NewNotFoundError("No account exists with the provided email address."))
 			return
 		}
 
 		if _, ok := err.(*services.InvalidVerificationCodeError); ok {
 			logger.Logger.Infof("VerifyAccount: invalid verification code for email=%s", req.Email)
-			c.JSON(401, common_dtos.ErrorResponse{
-				Type:     "validation",
-				Title:    "Invalid verification code",
-				Status:   401,
-				Detail:   "The verification code is incorrect.",
-				Instance: c.Request.RequestURI,
-			})
+			_ = c.Error(errors.NewUnauthorizedError("The verification code is incorrect."))
 			return
 		}
 
 		if _, ok := err.(*services.VerificationCodeExpiredError); ok {
 			logger.Logger.Infof("VerifyAccount: verification code expired for email=%s", req.Email)
-			c.JSON(400, common_dtos.ErrorResponse{
-				Type:     "validation",
-				Title:    "Verification code has expired",
-				Status:   400,
-				Detail:   "The verification code has expired. Please request a new one.",
-				Instance: c.Request.RequestURI,
-			})
+			_ = c.Error(errors.NewBadRequestError("The verification code has expired. Please request a new one."))
 			return
 		}
 
 		logger.Logger.Errorf("VerifyAccount: service error for email=%s: %v", req.Email, err)
-		c.JSON(500, common_dtos.ErrorResponse{
-			Type:     "server",
-			Title:    "Internal server error",
-			Status:   500,
-			Detail:   "An unexpected error occurred.",
-			Instance: c.Request.RequestURI,
-		})
+		_ = c.Error(errors.NewInternalServerError("An unexpected error occurred."))
 		return
 	}
 
 	logger.Logger.Infof("VerifyAccount: account verified successfully for email=%s", req.Email)
-	c.JSON(200, common_dtos.DataEnvelope[dtos.VerifyAccountResponseDTO]{
-		Data: dtos.VerifyAccountResponseDTO{
-			Email:    req.Email,
-			Verified: verified,
-		},
-	})
+	res := &dtos.VerifyAccountResponseDTO{
+		Email:    req.Email,
+		Verified: verified,
+	}
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
+}
+
+// @Summary Refresh verification code
+// @Description Request a new verification code to be sent to the user's email
+// @Tags authentication-service
+// @Accept   json
+// @Produce  json
+// @Param   request body dtos.RefreshVerificationRequestDTO true "Refresh verification data"
+// @Success 200  {object}  dtos.RefreshVerificationResponseDTO "Refresh requested"
+// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
+// @Failure 500  {object}  dtos.ErrorResponse "Internal server error"
+// @Router /auth/refresh [post]
+func (ec *accountController) RefreshVerification(c *gin.Context) {
+	req := dtos.RefreshVerificationRequestDTO{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Logger.Errorf("RefreshVerification: failed to bind JSON: %v", err)
+		_ = c.Error(errors.NewBadRequestError("The request body is not valid JSON."))
+		return
+	}
+
+	if req.Email == "" {
+		logger.Logger.Info("RefreshVerification: missing email")
+		_ = c.Error(errors.NewBadRequestError("You must provide an email address to refresh the verification code."))
+		return
+	}
+
+	newCode, err := ec.accountService.RefreshVerificationCode(req.Email)
+	if err != nil {
+		if _, ok := err.(*services.AccountNotFoundError); ok {
+			logger.Logger.Infof("RefreshVerification: account not found for email=%s", req.Email)
+			_ = c.Error(errors.NewNotFoundError("No account exists with the provided email address."))
+			return
+		}
+
+		if _, ok := err.(*services.AccountAlreadyVerifiedError); ok {
+			logger.Logger.Infof("RefreshVerification: account already verified for email=%s", req.Email)
+			_ = c.Error(errors.NewBadRequestError("The account is already verified; no verification code will be generated."))
+			return
+		}
+
+		logger.Logger.Errorf("RefreshVerification: service error for email=%s: %v", req.Email, err)
+		_ = c.Error(errors.NewInternalServerError("An unexpected error occurred."))
+		return
+	}
+
+	if err := ec.emailService.SendVerificationEmail(req.Email, newCode); err != nil {
+		logger.Logger.Errorf("RefreshVerification: failed to send verification email to email=%s: %v", req.Email, err)
+	}
+
+	logger.Logger.Infof("RefreshVerification: verification code refreshed for email=%s", req.Email)
+	res := &dtos.RefreshVerificationResponseDTO{
+		Email: req.Email,
+	}
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }

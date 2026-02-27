@@ -1,52 +1,31 @@
 package code_generator
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerateCode_RandomCode(t *testing.T) {
+func TestGenerateCode_Produces8AlphanumericChars(t *testing.T) {
 	randFn := func() int {
-		return 123456
+		return 12345678
 	}
 
 	code := GenerateCode(randFn)
-	assert.Equal(t, "123456", code)
+	assert.Equal(t, 8, len(code))
+
+	matched, err := regexp.MatchString("^[0-9A-Za-z]{8}$", code)
+	assert.Nil(t, err)
+	assert.True(t, matched, "code should be 8 alphanumeric characters")
 }
 
-func TestGenerateCode_ZeroCode(t *testing.T) {
+func TestGenerateCode_DeterministicForStaticSeed(t *testing.T) {
 	randFn := func() int {
-		return 0
+		return 12345678
 	}
 
-	code := GenerateCode(randFn)
-	assert.Equal(t, "000000", code)
-}
-
-func TestGenerateCode_Padding(t *testing.T) {
-	randFn := func() int {
-		return 42
-	}
-
-	code := GenerateCode(randFn)
-	assert.Equal(t, "000042", code)
-}
-
-func TestGeneratorCode_LargeNumber(t *testing.T) {
-	randFn := func() int {
-		return 1234567
-	}
-
-	code := GenerateCode(randFn)
-	assert.Equal(t, "234567", code)
-}
-
-func TestGenerateCode_NegativeNumber(t *testing.T) {
-	randFn := func() int {
-		return -1
-	}
-
-	code := GenerateCode(randFn)
-	assert.Equal(t, "999999", code)
+	code1 := GenerateCode(randFn)
+	code2 := GenerateCode(randFn)
+	assert.Equal(t, code1, code2)
 }

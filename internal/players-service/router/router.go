@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupPlayerServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) {
+func SetupPlayerServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	g := r.Group("/player")
 
 	characterRepo := character_repo.NewCharacterRepository(conf, db)
@@ -19,4 +19,6 @@ func SetupPlayerServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 	characterGroup.PATCH("", characterController.PatchCharacterInfo)
 	characterGroup.GET("", characterController.GetCharacterInfo)
 	characterGroup.GET(":id", characterController.GetCharacterInfo)
+
+	return nil
 }

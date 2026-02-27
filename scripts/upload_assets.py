@@ -7,7 +7,7 @@ from pathlib import Path
 
 def fetch_categories(server_url, auth_token=None):
     """Fetch available categories from the server."""
-    url = f"{server_url}/assets/sprites/categories"
+    url = f"{server_url}/assets/cosmetics/categories"
     headers = {'Authorization': f'Bearer {auth_token}'} if auth_token else {}
 
     try:
@@ -48,7 +48,7 @@ def get_file_extensions():
 
 def upload_sprite(server_url, file_path, category_id, auth_token=None):
     """Upload a single sprite file to the server."""
-    url = f"{server_url}/assets/sprites"
+    base_url = f"{server_url}/assets/cosmetics/categories"
 
     ext = file_path.suffix.lower()
     mime_type = 'image/png' if ext == '.png' else 'image/jpeg'
@@ -59,7 +59,7 @@ def upload_sprite(server_url, file_path, category_id, auth_token=None):
             data = {'category_id': category_id}
             headers = {'Authorization': f'Bearer {auth_token}'} if auth_token else {}
 
-            response = requests.put(url, files=files, data=data, headers=headers)
+            response = requests.put(f"{base_url}/{category_id}", files=files, data=data, headers=headers)
 
             if response.status_code == 201:
                 result = response.json()
@@ -75,7 +75,7 @@ def upload_sprite(server_url, file_path, category_id, auth_token=None):
 def main():
     if len(sys.argv) < 3:
         print("Usage: python upload_assets.py <server_url> <assets_folder_path> [auth_token]")
-        print("Example: python upload_assets.py http://localhost:8000 ./sprites")
+        print("Example: python upload_assets.py http://localhost:8000 ./cosmetics")
         return
 
     server_url = sys.argv[1].rstrip('/')

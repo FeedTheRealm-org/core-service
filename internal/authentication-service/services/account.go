@@ -74,6 +74,12 @@ func (e *VerificationCodeExpiredError) Error() string {
 	return "Verification code has expired"
 }
 
+type AccountAlreadyVerifiedError struct{}
+
+func (e *AccountAlreadyVerifiedError) Error() string {
+	return "Account already verified"
+}
+
 type AccountInvalidFormat struct {
 	Msg string
 }
@@ -238,4 +244,30 @@ func (s *accountService) VerifyAccount(email string, code string) (bool, error) 
 	}
 
 	return true, nil
+}
+
+func (s *accountService) RefreshVerificationCode(email string) (string, error) {
+	email = strings.ToLower(email)
+	user, err := s.repo.GetAccountByEmail(email)
+	if err != nil {
+		return "", &AccountNotFoundError{}
+	}
+
+	if user.Verified {
+		return "", &AccountAlreadyVerifiedError{}
+	}
+
+	functionGenerator := rand.Int
+	if s.conf.Server.Environment == config.Testing {
+		functionGenerator = code_generator.StaticGenerateCode
+	}
+
+	newCode := code_generator.GenerateCode(functionGenerator)
+	expiry := time.Now().Add(10 * time.Minute)
+
+	if err := s.repo.RefreshVerificationCode(user, newCode, expiry); err != nil {
+		return "", &AccountFailedToCreateError{}
+	}
+
+	return newCode, nil
 }

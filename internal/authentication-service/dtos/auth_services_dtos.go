@@ -24,6 +24,10 @@ type LoginAccountResponseDTO struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+type CheckSessionResponseDTO struct {
+	Message string `json:"message"`
+}
+
 type VerifyAccountRequestDTO struct {
 	Email string `json:"email"`
 	Code  string `json:"code"`
@@ -32,4 +36,12 @@ type VerifyAccountRequestDTO struct {
 type VerifyAccountResponseDTO struct {
 	Email    string `json:"email"`
 	Verified bool   `json:"verified"`
+}
+
+type RefreshVerificationRequestDTO struct {
+	Email string `json:"email"`
+}
+
+type RefreshVerificationResponseDTO struct {
+	Email string `json:"email"`
 }
