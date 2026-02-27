@@ -21,7 +21,7 @@ build: down # Build containers
 
 up: down # Build and start containers
 	docker compose -f $(COMPOSE_DEV) up -d
-	docker compose exec -f $(COMPOSE_DEV) app $(EXEC_APP)
+	docker compose -f $(COMPOSE_DEV) exec app $(EXEC_APP)
 .PHONY: up
 
 up-build: down # Build and start containers
