@@ -31,6 +31,7 @@ func NewAwsS3BucketRepository(bucketName string, conf *config.Config) (BucketRep
 	}
 
 	r.awsS3Client = aws_s3.NewFromConfig(awsCfg)
+	r.bucketName = bucketName
 
 	return r, nil
 }
