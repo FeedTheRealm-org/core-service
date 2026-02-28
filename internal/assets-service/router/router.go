@@ -72,7 +72,7 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 		return err
 	}
 
-	worldBucketRepo, err := getNewBucketRepository("world", conf)
+	worldsBucketRepo, err := getNewBucketRepository("worlds", conf)
 	if err != nil {
 		return err
 	}
@@ -81,10 +81,10 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 	SetupEndpointsForCosmeticsService(conf, db, g, cosmeticsBucketRepo)
 
 	/* Items endpoints */
-	SetupEndpointsForItemsService(conf, db, g, worldBucketRepo)
+	SetupEndpointsForItemsService(conf, db, g, worldsBucketRepo)
 
 	// /* Models Endpoints */
-	SetupEndpointsForModelsService(conf, db, g, worldBucketRepo)
+	SetupEndpointsForModelsService(conf, db, g, worldsBucketRepo)
 
 	return nil
 }
