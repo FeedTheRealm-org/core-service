@@ -57,15 +57,22 @@ func SetupEndpointsForModelsService(conf *config.Config, db *config.DB, g *gin.R
 	modelsGroup.PUT("/world/:world_id", modelsController.UploadModels)
 }
 
+func getNewBucketRepository(name string, conf *config.Config) (bucket.BucketRepository, error) {
+	if conf.Server.Environment == config.Development {
+		return bucket.NewOnDiskBucketRepository(name, conf)
+	}
+	return bucket.NewAwsS3BucketRepository(name, conf)
+}
+
 func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	g := r.Group("/assets")
 
-	cosmeticsBucketRepo, err := bucket.NewOnDiskBucketRepository("cosmetics", conf)
+	cosmeticsBucketRepo, err := getNewBucketRepository("cosmetics", conf)
 	if err != nil {
 		return err
 	}
 
-	worldBucketRepo, err := bucket.NewOnDiskBucketRepository("world", conf)
+	worldBucketRepo, err := getNewBucketRepository("world", conf)
 	if err != nil {
 		return err
 	}
