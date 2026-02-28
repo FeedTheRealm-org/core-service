@@ -25,7 +25,7 @@ func NewAwsS3BucketRepository(bucketName string, conf *config.Config) (BucketRep
 
 	ctx := context.Background()
 
-	awsCfg, err := aws_config.LoadDefaultConfig(ctx)
+	awsCfg, err := aws_config.LoadDefaultConfig(ctx, aws_config.WithRegion("us-east-2"))
 	if err != nil {
 		return nil, err
 	}
