@@ -8,6 +8,8 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/cosmetics"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
+
 	"github.com/google/uuid"
 )
 
@@ -52,11 +54,13 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticDat
 
 	category, err := ss.cosmeticsRepository.GetCategoryById(categoryId)
 	if err != nil {
+		logger.Logger.Errorf("Error getting category by id: %v", err)
 		return nil, err
 	}
 
 	filePath := fmt.Sprintf("/%s/%s%s", category.Name, cosmeticUniqueUrl, ext)
 	if err := ss.bucketRepo.UploadFile(filePath, "image/png", cosmeticData); err != nil {
+		logger.Logger.Errorf("Error uploading file to bucket: %v", err)
 		return nil, err
 	}
 
@@ -64,6 +68,7 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticDat
 		Url: fmt.Sprintf("%s%s", ss.bucketRepo.GetBaseUrl(), filePath),
 	}
 	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, cosmetic); err != nil {
+		logger.Logger.Errorf("Error creating cosmetic: %v", err)
 		return nil, err
 	}
 
