@@ -58,14 +58,14 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticDat
 		return nil, err
 	}
 
-	filePath := fmt.Sprintf("/%s/%s%s", category.Name, cosmeticUniqueUrl, ext)
+	filePath := fmt.Sprintf("%s/%s%s", category.Name, cosmeticUniqueUrl, ext)
 	if err := ss.bucketRepo.UploadFile(filePath, "image/png", cosmeticData); err != nil {
 		logger.Logger.Errorf("Error uploading file to bucket: %v", err)
 		return nil, err
 	}
 
 	cosmetic := &models.Cosmetic{
-		Url: fmt.Sprintf("%s%s", ss.bucketRepo.GetBaseUrl(), filePath),
+		Url: fmt.Sprintf("/%s", filePath),
 	}
 	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, cosmetic); err != nil {
 		logger.Logger.Errorf("Error creating cosmetic: %v", err)
