@@ -57,6 +57,7 @@ func (mc *modelsController) GetModelsList(c *gin.Context) {
 	for i, model := range modelsList {
 		modelResponseList[i] = dtos.ModelResponse{
 			ModelID: model.Id,
+			Url:     model.Url,
 		}
 	}
 

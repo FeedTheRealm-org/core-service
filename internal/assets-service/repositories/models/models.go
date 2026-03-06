@@ -4,6 +4,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	assetModels "github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/google/uuid"
+	"gorm.io/gorm/clause"
 )
 
 type modelsRepository struct {
@@ -29,11 +30,15 @@ func (mr *modelsRepository) PublishModels(modelsList []assetModels.Model) ([]ass
 
 	var publishedModels = make([]assetModels.Model, 0, len(modelsList))
 	for _, model := range modelsList {
-		if err := tx.Create(&model).Error; err != nil {
-			tx.Rollback()
+		if err := mr.db.Conn.
+			Clauses(
+				clause.OnConflict{
+					Columns:   []clause.Column{{Name: "id"}},
+					DoUpdates: clause.AssignmentColumns([]string{"url", "updated_at"}),
+				},
+			).Create(&model).Error; err != nil {
 			return nil, err
 		}
-		publishedModels = append(publishedModels, model)
 	}
 
 	if err := tx.Commit().Error; err != nil {

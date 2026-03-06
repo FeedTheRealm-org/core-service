@@ -2,3 +2,4 @@ main
 .env
 certs/
 local_buckets/
+bucket/
