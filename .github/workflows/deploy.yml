@@ -45,7 +45,7 @@ jobs:
               "aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
               "docker stop $SERVICE || true",
               "docker rm $SERVICE || true",
-              "docker rmi $(docker images -q) || true",
+              "docker image prune -af || true",
               "docker pull $IMAGE",
               "aws ssm get-parameters-by-path --path \"/core-service/\" --with-decryption --region ${{ secrets.AWS_REGION }} --query \"Parameters[*].[Name,Value]\" --output text | sed \"s#/core-service/##g; s#\\t#=#g\" > /tmp/core_service_env",
               "docker run -d --restart always --name $SERVICE -p 34782:8000 --env-file /tmp/core_service_env $IMAGE",
