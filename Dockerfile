@@ -29,6 +29,7 @@ WORKDIR /usr/src/app
 COPY certs /certs
 COPY migrations ./migrations
 COPY --from=builder /usr/local/bin/app /usr/local/bin/app
+COPY templates ./templates
 
 EXPOSE 8000
 
