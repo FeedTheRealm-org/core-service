@@ -72,7 +72,7 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 		return err
 	}
 
-	worldsBucketRepo, err := getNewBucketRepository("worlds", conf)
+	worldsBucketRepo, err := getNewBucketRepository("feedtherealm-prod-worlds", conf)
 	if err != nil {
 		return err
 	}
