@@ -23,11 +23,43 @@ type itemService struct {
 
 // NewItemService creates a new instance of ItemService.
 func NewItemService(conf *config.Config, repository items.ItemRepository, bucketRepo bucket.BucketRepository) ItemService {
-	return &itemService{
+	newItemService := &itemService{
 		conf:       conf,
 		repository: repository,
 		bucketRepo: bucketRepo,
 	}
+
+	if err := newItemService.seedInitialCategories(); err != nil {
+		logger.Logger.Errorf("Failed to seed initial item categories: %v", err)
+	}
+
+	return newItemService
+}
+
+func (is *itemService) seedInitialCategories() error {
+	existingCategories, err := is.repository.GetCategoriesList()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve existing categories: %w", err)
+	}
+
+	existingCategoryNames := make(map[string]bool)
+	for _, category := range existingCategories {
+		existingCategoryNames[category.Name] = true
+	}
+
+	initialCategories := is.conf.Assets.InitialCategories
+
+	for _, categoryName := range initialCategories {
+		if !existingCategoryNames[categoryName] {
+			if _, err := is.repository.AddCategory(categoryName); err != nil {
+				logger.Logger.Warnf("Failed to add initial category '%s': %v", categoryName, err)
+			} else {
+				logger.Logger.Infof("Added initial category: %s", categoryName)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (is *itemService) GetCategoriesList() ([]*models.ItemCategory, error) {
