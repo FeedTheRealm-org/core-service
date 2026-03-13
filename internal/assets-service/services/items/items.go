@@ -1,6 +1,7 @@
 package items
 
 import (
+	"errors"
 	"fmt"
 	"mime/multipart"
 	"os"
@@ -49,14 +50,20 @@ func (is *itemService) seedInitialCategories() error {
 
 	initialCategories := is.conf.Assets.InitialCategories
 
+	var errs []error
 	for _, categoryName := range initialCategories {
 		if !existingCategoryNames[categoryName] {
 			if _, err := is.repository.AddCategory(categoryName); err != nil {
 				logger.Logger.Warnf("Failed to add initial category '%s': %v", categoryName, err)
+				errs = append(errs, fmt.Errorf("failed to add initial category '%s': %w", categoryName, err))
 			} else {
 				logger.Logger.Infof("Added initial category: %s", categoryName)
 			}
 		}
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
 	}
 
 	return nil
