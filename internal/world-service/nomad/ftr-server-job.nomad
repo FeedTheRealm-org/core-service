@@ -19,11 +19,6 @@ job "{{ .JobName }}" {
         ports = ["game"]
         args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}"]
       }
-
-      resources {
-        cpu    = 200
-        memory = 256
-      }
     }
   }
 }
