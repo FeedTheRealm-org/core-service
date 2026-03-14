@@ -32,6 +32,7 @@ func (ns *nomadJobSenderService) StartNewJob(worldId uuid.UUID, zoneId int) erro
 		return fmt.Errorf("failed to read nomad template file: %w", err)
 	}
 
+	// TODO: add resources cap
 	jobTemplate, err := template.New("ftr-server-job").Parse(string(templateBytes))
 	if err != nil {
 		return fmt.Errorf("failed to parse nomad template: %w", err)
