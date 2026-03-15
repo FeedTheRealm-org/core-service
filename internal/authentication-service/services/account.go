@@ -11,6 +11,7 @@ import (
 	code_generator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/code-generator"
 	validator "github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/credential-validation"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
 )
 
@@ -88,12 +89,38 @@ func (e *AccountInvalidFormat) Error() string {
 	return "Account format is invalid"
 }
 
+func (s *accountService) seedAdminAccount(conf *config.Config) {
+	adminEmail := conf.Server.AdminEmail
+	adminPassword := conf.Server.AdminPassword
+
+	if adminEmail == "" || adminPassword == "" {
+		logger.Logger.Warn("Admin email or password not provided, skipping admin account creation")
+		return
+	}
+
+	if _, _, err := s.LoginAccount(adminEmail, adminPassword); err == nil {
+		logger.Logger.Infof("Admin account already exists with email: %s", adminEmail)
+		return
+	}
+
+	_, _, err := s.CreateAccount(adminEmail, adminPassword, true)
+	if err != nil {
+		logger.Logger.Warnf("Failed to create admin account: %v", err)
+	} else {
+		logger.Logger.Infof("Admin account created with email: %s", adminEmail)
+	}
+}
+
 func NewAccountService(conf *config.Config, repo repositories.AccountRepository, jwtManager *session.JWTManager) AccountService {
-	return &accountService{
+	newAccountService := &accountService{
 		conf: conf,
 		repo: repo,
 		jwt:  jwtManager,
 	}
+
+	newAccountService.seedAdminAccount(conf)
+
+	return newAccountService
 }
 
 func (s *accountService) GetUserByEmail(email string) (*models.User, error) {
