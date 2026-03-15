@@ -12,11 +12,49 @@ type packsService struct {
 	repo packs.PacksRepository
 }
 
+func (s *packsService) seedPacksData() error {
+	packs, err := s.GetAllPacks()
+	if len(packs) != 0 && err != nil {
+		return err
+	}
+
+	for _, pack := range packs {
+		if err := s.DeletePack(pack.Id); err != nil {
+			return err
+		}
+	}
+
+	newPacks := []struct {
+		Name  string
+		Gems  int
+		Price float32
+	}{
+		{"Small Pack", 1, 1.99},
+		{"Medium Pack", 10, 14.99},
+		{"Large Pack", 50, 24.99},
+	}
+
+	for _, data := range newPacks {
+		_, err := s.CreatePack(data.Name, data.Gems, data.Price)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func NewPacksService(conf *config.Config, repo packs.PacksRepository) PacksService {
-	return &packsService{
+	newService := &packsService{
 		conf: conf,
 		repo: repo,
 	}
+
+	if err := newService.seedPacksData(); err != nil {
+		return nil
+	}
+
+	return newService
 }
 
 func (s *packsService) GetAllPacks() ([]*models.Pack, error) {
