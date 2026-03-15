@@ -4,11 +4,11 @@ job "{{ .JobName }}" {
 
   group "zone" {
     restart {
-      attempts = 0
-      interval = "24h"
-      delay    = "10s"
-      mode     = "delay"
-    }
+        attempts = 10
+        interval = "5m"
+        delay    = "10s"
+        mode     = "delay"
+      }
 
     network {
       mode = "bridge"
