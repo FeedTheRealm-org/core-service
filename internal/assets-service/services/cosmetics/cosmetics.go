@@ -49,7 +49,7 @@ func (ss *cosmeticsService) AddCategory(category string) (*models.CosmeticCatego
 	return ss.cosmeticsRepository.AddCategory(category)
 }
 
-func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticData multipart.File, ext string) (*models.Cosmetic, error) {
+func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticData multipart.File, ext string, userId uuid.UUID) (*models.Cosmetic, error) {
 	cosmeticUniqueUrl := uuid.New().String()
 
 	category, err := ss.cosmeticsRepository.GetCategoryById(categoryId)
@@ -67,7 +67,7 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticDat
 	cosmetic := &models.Cosmetic{
 		Url: fmt.Sprintf("/%s", filePath),
 	}
-	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, cosmetic); err != nil {
+	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, cosmetic, userId); err != nil {
 		logger.Logger.Errorf("Error creating cosmetic: %v", err)
 		return nil, err
 	}

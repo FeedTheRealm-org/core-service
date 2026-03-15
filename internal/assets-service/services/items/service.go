@@ -12,7 +12,7 @@ type ItemService interface {
 	GetCategoriesList() ([]*models.ItemCategory, error)
 	// UploadSprite uploads or overwrites a single sprite file with the provided ID for a given world and saves its metadata.
 	// idStr is the raw ID value from the client (string). The service will validate/parse it as a UUID.
-	UploadSprite(worldID uuid.UUID, categoryId uuid.UUID, id uuid.UUID, file *multipart.FileHeader) (*models.Item, error)
+	UploadSprite(worldID uuid.UUID, categoryId uuid.UUID, id uuid.UUID, file *multipart.FileHeader, userId uuid.UUID) (*models.Item, error)
 
 	// GetItemById retrieves an item by its ID.
 	GetItemById(id uuid.UUID) (*models.Item, error)

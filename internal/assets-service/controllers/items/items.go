@@ -114,6 +114,12 @@ func (ic *itemController) GetItemById(c *gin.Context) {
 // @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/sprites/items/{world_id}/{category_id} [post]
 func (ic *itemController) UploadItems(c *gin.Context) {
+	userId, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	worldId, err := uuid.Parse(c.Param("world_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid world_id format"))
@@ -150,7 +156,7 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 			return
 		}
 
-		item, err := ic.service.UploadSprite(worldId, categoryId, id, spriteFile)
+		item, err := ic.service.UploadSprite(worldId, categoryId, id, spriteFile, userId)
 		if err != nil {
 			_ = c.Error(err)
 			return

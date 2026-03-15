@@ -127,11 +127,11 @@ func (cc *cosmeticsController) GetCosmeticById(c *gin.Context) {
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/cosmetics [put]
 func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
-	// userId, err := common_handlers.GetUserIDFromSession(ctx)
-	// if err != nil {
-	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-	// 	return
-	// }
+	userId, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
 
 	categoryId, err := uuid.Parse(c.PostForm("category_id"))
 	if err != nil {
@@ -165,7 +165,7 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 		_ = file.Close()
 	}()
 
-	cosmetic, err := cc.cosmeticsService.UploadCosmeticData(categoryId, file, filepath.Ext(reqFile.Filename))
+	cosmetic, err := cc.cosmeticsService.UploadCosmeticData(categoryId, file, filepath.Ext(reqFile.Filename), userId)
 	if err != nil {
 		_ = c.Error(err)
 		return
