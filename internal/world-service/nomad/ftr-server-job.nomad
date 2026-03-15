@@ -3,11 +3,17 @@ job "{{ .JobName }}" {
   type = "service"
 
   group "zone" {
+    restart {
+      attempts = 0
+      mode     = "delay"
+      delay    = "10s"
+    }
 
     network {
+      mode = "bridge"
+
       port "game" {
-        to       = 7777
-        protocol = "udp"
+        to = 7777
       }
     }
 
