@@ -67,12 +67,12 @@ func getNewBucketRepository(name string, conf *config.Config) (bucket.BucketRepo
 func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	g := r.Group("/assets")
 
-	cosmeticsBucketRepo, err := getNewBucketRepository("feedtherealm-prod-cosmetics", conf)
+	cosmeticsBucketRepo, err := getNewBucketRepository(conf.Assets.CosmeticsBucketName, conf)
 	if err != nil {
 		return err
 	}
 
-	worldsBucketRepo, err := getNewBucketRepository("worlds", conf)
+	worldsBucketRepo, err := getNewBucketRepository(conf.Assets.WorldsBucketName, conf)
 	if err != nil {
 		return err
 	}
