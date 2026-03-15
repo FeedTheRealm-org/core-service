@@ -35,6 +35,12 @@ func NewCosmeticsController(conf *config.Config, cosmeticsService cosmetics.Cosm
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/cosmetics/categories [get]
 func (cc *cosmeticsController) GetCategoriesList(c *gin.Context) {
+	_, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	categories, err := cc.cosmeticsService.GetCategoriesList()
 	if err != nil {
 		_ = c.Error(err)
@@ -63,11 +69,11 @@ func (cc *cosmeticsController) GetCategoriesList(c *gin.Context) {
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/cosmetics/categories/{category_id} [get]
 func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
-	// userId, err := common_handlers.GetUserIDFromSession(ctx)
-	// if err != nil {
-	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-	// 	return
-	// }
+	_, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
 
 	categoryId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -95,6 +101,12 @@ func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 }
 
 func (cc *cosmeticsController) GetCosmeticById(c *gin.Context) {
+	_, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	cosmeticId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid cosmetic_id: " + err.Error()))
@@ -178,6 +190,31 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
+func (cc *cosmeticsController) DeleteCosmetic(c *gin.Context) {
+	userId, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	cosmeticId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid cosmetic_id: " + err.Error()))
+		return
+	}
+
+	err = cc.cosmeticsService.DeleteCosmetic(cosmeticId, userId)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.CosmeticResponse{
+		CosmeticId: cosmeticId,
+	}
+	common_handlers.HandleSuccessResponse(c, http.StatusNoContent, res)
+}
+
 // @Summary AddCategory
 // @Description Adds a new cosmetic category.
 // @Tags assets-service
@@ -189,11 +226,10 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/cosmetics/categories [post]
 func (cc *cosmeticsController) AddCategory(c *gin.Context) {
-	// userId, err := common_handlers.GetUserIDFromSession(ctx)
-	// if err != nil {
-	// 	_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-	// 	return
-	// }
+	if err := common_handlers.IsAdminSession(c); err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
 
 	req := &dtos.AddCosmeticCategoryRequest{}
 	if err := c.ShouldBindJSON(req); err != nil {

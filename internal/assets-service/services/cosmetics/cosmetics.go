@@ -74,3 +74,23 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticDat
 
 	return cosmetic, nil
 }
+
+func (ss *cosmeticsService) DeleteCosmetic(cosmeticId uuid.UUID, userId uuid.UUID) error {
+	cosmetic, err := ss.cosmeticsRepository.GetCosmeticById(cosmeticId)
+	if err != nil {
+		logger.Logger.Errorf("Error getting cosmetic by id: %v", err)
+		return err
+	}
+
+	if err := ss.bucketRepo.DeleteFile(cosmetic.Url); err != nil {
+		logger.Logger.Errorf("Error deleting file from bucket: %v", err)
+		return err
+	}
+
+	if err := ss.cosmeticsRepository.DeleteCosmetic(cosmeticId, userId); err != nil {
+		logger.Logger.Errorf("Error deleting cosmetic: %v", err)
+		return err
+	}
+
+	return nil
+}

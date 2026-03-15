@@ -10,7 +10,9 @@ type ItemController interface {
 
 	GetItemById(c *gin.Context)
 
-	// UploadItems handles item upload.
 	UploadItems(c *gin.Context)
+
+	DeleteItem(c *gin.Context)
+
 	AddCategory(c *gin.Context)
 }

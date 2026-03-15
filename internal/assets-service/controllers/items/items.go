@@ -28,6 +28,12 @@ func NewItemController(conf *config.Config, service items.ItemService) ItemContr
 }
 
 func (ic *itemController) GetCategoriesList(c *gin.Context) {
+	_, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	categories, err := ic.service.GetCategoriesList()
 	if err != nil {
 		_ = c.Error(err)
@@ -48,6 +54,12 @@ func (ic *itemController) GetCategoriesList(c *gin.Context) {
 }
 
 func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
+	_, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	worldId, err := uuid.Parse(c.Param("world_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
@@ -80,6 +92,12 @@ func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
 }
 
 func (ic *itemController) GetItemById(c *gin.Context) {
+	_, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	itemId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid item_id: " + err.Error()))
@@ -176,7 +194,37 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
+func (ic *itemController) DeleteItem(c *gin.Context) {
+	userId, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	itemId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid item_id format"))
+		return
+	}
+
+	if err := ic.service.DeleteItem(itemId, userId); err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.ItemResponse{
+		Id: itemId,
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
+}
+
 func (ic *itemController) AddCategory(c *gin.Context) {
+	if err := common_handlers.IsAdminSession(c); err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	req := &dtos.AddItemCategoryRequest{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		_ = c.Error(errors.NewBadRequestError(err.Error()))

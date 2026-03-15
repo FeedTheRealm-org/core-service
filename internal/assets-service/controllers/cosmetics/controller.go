@@ -16,6 +16,9 @@ type CosmeticsController interface {
 	// UploadCosmeticData handles the upload of cosmetic file.
 	UploadCosmeticData(c *gin.Context)
 
+	// DeleteCosmetic handles the deletion of a cosmetic by its ID.
+	DeleteCosmetic(c *gin.Context)
+
 	// AddCategory handles the addition of a new sprite category.
 	AddCategory(c *gin.Context)
 }

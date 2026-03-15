@@ -23,4 +23,6 @@ type ItemService interface {
 	GetAllItems() ([]*models.Item, error)
 
 	AddCategory(name string) (*models.ItemCategory, error)
+
+	DeleteItem(id uuid.UUID, userId uuid.UUID) error
 }
