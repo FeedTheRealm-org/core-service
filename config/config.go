@@ -74,8 +74,8 @@ func CreateConfig() *Config {
 		Port:            getEnvOrDefaultInt("SERVER_PORT", 8000),
 		ShutdownTimeout: getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
 		Environment:     getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
-		AdminEmail:      getEnvOrDefaultString(os.Getenv("SERVER_ADMIN_EMAIL"), ""),
-		AdminPassword:   getEnvOrDefaultString(os.Getenv("SERVER_ADMIN_PASSWORD"), ""),
+		AdminEmail:      getEnvOrDefaultString("SERVER_ADMIN_EMAIL", ""),
+		AdminPassword:   getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
 	}
 
 	return &Config{
