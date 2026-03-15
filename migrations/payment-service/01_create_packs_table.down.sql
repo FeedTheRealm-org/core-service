@@ -1,0 +1,7 @@
+BEGIN;
+
+DROP TABLE IF EXISTS packs;
+
+DROP EXTENSION IF EXISTS "pgcrypto";
+
+COMMIT;
