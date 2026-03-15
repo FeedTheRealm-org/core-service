@@ -50,5 +50,11 @@ func JWTAuthMiddleware(jwtManager *session.JWTManager, fixedToken string) gin.Ha
 			logger.Logger.Warnln("Missing userID in JWT claims")
 			c.Set("invalidJWT", true)
 		}
+
+		if isAdmin, ok := claims["isAdmin"].(bool); ok && isAdmin {
+			c.Set("isAdmin", true)
+		} else {
+			c.Set("isAdmin", false)
+		}
 	}
 }

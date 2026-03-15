@@ -106,7 +106,7 @@ func (s *accountService) GetUserByEmail(email string) (*models.User, error) {
 	return user, nil
 }
 
-func (s *accountService) CreateAccount(email string, password string) (*models.User, string, error) {
+func (s *accountService) CreateAccount(email string, password string, isAdmin bool) (*models.User, string, error) {
 	email = strings.ToLower(email)
 	existingUser, err := s.repo.GetAccountByEmail(email)
 	if err == nil && existingUser != nil {
@@ -170,6 +170,7 @@ func (s *accountService) CreateAccount(email string, password string) (*models.U
 	user := &models.User{
 		Email:    email,
 		Password: string(hashedPassword),
+		IsAdmin:  isAdmin,
 	}
 
 	verificationCode := code_generator.GenerateCode(functionGenerator)
@@ -197,7 +198,7 @@ func (s *accountService) LoginAccount(email string, password string) (*models.Us
 		return nil, "", &AccountNotVerifiedError{}
 	}
 
-	token, err := s.jwt.GenerateToken(user.Id.String())
+	token, err := s.jwt.GenerateToken(user.Id.String(), user.IsAdmin)
 	if err != nil {
 		return nil, "", &AccountFailedToCreateTokenError{}
 	}

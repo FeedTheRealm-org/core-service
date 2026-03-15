@@ -58,7 +58,13 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 		return
 	}
 
-	result, verificationCode, err := ec.accountService.CreateAccount(req.Email, req.Password)
+	if err := common_handlers.IsAdminSession(c); err != nil && req.IsAdmin {
+		logger.Logger.Info("CreateAccount: Non-admin account try to create admin account with email=%s", req.Email)
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	result, verificationCode, err := ec.accountService.CreateAccount(req.Email, req.Password, req.IsAdmin)
 	if err != nil {
 		if _, ok := err.(*services.AccountAlreadyExistsError); ok {
 			logger.Logger.Infof("CreateAccount: account already exists for email=%s", req.Email)

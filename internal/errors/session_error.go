@@ -23,3 +23,10 @@ type InvalidSessionError struct {
 func (i *InvalidSessionError) Error() string {
 	return "session is invalid"
 }
+
+type NotAdminSessionError struct {
+}
+
+func (n *NotAdminSessionError) Error() string {
+	return "session does not have admin privileges"
+}
