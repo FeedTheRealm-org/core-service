@@ -136,7 +136,7 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 	if err != nil {
 		if _, ok := err.(*services.AccountNotFoundError); ok {
 			logger.Logger.Infof("LoginAccount: account not found for email=%s", req.Email)
-			_ = c.Error(errors.NewNotFoundError("The email address or password is incorrect."))
+			_ = c.Error(errors.NewUnauthorizedError("The email address or password is incorrect."))
 			return
 		}
 

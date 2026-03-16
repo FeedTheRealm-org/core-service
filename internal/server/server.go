@@ -55,6 +55,7 @@ func (s *Server) Start() error {
 	}
 
 	logger.Logger.Info("Starting server on port " + strconv.Itoa(s.conf.Server.Port))
+	logger.Logger.Info("Bounded Public IP: " + s.conf.Server.PublicIP)
 	if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err
 	}

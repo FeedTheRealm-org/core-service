@@ -22,6 +22,7 @@ type ServerConfig struct {
 	Environment     EnvironmentType
 	AdminEmail      string
 	AdminPassword   string
+	PublicIP        string
 }
 
 type DatabaseConfig struct {
@@ -49,6 +50,7 @@ type Config struct {
 	EmailLogoURL          string
 	ServerFixedToken      string
 	NomadAddr             string
+	NomadToken            string
 	NomadTemplatePath     string
 	NomadImageName        string
 	FTRServerImage        string
@@ -76,6 +78,7 @@ func CreateConfig() *Config {
 		Environment:     getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
 		AdminEmail:      getEnvOrDefaultString("SERVER_ADMIN_EMAIL", ""),
 		AdminPassword:   getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
+		PublicIP:        os.Getenv("PUBLIC_IP"),
 	}
 
 	return &Config{
@@ -89,6 +92,7 @@ func CreateConfig() *Config {
 		EmailLogoURL:          getEnvOrDefaultString("EMAIL_LOGO_URL", "https://avatars.githubusercontent.com/u/231922724?s=400&u=5f4eb45fb6dc7cfa42333bfe1dc64a376122e3d0&v=4"),
 		ServerFixedToken:      os.Getenv("SERVER_FIXED_TOKEN"),
 		NomadAddr:             os.Getenv("NOMAD_ADDR"),
+		NomadToken:            os.Getenv("NOMAD_TOKEN"),
 		NomadTemplatePath:     getEnvOrDefaultString("NOMAD_TEMPLATE_PATH", "/nomad/templates/ftr-server-job.nomad"),
 		FTRServerImage:        os.Getenv("FTR_SERVER_IMAGE"),
 	}

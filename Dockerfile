@@ -29,6 +29,8 @@ WORKDIR /usr/src/app
 COPY certs /certs
 COPY migrations ./migrations
 COPY --from=builder /usr/local/bin/app /usr/local/bin/app
+COPY templates ./templates
+COPY internal/world-service/nomad/ftr-server-job.nomad /nomad/templates/ftr-server-job.nomad
 
 EXPOSE 8000
 
