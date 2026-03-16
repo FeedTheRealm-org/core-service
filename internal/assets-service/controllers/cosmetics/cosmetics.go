@@ -203,7 +203,23 @@ func (cc *cosmeticsController) DeleteCosmetic(c *gin.Context) {
 		return
 	}
 
-	err = cc.cosmeticsService.DeleteCosmetic(cosmeticId, userId)
+	cosmetic, err := cc.cosmeticsService.GetCosmeticById(cosmeticId)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	if cosmetic == nil {
+		_ = c.Error(errors.NewBadRequestError("cosmetic not found"))
+		return
+	}
+
+	if cosmetic.CreatedBy != userId {
+		_ = c.Error(errors.NewUnauthorizedError("user is not authorized to delete this cosmetic"))
+		return
+	}
+
+	err = cc.cosmeticsService.DeleteCosmetic(cosmeticId)
 	if err != nil {
 		_ = c.Error(err)
 		return

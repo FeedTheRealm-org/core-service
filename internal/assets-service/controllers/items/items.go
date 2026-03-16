@@ -207,7 +207,23 @@ func (ic *itemController) DeleteItem(c *gin.Context) {
 		return
 	}
 
-	if err := ic.service.DeleteItem(itemId, userId); err != nil {
+	item, err := ic.service.GetItemById(itemId)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	if item == nil {
+		_ = c.Error(errors.NewBadRequestError("item not found"))
+		return
+	}
+
+	if item.CreatedBy != userId {
+		_ = c.Error(errors.NewUnauthorizedError("user is not authorized to delete this item"))
+		return
+	}
+
+	if err := ic.service.DeleteItem(itemId); err != nil {
 		_ = c.Error(err)
 		return
 	}

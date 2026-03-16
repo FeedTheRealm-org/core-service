@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	"github.com/FeedTheRealm-org/core-service/config"
-	assets_errors "github.com/FeedTheRealm-org/core-service/internal/assets-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/items"
@@ -130,22 +129,18 @@ func (is *itemService) GetAllItems() ([]*models.Item, error) {
 	return is.repository.GetAllItems()
 }
 
-func (is *itemService) DeleteItem(id uuid.UUID, userId uuid.UUID) error {
+func (is *itemService) DeleteItem(id uuid.UUID) error {
 	sprite, err := is.repository.GetItemById(id)
 	if err != nil {
 		return err
 	}
 
-	if sprite.CreatedBy != userId {
-		return assets_errors.NewUnauthorizedError("you are not the owner of this item")
+	if err := is.bucketRepo.DeleteFile(sprite.Url); err != nil {
+		logger.Logger.Warnf("Failed to delete sprite file from bucket %s: %v", sprite.Url, err)
 	}
 
 	if err := is.repository.DeleteSprite(id); err != nil {
 		return err
-	}
-
-	if err := is.bucketRepo.DeleteFile(sprite.Url); err != nil {
-		logger.Logger.Warnf("Failed to delete sprite file from bucket %s: %v", sprite.Url, err)
 	}
 
 	logger.Logger.Infof("Item sprite deleted: %s (ID: %s)", sprite.Url, id)
