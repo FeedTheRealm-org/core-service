@@ -20,6 +20,7 @@ type ServerConfig struct {
 	Port            int
 	ShutdownTimeout time.Duration
 	Environment     EnvironmentType
+	PublicIP        string
 }
 
 type DatabaseConfig struct {
@@ -69,6 +70,7 @@ func CreateConfig() *Config {
 		Port:            getEnvOrDefaultInt("SERVER_PORT", 8000),
 		ShutdownTimeout: getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
 		Environment:     getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
+		PublicIP:        os.Getenv("PUBLIC_IP"),
 	}
 
 	return &Config{
