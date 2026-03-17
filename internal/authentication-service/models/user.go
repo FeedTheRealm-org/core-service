@@ -13,4 +13,5 @@ type User struct {
 	Verified  bool      `gorm:"default:false"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+	IsAdmin   bool      `gorm:"default:false"`
 }

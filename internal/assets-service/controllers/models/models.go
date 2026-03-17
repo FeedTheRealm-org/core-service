@@ -142,7 +142,7 @@ func (mc *modelsController) DownloadModel(c *gin.Context) {
 // @Router /assets/models/{world_id} [post]
 // @Router /assets/models [post]
 func (mc *modelsController) UploadModels(c *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(c)
+	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
 		return
@@ -186,6 +186,7 @@ func (mc *modelsController) UploadModels(c *gin.Context) {
 		modelsRequest = append(modelsRequest, models.Model{
 			Id:        modelID,
 			ModelFile: modelFile,
+			CreatedBy: userId,
 		})
 	}
 

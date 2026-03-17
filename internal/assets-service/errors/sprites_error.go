@@ -1,5 +1,19 @@
 package errors
 
+type UnauthorizedError struct {
+	details string
+}
+
+func (e *UnauthorizedError) Error() string {
+	return e.details
+}
+
+func NewUnauthorizedError(details string) *UnauthorizedError {
+	return &UnauthorizedError{
+		details: details,
+	}
+}
+
 // CosmeticNotFound is returned when a requested sprite cannot be found.
 type CosmeticNotFound struct {
 	details string

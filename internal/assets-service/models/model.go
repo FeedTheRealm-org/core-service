@@ -14,6 +14,7 @@ type Model struct {
 	CreatedAt time.Time             `gorm:"autoCreateTime"`
 	UpdatedAt time.Time             `gorm:"autoUpdateTime"`
 	ModelFile *multipart.FileHeader `gorm:"-" json:"-"`
+	CreatedBy uuid.UUID             `gorm:"type:uuid;not null"`
 }
 
 func (Model) TableName() string {

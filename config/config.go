@@ -20,6 +20,8 @@ type ServerConfig struct {
 	Port            int
 	ShutdownTimeout time.Duration
 	Environment     EnvironmentType
+	AdminEmail      string
+	AdminPassword   string
 	PublicIP        string
 }
 
@@ -31,8 +33,10 @@ type DatabaseConfig struct {
 }
 
 type AssetsConfig struct {
-	MaxUploadSizeBytes int64
-	InitialCategories  []string
+	MaxUploadSizeBytes  int64
+	InitialCategories   []string
+	CosmeticsBucketName string
+	WorldsBucketName    string
 }
 
 type Config struct {
@@ -62,8 +66,10 @@ func CreateConfig() *Config {
 	}
 
 	assetsConf := &AssetsConfig{
-		MaxUploadSizeBytes: int64(getEnvOrDefaultInt("ASSETS_MAX_UPLOAD_SIZE_BYTES", 20*1024*1024)),
-		InitialCategories:  getEnvOrDefaultStringList("ASSETS_INITIAL_CATEGORIES", []string{"weapons", "consumables"}),
+		MaxUploadSizeBytes:  int64(getEnvOrDefaultInt("ASSETS_MAX_UPLOAD_SIZE_BYTES", 20*1024*1024)),
+		InitialCategories:   getEnvOrDefaultStringList("ASSETS_INITIAL_CATEGORIES", []string{"weapons", "consumables"}),
+		CosmeticsBucketName: getEnvOrDefaultString("ASSETS_COSMETICS_BUCKET_NAME", "cosmetics"),
+		WorldsBucketName:    getEnvOrDefaultString("ASSETS_WORLDS_BUCKET_NAME", "worlds"),
 	}
 
 	serverConf := &ServerConfig{
@@ -71,6 +77,8 @@ func CreateConfig() *Config {
 		Port:            getEnvOrDefaultInt("SERVER_PORT", 8000),
 		ShutdownTimeout: getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
 		Environment:     getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
+		AdminEmail:      getEnvOrDefaultString("SERVER_ADMIN_EMAIL", ""),
+		AdminPassword:   getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
 		PublicIP:        os.Getenv("PUBLIC_IP"),
 	}
 

@@ -16,6 +16,7 @@ type Item struct {
 	Category   ItemCategory `gorm:"foreignKey:CategoryID;references:Id"`
 	CreatedAt  time.Time    `gorm:"autoCreateTime"`
 	UpdatedAt  time.Time    `gorm:"autoUpdateTime"`
+	CreatedBy  uuid.UUID    `gorm:"type:uuid;not null"`
 }
 
 func (Item) TableName() string {

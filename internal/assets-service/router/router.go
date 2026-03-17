@@ -26,6 +26,7 @@ func SetupEndpointsForCosmeticsService(conf *config.Config, db *config.DB, g *gi
 	cosmeticsGroup.GET("/categories/:id", cosmeticsController.GetCosmeticsListByCategory)
 	cosmeticsGroup.GET(":id", cosmeticsController.GetCosmeticById)
 	cosmeticsGroup.PUT("/categories/:id", cosmeticsController.UploadCosmeticData)
+	cosmeticsGroup.DELETE(":id", cosmeticsController.DeleteCosmetic)
 
 	/* ADMIN ONLY */
 	cosmeticsGroup.POST("/categories", cosmeticsController.AddCategory)
@@ -42,6 +43,7 @@ func SetupEndpointsForItemsService(conf *config.Config, db *config.DB, g *gin.Ro
 	itemsGroup.GET("/world/:world_id/categories/:category_id", itemsController.GetItemsListByCategory)
 	itemsGroup.GET(":id", itemsController.GetItemById)
 	itemsGroup.PUT("/world/:world_id/categories/:category_id", itemsController.UploadItems)
+	itemsGroup.DELETE(":id", itemsController.DeleteItem)
 
 	/* ADMIN ONLY */
 	itemsGroup.POST("/categories", itemsController.AddCategory)
@@ -67,12 +69,12 @@ func getNewBucketRepository(name string, conf *config.Config) (bucket.BucketRepo
 func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	g := r.Group("/assets")
 
-	cosmeticsBucketRepo, err := getNewBucketRepository("feedtherealm-prod-cosmetics", conf)
+	cosmeticsBucketRepo, err := getNewBucketRepository(conf.Assets.CosmeticsBucketName, conf)
 	if err != nil {
 		return err
 	}
 
-	worldsBucketRepo, err := getNewBucketRepository("feedtherealm-prod-worlds", conf)
+	worldsBucketRepo, err := getNewBucketRepository(conf.Assets.WorldsBucketName, conf)
 	if err != nil {
 		return err
 	}

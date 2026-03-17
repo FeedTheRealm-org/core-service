@@ -78,7 +78,7 @@ func (cr *cosmeticsRepository) GetCategoryById(categoryId uuid.UUID) (*models.Co
 	return &category, nil
 }
 
-func (cr *cosmeticsRepository) CreateCosmetic(categoryId uuid.UUID, cosmetic *models.Cosmetic) error {
+func (cr *cosmeticsRepository) CreateCosmetic(categoryId uuid.UUID, cosmetic *models.Cosmetic, userId uuid.UUID) error {
 	var category models.CosmeticCategory
 	if err := cr.db.Conn.First(&category, "id = ?", categoryId).Error; err != nil {
 		if errors.IsRecordNotFound(err) {
@@ -88,9 +88,17 @@ func (cr *cosmeticsRepository) CreateCosmetic(categoryId uuid.UUID, cosmetic *mo
 	}
 
 	cosmetic.CategoryID = category.Id
+	cosmetic.CreatedBy = userId
 	if err := cr.db.Conn.Create(cosmetic).Error; err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (cr *cosmeticsRepository) DeleteCosmetic(cosmeticId uuid.UUID) error {
+	if err := cr.db.Conn.Delete(&models.Cosmetic{}, "id = ?", cosmeticId).Error; err != nil {
+		return err
+	}
 	return nil
 }

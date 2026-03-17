@@ -1,0 +1,12 @@
+BEGIN;
+
+ALTER TABLE models
+DROP COLUMN IF EXISTS created_by;
+
+ALTER TABLE items
+DROP COLUMN IF EXISTS created_by;
+
+ALTER TABLE cosmetics
+DROP COLUMN IF EXISTS created_by;
+
+COMMIT;

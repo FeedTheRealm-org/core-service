@@ -28,6 +28,12 @@ func NewItemController(conf *config.Config, service items.ItemService) ItemContr
 }
 
 func (ic *itemController) GetCategoriesList(c *gin.Context) {
+	_, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	categories, err := ic.service.GetCategoriesList()
 	if err != nil {
 		_ = c.Error(err)
@@ -48,6 +54,12 @@ func (ic *itemController) GetCategoriesList(c *gin.Context) {
 }
 
 func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
+	_, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	worldId, err := uuid.Parse(c.Param("world_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
@@ -80,6 +92,12 @@ func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
 }
 
 func (ic *itemController) GetItemById(c *gin.Context) {
+	_, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	itemId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid item_id: " + err.Error()))
@@ -114,6 +132,12 @@ func (ic *itemController) GetItemById(c *gin.Context) {
 // @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/sprites/items/{world_id}/{category_id} [post]
 func (ic *itemController) UploadItems(c *gin.Context) {
+	userId, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	worldId, err := uuid.Parse(c.Param("world_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid world_id format"))
@@ -150,7 +174,7 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 			return
 		}
 
-		item, err := ic.service.UploadSprite(worldId, categoryId, id, spriteFile)
+		item, err := ic.service.UploadSprite(worldId, categoryId, id, spriteFile, userId)
 		if err != nil {
 			_ = c.Error(err)
 			return
@@ -170,7 +194,53 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
+func (ic *itemController) DeleteItem(c *gin.Context) {
+	userId, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	itemId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid item_id format"))
+		return
+	}
+
+	item, err := ic.service.GetItemById(itemId)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	if item == nil {
+		_ = c.Error(errors.NewBadRequestError("item not found"))
+		return
+	}
+
+	if item.CreatedBy != userId {
+		_ = c.Error(errors.NewUnauthorizedError("user is not authorized to delete this item"))
+		return
+	}
+
+	if err := ic.service.DeleteItem(itemId); err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.ItemResponse{
+		Id: itemId,
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
+}
+
 func (ic *itemController) AddCategory(c *gin.Context) {
+	if err := common_handlers.IsAdminSession(c); err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	req := &dtos.AddItemCategoryRequest{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		_ = c.Error(errors.NewBadRequestError(err.Error()))

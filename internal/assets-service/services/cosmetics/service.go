@@ -18,7 +18,10 @@ type CosmeticsService interface {
 	GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error)
 
 	// UploadCosmeticData handles the upload of cosmetic file.
-	UploadCosmeticData(category uuid.UUID, cosmeticData multipart.File, ext string) (*models.Cosmetic, error)
+	UploadCosmeticData(category uuid.UUID, cosmeticData multipart.File, ext string, userId uuid.UUID) (*models.Cosmetic, error)
+
+	// DeleteCosmetic handles the deletion of a cosmetic by its ID.
+	DeleteCosmetic(cosmeticId uuid.UUID) error
 
 	// AddCategory handles the addition of a new cosmetic category.
 	AddCategory(category string) (*models.CosmeticCategory, error)

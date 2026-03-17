@@ -25,6 +25,14 @@ func IsSessionValid(ctx *gin.Context) error {
 	return nil
 }
 
+// IsAdminSession checks if the session has admin privileges.
+func IsAdminSession(ctx *gin.Context) error {
+	if err := IsSessionValid(ctx); err != nil {
+		return &errors.NotAdminSessionError{}
+	}
+	return nil
+}
+
 // GetUserIDFromSession checks if the session is valid and returns the userID from the session.
 func GetUserIDFromSession(ctx *gin.Context) (uuid.UUID, error) {
 	if err := IsSessionValid(ctx); err != nil {
