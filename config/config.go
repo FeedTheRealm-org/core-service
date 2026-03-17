@@ -47,6 +47,7 @@ type Config struct {
 	ServerFixedToken      string
 	NomadAddr             string
 	NomadToken            string
+	NomadCertPath         string
 	NomadTemplatePath     string
 	NomadImageName        string
 	FTRServerImage        string
@@ -85,6 +86,7 @@ func CreateConfig() *Config {
 		ServerFixedToken:      os.Getenv("SERVER_FIXED_TOKEN"),
 		NomadAddr:             os.Getenv("NOMAD_ADDR"),
 		NomadToken:            os.Getenv("NOMAD_TOKEN"),
+		NomadCertPath:         os.Getenv("NOMAD_CERT_PATH"),
 		NomadTemplatePath:     getEnvOrDefaultString("NOMAD_TEMPLATE_PATH", "/nomad/templates/ftr-server-job.nomad"),
 		FTRServerImage:        os.Getenv("FTR_SERVER_IMAGE"),
 	}

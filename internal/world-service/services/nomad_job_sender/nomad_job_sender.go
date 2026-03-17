@@ -59,6 +59,9 @@ func (ns *nomadJobSenderService) StartNewJob(worldId uuid.UUID, zoneId int) erro
 	apiConfig := api.DefaultConfig()
 	apiConfig.Address = ns.conf.NomadAddr
 	apiConfig.SecretID = ns.conf.NomadToken
+	apiConfig.TLSConfig = &api.TLSConfig{
+		CACert: ns.conf.NomadCertPath,
+	}
 
 	client, err := api.NewClient(apiConfig)
 	if err != nil {
