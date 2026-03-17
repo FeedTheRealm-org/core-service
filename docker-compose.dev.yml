@@ -16,8 +16,8 @@ services:
       - BREVO_API_KEY=${BREVO_API_KEY}
       - EMAIL_SENDER_ADDRESS=${EMAIL_SENDER_ADDRESS}
       - ALLOW_DB_RESET=true
-      - SERVER_ADMIN_EMAIL=${SERVER_ADMIN_EMAIL}
-      - SERVER_ADMIN_PASSWORD=${SERVER_ADMIN_PASSWORD}
+      - SERVER_ADMIN_EMAIL=admin
+      - SERVER_ADMIN_PASSWORD=admin
     depends_on:
       dev_db:
         condition: service_healthy
