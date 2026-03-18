@@ -6,15 +6,15 @@ x-app-base: &app-base
   ports:
     - "8000:8000"
   depends_on:
-    dev_db:
+    db:
       condition: service_healthy
   networks:
     - dev-app-network
 
 x-app-env: &app-env
-  DATABASE_URL: postgresql://postgres:postgres@dev_db:5432/postgres
+  DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
   DB_SHOULD_MIGRATE: "true"
-  SESSION_TOKEN_SECRET_KEY: dev_secret_key
+  SESSION_TOKEN_SECRET_KEY: secret_key
   SESSION_TOKEN_DURATION: 24h
   BREVO_API_KEY: ${BREVO_API_KEY}
   EMAIL_SENDER_ADDRESS: ${EMAIL_SENDER_ADDRESS}
@@ -45,7 +45,7 @@ services:
       context: .
       target: prod
 
-  dev_db:
+  db:
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: postgres
