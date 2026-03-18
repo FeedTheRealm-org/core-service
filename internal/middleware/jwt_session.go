@@ -16,8 +16,8 @@ func JWTAuthMiddleware(jwtManager *session.JWTManager, fixedToken string) gin.Ha
 	return func(c *gin.Context) {
 		defer c.Next()
 
-		authHeader := c.GetHeader("Authorization")
-		cookieToken, err := c.Cookie("jwt")
+		authHeader := c.GetHeader("Authorization") // Used from client apps
+		cookieToken, err := c.Cookie("jwt")        // Used from browsers
 		if authHeader == "" && err != nil {
 			return
 		} else if cookieToken != "" {
