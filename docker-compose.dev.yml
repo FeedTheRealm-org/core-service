@@ -19,8 +19,8 @@ x-app-env: &app-env
   BREVO_API_KEY: ${BREVO_API_KEY}
   EMAIL_SENDER_ADDRESS: ${EMAIL_SENDER_ADDRESS}
   ALLOW_DB_RESET: "true"
-  SERVER_ADMIN_EMAIL: admin
-  SERVER_ADMIN_PASSWORD: admin
+  SERVER_ADMIN_EMAIL: "admin@admin.admin"
+  SERVER_ADMIN_PASSWORD: admin123
 
 services:
   app-dev:

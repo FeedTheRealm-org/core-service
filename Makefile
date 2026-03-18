@@ -12,7 +12,7 @@ help: # Show this help message
 .PHONY: help
 
 down: # Stop and remove containers
-	docker compose -f $(COMPOSE_DEV) down
+	docker compose -f $(COMPOSE_DEV) down -t 2 --remove-orphans
 .PHONY: down
 
 build: down # Build containers
