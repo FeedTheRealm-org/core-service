@@ -5,7 +5,7 @@ import "time"
 type CreateAccountRequestDTO struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	IsAdmin  bool   `json:"is_admin"`
+	IsAdmin  *bool  `json:"is_admin,omitempty"`
 }
 
 type LoginAccountRequestDTO struct {
