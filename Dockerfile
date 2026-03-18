@@ -1,5 +1,5 @@
 # **Dependencies**
-FROM golang:1.24.6 AS deps
+FROM golang:1.26.1 AS deps
 
 WORKDIR /usr/src/app
 
