@@ -16,22 +16,21 @@ down: # Stop and remove containers
 .PHONY: down
 
 build: down # Build containers
-	docker compose -f $(COMPOSE_DEV) build
+	docker compose -f $(COMPOSE_DEV) --profile prod build
 .PHONY: build
 
-up: down # Build and start containers
-	docker compose -f $(COMPOSE_DEV) up -d
-	docker compose -f $(COMPOSE_DEV) exec app $(EXEC_APP)
+up: down # Start containers
+	docker compose -f $(COMPOSE_DEV) --profile prod up
 .PHONY: up
 
 up-build: down # Build and start containers
-	docker compose -f $(COMPOSE_DEV) up --build
+	docker compose -f $(COMPOSE_DEV) --profile prod up --build
 .PHONY: up-build
 
-dev: # Execute a bash shell in the development app container
-	docker compose -f $(COMPOSE_DEV) up -d --build
-	docker compose -f $(COMPOSE_DEV) exec app swag init -g cmd/main.go -o ./swagger
-	-docker compose -f $(COMPOSE_DEV) exec -it app /bin/bash
+dev: # Starts containers detatched and starts interactive shell in app container for manual runs
+	docker compose -f $(COMPOSE_DEV) --profile dev up -d --build dev_db buckets
+	docker compose -f $(COMPOSE_DEV) run --rm --service-ports app-dev swag init -g cmd/main.go -o ./swagger
+	docker compose -f $(COMPOSE_DEV) run --rm --service-ports app-dev /bin/bash
 	docker compose -f $(COMPOSE_DEV) down
 .PHONY: dev
 
@@ -39,13 +38,13 @@ test: # Execute all tests
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
 	docker compose -f $(COMPOSE_TEST) build
 	docker compose -f $(COMPOSE_TEST) up -d --remove-orphans
-	docker compose -f $(COMPOSE_TEST) exec -T app sh run_tests.sh
+	docker compose -f $(COMPOSE_TEST) exec -T app-dev sh run_tests.sh
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
 .PHONY: test
 
 clean: # Remove all containers and images
-	docker compose -f $(COMPOSE_BASE) down -v --rmi all --remove-orphans
-	docker compose -f $(COMPOSE_DEV) down -v --rmi all --remove-orphans
+	docker compose -f $(COMPOSE_BASE) down -v --remove-orphans
+	docker compose -f $(COMPOSE_DEV) down -v --remove-orphans
 .PHONY: clean
 
 swagger: # Generate Swagger documentation

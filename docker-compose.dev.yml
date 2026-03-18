@@ -1,14 +1,11 @@
-services:
-  app:
-    build:
-      context: .
-      target: dev
-    env_file:
-      - .env
-    tty: true
-    ports:
-      - "8000:8000"
-    environment:
+x-app-base: &app-base
+  build:
+    context: .
+  env_file:
+    - .env
+  ports:
+    - "8000:8000"
+  environment:
       - DATABASE_URL=postgresql://postgres:postgres@dev_db:5432/postgres
       - DB_SHOULD_MIGRATE=true
       - SESSION_TOKEN_SECRET_KEY=dev_secret_key
@@ -18,13 +15,29 @@ services:
       - ALLOW_DB_RESET=true
       - SERVER_ADMIN_EMAIL=admin
       - SERVER_ADMIN_PASSWORD=admin
-    depends_on:
-      dev_db:
-        condition: service_healthy
-    networks:
-      - dev-app-network
+  depends_on:
+    dev_db:
+      condition: service_healthy
+  networks:
+    - dev-app-network
+
+services:
+  app-dev:
+    <<: *app-base
+    profiles: ["dev"]
+    build:
+      context: .
+      target: dev
+    tty: true
     volumes:
       - .:/usr/src/app
+
+  app-prod:
+    <<: *app-base
+    profiles: ["prod"]
+    build:
+      context: .
+      target: prod
 
   dev_db:
     image: postgres:17-alpine
