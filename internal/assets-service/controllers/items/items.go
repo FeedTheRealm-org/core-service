@@ -236,11 +236,6 @@ func (ic *itemController) DeleteItem(c *gin.Context) {
 }
 
 func (ic *itemController) AddCategory(c *gin.Context) {
-	if err := common_handlers.IsAdminSession(c); err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
 	req := &dtos.AddItemCategoryRequest{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		_ = c.Error(errors.NewBadRequestError(err.Error()))
