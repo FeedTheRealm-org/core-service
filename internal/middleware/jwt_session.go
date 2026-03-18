@@ -17,8 +17,11 @@ func JWTAuthMiddleware(jwtManager *session.JWTManager, fixedToken string) gin.Ha
 		defer c.Next()
 
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
+		cookieToken, err := c.Cookie("jwt")
+		if authHeader == "" && err != nil {
 			return
+		} else if cookieToken != "" {
+			authHeader = "Bearer " + cookieToken
 		}
 		c.Set("includedJWT", true)
 
