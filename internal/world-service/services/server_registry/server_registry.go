@@ -12,6 +12,4 @@ func NewServerRegistryService() ServerRegistryService {
 
 func (sr serverRegistryService) RegisterServer(worldId uuid.UUID, zoneId int, address string) {}
 
-func (sr serverRegistryService) UnRegisterServerByWorld(worldId uuid.UUID, zoneId int) {}
-
-func (sr serverRegistryService) UnRegisterServerById(serverId uuid.UUID) {}
+func (sr serverRegistryService) UnRegisterServer(worldId uuid.UUID, zoneId int) {}

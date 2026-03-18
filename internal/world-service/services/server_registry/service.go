@@ -10,8 +10,5 @@ type ServerRegistryService interface {
 	RegisterServer(worldId uuid.UUID, zoneId int, address string)
 
 	// UnRegisterServer removes the server entry.
-	UnRegisterServerByWorld(worldId uuid.UUID, zoneId int)
-
-	// UnRegisterServer removes the server entry.
-	UnRegisterServerById(serverId uuid.UUID)
+	UnRegisterServer(worldId uuid.UUID, zoneId int)
 }
