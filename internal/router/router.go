@@ -38,9 +38,7 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 		return err
 	}
 
-	if conf.Server.Environment != config.Production {
-		SetupSwaggerRouter(r)
-	}
+	SetupSwaggerRouter(r, conf)
 
 	return nil
 }

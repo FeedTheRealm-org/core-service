@@ -1,6 +1,8 @@
 package router
 
 import (
+	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/middleware"
 	_ "github.com/FeedTheRealm-org/core-service/swagger"
 
 	"github.com/swaggo/files"
@@ -11,6 +13,13 @@ import (
 
 // SetupSwaggerRouter initializes the route Group /swagger/*any and
 // the corresponding handlers for the swagger documentation.
-func SetupSwaggerRouter(r *gin.Engine) {
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+func SetupSwaggerRouter(r *gin.Engine, conf *config.Config) {
+	handlers := []gin.HandlerFunc{}
+
+	if conf.Server.Environment == config.Production {
+		handlers = append(handlers, middleware.AdminCheckMiddleware())
+	}
+	handlers = append(handlers, ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	r.GET("/swagger/*any", handlers...)
 }
