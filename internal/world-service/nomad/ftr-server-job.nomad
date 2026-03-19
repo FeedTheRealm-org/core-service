@@ -26,6 +26,21 @@ job "{{ .JobName }}" {
         ports = ["game"]
         args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}"]
       }
+
+      service {
+        name = "zone-server"
+        port = "game"
+        tags = [
+          "world-{{ .WorldID }}",
+          "zone-{{ .ZoneID }}"
+        ]
+
+        check {
+          type     = "tcp"
+          interval = "10s"
+          timeout  = "3s"
+        }
+      }
     }
   }
 }
