@@ -38,10 +38,16 @@ type AssetsConfig struct {
 	WorldsBucketName    string
 }
 
+type StripeConfig struct {
+	StripeSecretKey     string
+	StripeWebhookSecret string
+}
+
 type Config struct {
 	Server                *ServerConfig
 	DB                    *DatabaseConfig
 	Assets                *AssetsConfig
+	Stripe                *StripeConfig
 	SessionTokenSecretKey string
 	SessionTokenDuration  time.Duration
 	BrevoAPIKey           string
@@ -78,10 +84,16 @@ func CreateConfig() *Config {
 		AdminPassword:   getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
 	}
 
+	stripeConf := &StripeConfig{
+		StripeSecretKey:     os.Getenv("STRIPE_SECRET_KEY"),
+		StripeWebhookSecret: os.Getenv("STRIPE_WEBHOOK_SECRET"),
+	}
+
 	return &Config{
 		Server:                serverConf,
 		DB:                    dbc,
 		Assets:                assetsConf,
+		Stripe:                stripeConf,
 		SessionTokenSecretKey: os.Getenv("SESSION_TOKEN_SECRET_KEY"),
 		SessionTokenDuration:  getEnvOrDefaultDuration("SESSION_TOKEN_DURATION", time.Hour*24),
 		BrevoAPIKey:           os.Getenv("BREVO_API_KEY"),

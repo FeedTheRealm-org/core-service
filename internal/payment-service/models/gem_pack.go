@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Pack struct {
+type GemPack struct {
 	Id        uuid.UUID `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name      string    `json:"name"`
 	Gems      int       `json:"gems"`
@@ -15,6 +15,6 @@ type Pack struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (Pack) TableName() string {
-	return "packs"
+func (GemPack) TableName() string {
+	return "gem_packs"
 }

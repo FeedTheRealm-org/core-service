@@ -1,6 +1,6 @@
 BEGIN;
 
-DROP TABLE IF EXISTS packs;
+DROP TABLE IF EXISTS gem_packs;
 
 DROP EXTENSION IF EXISTS "pgcrypto";
 

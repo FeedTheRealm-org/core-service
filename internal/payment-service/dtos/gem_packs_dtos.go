@@ -6,19 +6,19 @@ import (
 	"github.com/google/uuid"
 )
 
-type CreatePackRequest struct {
+type CreateGemPackRequest struct {
 	Name  string  `json:"name" binding:"required"`
 	Gems  int     `json:"gems" binding:"required"`
 	Price float32 `json:"price" binding:"required"`
 }
 
-type UpdatePackRequest struct {
+type UpdateGemPackRequest struct {
 	Name  string  `json:"name,omitempty"`
 	Gems  int     `json:"gems,omitempty"`
 	Price float32 `json:"price,omitempty"`
 }
 
-type PackResponse struct {
+type GemPackResponse struct {
 	Id        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	Gems      int       `json:"gems"`
@@ -27,6 +27,6 @@ type PackResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type PackDeletedResponse struct {
+type GemPackDeletedResponse struct {
 	Id uuid.UUID `json:"id"`
 }
