@@ -16,6 +16,10 @@ job "{{ .JobName }}" {
       port "game" {
         to = 7777
       }
+
+      port "health" {
+        to = 7778
+      }
     }
 
     task "zone" {
@@ -23,13 +27,15 @@ job "{{ .JobName }}" {
 
       config {
         image = "{{ .ImageName }}"
-        ports = ["game"]
+        ports = ["game", "health"]
         args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}"]
       }
 
       service {
         name = "zone-server"
         port = "game"
+        address_mode = "host"
+
         tags = [
           "world-{{ .WorldID }}",
           "zone-{{ .ZoneID }}"
@@ -37,6 +43,8 @@ job "{{ .JobName }}" {
 
         check {
           type     = "tcp"
+          port         = "health"
+          address_mode = "host"
           interval = "10s"
           timeout  = "3s"
         }
