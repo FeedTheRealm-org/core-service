@@ -27,7 +27,6 @@ job "{{ .JobName }}" {
 
       config {
         image = "{{ .ImageName }}"
-        name  = "world-{{ .WorldID }}_zone-{{ .ZoneID }}"
         ports = ["game", "health"]
         args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}"]
       }
