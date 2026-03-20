@@ -27,6 +27,7 @@ job "{{ .JobName }}" {
 
       config {
         image = "{{ .ImageName }}"
+        name  = "world-{{ .WorldID }}_zone-{{ .ZoneID }}"
         ports = ["game", "health"]
         args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}"]
       }
@@ -40,6 +41,10 @@ job "{{ .JobName }}" {
           "world-{{ .WorldID }}",
           "zone-{{ .ZoneID }}"
         ]
+
+        meta {
+          public_ip = "${attr.unique.platform.aws.public-ipv4}"
+        }
 
         check {
           type     = "tcp"
