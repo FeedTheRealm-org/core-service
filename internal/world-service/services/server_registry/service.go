@@ -4,11 +4,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// ServerRegistryService business logic for server registration.
+// ServerRegistryService defines the interface for nomad job api calls
 type ServerRegistryService interface {
-	// RegisterServer registers server in world-service.
-	RegisterServer(worldId uuid.UUID, zoneId int, address string)
+	// Starts new nomad service for a world and zone, this will be called when a world is published
+	StartNewJob(worldId uuid.UUID, zoneId int) error
 
-	// UnRegisterServer removes the server entry.
-	UnRegisterServer(worldId uuid.UUID, zoneId int)
+	GetServerAddress(worldId uuid.UUID, zoneId int) (string, int, error)
 }

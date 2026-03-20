@@ -4,26 +4,26 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/repositories/world"
-	nomad_job_sender "github.com/FeedTheRealm-org/core-service/internal/world-service/services/nomad_job_sender"
+	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/server_registry"
 	"github.com/google/uuid"
 )
 
 type worldService struct {
-	conf            *config.Config
-	worldRepository world.WorldRepository
-	nomadJobSender  nomad_job_sender.NomadJobSenderService
+	conf                  *config.Config
+	worldRepository       world.WorldRepository
+	serverRegistryService server_registry.ServerRegistryService
 }
 
 // NewWorldService creates a new instance of WorldService.
 func NewWorldService(
 	conf *config.Config,
 	worldRepository world.WorldRepository,
-	nomadJobSender nomad_job_sender.NomadJobSenderService,
+	serverRegistryService server_registry.ServerRegistryService,
 ) WorldService {
 	return &worldService{
-		conf:            conf,
-		worldRepository: worldRepository,
-		nomadJobSender:  nomadJobSender,
+		conf:                  conf,
+		worldRepository:       worldRepository,
+		serverRegistryService: serverRegistryService,
 	}
 }
 
@@ -34,7 +34,7 @@ func (cs *worldService) PublishWorld(newWorldData *models.WorldData) (*models.Wo
 	}
 
 	const defaultZoneID = 1
-	if err := cs.nomadJobSender.StartNewJob(createdWorld.ID, defaultZoneID); err != nil {
+	if err := cs.serverRegistryService.StartNewJob(createdWorld.ID, defaultZoneID); err != nil {
 		return nil, err
 	}
 

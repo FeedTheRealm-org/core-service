@@ -5,10 +5,10 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
-	nomad_job_sender_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/nomad_job_sender"
+	server_registry_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/server_registry"
 	world_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/world"
 	world_repo "github.com/FeedTheRealm-org/core-service/internal/world-service/repositories/world"
-	nomad_job_sender "github.com/FeedTheRealm-org/core-service/internal/world-service/services/nomad_job_sender"
+	server_registry_service "github.com/FeedTheRealm-org/core-service/internal/world-service/services/server_registry"
 	world_service "github.com/FeedTheRealm-org/core-service/internal/world-service/services/world"
 	"github.com/gin-gonic/gin"
 )
@@ -18,15 +18,15 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 
 	worldRepo := world_repo.NewWorldRepository(conf, db)
 
-	var nomadService nomad_job_sender.NomadJobSenderService
+	var nomadService server_registry_service.ServerRegistryService
 	if conf.Server.Environment == config.Production {
-		nomadService = nomad_job_sender.NewNomadJobSenderService(conf) // Real nomad service
+		nomadService = server_registry_service.NewServerRegistryService(conf) // Real nomad service
 	} else {
-		nomadService = nomad_job_sender.NewStubNomadJobSenderService() // Stub
+		nomadService = server_registry_service.NewStubServerRegistryService() // Stub
 	}
 	worldService := world_service.NewWorldService(conf, worldRepo, nomadService)
 	worldController := world_controller.NewWorldController(conf, worldService)
-	nomadJobSenderController := nomad_job_sender_controller.NewNomadJobSenderController(conf, nomadService)
+	serverRegistryController := server_registry_controller.NewServerRegistryController(conf, nomadService)
 
 	worldGroup.POST("", worldController.PublishWorld)
 	worldGroup.GET("", worldController.GetWorldsList)
@@ -36,7 +36,8 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 		worldGroup.DELETE("/reset-database", worldController.ResetDatabase)
 	}
 
-	worldGroup.GET("/:id/zones/:zone_id/start-job", middleware.AdminCheckMiddleware(), nomadJobSenderController.StartNewJob)
+	worldGroup.GET("/:id/zones/:zone_id/start-job", middleware.AdminCheckMiddleware(), serverRegistryController.StartNewJob)
+	worldGroup.GET("/:id/zones/:zone_id/address", serverRegistryController.GetServerAddress)
 
 	return nil
 }
