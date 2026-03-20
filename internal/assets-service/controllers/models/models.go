@@ -201,14 +201,15 @@ func (mc *modelsController) UploadModels(c *gin.Context) {
 		return
 	}
 
-	modelResponses := make([]dtos.ModelPublishResponse, len(savedModels))
+	modelResponses := make([]dtos.ModelResponse, len(savedModels))
 	for i, model := range savedModels {
-		modelResponses[i] = dtos.ModelPublishResponse{
+		modelResponses[i] = dtos.ModelResponse{
 			ModelID: model.Id,
+			Url:     model.Url,
 		}
 	}
 
-	modelsListResponse := dtos.ModelsPublishListResponse{
+	modelsListResponse := dtos.ModelsListResponse{
 		WorldID: worldID,
 		List:    modelResponses,
 	}
