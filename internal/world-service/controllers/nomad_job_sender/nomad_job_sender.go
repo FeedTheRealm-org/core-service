@@ -25,7 +25,7 @@ func NewNomadJobSenderController(conf *config.Config, nomadJobSenderService noma
 }
 
 func (c *nomadJobSenderController) StartNewJob(ctx *gin.Context) {
-	worldIdStr := ctx.Param("world_id")
+	worldIdStr := ctx.Param("id")
 	zoneIdStr := ctx.Param("zone_id")
 
 	worldId, err := uuid.Parse(worldIdStr)
