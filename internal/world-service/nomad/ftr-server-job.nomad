@@ -41,6 +41,10 @@ job "{{ .JobName }}" {
           "zone-{{ .ZoneID }}"
         ]
 
+        meta {
+          public_ip = "${attr.unique.platform.aws.public-ipv4}"
+        }
+
         check {
           type     = "tcp"
           port         = "health"

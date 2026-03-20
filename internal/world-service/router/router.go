@@ -4,6 +4,8 @@ import (
 	"os"
 
 	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/middleware"
+	nomad_job_sender_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/nomad_job_sender"
 	world_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/world"
 	world_repo "github.com/FeedTheRealm-org/core-service/internal/world-service/repositories/world"
 	nomad_job_sender "github.com/FeedTheRealm-org/core-service/internal/world-service/services/nomad_job_sender"
@@ -24,6 +26,7 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 	}
 	worldService := world_service.NewWorldService(conf, worldRepo, nomadService)
 	worldController := world_controller.NewWorldController(conf, worldService)
+	nomadJobSenderController := nomad_job_sender_controller.NewNomadJobSenderController(conf, nomadService)
 
 	worldGroup.POST("", worldController.PublishWorld)
 	worldGroup.GET("", worldController.GetWorldsList)
@@ -32,6 +35,8 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 	if os.Getenv("ALLOW_DB_RESET") == "true" {
 		worldGroup.DELETE("/reset-database", worldController.ResetDatabase)
 	}
+
+	worldGroup.GET("/:id/zones/:zone_id/start-job", middleware.AdminCheckMiddleware(), nomadJobSenderController.StartNewJob)
 
 	return nil
 }
