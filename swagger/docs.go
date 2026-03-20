@@ -248,7 +248,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Successfully uploaded models",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ModelsPublishListResponse"
+                            "$ref": "#/definitions/dtos.ModelsListResponse"
                         }
                     },
                     "400": {
@@ -360,7 +360,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Successfully uploaded models",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ModelsPublishListResponse"
+                            "$ref": "#/definitions/dtos.ModelsListResponse"
                         }
                     },
                     "400": {
@@ -1094,6 +1094,9 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "is_admin": {
+                    "type": "boolean"
+                },
                 "password": {
                     "type": "string"
                 }
@@ -1186,18 +1189,18 @@ const docTemplate = `{
                 }
             }
         },
-        "dtos.ModelPublishResponse": {
+        "dtos.ModelResponse": {
             "type": "object",
             "properties": {
                 "model_id": {
                     "type": "string"
                 },
-                "name": {
+                "url": {
                     "type": "string"
                 }
             }
         },
-        "dtos.ModelsPublishListResponse": {
+        "dtos.ModelsListResponse": {
             "type": "object",
             "required": [
                 "world_id"
@@ -1206,7 +1209,7 @@ const docTemplate = `{
                 "models": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dtos.ModelPublishResponse"
+                        "$ref": "#/definitions/dtos.ModelResponse"
                     }
                 },
                 "world_id": {

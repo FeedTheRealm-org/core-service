@@ -135,7 +135,7 @@ func (mc *modelsController) DownloadModel(c *gin.Context) {
 // @Param models[1].model_file formData file false "3D model file for second model"
 // @Param models[1].material_file formData file false "Material file for second model (optional)"
 // @Security BearerAuth
-// @Success 201 {object} dtos.ModelsPublishListResponse "Successfully uploaded models"
+// @Success 201 {object} dtos.ModelsListResponse "Successfully uploaded models"
 // @Failure 400 {object} map[string]interface{} "Bad request - missing required fields or invalid format"
 // @Failure 401 {object} map[string]interface{} "Unauthorized - invalid or missing JWT token"
 // @Failure 500 {object} map[string]interface{} "Internal server error - failed to save models"
