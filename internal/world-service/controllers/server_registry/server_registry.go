@@ -51,6 +51,31 @@ func (c *serverRegistryController) StartNewJob(ctx *gin.Context) {
 	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
 }
 
+func (c *serverRegistryController) StopJob(ctx *gin.Context) {
+	worldIdStr := ctx.Param("id")
+	zoneIdStr := ctx.Param("zone_id")
+
+	worldId, err := uuid.Parse(worldIdStr)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + worldIdStr))
+		return
+	}
+
+	zoneId, err := strconv.Atoi(zoneIdStr)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid zone ID: " + zoneIdStr))
+		return
+	}
+
+	err = c.nomadJobSenderService.StopJob(worldId, zoneId)
+	if err != nil {
+		_ = ctx.Error(errors.NewNotFoundError(err.Error()))
+		return
+	}
+
+	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
+}
+
 func (c *serverRegistryController) GetServerAddress(ctx *gin.Context) {
 	worldIdStr := ctx.Param("id")
 	zoneIdStr := ctx.Param("zone_id")
