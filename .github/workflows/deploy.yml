@@ -49,6 +49,7 @@ jobs:
               "aws ssm get-parameters-by-path --path \"/core-service/\" --with-decryption --region ${{ secrets.AWS_REGION }} --query \"Parameters[*].[Name,Value]\" --output text | sed \"s#/core-service/##g; s#\\t#=#g\" > /tmp/core_service_env",
               "aws ssm get-parameters-by-path --path \"/nomad/\" --with-decryption --region ${{ secrets.AWS_REGION }} --query \"Parameters[*].[Name,Value]\" --output text | sed \"s#/nomad/##g; s#\\t#=#g\" >> /tmp/core_service_env",
               "aws ssm get-parameters-by-path --path \"/monitoring/\" --with-decryption --region ${{ secrets.AWS_REGION }} --query \"Parameters[*].[Name,Value]\" --output text | sed \"s#/monitoring/##g; s#\\t#=#g\" >> /tmp/core_service_env",
+              "aws ssm get-parameters-by-path --path \"/consul/\" --with-decryption --region ${{ secrets.AWS_REGION }} --query \"Parameters[*].[Name,Value]\" --output text | sed \"s#/consul/##g; s#\\t#=#g\" >> /tmp/core_service_env",
               "docker run -d --restart always --name $SERVICE -p 34782:8000 --env-file /tmp/core_service_env -v /etc/nomad.d/tls/ca.pem:/etc/nomad.d/tls/ca.pem:ro $IMAGE",
               "rm /tmp/core_service_env"
             ]}'
