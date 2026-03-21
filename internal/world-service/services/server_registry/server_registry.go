@@ -84,6 +84,7 @@ func (s *serverRegistryService) StartNewJob(worldId uuid.UUID, zoneId int) error
 
 func (s *serverRegistryService) GetServerAddress(worldId uuid.UUID, zoneId int) (string, int, error) {
 	consulConfig := consul_api.DefaultConfig()
+	consulConfig.Address = s.conf.ConsulAddr
 
 	client, err := consul_api.NewClient(consulConfig)
 	if err != nil {
