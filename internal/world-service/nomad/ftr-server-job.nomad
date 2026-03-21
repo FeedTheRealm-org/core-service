@@ -43,6 +43,7 @@ job "{{ .JobName }}" {
 
         meta {
           public_ip = "${attr.unique.platform.aws.public-ipv4}"
+          deployed_at = "{{ .DeployedAt }}"
         }
 
         check {

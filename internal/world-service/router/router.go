@@ -20,7 +20,11 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 
 	var nomadService server_registry_service.ServerRegistryService
 	if conf.Server.Environment == config.Production {
-		nomadService = server_registry_service.NewServerRegistryService(conf) // Real nomad service
+		var err error
+		nomadService, err = server_registry_service.NewServerRegistryService(conf) // Real nomad service
+		if err != nil {
+			return err
+		}
 	} else {
 		nomadService = server_registry_service.NewStubServerRegistryService() // Stub
 	}

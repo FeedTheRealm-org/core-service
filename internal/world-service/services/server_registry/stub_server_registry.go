@@ -15,6 +15,10 @@ func (ns *stubServerRegistryService) StartNewJob(worldId uuid.UUID, zoneId int) 
 	return nil
 }
 
+func (ns *stubServerRegistryService) StopJob(worldId uuid.UUID, zoneId int) error {
+	return nil
+}
+
 func (ns *stubServerRegistryService) GetServerAddress(worldId uuid.UUID, zoneId int) (string, int, error) {
 	return "127.0.0.1", 7777, nil
 }
