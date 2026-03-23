@@ -72,17 +72,6 @@ func (bc *gemBalancesController) GetGemBalanceByUserId(c *gin.Context) {
 }
 
 func (bc *gemBalancesController) UpdateGemBalance(c *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(c)
-	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
-	if err := common_handlers.IsAdminSession(c); err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
 	req := dtos.UpdateGemBalanceRequest{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))

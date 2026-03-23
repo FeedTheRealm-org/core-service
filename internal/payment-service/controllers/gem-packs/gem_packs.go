@@ -61,17 +61,6 @@ func (pc *gemGemPacksController) GetGemPackById(c *gin.Context) {
 }
 
 func (pc *gemGemPacksController) CreateGemPack(c *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(c)
-	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
-	if err := common_handlers.IsAdminSession(c); err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
 	pack := &dtos.CreateGemPackRequest{}
 	if err := c.ShouldBindJSON(pack); err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))
@@ -97,17 +86,6 @@ func (pc *gemGemPacksController) CreateGemPack(c *gin.Context) {
 }
 
 func (pc *gemGemPacksController) UpdateGemPack(c *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(c)
-	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
-	if err := common_handlers.IsAdminSession(c); err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
 	req := &dtos.UpdateGemPackRequest{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))
@@ -139,17 +117,6 @@ func (pc *gemGemPacksController) UpdateGemPack(c *gin.Context) {
 }
 
 func (pc *gemGemPacksController) DeleteGemPack(c *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(c)
-	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
-	if err := common_handlers.IsAdminSession(c); err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
 	packId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid pack_id: " + err.Error()))

@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/middleware"
 	gem_balances_controller "github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/gem-balances"
 	gem_packs_controller "github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/gem-packs"
 	gem_balances_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-balances"
@@ -20,9 +21,9 @@ func SetupGemPacksServiceRouter(conf *config.Config, db *config.DB, g *gin.Route
 	packsGroup := g.Group("/packs")
 	packsGroup.GET("", gemGemPacksController.GetAllGemPacks)
 	packsGroup.GET("/:id", gemGemPacksController.GetGemPackById)
-	packsGroup.POST("", gemGemPacksController.CreateGemPack)
-	packsGroup.PUT("/:id", gemGemPacksController.UpdateGemPack)
-	packsGroup.DELETE("/:id", gemGemPacksController.DeleteGemPack)
+	packsGroup.POST("", middleware.AdminCheckMiddleware(), gemGemPacksController.CreateGemPack)
+	packsGroup.PUT("/:id", middleware.AdminCheckMiddleware(), gemGemPacksController.UpdateGemPack)
+	packsGroup.DELETE("/:id", middleware.AdminCheckMiddleware(), gemGemPacksController.DeleteGemPack)
 }
 
 func SetupBalancesServiceRouter(conf *config.Config, db *config.DB, paymentGroup *gin.RouterGroup, gemsGroup *gin.RouterGroup) {
@@ -35,7 +36,7 @@ func SetupBalancesServiceRouter(conf *config.Config, db *config.DB, paymentGroup
 	balancesGroup := gemsGroup.Group("/balances")
 	// balancesGroup.GET("", gemBalancesController.GetAllGemBalances)
 	balancesGroup.GET("/", gemBalancesController.GetGemBalanceByUserId)
-	balancesGroup.PUT("/:id", gemBalancesController.UpdateGemBalance)
+	balancesGroup.PUT("/:id", middleware.AdminCheckMiddleware(), gemBalancesController.UpdateGemBalance)
 
 	/* Webhook Endpoint */
 	paymentGroup.POST("/checkout", gemBalancesController.CreateCheckoutSession)
