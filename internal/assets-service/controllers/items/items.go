@@ -207,7 +207,23 @@ func (ic *itemController) DeleteItem(c *gin.Context) {
 		return
 	}
 
-	if err := ic.service.DeleteItem(itemId, userId); err != nil {
+	item, err := ic.service.GetItemById(itemId)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	if item == nil {
+		_ = c.Error(errors.NewBadRequestError("item not found"))
+		return
+	}
+
+	if item.CreatedBy != userId {
+		_ = c.Error(errors.NewUnauthorizedError("user is not authorized to delete this item"))
+		return
+	}
+
+	if err := ic.service.DeleteItem(itemId); err != nil {
 		_ = c.Error(err)
 		return
 	}
@@ -220,11 +236,6 @@ func (ic *itemController) DeleteItem(c *gin.Context) {
 }
 
 func (ic *itemController) AddCategory(c *gin.Context) {
-	if err := common_handlers.IsAdminSession(c); err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
 	req := &dtos.AddItemCategoryRequest{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		_ = c.Error(errors.NewBadRequestError(err.Error()))

@@ -103,11 +103,16 @@ func (s *accountService) seedAdminAccount(conf *config.Config) {
 		return
 	}
 
-	_, _, err := s.CreateAccount(adminEmail, adminPassword, true)
+	_, code, err := s.CreateAccount(adminEmail, adminPassword, true)
 	if err != nil {
 		logger.Logger.Warnf("Failed to create admin account: %v", err)
 	} else {
 		logger.Logger.Infof("Admin account created with email: %s", adminEmail)
+	}
+
+	_, err = s.VerifyAccount(adminEmail, code)
+	if err != nil {
+		logger.Logger.Warnf("Failed to verify admin account: %v", err)
 	}
 }
 

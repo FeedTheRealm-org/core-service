@@ -12,6 +12,7 @@ import (
 	cosmetics_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/cosmetics"
 	items_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/items"
 	models_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/models"
+	"github.com/FeedTheRealm-org/core-service/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,9 +27,10 @@ func SetupEndpointsForCosmeticsService(conf *config.Config, db *config.DB, g *gi
 	cosmeticsGroup.GET("/categories/:id", cosmeticsController.GetCosmeticsListByCategory)
 	cosmeticsGroup.GET(":id", cosmeticsController.GetCosmeticById)
 	cosmeticsGroup.PUT("/categories/:id", cosmeticsController.UploadCosmeticData)
+	cosmeticsGroup.DELETE(":id", cosmeticsController.DeleteCosmetic)
 
 	/* ADMIN ONLY */
-	cosmeticsGroup.POST("/categories", cosmeticsController.AddCategory)
+	cosmeticsGroup.POST("/categories", middleware.AdminCheckMiddleware(), cosmeticsController.AddCategory)
 }
 
 func SetupEndpointsForItemsService(conf *config.Config, db *config.DB, g *gin.RouterGroup, itemsBucketRepo bucket.BucketRepository) {
@@ -42,9 +44,10 @@ func SetupEndpointsForItemsService(conf *config.Config, db *config.DB, g *gin.Ro
 	itemsGroup.GET("/world/:world_id/categories/:category_id", itemsController.GetItemsListByCategory)
 	itemsGroup.GET(":id", itemsController.GetItemById)
 	itemsGroup.PUT("/world/:world_id/categories/:category_id", itemsController.UploadItems)
+	itemsGroup.DELETE(":id", itemsController.DeleteItem)
 
 	/* ADMIN ONLY */
-	itemsGroup.POST("/categories", itemsController.AddCategory)
+	itemsGroup.POST("/categories", middleware.AdminCheckMiddleware(), itemsController.AddCategory)
 }
 
 func SetupEndpointsForModelsService(conf *config.Config, db *config.DB, g *gin.RouterGroup, worldBucketRepo bucket.BucketRepository) {

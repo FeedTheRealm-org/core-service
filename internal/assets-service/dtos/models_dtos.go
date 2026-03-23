@@ -4,16 +4,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type ModelPublishResponse struct {
-	ModelID uuid.UUID `json:"model_id"`
-	Name    string    `json:"name"`
-}
-
-type ModelsPublishListResponse struct {
-	WorldID uuid.UUID              `gorm:"type:uuid;not null" json:"world_id" binding:"required"`
-	List    []ModelPublishResponse `json:"models"`
-}
-
 type ModelResponse struct {
 	ModelID uuid.UUID `json:"model_id"`
 	Url     string    `json:"url"`

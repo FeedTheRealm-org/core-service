@@ -96,22 +96,9 @@ func (cr *cosmeticsRepository) CreateCosmetic(categoryId uuid.UUID, cosmetic *mo
 	return nil
 }
 
-func (cr *cosmeticsRepository) DeleteCosmetic(cosmeticId uuid.UUID, userId uuid.UUID) error {
-	var cosmetic models.Cosmetic
-	if err := cr.db.Conn.First(&cosmetic, "id = ?", cosmeticId).Error; err != nil {
-		if errors.IsRecordNotFound(err) {
-			return assets_errors.NewCosmeticNotFound("cosmetic not found")
-		}
+func (cr *cosmeticsRepository) DeleteCosmetic(cosmeticId uuid.UUID) error {
+	if err := cr.db.Conn.Delete(&models.Cosmetic{}, "id = ?", cosmeticId).Error; err != nil {
 		return err
 	}
-
-	if cosmetic.CreatedBy != userId {
-		return assets_errors.NewUnauthorizedError("user is not authorized to delete this cosmetic")
-	}
-
-	if err := cr.db.Conn.Delete(&cosmetic).Error; err != nil {
-		return err
-	}
-
 	return nil
 }

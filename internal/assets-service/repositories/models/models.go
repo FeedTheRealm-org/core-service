@@ -28,7 +28,6 @@ func (mr *modelsRepository) PublishModels(modelsList []assetModels.Model) ([]ass
 		}
 	}()
 
-	var publishedModels = make([]assetModels.Model, 0, len(modelsList))
 	for _, model := range modelsList {
 		if err := mr.db.Conn.
 			Clauses(
@@ -42,6 +41,11 @@ func (mr *modelsRepository) PublishModels(modelsList []assetModels.Model) ([]ass
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	publishedModels, err := mr.GetModelsByWorld(modelsList[0].WorldID)
+	if err != nil {
 		return nil, err
 	}
 

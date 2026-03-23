@@ -1,32 +1,51 @@
+x-app-base: &app-base
+  build:
+    context: .
+  env_file:
+    - .env
+  ports:
+    - "8000:8000"
+  depends_on:
+    db:
+      condition: service_healthy
+  networks:
+    - dev-app-network
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
+  DB_SHOULD_MIGRATE: "true"
+  SESSION_TOKEN_SECRET_KEY: secret_key
+  SESSION_TOKEN_DURATION: 24h
+  BREVO_API_KEY: ${BREVO_API_KEY}
+  EMAIL_SENDER_ADDRESS: ${EMAIL_SENDER_ADDRESS}
+  ALLOW_DB_RESET: "true"
+  SERVER_ADMIN_EMAIL: "admin@admin.admin"
+  SERVER_ADMIN_PASSWORD: admin123
+
 services:
-  app:
+  app-dev:
+    <<: *app-base
+    profiles: ["dev"]
+    environment:
+      <<: *app-env
     build:
       context: .
       target: dev
-    env_file:
-      - .env
     tty: true
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@dev_db:5432/postgres
-      - DB_SHOULD_MIGRATE=true
-      - SESSION_TOKEN_SECRET_KEY=dev_secret_key
-      - SESSION_TOKEN_DURATION=24h
-      - BREVO_API_KEY=${BREVO_API_KEY}
-      - EMAIL_SENDER_ADDRESS=${EMAIL_SENDER_ADDRESS}
-      - ALLOW_DB_RESET=true
-      - SERVER_ADMIN_EMAIL=${SERVER_ADMIN_EMAIL}
-      - SERVER_ADMIN_PASSWORD=${SERVER_ADMIN_PASSWORD}
-    depends_on:
-      dev_db:
-        condition: service_healthy
-    networks:
-      - dev-app-network
     volumes:
       - .:/usr/src/app
 
-  dev_db:
+  app-prod:
+    <<: *app-base
+    profiles: ["prod"]
+    environment:
+      <<: *app-env
+      SERVER_ENVIRONMENT: production
+    build:
+      context: .
+      target: prod
+
+  db:
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: postgres

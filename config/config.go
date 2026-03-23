@@ -22,6 +22,7 @@ type ServerConfig struct {
 	Environment     EnvironmentType
 	AdminEmail      string
 	AdminPassword   string
+	PublicIP        string
 }
 
 type DatabaseConfig struct {
@@ -55,8 +56,11 @@ type Config struct {
 	EmailLogoURL          string
 	ServerFixedToken      string
 	NomadAddr             string
+	NomadToken            string
+	NomadCertPath         string
 	NomadTemplatePath     string
 	NomadImageName        string
+	ConsulAddr            string
 	FTRServerImage        string
 }
 
@@ -82,6 +86,7 @@ func CreateConfig() *Config {
 		Environment:     getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
 		AdminEmail:      getEnvOrDefaultString("SERVER_ADMIN_EMAIL", ""),
 		AdminPassword:   getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
+		PublicIP:        os.Getenv("PUBLIC_IP"),
 	}
 
 	stripeConf := &StripeConfig{
@@ -101,7 +106,10 @@ func CreateConfig() *Config {
 		EmailLogoURL:          getEnvOrDefaultString("EMAIL_LOGO_URL", "https://avatars.githubusercontent.com/u/231922724?s=400&u=5f4eb45fb6dc7cfa42333bfe1dc64a376122e3d0&v=4"),
 		ServerFixedToken:      os.Getenv("SERVER_FIXED_TOKEN"),
 		NomadAddr:             os.Getenv("NOMAD_ADDR"),
+		NomadToken:            os.Getenv("NOMAD_TOKEN"),
+		NomadCertPath:         os.Getenv("NOMAD_CERT_PATH"),
 		NomadTemplatePath:     getEnvOrDefaultString("NOMAD_TEMPLATE_PATH", "/nomad/templates/ftr-server-job.nomad"),
+		ConsulAddr:            os.Getenv("CONSUL_ADDR"),
 		FTRServerImage:        os.Getenv("FTR_SERVER_IMAGE"),
 	}
 }

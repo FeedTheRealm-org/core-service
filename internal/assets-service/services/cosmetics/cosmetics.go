@@ -75,7 +75,7 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticDat
 	return cosmetic, nil
 }
 
-func (ss *cosmeticsService) DeleteCosmetic(cosmeticId uuid.UUID, userId uuid.UUID) error {
+func (ss *cosmeticsService) DeleteCosmetic(cosmeticId uuid.UUID) error {
 	cosmetic, err := ss.cosmeticsRepository.GetCosmeticById(cosmeticId)
 	if err != nil {
 		logger.Logger.Errorf("Error getting cosmetic by id: %v", err)
@@ -87,7 +87,7 @@ func (ss *cosmeticsService) DeleteCosmetic(cosmeticId uuid.UUID, userId uuid.UUI
 		return err
 	}
 
-	if err := ss.cosmeticsRepository.DeleteCosmetic(cosmeticId, userId); err != nil {
+	if err := ss.cosmeticsRepository.DeleteCosmetic(cosmeticId); err != nil {
 		logger.Logger.Errorf("Error deleting cosmetic: %v", err)
 		return err
 	}

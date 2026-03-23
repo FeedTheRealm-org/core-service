@@ -24,5 +24,5 @@ type ItemService interface {
 
 	AddCategory(name string) (*models.ItemCategory, error)
 
-	DeleteItem(id uuid.UUID, userId uuid.UUID) error
+	DeleteItem(id uuid.UUID) error
 }

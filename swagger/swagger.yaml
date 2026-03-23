@@ -54,6 +54,8 @@ definitions:
     properties:
       email:
         type: string
+      is_admin:
+        type: boolean
       password:
         type: string
     type: object
@@ -113,18 +115,18 @@ definitions:
       updated_at:
         type: string
     type: object
-  dtos.ModelPublishResponse:
+  dtos.ModelResponse:
     properties:
       model_id:
         type: string
-      name:
+      url:
         type: string
     type: object
-  dtos.ModelsPublishListResponse:
+  dtos.ModelsListResponse:
     properties:
       models:
         items:
-          $ref: '#/definitions/dtos.ModelPublishResponse'
+          $ref: '#/definitions/dtos.ModelResponse'
         type: array
       world_id:
         type: string
@@ -384,7 +386,7 @@ paths:
         "201":
           description: Successfully uploaded models
           schema:
-            $ref: '#/definitions/dtos.ModelsPublishListResponse'
+            $ref: '#/definitions/dtos.ModelsListResponse'
         "400":
           description: Bad request - missing required fields or invalid format
           schema:
@@ -462,7 +464,7 @@ paths:
         "201":
           description: Successfully uploaded models
           schema:
-            $ref: '#/definitions/dtos.ModelsPublishListResponse'
+            $ref: '#/definitions/dtos.ModelsListResponse'
         "400":
           description: Bad request - missing required fields or invalid format
           schema:

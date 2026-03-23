@@ -203,7 +203,23 @@ func (cc *cosmeticsController) DeleteCosmetic(c *gin.Context) {
 		return
 	}
 
-	err = cc.cosmeticsService.DeleteCosmetic(cosmeticId, userId)
+	cosmetic, err := cc.cosmeticsService.GetCosmeticById(cosmeticId)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	if cosmetic == nil {
+		_ = c.Error(errors.NewBadRequestError("cosmetic not found"))
+		return
+	}
+
+	if cosmetic.CreatedBy != userId {
+		_ = c.Error(errors.NewUnauthorizedError("user is not authorized to delete this cosmetic"))
+		return
+	}
+
+	err = cc.cosmeticsService.DeleteCosmetic(cosmeticId)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -226,11 +242,6 @@ func (cc *cosmeticsController) DeleteCosmetic(c *gin.Context) {
 // @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
 // @Router /assets/cosmetics/categories [post]
 func (cc *cosmeticsController) AddCategory(c *gin.Context) {
-	if err := common_handlers.IsAdminSession(c); err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
 	req := &dtos.AddCosmeticCategoryRequest{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		_ = c.Error(errors.NewBadRequestError(err.Error()))

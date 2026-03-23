@@ -19,5 +19,5 @@ type CosmeticsRepository interface {
 
 	CreateCosmetic(category uuid.UUID, cosmetic *models.Cosmetic, userId uuid.UUID) error
 
-	DeleteCosmetic(cosmeticId uuid.UUID, userId uuid.UUID) error
+	DeleteCosmetic(cosmeticId uuid.UUID) error
 }

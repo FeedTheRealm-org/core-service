@@ -241,7 +241,7 @@
                     "201": {
                         "description": "Successfully uploaded models",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ModelsPublishListResponse"
+                            "$ref": "#/definitions/dtos.ModelsListResponse"
                         }
                     },
                     "400": {
@@ -353,7 +353,7 @@
                     "201": {
                         "description": "Successfully uploaded models",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ModelsPublishListResponse"
+                            "$ref": "#/definitions/dtos.ModelsListResponse"
                         }
                     },
                     "400": {
@@ -1087,6 +1087,9 @@
                 "email": {
                     "type": "string"
                 },
+                "is_admin": {
+                    "type": "boolean"
+                },
                 "password": {
                     "type": "string"
                 }
@@ -1179,18 +1182,18 @@
                 }
             }
         },
-        "dtos.ModelPublishResponse": {
+        "dtos.ModelResponse": {
             "type": "object",
             "properties": {
                 "model_id": {
                     "type": "string"
                 },
-                "name": {
+                "url": {
                     "type": "string"
                 }
             }
         },
-        "dtos.ModelsPublishListResponse": {
+        "dtos.ModelsListResponse": {
             "type": "object",
             "required": [
                 "world_id"
@@ -1199,7 +1202,7 @@
                 "models": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dtos.ModelPublishResponse"
+                        "$ref": "#/definitions/dtos.ModelResponse"
                     }
                 },
                 "world_id": {

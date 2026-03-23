@@ -27,7 +27,7 @@ func IsSessionValid(ctx *gin.Context) error {
 
 // IsAdminSession checks if the session has admin privileges.
 func IsAdminSession(ctx *gin.Context) error {
-	if err := IsSessionValid(ctx); err != nil {
+	if err := IsSessionValid(ctx); err != nil || !ctx.GetBool("isAdmin") {
 		return &errors.NotAdminSessionError{}
 	}
 	return nil
