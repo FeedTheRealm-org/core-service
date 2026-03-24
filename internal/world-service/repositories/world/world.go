@@ -2,7 +2,6 @@ package world
 
 import (
 	"errors"
-	"os"
 	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
