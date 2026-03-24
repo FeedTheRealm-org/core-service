@@ -46,7 +46,17 @@ func (cs *worldService) GetWorld(worldID uuid.UUID) (*models.WorldData, error) {
 }
 
 func (cs *worldService) UpdateWorld(worldID uuid.UUID, userId uuid.UUID, data []byte, description string) (*models.WorldData, error) {
-	return cs.worldRepository.UpdateWorldData(worldID, userId, data, description)
+	updatedWorld, err := cs.worldRepository.UpdateWorldData(worldID, userId, data, description)
+	if err != nil {
+		return nil, err
+	}
+
+	const defaultZoneID = 1
+	if err := cs.serverRegistryService.StartNewJob(worldID, defaultZoneID); err != nil {
+		return nil, err
+	}
+
+	return updatedWorld, nil
 }
 
 func (cs *worldService) GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error) {
