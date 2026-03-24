@@ -305,6 +305,33 @@ func (c *worldController) UpdateWorld(ctx *gin.Context) {
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
 }
 
+func (c *worldController) DeleteWorld(ctx *gin.Context) {
+	userId, err := common_handlers.GetUserIDFromSession(ctx)
+	if err != nil {
+		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	worldId := ctx.Param("id")
+	if worldId == "" {
+		_ = ctx.Error(errors.NewBadRequestError("World ID is required"))
+		return
+	}
+
+	parsedWorldId, err := uuid.Parse(worldId)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + worldId))
+		return
+	}
+
+	if err := c.worldService.DeleteWorld(parsedWorldId, userId); err != nil {
+		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
+}
+
 // @Summary ResetDatabase
 // @Description Clears all data in the database, this is only meant for testing and development environments
 // @Tags world-service

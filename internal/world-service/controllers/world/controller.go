@@ -16,6 +16,9 @@ type WorldController interface {
 	// UpdateWorld updates the data and description for an existing world.
 	UpdateWorld(c *gin.Context)
 
+	// DeleteWorld handles the deletion of a world.
+	DeleteWorld(c *gin.Context)
+
 	// ResetDatabase clears all data in the database.
 	ResetDatabase(c *gin.Context)
 }
