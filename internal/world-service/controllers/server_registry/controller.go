@@ -7,6 +7,9 @@ type ServerRegistryController interface {
 	// StartNewJob starts a new server by id as ADMIN.
 	StartNewJob(c *gin.Context)
 
+	// StartNewJob starts a new server by id as ADMIN.
+	StopJob(c *gin.Context)
+
 	// UnRegisterServer removes the server entry.
 	GetServerAddress(c *gin.Context)
 }

@@ -18,7 +18,11 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 
 	var nomadService server_registry_service.ServerRegistryService
 	if conf.Server.Environment == config.Production {
-		nomadService = server_registry_service.NewServerRegistryService(conf) // Real nomad service
+		var err error
+		nomadService, err = server_registry_service.NewServerRegistryService(conf) // Real nomad service
+		if err != nil {
+			return err
+		}
 	} else {
 		nomadService = server_registry_service.NewStubServerRegistryService() // Stub
 	}
@@ -33,6 +37,7 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 	worldGroup.DELETE("/reset-database", middleware.AdminCheckMiddleware(), worldController.ResetDatabase)
 
 	worldGroup.GET("/:id/zones/:zone_id/start-job", middleware.AdminCheckMiddleware(), serverRegistryController.StartNewJob)
+	worldGroup.GET("/:id/zones/:zone_id/stop-job", middleware.AdminCheckMiddleware(), serverRegistryController.StopJob)
 	worldGroup.GET("/:id/zones/:zone_id/address", serverRegistryController.GetServerAddress)
 
 	return nil
