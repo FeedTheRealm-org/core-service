@@ -16,6 +16,9 @@ type WorldService interface {
 	// UpdateWorld updates the data and description for an existing world, only if owned by userId.
 	UpdateWorld(worldID uuid.UUID, userId uuid.UUID, data []byte, description string) (*models.WorldData, error)
 
+	// DeleteWorld handles the deletion of a world, only if owned by userId.
+	DeleteWorld(worldID uuid.UUID, userId uuid.UUID) error
+
 	// GetWorldsList retrieves a paginated list of worlds.
 	GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error)
 
