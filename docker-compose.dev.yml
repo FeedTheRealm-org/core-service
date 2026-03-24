@@ -39,7 +39,7 @@ services:
     profiles: ["prod"]
     environment:
       <<: *app-env
-      SERVER_ENVIRONMENT: production
+      SERVER_ENVIRONMENT: development
     build:
       context: .
       target: prod

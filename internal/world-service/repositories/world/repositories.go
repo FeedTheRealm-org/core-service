@@ -16,6 +16,9 @@ type WorldRepository interface {
 	// UpdateWorldData updates the data and description for an existing world, only if owned by userId.
 	UpdateWorldData(worldID uuid.UUID, userId uuid.UUID, data []byte, description string) (*models.WorldData, error)
 
+	// DeleteWorldData deletes a world from the database, only if owned by userId.
+	DeleteWorldData(worldID uuid.UUID) error
+
 	// GetWorldsList retrieves a paginated list of worlds.
 	GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error)
 

@@ -65,6 +65,17 @@ func (r *worldRepository) UpdateWorldData(worldID uuid.UUID, userId uuid.UUID, d
 	return &wd, nil
 }
 
+func (r *worldRepository) DeleteWorldData(worldID uuid.UUID) error {
+	result := r.db.Conn.Delete(&models.WorldData{}, "id = ?", worldID)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return world_errors.NewWorldNotFound("world not found with ID: " + worldID.String())
+	}
+	return nil
+}
+
 // GetWorldsList retrieves a paginated list of worlds.
 func (r *worldRepository) GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error) {
 	var worlds []*models.WorldData

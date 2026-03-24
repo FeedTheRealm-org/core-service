@@ -34,6 +34,7 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 	worldGroup.GET("", worldController.GetWorldsList)
 	worldGroup.PUT("/:id", worldController.UpdateWorld)
 	worldGroup.GET("/:id", worldController.GetWorld)
+	worldGroup.DELETE("/:id", worldController.DeleteWorld)
 	worldGroup.DELETE("/reset-database", middleware.AdminCheckMiddleware(), worldController.ResetDatabase)
 
 	worldGroup.GET("/:id/zones/:zone_id/start-job", middleware.AdminCheckMiddleware(), serverRegistryController.StartNewJob)
