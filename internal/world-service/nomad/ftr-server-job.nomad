@@ -31,6 +31,10 @@ job "{{ .JobName }}" {
         args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}"]
       }
 
+      meta {
+        deployed_at = "{{ .DeployedAt }}"
+      }
+
       service {
         name = "zone-server"
         port = "game"
@@ -43,7 +47,6 @@ job "{{ .JobName }}" {
 
         meta {
           public_ip = "${attr.unique.platform.aws.public-ipv4}"
-          deployed_at = "{{ .DeployedAt }}"
         }
 
         check {
