@@ -80,9 +80,6 @@ func (r *worldRepository) GetWorldsList(offset int, limit int, filter string) ([
 }
 
 func (r *worldRepository) ClearDatabase() error {
-	if os.Getenv("ALLOW_DB_RESET") != "true" {
-		return errors.New("forbidden: database reset not allowed")
-	}
-	err := r.db.Conn.Exec("DELETE FROM world_data").Error
+	err := r.db.Conn.Delete(&models.WorldData{}, "1 = 1").Error
 	return err
 }

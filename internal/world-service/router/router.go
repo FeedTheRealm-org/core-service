@@ -1,8 +1,6 @@
 package router
 
 import (
-	"os"
-
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
 	server_registry_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/server_registry"
@@ -32,9 +30,7 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 	worldGroup.GET("", worldController.GetWorldsList)
 	worldGroup.PUT("/:id", worldController.UpdateWorld)
 	worldGroup.GET("/:id", worldController.GetWorld)
-	if os.Getenv("ALLOW_DB_RESET") == "true" {
-		worldGroup.DELETE("/reset-database", worldController.ResetDatabase)
-	}
+	worldGroup.DELETE("/reset-database", middleware.AdminCheckMiddleware(), worldController.ResetDatabase)
 
 	worldGroup.GET("/:id/zones/:zone_id/start-job", middleware.AdminCheckMiddleware(), serverRegistryController.StartNewJob)
 	worldGroup.GET("/:id/zones/:zone_id/address", serverRegistryController.GetServerAddress)
