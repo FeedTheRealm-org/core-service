@@ -76,6 +76,19 @@ definitions:
       email:
         type: string
     type: object
+  dtos.ErrorResponse:
+    properties:
+      detail:
+        type: string
+      instance:
+        type: string
+      status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: string
+    type: object
   dtos.ItemCategoryListResponse:
     properties:
       category_list:
@@ -241,13 +254,6 @@ definitions:
           $ref: '#/definitions/dtos.WorldMetadata'
         type: array
     type: object
-  errors.HttpError:
-    properties:
-      message:
-        type: string
-      status:
-        type: integer
-    type: object
 info:
   contact: {}
   description: |-
@@ -277,11 +283,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete cosmetic
@@ -307,11 +313,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get cosmetic by ID
@@ -332,7 +338,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get cosmetics categories
@@ -359,15 +365,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Adds a new cosmetic category
@@ -395,11 +401,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get cosmetics by category
@@ -431,11 +437,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Upload cosmetic data
@@ -460,11 +466,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete item
@@ -490,11 +496,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get item by ID
@@ -515,7 +521,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get item categories
@@ -542,15 +548,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Adds a new item category
@@ -582,11 +588,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get items by world and category
@@ -630,11 +636,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Upload items and sprites
@@ -661,19 +667,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get 3D models list
@@ -704,15 +710,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Upload batch 3D models
@@ -776,15 +782,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Check session expiration
@@ -812,19 +818,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       summary: Login account
       tags:
       - authentication-service
@@ -850,15 +856,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       summary: Refresh verification code
       tags:
       - authentication-service
@@ -884,19 +890,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       summary: Create a new account
       tags:
       - authentication-service
@@ -922,19 +928,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       summary: Verify an account
       tags:
       - authentication-service
@@ -954,15 +960,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get character metadata
@@ -989,15 +995,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update character info
@@ -1024,15 +1030,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get character metadata
@@ -1066,15 +1072,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List worlds
@@ -1101,15 +1107,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Publish new world
@@ -1134,11 +1140,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Destroy a world
@@ -1165,15 +1171,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Retrieve world detail
@@ -1206,15 +1212,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Modifies existing world data
@@ -1245,11 +1251,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Fetch running container address
@@ -1280,11 +1286,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Start Nomad allocation Job
@@ -1314,11 +1320,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Shutdown job execution
@@ -1337,7 +1343,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errors.HttpError'
+            $ref: '#/definitions/dtos.ErrorResponse'
       summary: Development DB reset
       tags:
       - world-service

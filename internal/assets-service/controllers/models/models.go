@@ -38,10 +38,10 @@ func NewModelsController(conf *config.Config, modelService service.ModelsService
 // @Produce      json
 // @Param        world_id path string true "World UUID"
 // @Success      200  {object}  dtos.ModelsListResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      404  {object}  errors.HttpError
-// @Failure      500  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
 // @Router       /assets/models/world/{world_id} [get]
 func (mc *modelsController) GetModelsList(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
@@ -91,9 +91,9 @@ func (mc *modelsController) GetModelsList(c *gin.Context) {
 // @Param        world_id path string true "World UUID"
 // @Param        model_id path string true "Model UUID"
 // @Success      200  {string}  string "GLB file body"
-// @Failure      400  {object}  errors.HttpError
-// @Failure      404  {object}  errors.HttpError
-// @Failure      500  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
 func (mc *modelsController) DownloadModel(c *gin.Context) {
 	// _, err := common_handlers.GetUserIDFromSession(c)
 	// if err != nil {
@@ -141,9 +141,9 @@ func (mc *modelsController) DownloadModel(c *gin.Context) {
 // @Param        world_id path string true "World UUID"
 // @Param        models formData file true "Multipart upload array for model bindings"
 // @Success      201  {object}  dtos.ModelsListResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      500  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
 // @Router       /assets/models/world/{world_id} [put]
 func (mc *modelsController) UploadModels(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)

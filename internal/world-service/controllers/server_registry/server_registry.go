@@ -35,8 +35,8 @@ func NewServerRegistryController(conf *config.Config, nomadJobService server_reg
 // @Param        id path string true "World UUID"
 // @Param        zone_id path int true "World Zone Number"
 // @Success      200  {string}  string "Acknowledge Boot"
-// @Failure      400  {object}  errors.HttpError
-// @Failure      500  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
 // @Router       /world/orchestrator/{id}/zones/{zone_id}/start-job [get]
 func (c *serverRegistryController) StartNewJob(ctx *gin.Context) {
 	worldIdStr := ctx.Param("id")
@@ -72,8 +72,8 @@ func (c *serverRegistryController) StartNewJob(ctx *gin.Context) {
 // @Param        id path string true "World UUID"
 // @Param        zone_id path int true "World Zone Number"
 // @Success      200  {string}  string "Acknowledge Stop"
-// @Failure      400  {object}  errors.HttpError
-// @Failure      404  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
 // @Router       /world/orchestrator/{id}/zones/{zone_id}/stop-job [get]
 func (c *serverRegistryController) StopJob(ctx *gin.Context) {
 	worldIdStr := ctx.Param("id")
@@ -109,8 +109,8 @@ func (c *serverRegistryController) StopJob(ctx *gin.Context) {
 // @Param        id path string true "World UUID"
 // @Param        zone_id path int true "World Zone Number"
 // @Success      200  {object}  dtos.WorldAddressResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      404  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
 // @Router       /world/orchestrator/{id}/zones/{zone_id}/address [get]
 func (c *serverRegistryController) GetServerAddress(ctx *gin.Context) {
 	worldIdStr := ctx.Param("id")

@@ -40,9 +40,9 @@ func NewWorldController(conf *config.Config, characterService world.WorldService
 // @Produce      json
 // @Param        request body dtos.WorldRequest true "World creation data"
 // @Success      201  {object}  dtos.WorldResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      409  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      409  {object} dtos.ErrorResponse
 // @Router       /world [post]
 func (c *worldController) PublishWorld(ctx *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(ctx)
@@ -111,9 +111,9 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 // @Produce      json
 // @Param        id path string true "World UUID"
 // @Success      200  {object}  dtos.WorldResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      404  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
 // @Router       /world/{id} [get]
 func (c *worldController) GetWorld(ctx *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(ctx)
@@ -169,9 +169,9 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 // @Param        limit query int false "Max hits per page"
 // @Param        filter query string false "Search filters"
 // @Success      200  {object}  dtos.WorldsListResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      404  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
 // @Router       /world [get]
 func (c *worldController) GetWorldsList(ctx *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(ctx)
@@ -242,9 +242,9 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 // @Param        id path string true "World UUID"
 // @Param        request body dtos.WorldRequest true "Updated JSON configuration block"
 // @Success      200  {object}  dtos.WorldResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      404  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
 // @Router       /world/{id} [put]
 func (c *worldController) UpdateWorld(ctx *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(ctx)
@@ -323,8 +323,8 @@ func (c *worldController) UpdateWorld(ctx *gin.Context) {
 // @Produce      json
 // @Param        id path string true "World UUID"
 // @Success      200  {string}  string "Success Message Payload"
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
 // @Router       /world/{id} [delete]
 func (c *worldController) DeleteWorld(ctx *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(ctx)
@@ -359,7 +359,7 @@ func (c *worldController) DeleteWorld(ctx *gin.Context) {
 // @Tags         world-service
 // @Produce      json
 // @Success      200  {string}  string "Success reset"
-// @Failure      500  {object}  errors.HttpError
+// @Failure      500  {object} dtos.ErrorResponse
 // @Router       /world/reset-database [delete]
 func (c *worldController) ResetDatabase(ctx *gin.Context) {
 

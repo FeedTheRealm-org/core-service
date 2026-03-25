@@ -33,10 +33,10 @@ func NewAccountController(conf *config.Config, accountService services.AccountSe
 // @Produce      json
 // @Param        request body dtos.CreateAccountRequestDTO true "Account creation details"
 // @Success      201  {object}  dtos.CreateAccountResponseDTO
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      409  {object}  errors.HttpError
-// @Failure      500  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      409  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
 // @Router       /auth/signup [post]
 func (ec *accountController) CreateAccount(c *gin.Context) {
 	req := &dtos.CreateAccountRequestDTO{}
@@ -112,10 +112,10 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 // @Produce      json
 // @Param        request body dtos.LoginAccountRequestDTO true "Login credentials"
 // @Success      200  {object}  dtos.LoginAccountResponseDTO
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      403  {object}  errors.HttpError
-// @Failure      500  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      403  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
 // @Router       /auth/login [post]
 func (ec *accountController) LoginAccount(c *gin.Context) {
 	req := dtos.LoginAccountRequestDTO{}
@@ -182,9 +182,9 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Success      200  {object}  dtos.CheckSessionResponseDTO
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      500  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
 // @Router       /auth/check-session [get]
 func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
@@ -233,10 +233,10 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 // @Produce      json
 // @Param        request body dtos.VerifyAccountRequestDTO true "Verification details"
 // @Success      200  {object}  dtos.VerifyAccountResponseDTO
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      404  {object}  errors.HttpError
-// @Failure      500  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
 // @Router       /auth/verify [post]
 func (ec *accountController) VerifyAccount(c *gin.Context) {
 	req := dtos.VerifyAccountRequestDTO{}
@@ -300,9 +300,9 @@ func (ec *accountController) VerifyAccount(c *gin.Context) {
 // @Produce      json
 // @Param        request body dtos.RefreshVerificationRequestDTO true "Email details"
 // @Success      200  {object}  dtos.RefreshVerificationResponseDTO
-// @Failure      400  {object}  errors.HttpError
-// @Failure      404  {object}  errors.HttpError
-// @Failure      500  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
 // @Router       /auth/refresh [post]
 func (ec *accountController) RefreshVerification(c *gin.Context) {
 	req := dtos.RefreshVerificationRequestDTO{}

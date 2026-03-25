@@ -35,7 +35,7 @@ func NewItemController(conf *config.Config, service items.ItemService) ItemContr
 // @Accept       json
 // @Produce      json
 // @Success      200  {object}  dtos.ItemCategoryListResponse
-// @Failure      401  {object}  errors.HttpError
+// @Failure      401  {object} dtos.ErrorResponse
 // @Router       /assets/items/categories [get]
 func (ic *itemController) GetCategoriesList(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
@@ -73,8 +73,8 @@ func (ic *itemController) GetCategoriesList(c *gin.Context) {
 // @Param        world_id path string true "World UUID"
 // @Param        category_id path string true "Category UUID"
 // @Success      200  {object}  dtos.ItemListResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
 // @Router       /assets/items/world/{world_id}/categories/{category_id} [get]
 func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
@@ -123,8 +123,8 @@ func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
 // @Produce      json
 // @Param        id path string true "Item UUID"
 // @Success      200  {object}  dtos.ItemResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
 // @Router       /assets/items/{id} [get]
 func (ic *itemController) GetItemById(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
@@ -165,8 +165,8 @@ func (ic *itemController) GetItemById(c *gin.Context) {
 // @Param        ids formData []string true "Array of exact item IDs"
 // @Param        sprites formData file true "Muti-part chunk array of files"
 // @Success      201  {object}  dtos.ItemListResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
 // @Router       /assets/items/world/{world_id}/categories/{category_id} [put]
 func (ic *itemController) UploadItems(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
@@ -239,8 +239,8 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 // @Produce      json
 // @Param        id path string true "Item UUID"
 // @Success      204  {object}  dtos.ItemResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
 // @Router       /assets/items/{id} [delete]
 func (ic *itemController) DeleteItem(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
@@ -292,9 +292,9 @@ func (ic *itemController) DeleteItem(c *gin.Context) {
 // @Produce      json
 // @Param        category body dtos.AddItemCategoryRequest true "Category data"
 // @Success      201  {object}  dtos.ItemCategoryResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      409  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      409  {object} dtos.ErrorResponse
 // @Router       /assets/items/categories [post]
 func (ic *itemController) AddCategory(c *gin.Context) {
 	req := &dtos.AddItemCategoryRequest{}

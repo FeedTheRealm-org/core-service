@@ -35,7 +35,7 @@ func NewCosmeticsController(conf *config.Config, cosmeticsService cosmetics.Cosm
 // @Accept       json
 // @Produce      json
 // @Success      200  {object}  dtos.CosmeticCategoryListResponse
-// @Failure      401  {object}  errors.HttpError
+// @Failure      401  {object} dtos.ErrorResponse
 // @Router       /assets/cosmetics/categories [get]
 func (cc *cosmeticsController) GetCategoriesList(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
@@ -72,8 +72,8 @@ func (cc *cosmeticsController) GetCategoriesList(c *gin.Context) {
 // @Produce      json
 // @Param        id path string true "Category UUID"
 // @Success      200  {object}  dtos.CosmeticsListResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
 // @Router       /assets/cosmetics/categories/{id} [get]
 func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
@@ -116,8 +116,8 @@ func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 // @Produce      json
 // @Param        id path string true "Cosmetic UUID"
 // @Success      200  {object}  dtos.CosmeticResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
 // @Router       /assets/cosmetics/{id} [get]
 func (cc *cosmeticsController) GetCosmeticById(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
@@ -156,8 +156,8 @@ func (cc *cosmeticsController) GetCosmeticById(c *gin.Context) {
 // @Param        category_id formData string true "Category UUID"
 // @Param        sprite formData file true "Cosmetic File"
 // @Success      201  {object}  dtos.CosmeticResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
 // @Router       /assets/cosmetics/categories/{id} [put]
 func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
@@ -219,8 +219,8 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 // @Produce      json
 // @Param        id path string true "Cosmetic UUID"
 // @Success      204  {object}  dtos.CosmeticResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
 // @Router       /assets/cosmetics/{id} [delete]
 func (cc *cosmeticsController) DeleteCosmetic(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
@@ -272,9 +272,9 @@ func (cc *cosmeticsController) DeleteCosmetic(c *gin.Context) {
 // @Produce      json
 // @Param        category body dtos.AddCosmeticCategoryRequest true "Category data"
 // @Success      201  {object}  dtos.CosmeticCategoryResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      409  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      409  {object} dtos.ErrorResponse
 // @Router       /assets/cosmetics/categories [post]
 func (cc *cosmeticsController) AddCategory(c *gin.Context) {
 	req := &dtos.AddCosmeticCategoryRequest{}

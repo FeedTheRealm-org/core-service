@@ -37,9 +37,9 @@ func NewCharacterController(conf *config.Config, characterService character.Char
 // @Produce      json
 // @Param        request body dtos.PatchCharacterInfoRequest true "Patch Character DTO"
 // @Success      200  {object}  dtos.CharacterInfoResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      409  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      409  {object} dtos.ErrorResponse
 // @Router       /player/character [patch]
 func (c *characterController) PatchCharacterInfo(ctx *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(ctx)
@@ -106,9 +106,9 @@ func (c *characterController) PatchCharacterInfo(ctx *gin.Context) {
 // @Produce      json
 // @Param        id path string false "Player Character UUID"
 // @Success      200  {object}  dtos.CharacterInfoResponse
-// @Failure      400  {object}  errors.HttpError
-// @Failure      401  {object}  errors.HttpError
-// @Failure      404  {object}  errors.HttpError
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
 // @Router       /player/character/{id} [get]
 // @Router       /player/character [get]
 func (c *characterController) GetCharacterInfo(ctx *gin.Context) {
