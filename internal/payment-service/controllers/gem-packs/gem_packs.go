@@ -92,6 +92,11 @@ func (pc *gemPacksController) UpdateGemPack(c *gin.Context) {
 		return
 	}
 
+	if req.Name == nil && req.Gems == nil && req.Price == nil {
+		_ = c.Error(errors.NewBadRequestError("at least one field must be provided for update"))
+		return
+	}
+
 	packId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid pack_id: " + err.Error()))

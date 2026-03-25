@@ -16,8 +16,8 @@ type GemPacksService interface {
 	// CreatePack creates a new pack with the provided details.
 	CreateGemPack(name string, gems int, price decimal.Decimal) (*models.GemPack, error)
 
-	// UpdatePack updates the details of an existing pack.
-	UpdateGemPack(packageId uuid.UUID, name string, gems int, price decimal.Decimal) (*models.GemPack, error)
+	// UpdatePack updates only provided fields of an existing pack.
+	UpdateGemPack(packageId uuid.UUID, name *string, gems *int, price *decimal.Decimal) (*models.GemPack, error)
 
 	// DeletePack deletes a pack by its ID.
 	DeleteGemPack(packageId uuid.UUID) error

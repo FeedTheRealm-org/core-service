@@ -14,9 +14,9 @@ type CreateGemPackRequest struct {
 }
 
 type UpdateGemPackRequest struct {
-	Name  string          `json:"name,omitempty"`
-	Gems  int             `json:"gems,omitempty"`
-	Price decimal.Decimal `json:"price,omitempty"`
+	Name  *string          `json:"name,omitempty"`
+	Gems  *int             `json:"gems,omitempty"`
+	Price *decimal.Decimal `json:"price,omitempty"`
 }
 
 type GemPackResponse struct {
