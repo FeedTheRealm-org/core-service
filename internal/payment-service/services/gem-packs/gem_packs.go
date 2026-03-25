@@ -6,6 +6,7 @@ import (
 	gem_packs "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-packs"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 type gemPacksService struct {
@@ -26,11 +27,11 @@ func (s *gemPacksService) seedPacksData() error {
 	newPacks := []struct {
 		Name  string
 		Gems  int
-		Price float32
+		Price decimal.Decimal
 	}{
-		{"Small Pack", 1, 1.99},
-		{"Medium Pack", 10, 14.99},
-		{"Large Pack", 50, 24.99},
+		{"Small Pack", 1, decimal.NewFromFloat(1.99)},
+		{"Medium Pack", 10, decimal.NewFromFloat(14.99)},
+		{"Large Pack", 50, decimal.NewFromFloat(24.99)},
 	}
 
 	for _, data := range newPacks {
@@ -73,7 +74,7 @@ func (s *gemPacksService) GetGemPackById(packId uuid.UUID) (*models.GemPack, err
 	return pack, nil
 }
 
-func (s *gemPacksService) CreateGemPack(name string, gems int, price float32) (*models.GemPack, error) {
+func (s *gemPacksService) CreateGemPack(name string, gems int, price decimal.Decimal) (*models.GemPack, error) {
 	newPackage := &models.GemPack{
 		Name:  name,
 		Gems:  gems,
@@ -87,7 +88,7 @@ func (s *gemPacksService) CreateGemPack(name string, gems int, price float32) (*
 	return createdPackage, nil
 }
 
-func (s *gemPacksService) UpdateGemPack(packId uuid.UUID, name string, gems int, price float32) (*models.GemPack, error) {
+func (s *gemPacksService) UpdateGemPack(packId uuid.UUID, name string, gems int, price decimal.Decimal) (*models.GemPack, error) {
 	pack, err := s.repo.GetGemPackById(packId)
 	if err != nil {
 		return nil, err

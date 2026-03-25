@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"github.com/stripe/stripe-go/v84"
 	"github.com/stripe/stripe-go/v84/checkout/session"
 	"github.com/stripe/stripe-go/v84/webhook"
@@ -83,7 +84,7 @@ func (bs *gemBalancesService) CreateCheckoutSession(userId uuid.UUID, packId uui
 		ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
 			Name: stripe.String(pack.Name),
 		},
-		UnitAmount: stripe.Int64(int64(pack.Price * 100)),
+		UnitAmount: stripe.Int64(pack.Price.Mul(decimal.NewFromInt(100)).IntPart()),
 	}
 
 	stripeParamsSession := &stripe.CheckoutSessionLineItemParams{

@@ -12,6 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/consul/api v1.33.4
 	github.com/hashicorp/nomad/api v0.0.0-20260314001232-211384eb84d3
+	github.com/shopspring/decimal v1.2.0
 	github.com/stretchr/testify v1.10.0
 	github.com/stripe/stripe-go/v84 v84.4.1
 	github.com/swaggo/files v1.0.1
