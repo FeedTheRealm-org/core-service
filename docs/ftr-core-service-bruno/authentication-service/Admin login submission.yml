@@ -1,0 +1,41 @@
+info:
+  name: Admin login submission
+  type: http
+  seq: 2
+  tags:
+    - authentication-service
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Fallback on error
+    request:
+      url: "{{baseUrl}}/auth"
+      method: POST
+    response:
+      status: 200
+      statusText: OK
+      body:
+        type: text
+        data: ""
+  - name: 302 Response
+    description: Redirect to /swagger/index.html
+    request:
+      url: "{{baseUrl}}/auth"
+      method: POST
+    response:
+      status: 302
+      statusText: Found
+      body:
+        type: text
+        data: ""

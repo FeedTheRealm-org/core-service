@@ -1,0 +1,88 @@
+info:
+  name: Start Nomad allocation Job
+  type: http
+  seq: 7
+  tags:
+    - world-service
+
+http:
+  method: GET
+  url: "{{baseUrl}}/world/orchestrator/:id/zones/:zone_id/start-job"
+  params:
+    - name: id
+      value: ""
+      type: path
+      description: World UUID
+    - name: zone_id
+      value: ""
+      type: path
+      description: World Zone Number
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Acknowledge Boot
+    request:
+      url: "{{baseUrl}}/world/orchestrator/:id/zones/:zone_id/start-job"
+      method: GET
+      params:
+        - name: id
+          value: ""
+          type: path
+          description: World UUID
+        - name: zone_id
+          value: ""
+          type: path
+          description: World Zone Number
+    response:
+      status: 200
+      statusText: OK
+      body:
+        type: text
+        data: ""
+  - name: 400 Response
+    description: Bad Request
+    request:
+      url: "{{baseUrl}}/world/orchestrator/:id/zones/:zone_id/start-job"
+      method: GET
+      params:
+        - name: id
+          value: ""
+          type: path
+          description: World UUID
+        - name: zone_id
+          value: ""
+          type: path
+          description: World Zone Number
+    response:
+      status: 400
+      statusText: Bad Request
+      body:
+        type: text
+        data: ""
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/world/orchestrator/:id/zones/:zone_id/start-job"
+      method: GET
+      params:
+        - name: id
+          value: ""
+          type: path
+          description: World UUID
+        - name: zone_id
+          value: ""
+          type: path
+          description: World Zone Number
+    response:
+      status: 500
+      statusText: Internal Server Error
+      body:
+        type: text
+        data: ""
