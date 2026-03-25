@@ -83,6 +83,18 @@ func (bc *gemBalancesController) UpdateGemBalance(c *gin.Context) {
 		return
 	}
 
+	balance, err := bc.gemBalanceService.GetGemBalanceByUserId(req.UserId)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.GemBalanceResponse{
+		UserId: balance.UserId,
+		Gems:   balance.Gems,
+	}
+
+	common_handlers.HandleSuccessResponse(c, 200, res)
 }
 
 func (bc *gemBalancesController) CreateCheckoutSession(c *gin.Context) {
