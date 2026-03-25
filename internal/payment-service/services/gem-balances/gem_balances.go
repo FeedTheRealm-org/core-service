@@ -10,8 +10,8 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/payment-service/models"
-	"github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-balances"
-	"github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-packs"
+	gem_balances "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-balances"
+	gem_packs "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-packs"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 )
 
@@ -154,15 +154,17 @@ func (bs *gemBalancesService) HandleWebhook(payload []byte, signature string) er
 		}
 
 		balance, err := bs.gemBalancesRepo.GetGemBalanceByUserId(userId)
+		if err != nil {
+			logger.Logger.Error("Failed to retrieve balance for user " + userId.String() + ": " + err.Error())
+			return err
+		}
+
 		if balance == nil {
 			logger.Logger.Info("No existing balance found for user " + userId.String() + ", creating new balance record")
 			if err := bs.gemBalancesRepo.CreateGemBalance(userId); err != nil {
 				logger.Logger.Error("Failed to create balance for user " + userId.String() + ": " + err.Error())
 				return err
 			}
-		} else if err != nil {
-			logger.Logger.Error("Failed to retrieve balance for user " + userId.String() + ": " + err.Error())
-			return err
 		}
 
 		if err := bs.gemBalancesRepo.AddToGemBalance(userId, pack.Gems); err != nil {
