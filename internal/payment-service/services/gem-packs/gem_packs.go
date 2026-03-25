@@ -14,14 +14,12 @@ type gemGemPacksService struct {
 
 func (s *gemGemPacksService) seedPacksData() error {
 	packs, err := s.GetAllGemPacks()
-	if len(packs) != 0 && err != nil {
+	if err != nil {
 		return err
 	}
 
-	for _, pack := range packs {
-		if err := s.DeleteGemPack(pack.Id); err != nil {
-			return err
-		}
+	if len(packs) > 0 {
+		return nil
 	}
 
 	newPacks := []struct {
