@@ -40,7 +40,7 @@ func NewCharacterController(conf *config.Config, characterService character.Char
 // @Failure      400  {object}  errors.HttpError
 // @Failure      401  {object}  errors.HttpError
 // @Failure      409  {object}  errors.HttpError
-// @Router       /players/character [patch]
+// @Router       /player/character [patch]
 func (c *characterController) PatchCharacterInfo(ctx *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {
@@ -109,8 +109,8 @@ func (c *characterController) PatchCharacterInfo(ctx *gin.Context) {
 // @Failure      400  {object}  errors.HttpError
 // @Failure      401  {object}  errors.HttpError
 // @Failure      404  {object}  errors.HttpError
-// @Router       /players/character/{id} [get]
-// @Router       /players/character [get]
+// @Router       /player/character/{id} [get]
+// @Router       /player/character [get]
 func (c *characterController) GetCharacterInfo(ctx *gin.Context) {
 	sessionUserId, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {

@@ -158,7 +158,7 @@ func (cc *cosmeticsController) GetCosmeticById(c *gin.Context) {
 // @Success      201  {object}  dtos.CosmeticResponse
 // @Failure      400  {object}  errors.HttpError
 // @Failure      401  {object}  errors.HttpError
-// @Router       /assets/cosmetics [put]
+// @Router       /assets/cosmetics/categories/{id} [put]
 func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {

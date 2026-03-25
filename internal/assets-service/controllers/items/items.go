@@ -75,7 +75,7 @@ func (ic *itemController) GetCategoriesList(c *gin.Context) {
 // @Success      200  {object}  dtos.ItemListResponse
 // @Failure      400  {object}  errors.HttpError
 // @Failure      401  {object}  errors.HttpError
-// @Router       /assets/sprites/items/{world_id}/{category_id} [get]
+// @Router       /assets/items/world/{world_id}/categories/{category_id} [get]
 func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -167,7 +167,7 @@ func (ic *itemController) GetItemById(c *gin.Context) {
 // @Success      201  {object}  dtos.ItemListResponse
 // @Failure      400  {object}  errors.HttpError
 // @Failure      401  {object}  errors.HttpError
-// @Router       /assets/sprites/items/{world_id}/{category_id} [post]
+// @Router       /assets/items/world/{world_id}/categories/{category_id} [put]
 func (ic *itemController) UploadItems(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {

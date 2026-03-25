@@ -42,7 +42,7 @@ func NewModelsController(conf *config.Config, modelService service.ModelsService
 // @Failure      401  {object}  errors.HttpError
 // @Failure      404  {object}  errors.HttpError
 // @Failure      500  {object}  errors.HttpError
-// @Router       /assets/models/{world_id} [get]
+// @Router       /assets/models/world/{world_id} [get]
 func (mc *modelsController) GetModelsList(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -94,7 +94,6 @@ func (mc *modelsController) GetModelsList(c *gin.Context) {
 // @Failure      400  {object}  errors.HttpError
 // @Failure      404  {object}  errors.HttpError
 // @Failure      500  {object}  errors.HttpError
-// @Router       /assets/models/{world_id}/assets/{model_id}/model [get]
 func (mc *modelsController) DownloadModel(c *gin.Context) {
 	// _, err := common_handlers.GetUserIDFromSession(c)
 	// if err != nil {
@@ -145,7 +144,7 @@ func (mc *modelsController) DownloadModel(c *gin.Context) {
 // @Failure      400  {object}  errors.HttpError
 // @Failure      401  {object}  errors.HttpError
 // @Failure      500  {object}  errors.HttpError
-// @Router       /assets/models/{world_id} [post]
+// @Router       /assets/models/world/{world_id} [put]
 func (mc *modelsController) UploadModels(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
