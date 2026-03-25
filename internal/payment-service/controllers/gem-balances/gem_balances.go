@@ -2,6 +2,7 @@ package gem_balances
 
 import (
 	"io"
+	"net/http"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
@@ -124,6 +125,8 @@ func (bc *gemBalancesController) CreateCheckoutSession(c *gin.Context) {
 }
 
 func (bc *gemBalancesController) HandleStripeWebhook(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(65536))
+
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("failed to read request body"))
