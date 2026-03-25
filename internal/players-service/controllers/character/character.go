@@ -28,16 +28,19 @@ func NewCharacterController(conf *config.Config, characterService character.Char
 	}
 }
 
-// @Summary PatchCharacterInfo
-// @Description Updates the name and bio of the session player character
-// @Tags players-service
-// @Accept   json
-// @Produce  json
-// @Param   request body dtos.PatchCharacterInfoRequest true "Character Info data"
-// @Success 200  {object}  dtos.CharacterInfoResponse "Updated correctly"
-// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /players/character [patch]
+// PatchCharacterInfo godoc
+// @Summary      Update character info
+// @Description  Updates the name, bio, and associated sprites map.
+// @Tags         players-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request body dtos.PatchCharacterInfoRequest true "Patch Character DTO"
+// @Success      200  {object}  dtos.CharacterInfoResponse
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Failure      409  {object}  errors.HttpError
+// @Router       /players/character [patch]
 func (c *characterController) PatchCharacterInfo(ctx *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {
@@ -94,14 +97,20 @@ func (c *characterController) PatchCharacterInfo(ctx *gin.Context) {
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
 }
 
-// @Summary GetCharacterInfo
-// @Description Retrieves the name and bio of the session player character
-// @Tags players-service
-// @Accept   json
-// @Produce  json
-// @Success 200  {object}  dtos.CharacterInfoResponse "Character info retrieved correctly"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /players/character/:id [get]
+// GetCharacterInfo godoc
+// @Summary      Get character metadata
+// @Description  Retrieves character metadata for the session player or a target UUID.
+// @Tags         players-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id path string false "Player Character UUID"
+// @Success      200  {object}  dtos.CharacterInfoResponse
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Failure      404  {object}  errors.HttpError
+// @Router       /players/character/{id} [get]
+// @Router       /players/character [get]
 func (c *characterController) GetCharacterInfo(ctx *gin.Context) {
 	sessionUserId, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {

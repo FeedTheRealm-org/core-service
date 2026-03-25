@@ -27,13 +27,16 @@ func NewCosmeticsController(conf *config.Config, cosmeticsService cosmetics.Cosm
 	}
 }
 
-// @Summary GetCategoriesList
-// @Description Retrieves the list of existing categories UUIDs.
-// @Tags assets-service
-// @Produce  json
-// @Success 200  {object}  dtos.CosmeticCategoryListResponse "Category list"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /assets/cosmetics/categories [get]
+// GetCategoriesList godoc
+// @Summary      Get cosmetics categories
+// @Description  Retrieves a list of all cosmetic categories.
+// @Tags         assets-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  dtos.CosmeticCategoryListResponse
+// @Failure      401  {object}  errors.HttpError
+// @Router       /assets/cosmetics/categories [get]
 func (cc *cosmeticsController) GetCategoriesList(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -60,14 +63,18 @@ func (cc *cosmeticsController) GetCategoriesList(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
-// @Summary GetCosmeticsListByCategory
-// @Description Retrieves the list of existing cosmetics UUIDs for a given category UUID.
-// @Tags assets-service
-// @Produce  json
-// @Param category_id path string true "Category UUID"
-// @Success 200  {object}  dtos.CosmeticsListResponse "Cosmetic list"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /assets/cosmetics/categories/{category_id} [get]
+// GetCosmeticsListByCategory godoc
+// @Summary      Get cosmetics by category
+// @Description  Retrieves a list of cosmetics that belong to a specific category ID.
+// @Tags         assets-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "Category UUID"
+// @Success      200  {object}  dtos.CosmeticsListResponse
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Router       /assets/cosmetics/categories/{id} [get]
 func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -100,6 +107,18 @@ func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
+// GetCosmeticById godoc
+// @Summary      Get cosmetic by ID
+// @Description  Retrieves a single cosmetic item by its ID.
+// @Tags         assets-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "Cosmetic UUID"
+// @Success      200  {object}  dtos.CosmeticResponse
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Router       /assets/cosmetics/{id} [get]
 func (cc *cosmeticsController) GetCosmeticById(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -127,17 +146,19 @@ func (cc *cosmeticsController) GetCosmeticById(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
-// @Summary UploadCosmeticData
-// @Description Uploads a cosmetic file.
-// @Tags assets-service
-// @Accept  multipart/form-data
-// @Produce  json
-// @Param cosmetic formData file true "Cosmetic file"
-// @Param category_id formData string true "Category ID"
-// @Success 201  {object}  dtos.CosmeticResponse "Uploaded cosmetic"
-// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /assets/cosmetics [put]
+// UploadCosmeticData godoc
+// @Summary      Upload cosmetic data
+// @Description  Upload a cosmetic form-data payload containing category ID and cosmetic file.
+// @Tags         assets-service
+// @Security     BearerAuth
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        category_id formData string true "Category UUID"
+// @Param        sprite formData file true "Cosmetic File"
+// @Success      201  {object}  dtos.CosmeticResponse
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Router       /assets/cosmetics [put]
 func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -190,6 +211,17 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
+// DeleteCosmetic godoc
+// @Summary      Delete cosmetic
+// @Description  Delete a specific cosmetic by ID (requires ownership)
+// @Tags         assets-service
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path string true "Cosmetic UUID"
+// @Success      204  {object}  dtos.CosmeticResponse
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Router       /assets/cosmetics/{id} [delete]
 func (cc *cosmeticsController) DeleteCosmetic(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -231,16 +263,19 @@ func (cc *cosmeticsController) DeleteCosmetic(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusNoContent, res)
 }
 
-// @Summary AddCategory
-// @Description Adds a new cosmetic category.
-// @Tags assets-service
-// @Accept  json
-// @Produce  json
-// @Param category body dtos.AddCosmeticCategoryRequest true "Category data"
-// @Success 201  {object}  dtos.CosmeticCategoryResponse "Created category"
-// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /assets/cosmetics/categories [post]
+// AddCategory godoc
+// @Summary      Adds a new cosmetic category
+// @Description  Creates a new cosmetic category globally.
+// @Tags         assets-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        category body dtos.AddCosmeticCategoryRequest true "Category data"
+// @Success      201  {object}  dtos.CosmeticCategoryResponse
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Failure      409  {object}  errors.HttpError
+// @Router       /assets/cosmetics/categories [post]
 func (cc *cosmeticsController) AddCategory(c *gin.Context) {
 	req := &dtos.AddCosmeticCategoryRequest{}
 	if err := c.ShouldBindJSON(req); err != nil {

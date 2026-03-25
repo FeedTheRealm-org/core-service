@@ -26,16 +26,18 @@ func NewAccountController(conf *config.Config, accountService services.AccountSe
 	}
 }
 
-// @Summary Sign up
-// @Description Create a new user account
-// @Tags authentication-service
-// @Accept   json
-// @Produce  json
-// @Param   request body dtos.CreateAccountRequestDTO true "Signup data"
-// @Success 200  {object}  dtos.CreateAccountResponseDTO "Successful login"
-// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /auth/signup [post]
+// @Summary      Create a new account
+// @Description  Creates a new user account with the provided email and password.
+// @Tags         authentication-service
+// @Accept       json
+// @Produce      json
+// @Param        request body dtos.CreateAccountRequestDTO true "Account creation details"
+// @Success      201  {object}  dtos.CreateAccountResponseDTO
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Failure      409  {object}  errors.HttpError
+// @Failure      500  {object}  errors.HttpError
+// @Router       /auth/signup [post]
 func (ec *accountController) CreateAccount(c *gin.Context) {
 	req := &dtos.CreateAccountRequestDTO{}
 	if err := c.ShouldBindJSON(req); err != nil {
@@ -103,16 +105,18 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
-// @Summary Login
-// @Description Log in an existing user
-// @Tags authentication-service
-// @Accept   json
-// @Produce  json
-// @Param   request body dtos.LoginAccountRequestDTO true "Login data"
-// @Success 200  {object}  dtos.LoginAccountResponseDTO "Successful login"
-// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /auth/login [post]
+// @Summary      Login account
+// @Description  Authenticates a user and returns an access token.
+// @Tags         authentication-service
+// @Accept       json
+// @Produce      json
+// @Param        request body dtos.LoginAccountRequestDTO true "Login credentials"
+// @Success      200  {object}  dtos.LoginAccountResponseDTO
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Failure      403  {object}  errors.HttpError
+// @Failure      500  {object}  errors.HttpError
+// @Router       /auth/login [post]
 func (ec *accountController) LoginAccount(c *gin.Context) {
 	req := dtos.LoginAccountRequestDTO{}
 
@@ -171,6 +175,17 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
+// @Summary      Check session expiration
+// @Description  Validates the integrity and expiration of an active token.
+// @Tags         authentication-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  dtos.CheckSessionResponseDTO
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Failure      500  {object}  errors.HttpError
+// @Router       /auth/check-session [get]
 func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
@@ -211,16 +226,18 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
-// @Summary Verify Account
-// @Description Verify a user account with email verification code
-// @Tags authentication-service
-// @Accept   json
-// @Produce  json
-// @Param   request body dtos.VerifyAccountRequestDTO true "Verification data"
-// @Success 200  {object}  dtos.VerifyAccountResponseDTO "Successful verification (Wrapped in data envelope)"
-// @Failure 400  {object}  dtos.ErrorResponse "Bad request or invalid code"
-// @Failure 500  {object}  dtos.ErrorResponse "Internal server error"
-// @Router /auth/verify [post]
+// @Summary      Verify an account
+// @Description  Verifies a user's email address with a provided verification code.
+// @Tags         authentication-service
+// @Accept       json
+// @Produce      json
+// @Param        request body dtos.VerifyAccountRequestDTO true "Verification details"
+// @Success      200  {object}  dtos.VerifyAccountResponseDTO
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Failure      404  {object}  errors.HttpError
+// @Failure      500  {object}  errors.HttpError
+// @Router       /auth/verify [post]
 func (ec *accountController) VerifyAccount(c *gin.Context) {
 	req := dtos.VerifyAccountRequestDTO{}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -276,16 +293,17 @@ func (ec *accountController) VerifyAccount(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
-// @Summary Refresh verification code
-// @Description Request a new verification code to be sent to the user's email
-// @Tags authentication-service
-// @Accept   json
-// @Produce  json
-// @Param   request body dtos.RefreshVerificationRequestDTO true "Refresh verification data"
-// @Success 200  {object}  dtos.RefreshVerificationResponseDTO "Refresh requested"
-// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
-// @Failure 500  {object}  dtos.ErrorResponse "Internal server error"
-// @Router /auth/refresh [post]
+// @Summary      Refresh verification code
+// @Description  Generates and sends a new verification code to the user's email.
+// @Tags         authentication-service
+// @Accept       json
+// @Produce      json
+// @Param        request body dtos.RefreshVerificationRequestDTO true "Email details"
+// @Success      200  {object}  dtos.RefreshVerificationResponseDTO
+// @Failure      400  {object}  errors.HttpError
+// @Failure      404  {object}  errors.HttpError
+// @Failure      500  {object}  errors.HttpError
+// @Router       /auth/refresh [post]
 func (ec *accountController) RefreshVerification(c *gin.Context) {
 	req := dtos.RefreshVerificationRequestDTO{}
 	if err := c.ShouldBindJSON(&req); err != nil {

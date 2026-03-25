@@ -31,17 +31,19 @@ func NewWorldController(conf *config.Config, characterService world.WorldService
 	}
 }
 
-// @Summary PublishWorld
-// @Description Publishes a new world with the provided information
-// @Tags world-service
-// @Accept   json
-// @Produce  json
-// @Param Authorization header string true "Bearer token for authentication"
-// @Param   request body dtos.WorldRequest true "World Data"
-// @Success 201  {object}  dtos.WorldResponse "Published correctly"
-// @Failure 400  {object}  dtos.ErrorResponse "Bad request body"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /world [post]
+// PublishWorld godoc
+// @Summary      Publish new world
+// @Description  Create a new world instance in the registry.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request body dtos.WorldRequest true "World creation data"
+// @Success      201  {object}  dtos.WorldResponse
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Failure      409  {object}  errors.HttpError
+// @Router       /world [post]
 func (c *worldController) PublishWorld(ctx *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {
@@ -100,16 +102,19 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 	common_handlers.HandleSuccessResponse(ctx, http.StatusCreated, response)
 }
 
-// @Summary GetWorld
-// @Description Retrieves the name and data of the session player world
-// @Tags world-service
-// @Accept   json
-// @Produce  json
-// @Param Authorization header string true "Bearer token for authentication"
-// @Param id  path string true "World ID"
-// @Success 200  {object}  dtos.WorldResponse "World info retrieved correctly"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router  /world/{id} [get]
+// GetWorld godoc
+// @Summary      Retrieve world detail
+// @Description  Fetches full world payload and configuration data by passing the world ID.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "World UUID"
+// @Success      200  {object}  dtos.WorldResponse
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Failure      404  {object}  errors.HttpError
+// @Router       /world/{id} [get]
 func (c *worldController) GetWorld(ctx *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {
@@ -153,18 +158,21 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
 }
 
-// @Summary GetWorldsList
-// @Description Retrieves a paginated list of worlds
-// @Tags world-service
-// @Accept   json
-// @Produce  json
-// @Param Authorization header string true "Bearer token for authentication"
-// @Param offset query int true "Pagination offset (starting index)"
-// @Param limit  query int true "Pagination limit (max 100)"
-// @Param filter query string false "Filter worlds by name (case-insensitive partial match)"
-// @Success 200 {object} dtos.WorldsListResponse "Worlds list retrieved correctly"
-// @Failure 401 {object} dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /world [get]
+// GetWorldsList godoc
+// @Summary      List worlds
+// @Description  Generates paginated meta-list of standard player-made worlds.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        offset query int false "Offset for pagination"
+// @Param        limit query int false "Max hits per page"
+// @Param        filter query string false "Search filters"
+// @Success      200  {object}  dtos.WorldsListResponse
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Failure      404  {object}  errors.HttpError
+// @Router       /world [get]
 func (c *worldController) GetWorldsList(ctx *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {
@@ -224,18 +232,20 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
 }
 
-// @Summary UpdateWorld
-// @Description Updates the data and description of an existing world
-// @Tags world-service
-// @Accept   json
-// @Produce  json
-// @Param Authorization header string true "Bearer token for authentication"
-// @Param id  path string true "World ID"
-// @Param   request body dtos.WorldRequest true "World Data"
-// @Success 200  {object}  dtos.WorldResponse "World updated correctly"
-// @Failure 400  {object}  dtos.ErrorResponse "Bad request body or invalid ID"
-// @Failure 401  {object}  dtos.ErrorResponse "Invalid credentials or invalid JWT token"
-// @Router /world/{id} [put]
+// UpdateWorld godoc
+// @Summary      Modifies existing world data
+// @Description  Changes the underlying data mappings and description values of an owned world instance.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "World UUID"
+// @Param        request body dtos.WorldRequest true "Updated JSON configuration block"
+// @Success      200  {object}  dtos.WorldResponse
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Failure      404  {object}  errors.HttpError
+// @Router       /world/{id} [put]
 func (c *worldController) UpdateWorld(ctx *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {
@@ -305,6 +315,17 @@ func (c *worldController) UpdateWorld(ctx *gin.Context) {
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
 }
 
+// DeleteWorld godoc
+// @Summary      Destroy a world
+// @Description  Delete a world permanently. Requires ownership.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path string true "World UUID"
+// @Success      200  {string}  string "Success Message Payload"
+// @Failure      400  {object}  errors.HttpError
+// @Failure      401  {object}  errors.HttpError
+// @Router       /world/{id} [delete]
 func (c *worldController) DeleteWorld(ctx *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {
@@ -332,12 +353,14 @@ func (c *worldController) DeleteWorld(ctx *gin.Context) {
 	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
 }
 
-// @Summary ResetDatabase
-// @Description Clears all data in the database, this is only meant for testing and development environments
-// @Tags world-service
-// @Accept   json
-// @Produce  json
-// @Router /world/reset-database [delete]
+// ResetDatabase godoc
+// @Summary      Development DB reset
+// @Description  Purge utility used carefully during development to wipe all tables.
+// @Tags         world-service
+// @Produce      json
+// @Success      200  {string}  string "Success reset"
+// @Failure      500  {object}  errors.HttpError
+// @Router       /world/reset-database [delete]
 func (c *worldController) ResetDatabase(ctx *gin.Context) {
 
 	err := c.worldService.ClearDatabase()

@@ -18,6 +18,13 @@ func NewAdminLoginController(accountService services.AccountService) *AdminLogin
 	}
 }
 
+// AdminLoginPageHandler godoc
+// @Summary      Admin login page
+// @Description  Serves the HTML form for admin login.
+// @Tags         authentication-service
+// @Produce      text/html
+// @Success      200  {string}  string "HTML form"
+// @Router       /auth [get]
 func (ac *AdminLoginController) AdminLoginPageHandler(c *gin.Context) {
 	logger.Logger.Info("Serving admin login page")
 	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`
@@ -29,6 +36,17 @@ func (ac *AdminLoginController) AdminLoginPageHandler(c *gin.Context) {
 	`))
 }
 
+// AdminLoginHandler godoc
+// @Summary      Admin login submission
+// @Description  Processes admin login form submission, sets a JWT cookie, and redirects to Swagger UI.
+// @Tags         authentication-service
+// @Accept       x-www-form-urlencoded
+// @Produce      text/html
+// @Param        email formData string true "Admin Email"
+// @Param        password formData string true "Admin Password"
+// @Success      302  {string}  string "Redirect to /swagger/index.html"
+// @Success      200  {string}  string "Fallback on error"
+// @Router       /auth [post]
 func (ac *AdminLoginController) AdminLoginHandler(c *gin.Context) {
 	email := c.PostForm("email")
 	password := c.PostForm("password")
