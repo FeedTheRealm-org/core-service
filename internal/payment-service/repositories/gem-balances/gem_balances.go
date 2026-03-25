@@ -6,6 +6,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/payment-service/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type DatabaseError struct {
@@ -62,6 +63,45 @@ func (br *gemBalancesRepository) GetGemBalanceByUserId(userId uuid.UUID) (*model
 
 func (br *gemBalancesRepository) AddToGemBalance(userId uuid.UUID, gems int) error {
 	return br.db.Conn.Model(&models.GemBalance{}).Where("user_id = ?", userId).UpdateColumn("gems", gorm.Expr("gems + ?", gems)).Error
+}
+
+func (br *gemBalancesRepository) ApplyStripeCheckoutCreditIfUnprocessed(userId uuid.UUID, gems int, eventID string, sessionID string) (bool, error) {
+	applied := false
+
+	err := br.db.Conn.Transaction(func(tx *gorm.DB) error {
+		processedEvent := &models.ProcessedStripeWebhookEvent{
+			EventID:   eventID,
+			SessionID: sessionID,
+			EventType: "checkout.session.completed",
+			UserID:    userId,
+		}
+
+		result := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(processedEvent)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		if result.RowsAffected == 0 {
+			return nil
+		}
+
+		if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&models.GemBalance{UserId: userId, Gems: 0}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Model(&models.GemBalance{}).Where("user_id = ?", userId).UpdateColumn("gems", gorm.Expr("gems + ?", gems)).Error; err != nil {
+			return err
+		}
+
+		applied = true
+		return nil
+	})
+
+	if err != nil {
+		return false, &DatabaseError{message: err.Error()}
+	}
+
+	return applied, nil
 }
 
 func (br *gemBalancesRepository) UpdateGemBalance(userId uuid.UUID, newGems int) error {

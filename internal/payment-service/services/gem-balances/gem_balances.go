@@ -154,23 +154,15 @@ func (bs *gemBalancesService) HandleWebhook(payload []byte, signature string) er
 			return err
 		}
 
-		balance, err := bs.gemBalancesRepo.GetGemBalanceByUserId(userId)
+		applied, err := bs.gemBalancesRepo.ApplyStripeCheckoutCreditIfUnprocessed(userId, pack.Gems, event.ID, session.ID)
 		if err != nil {
-			logger.Logger.Error("Failed to retrieve balance for user " + userId.String() + ": " + err.Error())
+			logger.Logger.Error("Failed to apply idempotent Stripe credit for user " + userId.String() + ": " + err.Error())
 			return err
 		}
 
-		if balance == nil {
-			logger.Logger.Info("No existing balance found for user " + userId.String() + ", creating new balance record")
-			if err := bs.gemBalancesRepo.CreateGemBalance(userId); err != nil {
-				logger.Logger.Error("Failed to create balance for user " + userId.String() + ": " + err.Error())
-				return err
-			}
-		}
-
-		if err := bs.gemBalancesRepo.AddToGemBalance(userId, pack.Gems); err != nil {
-			logger.Logger.Error("Failed to update balance for user " + userId.String() + ": " + err.Error())
-			return err
+		if !applied {
+			logger.Logger.Info("Ignoring duplicate Stripe checkout session completed event: " + event.ID)
+			return nil
 		}
 
 		logger.Logger.Info("Processing Stripe checkout session completed event for session ID " + session.ID)
