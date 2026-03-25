@@ -1,4 +1,4 @@
-package packs
+package gem_packs
 
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
