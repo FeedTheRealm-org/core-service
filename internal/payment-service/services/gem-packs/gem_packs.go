@@ -4,15 +4,16 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/payment-service/models"
 	gem_packs "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-packs"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 )
 
-type gemGemPacksService struct {
+type gemPacksService struct {
 	conf *config.Config
 	repo gem_packs.GemPacksRepository
 }
 
-func (s *gemGemPacksService) seedPacksData() error {
+func (s *gemPacksService) seedPacksData() error {
 	packs, err := s.GetAllGemPacks()
 	if err != nil {
 		return err
@@ -43,19 +44,20 @@ func (s *gemGemPacksService) seedPacksData() error {
 }
 
 func NewGemPacksService(conf *config.Config, repo gem_packs.GemPacksRepository) GemPacksService {
-	newService := &gemGemPacksService{
+	newService := &gemPacksService{
 		conf: conf,
 		repo: repo,
 	}
 
 	if err := newService.seedPacksData(); err != nil {
-		return nil
+		logger.Logger.Errorf("Failed to seed gem packs data: %v", err)
+		return newService
 	}
 
 	return newService
 }
 
-func (s *gemGemPacksService) GetAllGemPacks() ([]*models.GemPack, error) {
+func (s *gemPacksService) GetAllGemPacks() ([]*models.GemPack, error) {
 	packs, err := s.repo.GetAllGemPacks()
 	if err != nil {
 		return nil, err
@@ -63,7 +65,7 @@ func (s *gemGemPacksService) GetAllGemPacks() ([]*models.GemPack, error) {
 	return packs, nil
 }
 
-func (s *gemGemPacksService) GetGemPackById(packId uuid.UUID) (*models.GemPack, error) {
+func (s *gemPacksService) GetGemPackById(packId uuid.UUID) (*models.GemPack, error) {
 	pack, err := s.repo.GetGemPackById(packId)
 	if err != nil {
 		return nil, err
@@ -71,7 +73,7 @@ func (s *gemGemPacksService) GetGemPackById(packId uuid.UUID) (*models.GemPack, 
 	return pack, nil
 }
 
-func (s *gemGemPacksService) CreateGemPack(name string, gems int, price float32) (*models.GemPack, error) {
+func (s *gemPacksService) CreateGemPack(name string, gems int, price float32) (*models.GemPack, error) {
 	newPackage := &models.GemPack{
 		Name:  name,
 		Gems:  gems,
@@ -85,7 +87,7 @@ func (s *gemGemPacksService) CreateGemPack(name string, gems int, price float32)
 	return createdPackage, nil
 }
 
-func (s *gemGemPacksService) UpdateGemPack(packId uuid.UUID, name string, gems int, price float32) (*models.GemPack, error) {
+func (s *gemPacksService) UpdateGemPack(packId uuid.UUID, name string, gems int, price float32) (*models.GemPack, error) {
 	pack, err := s.repo.GetGemPackById(packId)
 	if err != nil {
 		return nil, err
@@ -102,7 +104,7 @@ func (s *gemGemPacksService) UpdateGemPack(packId uuid.UUID, name string, gems i
 	return updatedPackage, nil
 }
 
-func (s *gemGemPacksService) DeleteGemPack(packId uuid.UUID) error {
+func (s *gemPacksService) DeleteGemPack(packId uuid.UUID) error {
 	err := s.repo.DeleteGemPack(packId)
 	if err != nil {
 		return err

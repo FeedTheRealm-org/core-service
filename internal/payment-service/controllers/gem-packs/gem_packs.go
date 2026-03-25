@@ -10,26 +10,26 @@ import (
 	"github.com/google/uuid"
 )
 
-type gemGemPacksController struct {
-	conf               *config.Config
-	gemGemPacksService gem_packs.GemPacksService
+type gemPacksController struct {
+	conf            *config.Config
+	gemPacksService gem_packs.GemPacksService
 }
 
-func NewGemPacksController(conf *config.Config, gemGemPacksService gem_packs.GemPacksService) GemPacksController {
-	return &gemGemPacksController{
-		conf:               conf,
-		gemGemPacksService: gemGemPacksService,
+func NewGemPacksController(conf *config.Config, gemPacksService gem_packs.GemPacksService) GemPacksController {
+	return &gemPacksController{
+		conf:            conf,
+		gemPacksService: gemPacksService,
 	}
 }
 
-func (pc *gemGemPacksController) GetAllGemPacks(c *gin.Context) {
+func (pc *gemPacksController) GetAllGemPacks(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
 		return
 	}
 
-	packs, err := pc.gemGemPacksService.GetAllGemPacks()
+	packs, err := pc.gemPacksService.GetAllGemPacks()
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -38,7 +38,7 @@ func (pc *gemGemPacksController) GetAllGemPacks(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, packs)
 }
 
-func (pc *gemGemPacksController) GetGemPackById(c *gin.Context) {
+func (pc *gemPacksController) GetGemPackById(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
@@ -51,7 +51,7 @@ func (pc *gemGemPacksController) GetGemPackById(c *gin.Context) {
 		return
 	}
 
-	pack, err := pc.gemGemPacksService.GetGemPackById(packId)
+	pack, err := pc.gemPacksService.GetGemPackById(packId)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -60,14 +60,14 @@ func (pc *gemGemPacksController) GetGemPackById(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, pack)
 }
 
-func (pc *gemGemPacksController) CreateGemPack(c *gin.Context) {
+func (pc *gemPacksController) CreateGemPack(c *gin.Context) {
 	pack := &dtos.CreateGemPackRequest{}
 	if err := c.ShouldBindJSON(pack); err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))
 		return
 	}
 
-	createdPack, err := pc.gemGemPacksService.CreateGemPack(pack.Name, pack.Gems, pack.Price)
+	createdPack, err := pc.gemPacksService.CreateGemPack(pack.Name, pack.Gems, pack.Price)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -85,7 +85,7 @@ func (pc *gemGemPacksController) CreateGemPack(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 201, res)
 }
 
-func (pc *gemGemPacksController) UpdateGemPack(c *gin.Context) {
+func (pc *gemPacksController) UpdateGemPack(c *gin.Context) {
 	req := &dtos.UpdateGemPackRequest{}
 	if err := c.ShouldBindJSON(req); err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))
@@ -98,7 +98,7 @@ func (pc *gemGemPacksController) UpdateGemPack(c *gin.Context) {
 		return
 	}
 
-	updatedPack, err := pc.gemGemPacksService.UpdateGemPack(packId, req.Name, req.Gems, req.Price)
+	updatedPack, err := pc.gemPacksService.UpdateGemPack(packId, req.Name, req.Gems, req.Price)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -116,14 +116,14 @@ func (pc *gemGemPacksController) UpdateGemPack(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
 
-func (pc *gemGemPacksController) DeleteGemPack(c *gin.Context) {
+func (pc *gemPacksController) DeleteGemPack(c *gin.Context) {
 	packId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid pack_id: " + err.Error()))
 		return
 	}
 
-	if err := pc.gemGemPacksService.DeleteGemPack(packId); err != nil {
+	if err := pc.gemPacksService.DeleteGemPack(packId); err != nil {
 		_ = c.Error(err)
 		return
 	}
