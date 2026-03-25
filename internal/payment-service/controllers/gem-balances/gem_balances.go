@@ -59,6 +59,11 @@ func (bc *gemBalancesController) GetGemBalanceByUserId(c *gin.Context) {
 			_ = c.Error(err)
 			return
 		}
+		balance, err = bc.gemBalanceService.GetGemBalanceByUserId(userId)
+		if err != nil {
+			_ = c.Error(err)
+			return
+		}
 	} else if err != nil {
 		_ = c.Error(err)
 		return
