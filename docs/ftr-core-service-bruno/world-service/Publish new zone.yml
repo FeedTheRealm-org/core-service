@@ -1,0 +1,23 @@
+info:
+  name: Publish new zone
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: "{{baseUrl}}/world/zones"
+  body:
+    type: json
+    data: |-
+      {
+        "world_id": "b0247402-9183-4303-9662-6d113c0ae179",
+        "zone_id": 1,
+        "data": "{'hola': false}"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

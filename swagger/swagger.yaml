@@ -170,6 +170,14 @@ definitions:
       character_name:
         type: string
     type: object
+  dtos.PublishZoneRequest:
+    properties:
+      data: {}
+      world_id:
+        type: string
+      zone_id:
+        type: integer
+    type: object
   dtos.RefreshVerificationRequestDTO:
     properties:
       email:
@@ -179,6 +187,10 @@ definitions:
     properties:
       email:
         type: string
+    type: object
+  dtos.UpdateCreateableDataRequest:
+    properties:
+      createable_data: {}
     type: object
   dtos.VerifyAccountRequestDTO:
     properties:
@@ -203,6 +215,8 @@ definitions:
     type: object
   dtos.WorldMetadata:
     properties:
+      createable_data:
+        type: string
       created_at:
         type: string
       description:
@@ -218,6 +232,7 @@ definitions:
     type: object
   dtos.WorldRequest:
     properties:
+      createable_data: {}
       data: {}
       description:
         type: string
@@ -226,6 +241,8 @@ definitions:
     type: object
   dtos.WorldResponse:
     properties:
+      createable_data:
+        type: string
       created_at:
         type: string
       data:
@@ -240,6 +257,24 @@ definitions:
         type: string
       user_id:
         type: string
+    type: object
+  dtos.WorldZoneResponse:
+    properties:
+      world_id:
+        type: string
+      zone_data:
+        type: string
+      zone_id:
+        type: integer
+    type: object
+  dtos.WorldZonesResponse:
+    properties:
+      world_id:
+        type: string
+      zones:
+        items:
+          type: integer
+        type: array
     type: object
   dtos.WorldsListResponse:
     properties:
@@ -1226,6 +1261,82 @@ paths:
       summary: Modifies existing world data
       tags:
       - world-service
+  /world/{id}/createable-data:
+    put:
+      consumes:
+      - application/json
+      description: Updates createable_data by world ID.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Createable data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateCreateableDataRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WorldResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update world createable data
+      tags:
+      - world-service
+  /world/{id}/zones:
+    get:
+      consumes:
+      - application/json
+      description: Returns all available zone IDs for a specific world.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WorldZonesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Retrieve zones for a world
+      tags:
+      - world-service
   /world/orchestrator/{id}/zones/{zone_id}/address:
     get:
       description: Returns resolved dynamically routed TCP/UDP IP and Port mappings
@@ -1345,6 +1456,42 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: Development DB reset
+      tags:
+      - world-service
+  /world/zones:
+    post:
+      consumes:
+      - application/json
+      description: Publishes or updates a zone for a world by world_id and zone_id.
+      parameters:
+      - description: Zone publish data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.PublishZoneRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WorldZoneResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Publish zone
       tags:
       - world-service
 swagger: "2.0"
