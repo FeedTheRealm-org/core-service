@@ -23,7 +23,7 @@ type gemBalancesService struct {
 }
 
 func NewGemBalancesService(conf *config.Config, gemBalancesRepo gem_balances.GemBalancesRepository, packsRepo gem_packs.GemPacksRepository) GemBalancesService {
-	stripe.Key = conf.Stripe.StripeSecretKey
+	stripe.Key = conf.Stripe.StripeApiKey
 	return &gemBalancesService{conf: conf, gemBalancesRepo: gemBalancesRepo, packsRepo: packsRepo}
 }
 

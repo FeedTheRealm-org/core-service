@@ -40,7 +40,7 @@ type AssetsConfig struct {
 }
 
 type StripeConfig struct {
-	StripeSecretKey     string
+	StripeApiKey        string
 	StripeWebhookSecret string
 }
 
@@ -90,7 +90,7 @@ func CreateConfig() *Config {
 	}
 
 	stripeConf := &StripeConfig{
-		StripeSecretKey:     os.Getenv("STRIPE_SECRET_KEY"),
+		StripeApiKey:        os.Getenv("STRIPE_API_KEY"),
 		StripeWebhookSecret: os.Getenv("STRIPE_WEBHOOK_SECRET"),
 	}
 
