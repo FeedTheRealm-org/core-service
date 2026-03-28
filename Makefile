@@ -54,3 +54,11 @@ swagger: # Generate Swagger documentation
 migration: # Create a new database migration. Usage: make migration service=your_service name=your_migration_name
 	migrate create -ext sql -dir migrations/$(service) $(name)
 .PHONY: migration
+
+logs: # Tail logs of all containers
+	docker compose -f $(COMPOSE_DEV) logs -f
+.PHONY: logs
+
+logs-%: # Tail logs of a specific service. Usage: make logs-service_name
+	docker compose -f $(COMPOSE_DEV) logs -f $*
+.PHONY: logs-%
