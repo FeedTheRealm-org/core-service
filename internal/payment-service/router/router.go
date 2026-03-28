@@ -34,7 +34,6 @@ func SetupBalancesServiceRouter(conf *config.Config, db *config.DB, paymentGroup
 
 	/* Balances Endpoints */
 	balancesGroup := gemsGroup.Group("/balances")
-	// balancesGroup.GET("", gemBalancesController.GetAllGemBalances)
 	balancesGroup.GET("", gemBalancesController.GetGemBalanceByUserId)
 	balancesGroup.PUT("/:id", middleware.AdminCheckMiddleware(), gemBalancesController.UpdateGemBalance)
 
