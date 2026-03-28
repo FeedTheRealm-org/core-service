@@ -21,6 +21,8 @@ x-app-env: &app-env
   ALLOW_DB_RESET: "true"
   SERVER_ADMIN_EMAIL: "admin@admin.admin"
   SERVER_ADMIN_PASSWORD: admin123
+  STRIPE_API_KEY: ${STRIPE_API_KEY}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
 
 services:
   app-dev:
@@ -34,6 +36,8 @@ services:
     tty: true
     volumes:
       - .:/usr/src/app
+    networks:
+      - dev-app-network
 
   app-prod:
     <<: *app-base
@@ -73,6 +77,16 @@ services:
       - dev-app-network
     volumes:
       - ./local_buckets:/buckets
+
+  stripe-webhook:
+    image: stripe/stripe-cli:latest
+    command: listen
+      --forward-to app-dev:8000/payments/webhook/stripe
+    environment:
+      STRIPE_API_KEY: ${STRIPE_API_KEY}
+      STRIPE_DEVICE_NAME: ${STRIPE_DEVICE_NAME}
+    networks:
+      - dev-app-network
 
 networks:
   dev-app-network:
