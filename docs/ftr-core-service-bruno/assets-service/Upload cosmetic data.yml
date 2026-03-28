@@ -1,0 +1,52 @@
+info:
+  name: Upload cosmetic data
+  type: http
+  seq: 6
+  tags:
+    - assets-service
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/assets/cosmetics/categories/:id"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 201 Response
+    description: Created
+    request:
+      url: "{{baseUrl}}/assets/cosmetics/categories/:id"
+      method: PUT
+    response:
+      status: 201
+      statusText: Created
+      body:
+        type: text
+        data: ""
+  - name: 400 Response
+    description: Bad Request
+    request:
+      url: "{{baseUrl}}/assets/cosmetics/categories/:id"
+      method: PUT
+    response:
+      status: 400
+      statusText: Bad Request
+      body:
+        type: text
+        data: ""
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/assets/cosmetics/categories/:id"
+      method: PUT
+    response:
+      status: 401
+      statusText: Unauthorized
+      body:
+        type: text
+        data: ""

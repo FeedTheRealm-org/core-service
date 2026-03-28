@@ -15,76 +15,33 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/assets/cosmetics": {
-            "put": {
-                "description": "Uploads a cosmetic file.",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "UploadCosmeticData",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "Cosmetic file",
-                        "name": "cosmetic",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Category ID",
-                        "name": "category_id",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Uploaded cosmetic",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.CosmeticResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request body",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials or invalid JWT token",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/assets/cosmetics/categories": {
             "get": {
-                "description": "Retrieves the list of existing categories UUIDs.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of all cosmetic categories.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "assets-service"
                 ],
-                "summary": "GetCategoriesList",
+                "summary": "Get cosmetics categories",
                 "responses": {
                     "200": {
-                        "description": "Category list",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.CosmeticCategoryListResponse"
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials or invalid JWT token",
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -92,7 +49,12 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Adds a new cosmetic category.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new cosmetic category globally.",
                 "consumes": [
                     "application/json"
                 ],
@@ -102,7 +64,7 @@ const docTemplate = `{
                 "tags": [
                     "assets-service"
                 ],
-                "summary": "AddCategory",
+                "summary": "Adds a new cosmetic category",
                 "parameters": [
                     {
                         "description": "Category data",
@@ -116,19 +78,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created category",
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/dtos.CosmeticCategoryResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad request body",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials or invalid JWT token",
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -136,17 +104,317 @@ const docTemplate = `{
                 }
             }
         },
-        "/assets/cosmetics/categories/{category_id}": {
+        "/assets/cosmetics/categories/{id}": {
             "get": {
-                "description": "Retrieves the list of existing cosmetics UUIDs for a given category UUID.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of cosmetics that belong to a specific category ID.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "assets-service"
                 ],
-                "summary": "GetCosmeticsListByCategory",
+                "summary": "Get cosmetics by category",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CosmeticsListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload a cosmetic form-data payload containing category ID and cosmetic file.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Upload cosmetic data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category UUID",
+                        "name": "category_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Cosmetic File",
+                        "name": "sprite",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CosmeticResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/cosmetics/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a single cosmetic item by its ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Get cosmetic by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cosmetic UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CosmeticResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a specific cosmetic by ID (requires ownership)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Delete cosmetic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cosmetic UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CosmeticResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/items/categories": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of all item categories.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Get item categories",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemCategoryListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new item category globally.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Adds a new item category",
+                "parameters": [
+                    {
+                        "description": "Category data",
+                        "name": "category",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.AddItemCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemCategoryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/items/world/{world_id}/categories/{category_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves an items list specific to a world ID and category ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Get items by world and category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "world_id",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "Category UUID",
@@ -157,306 +425,32 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Cosmetic list",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dtos.CosmeticsListResponse"
+                            "$ref": "#/definitions/dtos.ItemListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials or invalid JWT token",
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     }
                 }
-            }
-        },
-        "/assets/models": {
-            "post": {
+            },
+            "put": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Upload multiple 3D models with their materials to a specific world. Supports GLB, FBX, OBJ model files and various material formats. Material files are optional.",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Models"
-                ],
-                "summary": "Upload world models",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Name of the first model",
-                        "name": "models[0].name",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Unique ID for the first model",
-                        "name": "models[0].model_id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "3D model file (GLB, FBX, OBJ, etc.)",
-                        "name": "models[0].model_file",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "Material file (optional)",
-                        "name": "models[0].material_file",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Name of the second model",
-                        "name": "models[1].name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Unique ID for the second model",
-                        "name": "models[1].model_id",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "3D model file for second model",
-                        "name": "models[1].model_file",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Material file for second model (optional)",
-                        "name": "models[1].material_file",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Successfully uploaded models",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ModelsListResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request - missing required fields or invalid format",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - invalid or missing JWT token",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error - failed to save models",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/assets/models/{world_id}": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Upload multiple 3D models with their materials to a specific world. Supports GLB, FBX, OBJ model files and various material formats. Material files are optional.",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Models"
-                ],
-                "summary": "Upload world models",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "World ID",
-                        "name": "world_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Name of the first model",
-                        "name": "models[0].name",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Unique ID for the first model",
-                        "name": "models[0].model_id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "3D model file (GLB, FBX, OBJ, etc.)",
-                        "name": "models[0].model_file",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "Material file (optional)",
-                        "name": "models[0].material_file",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Name of the second model",
-                        "name": "models[1].name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Unique ID for the second model",
-                        "name": "models[1].model_id",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "3D model file for second model",
-                        "name": "models[1].model_file",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Material file for second model (optional)",
-                        "name": "models[1].material_file",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Successfully uploaded models",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ModelsListResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request - missing required fields or invalid format",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - invalid or missing JWT token",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error - failed to save models",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/assets/models/{world_id}/assets/{model_id}/model": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Downloads a single 3D model file (GLB) for a specific asset in a world",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/gltf-binary"
-                ],
-                "tags": [
-                    "Models"
-                ],
-                "summary": "Download model file",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "World ID",
-                        "name": "world_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Asset ID",
-                        "name": "model_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "GLB model file",
-                        "schema": {
-                            "type": "file"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request - missing world_id or model_id",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Not found - model file not found for this asset",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/assets/sprites/items/{world_id}/{category_id}": {
-            "post": {
-                "description": "Uploads multiple item sprites. Each sprite must have a provided ID.",
+                "description": "Upload item IDs alongside sprite files mapping to a world and category.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -466,54 +460,56 @@ const docTemplate = `{
                 "tags": [
                     "assets-service"
                 ],
-                "summary": "UploadItemSprites",
+                "summary": "Upload items and sprites",
                 "parameters": [
                     {
                         "type": "string",
-                        "format": "uuid",
-                        "description": "World ID",
+                        "description": "World UUID",
                         "name": "world_id",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "format": "uuid",
-                        "description": "Category ID",
+                        "description": "Category UUID",
                         "name": "category_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Item IDs (UUIDs), one per file",
-                        "name": "ids[]",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Array of exact item IDs",
+                        "name": "ids",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "file",
-                        "description": "Item sprite files (PNG o JPEG)",
-                        "name": "sprites[]",
+                        "description": "Muti-part chunk array of files",
+                        "name": "sprites",
                         "in": "formData",
                         "required": true
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Uploaded item sprites",
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/dtos.ItemListResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials or invalid JWT token",
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -521,9 +517,291 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/login": {
+        "/assets/items/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a single item item by its ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Get item by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a specific item by ID (requires ownership)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Delete item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ItemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/models/world/{world_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve the metadata models available in a given world id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Get 3D models list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "world_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ModelsListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Submit multiple custom models bounded to a specific world.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Upload batch 3D models",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "world_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Multipart upload array for model bindings",
+                        "name": "models",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ModelsListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth": {
+            "get": {
+                "description": "Serves the HTML form for admin login.",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Admin login page",
+                "responses": {
+                    "200": {
+                        "description": "HTML form",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
-                "description": "Log in an existing user",
+                "description": "Processes admin login form submission, sets a JWT cookie, and redirects to Swagger UI.",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Admin login submission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin Email",
+                        "name": "email",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Admin Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fallback on error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "302": {
+                        "description": "Redirect to /swagger/index.html",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/check-session": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Validates the integrity and expiration of an active token.",
                 "consumes": [
                     "application/json"
                 ],
@@ -533,10 +811,51 @@ const docTemplate = `{
                 "tags": [
                     "authentication-service"
                 ],
-                "summary": "Login",
+                "summary": "Check session expiration",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CheckSessionResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Authenticates a user and returns an access token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Login account",
                 "parameters": [
                     {
-                        "description": "Login data",
+                        "description": "Login credentials",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -547,19 +866,31 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful login",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.LoginAccountResponseDTO"
                         }
                     },
                     "400": {
-                        "description": "Bad request body",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials or invalid JWT token",
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -569,7 +900,7 @@ const docTemplate = `{
         },
         "/auth/refresh": {
             "post": {
-                "description": "Request a new verification code to be sent to the user's email",
+                "description": "Generates and sends a new verification code to the user's email.",
                 "consumes": [
                     "application/json"
                 ],
@@ -582,7 +913,7 @@ const docTemplate = `{
                 "summary": "Refresh verification code",
                 "parameters": [
                     {
-                        "description": "Refresh verification data",
+                        "description": "Email details",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -593,19 +924,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Refresh requested",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.RefreshVerificationResponseDTO"
                         }
                     },
                     "400": {
-                        "description": "Bad request body",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -615,7 +952,7 @@ const docTemplate = `{
         },
         "/auth/signup": {
             "post": {
-                "description": "Create a new user account",
+                "description": "Creates a new user account with the provided email and password.",
                 "consumes": [
                     "application/json"
                 ],
@@ -625,10 +962,10 @@ const docTemplate = `{
                 "tags": [
                     "authentication-service"
                 ],
-                "summary": "Sign up",
+                "summary": "Create a new account",
                 "parameters": [
                     {
-                        "description": "Signup data",
+                        "description": "Account creation details",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -638,20 +975,32 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "Successful login",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/dtos.CreateAccountResponseDTO"
                         }
                     },
                     "400": {
-                        "description": "Bad request body",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials or invalid JWT token",
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -661,7 +1010,7 @@ const docTemplate = `{
         },
         "/auth/verify": {
             "post": {
-                "description": "Verify a user account with email verification code",
+                "description": "Verifies a user's email address with a provided verification code.",
                 "consumes": [
                     "application/json"
                 ],
@@ -671,10 +1020,10 @@ const docTemplate = `{
                 "tags": [
                     "authentication-service"
                 ],
-                "summary": "Verify Account",
+                "summary": "Verify an account",
                 "parameters": [
                     {
-                        "description": "Verification data",
+                        "description": "Verification details",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -685,19 +1034,31 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful verification (Wrapped in data envelope)",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.VerifyAccountResponseDTO"
                         }
                     },
                     "400": {
-                        "description": "Bad request or invalid code",
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -705,9 +1066,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/players/character": {
-            "patch": {
-                "description": "Updates the name and bio of the session player character",
+        "/player/character": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves character metadata for the session player or a target UUID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -717,10 +1083,54 @@ const docTemplate = `{
                 "tags": [
                     "players-service"
                 ],
-                "summary": "PatchCharacterInfo",
+                "summary": "Get character metadata",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CharacterInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates the name, bio, and associated sprites map.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "players-service"
+                ],
+                "summary": "Update character info",
                 "parameters": [
                     {
-                        "description": "Character Info data",
+                        "description": "Patch Character DTO",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -731,19 +1141,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Updated correctly",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.CharacterInfoResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad request body",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials or invalid JWT token",
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -751,9 +1167,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/players/character/:id": {
+        "/player/character/{id}": {
             "get": {
-                "description": "Retrieves the name and bio of the session player character",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves character metadata for the session player or a target UUID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -763,16 +1184,36 @@ const docTemplate = `{
                 "tags": [
                     "players-service"
                 ],
-                "summary": "GetCharacterInfo",
+                "summary": "Get character metadata",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Player Character UUID",
+                        "name": "id",
+                        "in": "path"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Character info retrieved correctly",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.CharacterInfoResponse"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
                     "401": {
-                        "description": "Invalid credentials or invalid JWT token",
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -782,7 +1223,12 @@ const docTemplate = `{
         },
         "/world": {
             "get": {
-                "description": "Retrieves a paginated list of worlds",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generates paginated meta-list of standard player-made worlds.",
                 "consumes": [
                     "application/json"
                 ],
@@ -792,45 +1238,48 @@ const docTemplate = `{
                 "tags": [
                     "world-service"
                 ],
-                "summary": "GetWorldsList",
+                "summary": "List worlds",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Bearer token for authentication",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
                         "type": "integer",
-                        "description": "Pagination offset (starting index)",
+                        "description": "Offset for pagination",
                         "name": "offset",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Pagination limit (max 100)",
+                        "description": "Max hits per page",
                         "name": "limit",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Filter worlds by name (case-insensitive partial match)",
+                        "description": "Search filters",
                         "name": "filter",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Worlds list retrieved correctly",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldsListResponse"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
                     "401": {
-                        "description": "Invalid credentials or invalid JWT token",
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -838,7 +1287,12 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Publishes a new world with the provided information",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new world instance in the registry.",
                 "consumes": [
                     "application/json"
                 ],
@@ -848,17 +1302,10 @@ const docTemplate = `{
                 "tags": [
                     "world-service"
                 ],
-                "summary": "PublishWorld",
+                "summary": "Publish new world",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Bearer token for authentication",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "description": "World Data",
+                        "description": "World creation data",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -869,19 +1316,184 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Published correctly",
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad request body",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials or invalid JWT token",
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/world/orchestrator/{id}/zones/{zone_id}/address": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns resolved dynamically routed TCP/UDP IP and Port mappings for client connections.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Fetch running container address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "World Zone Number",
+                        "name": "zone_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldAddressResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/world/orchestrator/{id}/zones/{zone_id}/start-job": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Init an orchestrator game server container to map back to this World and Zone chunk.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Start Nomad allocation Job",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "World Zone Number",
+                        "name": "zone_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Acknowledge Boot",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/world/orchestrator/{id}/zones/{zone_id}/stop-job": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Stop local processing chunk container linked to orchestrator mapping.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Shutdown job execution",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "World Zone Number",
+                        "name": "zone_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Acknowledge Stop",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -891,23 +1503,38 @@ const docTemplate = `{
         },
         "/world/reset-database": {
             "delete": {
-                "description": "Clears all data in the database, this is only meant for testing and development environments",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Purge utility used carefully during development to wipe all tables.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "world-service"
                 ],
-                "summary": "ResetDatabase",
-                "responses": {}
+                "summary": "Development DB reset",
+                "responses": {
+                    "200": {
+                        "description": "Success reset",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/world/{id}": {
             "get": {
-                "description": "Retrieves the name and data of the session player world",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Fetches full world payload and configuration data by passing the world ID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -917,18 +1544,11 @@ const docTemplate = `{
                 "tags": [
                     "world-service"
                 ],
-                "summary": "GetWorld",
+                "summary": "Retrieve world detail",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Bearer token for authentication",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "World ID",
+                        "description": "World UUID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -936,13 +1556,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "World info retrieved correctly",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldResponse"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
                     "401": {
-                        "description": "Invalid credentials or invalid JWT token",
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -950,7 +1582,12 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Updates the data and description of an existing world",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Changes the underlying data mappings and description values of an owned world instance.",
                 "consumes": [
                     "application/json"
                 ],
@@ -960,24 +1597,17 @@ const docTemplate = `{
                 "tags": [
                     "world-service"
                 ],
-                "summary": "UpdateWorld",
+                "summary": "Modifies existing world data",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Bearer token for authentication",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "World ID",
+                        "description": "World UUID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "World Data",
+                        "description": "Updated JSON configuration block",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -988,19 +1618,69 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "World updated correctly",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.WorldResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad request body or invalid ID",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials or invalid JWT token",
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a world permanently. Requires ownership.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Destroy a world",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success Message Payload",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -1011,6 +1691,17 @@ const docTemplate = `{
     },
     "definitions": {
         "dtos.AddCosmeticCategoryRequest": {
+            "type": "object",
+            "required": [
+                "category_name"
+            ],
+            "properties": {
+                "category_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.AddItemCategoryRequest": {
             "type": "object",
             "required": [
                 "category_name"
@@ -1040,6 +1731,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.CheckSessionResponseDTO": {
+            "type": "object",
+            "properties": {
+                "message": {
                     "type": "string"
                 }
             }
@@ -1126,6 +1825,28 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ItemCategoryListResponse": {
+            "type": "object",
+            "properties": {
+                "category_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.ItemCategoryResponse"
+                    }
+                }
+            }
+        },
+        "dtos.ItemCategoryResponse": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "string"
+                },
+                "category_name": {
                     "type": "string"
                 }
             }
@@ -1269,6 +1990,17 @@ const docTemplate = `{
                 },
                 "verified": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dtos.WorldAddressResponse": {
+            "type": "object",
+            "properties": {
+                "ip": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
                 }
             }
         },

@@ -7,6 +7,13 @@ definitions:
     required:
     - category_name
     type: object
+  dtos.AddItemCategoryRequest:
+    properties:
+      category_name:
+        type: string
+    required:
+    - category_name
+    type: object
   dtos.CharacterInfoResponse:
     properties:
       category_sprites:
@@ -20,6 +27,11 @@ definitions:
       created_at:
         type: string
       updated_at:
+        type: string
+    type: object
+  dtos.CheckSessionResponseDTO:
+    properties:
+      message:
         type: string
     type: object
   dtos.CosmeticCategoryListResponse:
@@ -75,6 +87,20 @@ definitions:
       title:
         type: string
       type:
+        type: string
+    type: object
+  dtos.ItemCategoryListResponse:
+    properties:
+      category_list:
+        items:
+          $ref: '#/definitions/dtos.ItemCategoryResponse'
+        type: array
+    type: object
+  dtos.ItemCategoryResponse:
+    properties:
+      category_id:
+        type: string
+      category_name:
         type: string
     type: object
   dtos.ItemListResponse:
@@ -168,6 +194,13 @@ definitions:
       verified:
         type: boolean
     type: object
+  dtos.WorldAddressResponse:
+    properties:
+      ip:
+        type: string
+      port:
+        type: integer
+    type: object
   dtos.WorldMetadata:
     properties:
       created_at:
@@ -231,61 +264,90 @@ info:
   title: FeedTheRealm Core Service API
   version: 0.1.0
 paths:
-  /assets/cosmetics:
-    put:
-      consumes:
-      - multipart/form-data
-      description: Uploads a cosmetic file.
+  /assets/cosmetics/{id}:
+    delete:
+      description: Delete a specific cosmetic by ID (requires ownership)
       parameters:
-      - description: Cosmetic file
-        in: formData
-        name: cosmetic
-        required: true
-        type: file
-      - description: Category ID
-        in: formData
-        name: category_id
+      - description: Cosmetic UUID
+        in: path
+        name: id
         required: true
         type: string
       produces:
       - application/json
       responses:
-        "201":
-          description: Uploaded cosmetic
+        "204":
+          description: No Content
           schema:
             $ref: '#/definitions/dtos.CosmeticResponse'
         "400":
-          description: Bad request body
+          description: Bad Request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "401":
-          description: Invalid credentials or invalid JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: UploadCosmeticData
+      security:
+      - BearerAuth: []
+      summary: Delete cosmetic
       tags:
       - assets-service
-  /assets/cosmetics/categories:
     get:
-      description: Retrieves the list of existing categories UUIDs.
+      consumes:
+      - application/json
+      description: Retrieves a single cosmetic item by its ID.
+      parameters:
+      - description: Cosmetic UUID
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: Category list
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.CosmeticResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get cosmetic by ID
+      tags:
+      - assets-service
+  /assets/cosmetics/categories:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of all cosmetic categories.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
           schema:
             $ref: '#/definitions/dtos.CosmeticCategoryListResponse'
         "401":
-          description: Invalid credentials or invalid JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: GetCategoriesList
+      security:
+      - BearerAuth: []
+      summary: Get cosmetics categories
       tags:
       - assets-service
     post:
       consumes:
       - application/json
-      description: Adds a new cosmetic category.
+      description: Creates a new cosmetic category globally.
       parameters:
       - description: Category data
         in: body
@@ -297,25 +359,220 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created category
+          description: Created
           schema:
             $ref: '#/definitions/dtos.CosmeticCategoryResponse'
         "400":
-          description: Bad request body
+          description: Bad Request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "401":
-          description: Invalid credentials or invalid JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: AddCategory
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Adds a new cosmetic category
       tags:
       - assets-service
-  /assets/cosmetics/categories/{category_id}:
+  /assets/cosmetics/categories/{id}:
     get:
-      description: Retrieves the list of existing cosmetics UUIDs for a given category
-        UUID.
+      consumes:
+      - application/json
+      description: Retrieves a list of cosmetics that belong to a specific category
+        ID.
       parameters:
+      - description: Category UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.CosmeticsListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get cosmetics by category
+      tags:
+      - assets-service
+    put:
+      consumes:
+      - multipart/form-data
+      description: Upload a cosmetic form-data payload containing category ID and
+        cosmetic file.
+      parameters:
+      - description: Category UUID
+        in: formData
+        name: category_id
+        required: true
+        type: string
+      - description: Cosmetic File
+        in: formData
+        name: sprite
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.CosmeticResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload cosmetic data
+      tags:
+      - assets-service
+  /assets/items/{id}:
+    delete:
+      description: Delete a specific item by ID (requires ownership)
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/dtos.ItemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete item
+      tags:
+      - assets-service
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a single item item by its ID.
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ItemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get item by ID
+      tags:
+      - assets-service
+  /assets/items/categories:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of all item categories.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ItemCategoryListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get item categories
+      tags:
+      - assets-service
+    post:
+      consumes:
+      - application/json
+      description: Creates a new item category globally.
+      parameters:
+      - description: Category data
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AddItemCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.ItemCategoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Adds a new item category
+      tags:
+      - assets-service
+  /assets/items/world/{world_id}/categories/{category_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves an items list specific to a world ID and category ID.
+      parameters:
+      - description: World UUID
+        in: path
+        name: world_id
+        required: true
+        type: string
       - description: Category UUID
         in: path
         name: category_id
@@ -325,266 +582,227 @@ paths:
       - application/json
       responses:
         "200":
-          description: Cosmetic list
+          description: OK
           schema:
-            $ref: '#/definitions/dtos.CosmeticsListResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
+            $ref: '#/definitions/dtos.ItemListResponse'
+        "400":
+          description: Bad Request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: GetCosmeticsListByCategory
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get items by world and category
       tags:
       - assets-service
-  /assets/models:
-    post:
+    put:
       consumes:
       - multipart/form-data
-      description: Upload multiple 3D models with their materials to a specific world.
-        Supports GLB, FBX, OBJ model files and various material formats. Material
-        files are optional.
+      description: Upload item IDs alongside sprite files mapping to a world and category.
       parameters:
-      - description: Name of the first model
-        in: formData
-        name: models[0].name
-        required: true
-        type: string
-      - description: Unique ID for the first model
-        format: uuid
-        in: formData
-        name: models[0].model_id
-        required: true
-        type: string
-      - description: 3D model file (GLB, FBX, OBJ, etc.)
-        in: formData
-        name: models[0].model_file
-        required: true
-        type: file
-      - description: Material file (optional)
-        in: formData
-        name: models[0].material_file
-        type: file
-      - description: Name of the second model
-        in: formData
-        name: models[1].name
-        type: string
-      - description: Unique ID for the second model
-        format: uuid
-        in: formData
-        name: models[1].model_id
-        type: string
-      - description: 3D model file for second model
-        in: formData
-        name: models[1].model_file
-        type: file
-      - description: Material file for second model (optional)
-        in: formData
-        name: models[1].material_file
-        type: file
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Successfully uploaded models
-          schema:
-            $ref: '#/definitions/dtos.ModelsListResponse'
-        "400":
-          description: Bad request - missing required fields or invalid format
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized - invalid or missing JWT token
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error - failed to save models
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Upload world models
-      tags:
-      - Models
-  /assets/models/{world_id}:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Upload multiple 3D models with their materials to a specific world.
-        Supports GLB, FBX, OBJ model files and various material formats. Material
-        files are optional.
-      parameters:
-      - description: World ID
-        format: uuid
+      - description: World UUID
         in: path
         name: world_id
         required: true
         type: string
-      - description: Name of the first model
-        in: formData
-        name: models[0].name
-        required: true
-        type: string
-      - description: Unique ID for the first model
-        format: uuid
-        in: formData
-        name: models[0].model_id
-        required: true
-        type: string
-      - description: 3D model file (GLB, FBX, OBJ, etc.)
-        in: formData
-        name: models[0].model_file
-        required: true
-        type: file
-      - description: Material file (optional)
-        in: formData
-        name: models[0].material_file
-        type: file
-      - description: Name of the second model
-        in: formData
-        name: models[1].name
-        type: string
-      - description: Unique ID for the second model
-        format: uuid
-        in: formData
-        name: models[1].model_id
-        type: string
-      - description: 3D model file for second model
-        in: formData
-        name: models[1].model_file
-        type: file
-      - description: Material file for second model (optional)
-        in: formData
-        name: models[1].material_file
-        type: file
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Successfully uploaded models
-          schema:
-            $ref: '#/definitions/dtos.ModelsListResponse'
-        "400":
-          description: Bad request - missing required fields or invalid format
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized - invalid or missing JWT token
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error - failed to save models
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Upload world models
-      tags:
-      - Models
-  /assets/models/{world_id}/assets/{model_id}/model:
-    get:
-      consumes:
-      - application/json
-      description: Downloads a single 3D model file (GLB) for a specific asset in
-        a world
-      parameters:
-      - description: World ID
-        format: uuid
-        in: path
-        name: world_id
-        required: true
-        type: string
-      - description: Asset ID
-        format: uuid
-        in: path
-        name: model_id
-        required: true
-        type: string
-      produces:
-      - application/gltf-binary
-      responses:
-        "200":
-          description: GLB model file
-          schema:
-            type: file
-        "400":
-          description: Bad request - missing world_id or model_id
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not found - model file not found for this asset
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Download model file
-      tags:
-      - Models
-  /assets/sprites/items/{world_id}/{category_id}:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Uploads multiple item sprites. Each sprite must have a provided
-        ID.
-      parameters:
-      - description: World ID
-        format: uuid
-        in: path
-        name: world_id
-        required: true
-        type: string
-      - description: Category ID
-        format: uuid
+      - description: Category UUID
         in: path
         name: category_id
         required: true
         type: string
-      - description: Item IDs (UUIDs), one per file
+      - collectionFormat: csv
+        description: Array of exact item IDs
         in: formData
-        name: ids[]
+        items:
+          type: string
+        name: ids
         required: true
-        type: string
-      - description: Item sprite files (PNG o JPEG)
+        type: array
+      - description: Muti-part chunk array of files
         in: formData
-        name: sprites[]
+        name: sprites
         required: true
         type: file
       produces:
       - application/json
       responses:
         "201":
-          description: Uploaded item sprites
+          description: Created
           schema:
             $ref: '#/definitions/dtos.ItemListResponse'
         "400":
-          description: Bad request
+          description: Bad Request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "401":
-          description: Invalid credentials or invalid JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: UploadItemSprites
+      security:
+      - BearerAuth: []
+      summary: Upload items and sprites
       tags:
       - assets-service
+  /assets/models/world/{world_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the metadata models available in a given world id.
+      parameters:
+      - description: World UUID
+        in: path
+        name: world_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ModelsListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get 3D models list
+      tags:
+      - assets-service
+    put:
+      consumes:
+      - multipart/form-data
+      description: Submit multiple custom models bounded to a specific world.
+      parameters:
+      - description: World UUID
+        in: path
+        name: world_id
+        required: true
+        type: string
+      - description: Multipart upload array for model bindings
+        in: formData
+        name: models
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.ModelsListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload batch 3D models
+      tags:
+      - assets-service
+  /auth:
+    get:
+      description: Serves the HTML form for admin login.
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: HTML form
+          schema:
+            type: string
+      summary: Admin login page
+      tags:
+      - authentication-service
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Processes admin login form submission, sets a JWT cookie, and redirects
+        to Swagger UI.
+      parameters:
+      - description: Admin Email
+        in: formData
+        name: email
+        required: true
+        type: string
+      - description: Admin Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: Fallback on error
+          schema:
+            type: string
+        "302":
+          description: Redirect to /swagger/index.html
+          schema:
+            type: string
+      summary: Admin login submission
+      tags:
+      - authentication-service
+  /auth/check-session:
+    get:
+      consumes:
+      - application/json
+      description: Validates the integrity and expiration of an active token.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.CheckSessionResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Check session expiration
+      tags:
+      - authentication-service
   /auth/login:
     post:
       consumes:
       - application/json
-      description: Log in an existing user
+      description: Authenticates a user and returns an access token.
       parameters:
-      - description: Login data
+      - description: Login credentials
         in: body
         name: request
         required: true
@@ -594,27 +812,35 @@ paths:
       - application/json
       responses:
         "200":
-          description: Successful login
+          description: OK
           schema:
             $ref: '#/definitions/dtos.LoginAccountResponseDTO'
         "400":
-          description: Bad request body
+          description: Bad Request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "401":
-          description: Invalid credentials or invalid JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: Login
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Login account
       tags:
       - authentication-service
   /auth/refresh:
     post:
       consumes:
       - application/json
-      description: Request a new verification code to be sent to the user's email
+      description: Generates and sends a new verification code to the user's email.
       parameters:
-      - description: Refresh verification data
+      - description: Email details
         in: body
         name: request
         required: true
@@ -624,15 +850,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: Refresh requested
+          description: OK
           schema:
             $ref: '#/definitions/dtos.RefreshVerificationResponseDTO'
         "400":
-          description: Bad request body
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: Refresh verification code
@@ -642,9 +872,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new user account
+      description: Creates a new user account with the provided email and password.
       parameters:
-      - description: Signup data
+      - description: Account creation details
         in: body
         name: request
         required: true
@@ -653,28 +883,36 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: Successful login
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/dtos.CreateAccountResponseDTO'
         "400":
-          description: Bad request body
+          description: Bad Request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "401":
-          description: Invalid credentials or invalid JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: Sign up
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Create a new account
       tags:
       - authentication-service
   /auth/verify:
     post:
       consumes:
       - application/json
-      description: Verify a user account with email verification code
+      description: Verifies a user's email address with a provided verification code.
       parameters:
-      - description: Verification data
+      - description: Verification details
         in: body
         name: request
         required: true
@@ -684,27 +922,64 @@ paths:
       - application/json
       responses:
         "200":
-          description: Successful verification (Wrapped in data envelope)
+          description: OK
           schema:
             $ref: '#/definitions/dtos.VerifyAccountResponseDTO'
         "400":
-          description: Bad request or invalid code
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: Verify Account
+      summary: Verify an account
       tags:
       - authentication-service
-  /players/character:
+  /player/character:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves character metadata for the session player or a target
+        UUID.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.CharacterInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get character metadata
+      tags:
+      - players-service
     patch:
       consumes:
       - application/json
-      description: Updates the name and bio of the session player character
+      description: Updates the name, bio, and associated sprites map.
       parameters:
-      - description: Character Info data
+      - description: Patch Character DTO
         in: body
         name: request
         required: true
@@ -714,61 +989,76 @@ paths:
       - application/json
       responses:
         "200":
-          description: Updated correctly
+          description: OK
           schema:
             $ref: '#/definitions/dtos.CharacterInfoResponse'
         "400":
-          description: Bad request body
+          description: Bad Request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "401":
-          description: Invalid credentials or invalid JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: PatchCharacterInfo
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update character info
       tags:
       - players-service
-  /players/character/:id:
+  /player/character/{id}:
     get:
       consumes:
       - application/json
-      description: Retrieves the name and bio of the session player character
+      description: Retrieves character metadata for the session player or a target
+        UUID.
+      parameters:
+      - description: Player Character UUID
+        in: path
+        name: id
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: Character info retrieved correctly
+          description: OK
           schema:
             $ref: '#/definitions/dtos.CharacterInfoResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
+        "400":
+          description: Bad Request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: GetCharacterInfo
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get character metadata
       tags:
       - players-service
   /world:
     get:
       consumes:
       - application/json
-      description: Retrieves a paginated list of worlds
+      description: Generates paginated meta-list of standard player-made worlds.
       parameters:
-      - description: Bearer token for authentication
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: Pagination offset (starting index)
+      - description: Offset for pagination
         in: query
         name: offset
-        required: true
         type: integer
-      - description: Pagination limit (max 100)
+      - description: Max hits per page
         in: query
         name: limit
-        required: true
         type: integer
-      - description: Filter worlds by name (case-insensitive partial match)
+      - description: Search filters
         in: query
         name: filter
         type: string
@@ -776,27 +1066,32 @@ paths:
       - application/json
       responses:
         "200":
-          description: Worlds list retrieved correctly
+          description: OK
           schema:
             $ref: '#/definitions/dtos.WorldsListResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
+        "400":
+          description: Bad Request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: GetWorldsList
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List worlds
       tags:
       - world-service
     post:
       consumes:
       - application/json
-      description: Publishes a new world with the provided information
+      description: Create a new world instance in the registry.
       parameters:
-      - description: Bearer token for authentication
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: World Data
+      - description: World creation data
         in: body
         name: request
         required: true
@@ -806,32 +1101,31 @@ paths:
       - application/json
       responses:
         "201":
-          description: Published correctly
+          description: Created
           schema:
             $ref: '#/definitions/dtos.WorldResponse'
         "400":
-          description: Bad request body
+          description: Bad Request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "401":
-          description: Invalid credentials or invalid JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: PublishWorld
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Publish new world
       tags:
       - world-service
   /world/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves the name and data of the session player world
+    delete:
+      description: Delete a world permanently. Requires ownership.
       parameters:
-      - description: Bearer token for authentication
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: World ID
+      - description: World UUID
         in: path
         name: id
         required: true
@@ -840,32 +1134,69 @@ paths:
       - application/json
       responses:
         "200":
-          description: World info retrieved correctly
+          description: Success Message Payload
           schema:
-            $ref: '#/definitions/dtos.WorldResponse'
-        "401":
-          description: Invalid credentials or invalid JWT token
+            type: string
+        "400":
+          description: Bad Request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: GetWorld
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Destroy a world
+      tags:
+      - world-service
+    get:
+      consumes:
+      - application/json
+      description: Fetches full world payload and configuration data by passing the
+        world ID.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WorldResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Retrieve world detail
       tags:
       - world-service
     put:
       consumes:
       - application/json
-      description: Updates the data and description of an existing world
+      description: Changes the underlying data mappings and description values of
+        an owned world instance.
       parameters:
-      - description: Bearer token for authentication
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: World ID
+      - description: World UUID
         in: path
         name: id
         required: true
         type: string
-      - description: World Data
+      - description: Updated JSON configuration block
         in: body
         name: request
         required: true
@@ -875,30 +1206,145 @@ paths:
       - application/json
       responses:
         "200":
-          description: World updated correctly
+          description: OK
           schema:
             $ref: '#/definitions/dtos.WorldResponse'
         "400":
-          description: Bad request body or invalid ID
+          description: Bad Request
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
         "401":
-          description: Invalid credentials or invalid JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      summary: UpdateWorld
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Modifies existing world data
+      tags:
+      - world-service
+  /world/orchestrator/{id}/zones/{zone_id}/address:
+    get:
+      description: Returns resolved dynamically routed TCP/UDP IP and Port mappings
+        for client connections.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: World Zone Number
+        in: path
+        name: zone_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WorldAddressResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Fetch running container address
+      tags:
+      - world-service
+  /world/orchestrator/{id}/zones/{zone_id}/start-job:
+    get:
+      description: Init an orchestrator game server container to map back to this
+        World and Zone chunk.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: World Zone Number
+        in: path
+        name: zone_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Acknowledge Boot
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Start Nomad allocation Job
+      tags:
+      - world-service
+  /world/orchestrator/{id}/zones/{zone_id}/stop-job:
+    get:
+      description: Stop local processing chunk container linked to orchestrator mapping.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: World Zone Number
+        in: path
+        name: zone_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Acknowledge Stop
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Shutdown job execution
       tags:
       - world-service
   /world/reset-database:
     delete:
-      consumes:
-      - application/json
-      description: Clears all data in the database, this is only meant for testing
-        and development environments
+      description: Purge utility used carefully during development to wipe all tables.
       produces:
       - application/json
-      responses: {}
-      summary: ResetDatabase
+      responses:
+        "200":
+          description: Success reset
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Development DB reset
       tags:
       - world-service
 swagger: "2.0"

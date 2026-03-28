@@ -4,29 +4,40 @@ Monolithic backend for all adjacent services to the game.
 
 **Structure must always stay easy to divide into microservices and escalate if needed.**
 
+## Documentation
+
+For detailed information, please refer to the specific documentation files in the `docs/` directory:
+
+- [Architecture & Modular Monolith Details](docs/architecture.md)
+- [Development Guide & Local Setup](docs/development.md)
+- [Production Usage & Deployment](docs/production.md)
+- [Testing Setup](docs/testing.md)
+- [CI/CD & GitHub Actions](docs/github_actions.md)
+
 ## Technologies
 
-- Gin-gonic
-- Go
+- [Gin-gonic](https://gin-gonic.com/)
+- [Go](https://go.dev/)
+- [Docker](https://docs.docker.com/)
+- [Swaggo](https://github.com/swaggo/swag)
+- [Nomad (via hashicorp)](https://developer.hashicorp.com/nomad)
 
-## How to run
+## Quick Start
 
 ### Dependencies
 
-- Install golang!
-- Intall docker!
+- Install [golang](https://go.dev/doc/install)
+- Intall [Docker & Docker Compose](https://docs.docker.com/get-docker/)
+- Install `make`
 
 ### Development
 
 ```bash
-# Run development instance
-go run cmd/main
+# Setup environment variables
+cp .env.example .env
 
-# Build binary executable
-go build cmd/main
-
-# Format code
-go fmt ./...
+# Run development environment (API, DB, Buckets)
+make dev
 ```
 
 ### Production
@@ -46,151 +57,50 @@ docker rmi join-travel-back:latest
 
 ## How to test
 
-Tests should be written in the same package of the tested object, and the package name should be the same but appending `_test`.
+See the [Testing Guide](docs/testing.md) for more details.
 
 ```bash
 # Run tests in Docker (includes acceptance tests)
-make exec-test
+make test
 ```
 
 ## Makefile Commands
 
-The project includes a Makefile with convenient commands for development and testing:
+The project includes a `Makefile` with convenient commands for development and testing. See [Development Guide](docs/development.md) for more usage examples.
 
 ```bash
 # Show all available commands with descriptions
 make help
 
 # Development commands
-make docker-up-dev          # Build and start development containers
-make docker-build-dev       # Build development containers
-make docker-down-dev        # Stop and remove development containers
-make docker-exec-app-dev    # Run migrations and open bash shell in app container
+make dev          # Starts detached containers and an interactive shell
+make up-build     # Builds & starts production profile containers, or just: make up
+make build        # Builds production profile containers
+make down         # Stops all running containers
 
 # Testing commands
-make exec-test              # Build, run, and execute tests in Docker containers
+make test         # Build, run, and execute tests in a clean Docker environment
 
-# Swagger commands
-make swag init              # Generate Swagger documentation
+# Documentation
+make swagger      # Generate Swagger documentation
 ```
 
 ## Database Migrations
 
-The project uses `golang-migrate` for database migrations. Migration files are located in the `migrations/` directory.
-
-```bash
-# Run migrations manually (from project root)
-go run cmd/migrate/main.go up
-
-# Rollback migrations
-go run cmd/migrate/main.go down
-
-# Check migration version
-go run cmd/migrate/main.go version
-```
-
-**Environment Variables for Database:**
-
-- `DB_USER` - Database username
-- `DB_PASSWORD` - Database password
-- `DB_HOST` - Database host
-- `DB_PORT` - Database port (default: 5432)
-- `DB_NAME` - Database name
+The project uses `golang-migrate` for database migrations. Migration files are located in the `migrations/` directory. For setup details, see [Development Guide](docs/development.md).
 
 ## Structure
 
-Se tiene la siguiente estructura base, donde cada microservicio que forma parte del monolith se separa del resto para eventualmente escalar la arquitectura,
-en cada uno los controladores, servicios y repositorios se ponen en sus correspontientes carpetas.
-
-- **Crear su archivo separado para la interfaz y otro para la implementacion**.
-- **No utilizar dependencias de un servicio en otro (no cross-imports)**.
-
-```bash
-.
-├── cmd
-│   └── main.go
-├── config
-│   ├── config.go
-│   └── database.go
-├── internal
-│   ├── authentication-service
-│   │   ├── acceptance-tests
-│   │   ├── controllers
-│   │   ├── dtos
-│   │   ├── models
-│   │   ├── repositories
-│   │   ├── router
-│   │   ├── services
-│   │   └── utils
-│   ├── common_handlers
-│   │   ├── context_getters.go
-│   │   ├── not_found.go
-│   │   └── success_handlers.go
-│   ├── dtos
-│   │   └── envelopes.go
-│   ├── errors
-│   │   ├── database_error.go
-│   │   ├── http_error.go
-│   │   └── session_error.go
-│   ├── middleware
-│   │   ├── error_handler.go
-│   │   ├── jwt_session.go
-│   │   └── jwt_session_test.go
-│   ├── players-service
-│   │   ├── acceptance-tests
-│   │   ├── controllers
-│   │   ├── dtos
-│   │   ├── errors
-│   │   ├── models
-│   │   ├── repositories
-│   │   ├── router
-│   │   └── services
-│   ├── router
-│   │   ├── router.go
-│   │   └── swagger_routes.go
-│   ├── server
-│   │   └── server.go
-│   ├── utils
-│   │   ├── input_validation
-│   │   ├── logger
-│   │   ├── seed_database
-│   │   └── session
-│   └── world-service
-│       ├── acceptance-tests
-│       ├── controllers
-│       ├── dtos
-│       ├── errors
-│       ├── models
-│       ├── repositories
-│       ├── router
-│       └── services
-└── migrations
-```
+See [Architecture Documentation](docs/architecture.md) for a comprehensive breakdown of the modular monolith design.
 
 ## Swagger Documentation
 
-Endpoint documentation was made with `Swagger` <br>
-Once staring up the project, go to this link to test out the endpoints:
+Endpoint documentation was made with `Swagger`. Once starting up the project, navigate to this link to test out the endpoints:
 
 ```sh
-# In this case, if locally starting the project, this is the url
 http://localhost:8000/swagger/index.html
 ```
 
-## Seed items with sprites
+## Maintenance Scripts
 
-Script to seed items wiht its sprites and categories. It is needed to have under the directory /client/Assets the asset called "6000FantasyIcons" like /client/Assets6000FantasyIcons. the scripts loads the .png from that folder automatically.
-
-```sh
-#~/Documents/tpf/feed_the_realm/services$
-./scripts/seed_items.sh ../client http://localhost:8000
-```
-
-## Reset items Database
-
-You can reset from database and erase all items, item categories and item sprites by using the next script.
-
-```sh
-sudo chmod +x scripts/reset_items_data.sh
-./scripts/reset_items_data.sh
-```
+Check the [Development Guide](docs/development.md) for full descriptions of maintenance scripts like `seed_items.sh` and `reset_items_data.sh`.

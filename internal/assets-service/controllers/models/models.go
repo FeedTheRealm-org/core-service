@@ -29,6 +29,20 @@ func NewModelsController(conf *config.Config, modelService service.ModelsService
 	}
 }
 
+// GetModelsList godoc
+// @Summary      Get 3D models list
+// @Description  Retrieve the metadata models available in a given world id.
+// @Tags         assets-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        world_id path string true "World UUID"
+// @Success      200  {object}  dtos.ModelsListResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /assets/models/world/{world_id} [get]
 func (mc *modelsController) GetModelsList(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -68,20 +82,18 @@ func (mc *modelsController) GetModelsList(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, response)
 }
 
-// DownloadModel downloads a single model file for a specific asset in a world
-// @Summary Download model file
-// @Description Downloads a single 3D model file (GLB) for a specific asset in a world
-// @Tags Models
-// @Accept json
-// @Produce application/gltf-binary
-// @Param world_id path string true "World ID" format(uuid)
-// @Param model_id path string true "Asset ID" format(uuid)
-// @Security BearerAuth
-// @Success 200 {file} binary "GLB model file"
-// @Failure 400 {object} map[string]interface{} "Bad request - missing world_id or model_id"
-// @Failure 404 {object} map[string]interface{} "Not found - model file not found for this asset"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /assets/models/{world_id}/assets/{model_id}/model [get]
+// DownloadModel godoc
+// @Summary      Download binary model
+// @Description  Stream/Download a .glb model file.
+// @Tags         assets-service
+// @Security     BearerAuth
+// @Produce      application/gltf-binary
+// @Param        world_id path string true "World UUID"
+// @Param        model_id path string true "Model UUID"
+// @Success      200  {string}  string "GLB file body"
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
 func (mc *modelsController) DownloadModel(c *gin.Context) {
 	// _, err := common_handlers.GetUserIDFromSession(c)
 	// if err != nil {
@@ -119,28 +131,20 @@ func (mc *modelsController) DownloadModel(c *gin.Context) {
 	c.File(modelPath)
 }
 
-// UploadModels uploads multiple 3D models and materials to a specific world
-// @Summary Upload world models
-// @Description Upload multiple 3D models with their materials to a specific world. Supports GLB, FBX, OBJ model files and various material formats. Material files are optional.
-// @Tags Models
-// @Accept multipart/form-data
-// @Produce json
-// @Param world_id path string true "World ID" format(uuid)
-// @Param models[0].name formData string true "Name of the first model"
-// @Param models[0].model_id formData string true "Unique ID for the first model" format(uuid)
-// @Param models[0].model_file formData file true "3D model file (GLB, FBX, OBJ, etc.)"
-// @Param models[0].material_file formData file false "Material file (optional)"
-// @Param models[1].name formData string false "Name of the second model"
-// @Param models[1].model_id formData string false "Unique ID for the second model" format(uuid)
-// @Param models[1].model_file formData file false "3D model file for second model"
-// @Param models[1].material_file formData file false "Material file for second model (optional)"
-// @Security BearerAuth
-// @Success 201 {object} dtos.ModelsListResponse "Successfully uploaded models"
-// @Failure 400 {object} map[string]interface{} "Bad request - missing required fields or invalid format"
-// @Failure 401 {object} map[string]interface{} "Unauthorized - invalid or missing JWT token"
-// @Failure 500 {object} map[string]interface{} "Internal server error - failed to save models"
-// @Router /assets/models/{world_id} [post]
-// @Router /assets/models [post]
+// UploadModels godoc
+// @Summary      Upload batch 3D models
+// @Description  Submit multiple custom models bounded to a specific world.
+// @Tags         assets-service
+// @Security     BearerAuth
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        world_id path string true "World UUID"
+// @Param        models formData file true "Multipart upload array for model bindings"
+// @Success      201  {object}  dtos.ModelsListResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /assets/models/world/{world_id} [put]
 func (mc *modelsController) UploadModels(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {

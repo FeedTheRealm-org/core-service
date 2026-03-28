@@ -1,0 +1,63 @@
+info:
+  name: Adds a new cosmetic category
+  type: http
+  seq: 4
+  tags:
+    - assets-service
+
+http:
+  method: POST
+  url: "{{baseUrl}}/assets/cosmetics/categories"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 201 Response
+    description: Created
+    request:
+      url: "{{baseUrl}}/assets/cosmetics/categories"
+      method: POST
+    response:
+      status: 201
+      statusText: Created
+      body:
+        type: text
+        data: ""
+  - name: 400 Response
+    description: Bad Request
+    request:
+      url: "{{baseUrl}}/assets/cosmetics/categories"
+      method: POST
+    response:
+      status: 400
+      statusText: Bad Request
+      body:
+        type: text
+        data: ""
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/assets/cosmetics/categories"
+      method: POST
+    response:
+      status: 401
+      statusText: Unauthorized
+      body:
+        type: text
+        data: ""
+  - name: 409 Response
+    description: Conflict
+    request:
+      url: "{{baseUrl}}/assets/cosmetics/categories"
+      method: POST
+    response:
+      status: 409
+      statusText: Conflict
+      body:
+        type: text
+        data: ""

@@ -26,6 +26,18 @@ func NewServerRegistryController(conf *config.Config, nomadJobService server_reg
 	}
 }
 
+// StartNewJob godoc
+// @Summary      Start Nomad allocation Job
+// @Description  Init an orchestrator game server container to map back to this World and Zone chunk.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path string true "World UUID"
+// @Param        zone_id path int true "World Zone Number"
+// @Success      200  {string}  string "Acknowledge Boot"
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /world/orchestrator/{id}/zones/{zone_id}/start-job [get]
 func (c *serverRegistryController) StartNewJob(ctx *gin.Context) {
 	worldIdStr := ctx.Param("id")
 	zoneIdStr := ctx.Param("zone_id")
@@ -51,6 +63,18 @@ func (c *serverRegistryController) StartNewJob(ctx *gin.Context) {
 	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
 }
 
+// StopJob godoc
+// @Summary      Shutdown job execution
+// @Description  Stop local processing chunk container linked to orchestrator mapping.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path string true "World UUID"
+// @Param        zone_id path int true "World Zone Number"
+// @Success      200  {string}  string "Acknowledge Stop"
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Router       /world/orchestrator/{id}/zones/{zone_id}/stop-job [get]
 func (c *serverRegistryController) StopJob(ctx *gin.Context) {
 	worldIdStr := ctx.Param("id")
 	zoneIdStr := ctx.Param("zone_id")
@@ -76,6 +100,18 @@ func (c *serverRegistryController) StopJob(ctx *gin.Context) {
 	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
 }
 
+// GetServerAddress godoc
+// @Summary      Fetch running container address
+// @Description  Returns resolved dynamically routed TCP/UDP IP and Port mappings for client connections.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path string true "World UUID"
+// @Param        zone_id path int true "World Zone Number"
+// @Success      200  {object}  dtos.WorldAddressResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Router       /world/orchestrator/{id}/zones/{zone_id}/address [get]
 func (c *serverRegistryController) GetServerAddress(ctx *gin.Context) {
 	worldIdStr := ctx.Param("id")
 	zoneIdStr := ctx.Param("zone_id")

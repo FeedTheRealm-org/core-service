@@ -2,7 +2,6 @@ package world
 
 import (
 	"errors"
-	"os"
 	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
@@ -66,6 +65,17 @@ func (r *worldRepository) UpdateWorldData(worldID uuid.UUID, userId uuid.UUID, d
 	return &wd, nil
 }
 
+func (r *worldRepository) DeleteWorldData(worldID uuid.UUID) error {
+	result := r.db.Conn.Delete(&models.WorldData{}, "id = ?", worldID)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return world_errors.NewWorldNotFound("world not found with ID: " + worldID.String())
+	}
+	return nil
+}
+
 // GetWorldsList retrieves a paginated list of worlds.
 func (r *worldRepository) GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error) {
 	var worlds []*models.WorldData
@@ -80,9 +90,6 @@ func (r *worldRepository) GetWorldsList(offset int, limit int, filter string) ([
 }
 
 func (r *worldRepository) ClearDatabase() error {
-	if os.Getenv("ALLOW_DB_RESET") != "true" {
-		return errors.New("forbidden: database reset not allowed")
-	}
-	err := r.db.Conn.Exec("DELETE FROM world_data").Error
+	err := r.db.Conn.Delete(&models.WorldData{}, "1 = 1").Error
 	return err
 }
