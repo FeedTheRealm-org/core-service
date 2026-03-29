@@ -31,5 +31,8 @@ type WorldRepository interface {
 	// GetWorldZones retrieves available zones for a specific world.
 	GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, error)
 
+	// GetWorldZone retrieves a specific zone for a world.
+	GetWorldZone(worldID uuid.UUID, zoneID int) (*models.WorldZone, error)
+
 	ClearDatabase() error
 }

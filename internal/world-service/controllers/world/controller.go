@@ -16,6 +16,9 @@ type WorldController interface {
 	// GetWorldZones retrieves available zones for a specific world.
 	GetWorldZones(c *gin.Context)
 
+	// GetWorldZoneData retrieves specific zone data for a specific world.
+	GetWorldZoneData(c *gin.Context)
+
 	// GetWorldsList retrieves a paginated list of worlds.
 	GetWorldsList(c *gin.Context)
 

@@ -39,13 +39,8 @@ type WorldAddressResponse struct {
 }
 
 type WorldZonesResponse struct {
-	WorldID string          `json:"world_id"`
-	Zones   []WorldZoneData `json:"zones"`
-}
-
-type WorldZoneData struct {
-	ZoneID   int    `json:"zone_id"`
-	ZoneData string `json:"zone_data"`
+	WorldID string `json:"world_id"`
+	Zones   []int  `json:"zones"`
 }
 
 type WorldZoneResponse struct {

@@ -108,6 +108,10 @@ func (cs *worldService) GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, e
 	return cs.worldRepository.GetWorldZones(worldID)
 }
 
+func (cs *worldService) GetWorldZone(worldID uuid.UUID, zoneID int) (*models.WorldZone, error) {
+	return cs.worldRepository.GetWorldZone(worldID, zoneID)
+}
+
 func (cs *worldService) ClearDatabase() error {
 	return cs.worldRepository.ClearDatabase()
 }

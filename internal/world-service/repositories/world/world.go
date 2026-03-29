@@ -144,6 +144,14 @@ func (r *worldRepository) GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone,
 	return worldZones, nil
 }
 
+func (r *worldRepository) GetWorldZone(worldID uuid.UUID, zoneID int) (*models.WorldZone, error) {
+	var worldZone models.WorldZone
+	if err := r.db.Conn.Where("world_id = ? AND id = ?", worldID, zoneID).First(&worldZone).Error; err != nil {
+		return nil, err
+	}
+	return &worldZone, nil
+}
+
 func (r *worldRepository) ClearDatabase() error {
 	if err := r.db.Conn.Delete(&models.WorldZone{}, "1 = 1").Error; err != nil {
 		return err

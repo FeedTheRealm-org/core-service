@@ -421,17 +421,60 @@ func (c *worldController) GetWorldZones(ctx *gin.Context) {
 		return
 	}
 
-	zoneResponse := make([]dtos.WorldZoneData, 0, len(zones))
+	zoneIds := make([]int, 0, len(zones))
 	for _, zone := range zones {
-		zoneResponse = append(zoneResponse, dtos.WorldZoneData{
-			ZoneID:   zone.ID,
-			ZoneData: zone.ZoneData.String(),
-		})
+		zoneIds = append(zoneIds, zone.ID)
 	}
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, &dtos.WorldZonesResponse{
 		WorldID: worldID.String(),
-		Zones:   zoneResponse,
+		Zones:   zoneIds,
+	})
+}
+
+// GetWorldZoneData godoc
+// @Summary      Retrieve specific zone data
+// @Description  Returns data for a specific zone in a world.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "World UUID"
+// @Param        zone_id path int true "Zone ID"
+// @Success      200  {object}  dtos.WorldZoneResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Router       /world/{id}/zones/{zone_id} [get]
+func (c *worldController) GetWorldZoneData(ctx *gin.Context) {
+	_, err := common_handlers.GetUserIDFromSession(ctx)
+	if err != nil {
+		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	worldID, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + ctx.Param("id")))
+		return
+	}
+
+	zoneID, err := strconv.Atoi(ctx.Param("zone_id"))
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid zone ID: " + ctx.Param("zone_id")))
+		return
+	}
+
+	zone, err := c.worldService.GetWorldZone(worldID, zoneID)
+	if err != nil {
+		_ = ctx.Error(errors.NewNotFoundError("zone not found"))
+		return
+	}
+
+	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, &dtos.WorldZoneResponse{
+		WorldID:  worldID.String(),
+		ZoneID:   zone.ID,
+		ZoneData: zone.ZoneData.String(),
 	})
 }
 
