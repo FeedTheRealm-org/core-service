@@ -20,6 +20,16 @@ x-app-env: &app-env
   EMAIL_SENDER_ADDRESS: ${EMAIL_SENDER_ADDRESS}
   SERVER_ADMIN_EMAIL: "admin@admin.admin"
   SERVER_ADMIN_PASSWORD: admin123
+  STRIPE_API_KEY: ${STRIPE_API_KEY}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+
+x-stripe-base: &stripe-base
+  image: stripe/stripe-cli:latest
+  environment:
+    STRIPE_API_KEY: ${STRIPE_API_KEY}
+    STRIPE_DEVICE_NAME: ${STRIPE_DEVICE_NAME}
+  networks:
+    - dev-app-network
 
 services:
   app-dev:
@@ -33,6 +43,8 @@ services:
     tty: true
     volumes:
       - .:/usr/src/app
+    networks:
+      - dev-app-network
 
   app-prod:
     <<: *app-base
@@ -43,6 +55,8 @@ services:
     build:
       context: .
       target: prod
+    networks:
+      - dev-app-network
 
   db:
     image: postgres:17-alpine
@@ -72,6 +86,16 @@ services:
       - dev-app-network
     volumes:
       - ./local_buckets:/buckets
+
+  stripe-webhook-dev:
+    <<: *stripe-base
+    profiles: ["dev"]
+    command: listen --forward-to app-dev:8000/payments/webhook/stripe
+
+  stripe-webhook-prod:
+    <<: *stripe-base
+    profiles: ["prod"]
+    command: listen --forward-to app-prod:8000/payments/webhook/stripe
 
 networks:
   dev-app-network:

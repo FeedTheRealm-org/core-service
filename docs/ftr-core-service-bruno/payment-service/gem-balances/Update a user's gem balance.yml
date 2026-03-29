@@ -1,0 +1,25 @@
+info:
+  name: Update a user's gem balance
+  type: http
+  seq: 2
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/payments/gems/balances/:user_id"
+  params:
+    - name: user_id
+      value: c28eb604-5425-4001-ae5f-1115f3bf66fb
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "gems": 18
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

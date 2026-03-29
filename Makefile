@@ -28,9 +28,9 @@ up-build: down # Build and start containers
 .PHONY: up-build
 
 dev: # Starts containers detatched and starts interactive shell in app container for manual runs
-	docker compose -f $(COMPOSE_DEV) --profile dev up -d --build db buckets
-	docker compose -f $(COMPOSE_DEV) run --rm --service-ports app-dev swag init -g cmd/main.go -o ./swagger
-	docker compose -f $(COMPOSE_DEV) run --rm --service-ports app-dev /bin/bash
+	docker compose -f $(COMPOSE_DEV) --profile dev up -d --build app-dev db buckets stripe-webhook
+	docker compose -f $(COMPOSE_DEV) exec app-dev swag init -g cmd/main.go -o ./swagger
+	docker compose -f $(COMPOSE_DEV) exec app-dev /bin/bash
 	docker compose -f $(COMPOSE_DEV) down
 .PHONY: dev
 
@@ -54,3 +54,11 @@ swagger: # Generate Swagger documentation
 migration: # Create a new database migration. Usage: make migration service=your_service name=your_migration_name
 	migrate create -ext sql -dir migrations/$(service) $(name)
 .PHONY: migration
+
+logs: # Tail logs of all containers
+	docker compose -f $(COMPOSE_DEV) logs -f
+.PHONY: logs
+
+logs-%: # Tail logs of a specific service. Usage: make logs-service_name
+	docker compose -f $(COMPOSE_DEV) logs -f $*
+.PHONY: logs-%
