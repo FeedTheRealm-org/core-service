@@ -1,0 +1,19 @@
+info:
+  name: Delete gem pack
+  type: http
+  seq: 5
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/payments/gems/packs/:pack_id"
+  params:
+    - name: pack_id
+      value: 244dcd4b-b2de-4649-8e02-e97321e98388
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

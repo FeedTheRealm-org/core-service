@@ -1,0 +1,7 @@
+info:
+  name: gem-packs
+  type: folder
+  seq: 1
+
+request:
+  auth: inherit
