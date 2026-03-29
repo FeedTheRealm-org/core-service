@@ -23,6 +23,14 @@ x-app-env: &app-env
   STRIPE_API_KEY: ${STRIPE_API_KEY}
   STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
 
+x-stripe-base: &stripe-base
+  image: stripe/stripe-cli:latest
+  environment:
+    STRIPE_API_KEY: ${STRIPE_API_KEY}
+    STRIPE_DEVICE_NAME: ${STRIPE_DEVICE_NAME}
+  networks:
+    - dev-app-network
+
 services:
   app-dev:
     <<: *app-base
@@ -47,6 +55,8 @@ services:
     build:
       context: .
       target: prod
+    networks:
+      - dev-app-network
 
   db:
     image: postgres:17-alpine
@@ -77,15 +87,15 @@ services:
     volumes:
       - ./local_buckets:/buckets
 
-  stripe-webhook:
-    image: stripe/stripe-cli:latest
-    command: listen
-      --forward-to app-dev:8000/payments/webhook/stripe
-    environment:
-      STRIPE_API_KEY: ${STRIPE_API_KEY}
-      STRIPE_DEVICE_NAME: ${STRIPE_DEVICE_NAME}
-    networks:
-      - dev-app-network
+  stripe-webhook-dev:
+    <<: *stripe-base
+    profiles: ["dev"]
+    command: listen --forward-to app-dev:8000/payments/webhook/stripe
+
+  stripe-webhook-prod:
+    <<: *stripe-base
+    profiles: ["prod"]
+    command: listen --forward-to app-prod:8000/payments/webhook/stripe
 
 networks:
   dev-app-network:
