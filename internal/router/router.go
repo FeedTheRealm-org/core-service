@@ -6,6 +6,7 @@ import (
 	authRouter "github.com/FeedTheRealm-org/core-service/internal/authentication-service/router"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
+	paymentsRouter "github.com/FeedTheRealm-org/core-service/internal/payment-service/router"
 	playersRouter "github.com/FeedTheRealm-org/core-service/internal/players-service/router"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
 	worldRouter "github.com/FeedTheRealm-org/core-service/internal/world-service/router"
@@ -23,6 +24,10 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	r.NoRoute(common_handlers.NotFoundController)
 
 	if err := authRouter.SetupAuthenticationServiceRouter(r, conf, db, jwtManager); err != nil {
+		return err
+	}
+
+	if err := paymentsRouter.SetupPaymentServiceRouter(r, conf, db); err != nil {
 		return err
 	}
 
