@@ -1040,17 +1040,17 @@ paths:
           schema:
             $ref: '#/definitions/dtos.CheckoutResponse'
         "400":
-          description: Bad request
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create checkout session
@@ -1069,11 +1069,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get current user gem balance
@@ -1104,17 +1104,17 @@ paths:
           schema:
             $ref: '#/definitions/dtos.GemBalanceResponse'
         "400":
-          description: Bad request
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update a user's gem balance
@@ -1129,17 +1129,15 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/dtos.GemPackResponse'
-            type: array
+            $ref: '#/definitions/dtos.GemPackResponse'
         "401":
           description: Unauthorized
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List gem packs
@@ -1164,17 +1162,17 @@ paths:
           schema:
             $ref: '#/definitions/dtos.GemPackResponse'
         "400":
-          description: Bad request
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create gem pack
@@ -1197,21 +1195,21 @@ paths:
           schema:
             $ref: '#/definitions/dtos.GemPackDeletedResponse'
         "400":
-          description: Bad request
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
-          description: Not found
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete gem pack
@@ -1233,21 +1231,21 @@ paths:
           schema:
             $ref: '#/definitions/dtos.GemPackResponse'
         "400":
-          description: Bad request
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
-          description: Not found
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get gem pack by ID
@@ -1277,21 +1275,21 @@ paths:
           schema:
             $ref: '#/definitions/dtos.GemPackResponse'
         "400":
-          description: Bad request
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "404":
-          description: Not found
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update gem pack
@@ -1310,13 +1308,13 @@ paths:
           schema:
             $ref: '#/definitions/dtos.WebhookResponse'
         "400":
-          description: Bad request
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/dtos.ErrorResponse'
       summary: Handle Stripe webhook
       tags:
       - payment-service

@@ -31,9 +31,9 @@ func NewGemBalancesController(conf *config.Config, gemBalanceService gem_balance
 // @Tags         payment-service
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {array}   dtos.GemBalanceResponse
-// @Failure      401  {string}  string "Unauthorized"
-// @Failure      500  {string}  string "Internal server error"
+// @Success      200  {object}  dtos.GemBalanceResponse
+// @Failure      401  {object}  dtos.ErrorResponse
+// @Failure      500  {object}  dtos.ErrorResponse
 func (bc *gemBalancesController) GetAllGemBalances(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -62,8 +62,8 @@ func (bc *gemBalancesController) GetAllGemBalances(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Success      200  {object}  dtos.GemBalanceResponse
-// @Failure      401  {string}  string "Unauthorized"
-// @Failure      500  {string}  string "Internal server error"
+// @Failure      401  {object}  dtos.ErrorResponse
+// @Failure      500  {object}  dtos.ErrorResponse
 // @Router       /payments/gems/balances [get]
 func (bc *gemBalancesController) GetGemBalanceByUserId(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
@@ -107,9 +107,9 @@ func (bc *gemBalancesController) GetGemBalanceByUserId(c *gin.Context) {
 // @Param        id       path      string                        true  "User ID"
 // @Param        request  body      dtos.UpdateGemBalanceRequest  true  "Gem balance update payload"
 // @Success      200      {object}  dtos.GemBalanceResponse
-// @Failure      400      {string}  string "Bad request"
-// @Failure      401      {string}  string "Unauthorized"
-// @Failure      500      {string}  string "Internal server error"
+// @Failure      400      {object}  dtos.ErrorResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
 // @Router       /payments/gems/balances/{id} [put]
 func (bc *gemBalancesController) UpdateGemBalance(c *gin.Context) {
 	userId, err := uuid.Parse(c.Param("id"))
@@ -152,9 +152,9 @@ func (bc *gemBalancesController) UpdateGemBalance(c *gin.Context) {
 // @Produce      json
 // @Param        request  body      dtos.CheckoutRequest   true  "Checkout request"
 // @Success      200      {object}  dtos.CheckoutResponse
-// @Failure      400      {string}  string "Bad request"
-// @Failure      401      {string}  string "Unauthorized"
-// @Failure      500      {string}  string "Internal server error"
+// @Failure      400      {object}  dtos.ErrorResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
 // @Router       /payments/checkout [post]
 func (bc *gemBalancesController) CreateCheckoutSession(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
@@ -189,8 +189,8 @@ func (bc *gemBalancesController) CreateCheckoutSession(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Success      200  {object}  dtos.WebhookResponse
-// @Failure      400  {string}  string "Bad request"
-// @Failure      500  {string}  string "Internal server error"
+// @Failure      400  {object}  dtos.ErrorResponse
+// @Failure      500  {object}  dtos.ErrorResponse
 // @Router       /payments/webhook/stripe [post]
 func (bc *gemBalancesController) HandleStripeWebhook(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(65536))

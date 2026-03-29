@@ -28,9 +28,9 @@ func NewGemPacksController(conf *config.Config, gemPacksService gem_packs.GemPac
 // @Tags         payment-service
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {array}   dtos.GemPackResponse
-// @Failure      401  {string}  string "Unauthorized"
-// @Failure      500  {string}  string "Internal server error"
+// @Success      200  {object}  dtos.GemPackResponse
+// @Failure      401  {object}  dtos.ErrorResponse
+// @Failure      500  {object}  dtos.ErrorResponse
 // @Router       /payments/gems/packs [get]
 func (pc *gemPacksController) GetAllGemPacks(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
@@ -56,10 +56,10 @@ func (pc *gemPacksController) GetAllGemPacks(c *gin.Context) {
 // @Produce      json
 // @Param        id    path      string               true  "Pack ID"
 // @Success      200   {object}  dtos.GemPackResponse
-// @Failure      400   {string}  string "Bad request"
-// @Failure      401   {string}  string "Unauthorized"
-// @Failure      404   {string}  string "Not found"
-// @Failure      500   {string}  string "Internal server error"
+// @Failure      400   {object}  dtos.ErrorResponse
+// @Failure      401   {object}  dtos.ErrorResponse
+// @Failure      404   {object}  dtos.ErrorResponse
+// @Failure      500   {object}  dtos.ErrorResponse
 // @Router       /payments/gems/packs/{id} [get]
 func (pc *gemPacksController) GetGemPackById(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
@@ -92,9 +92,9 @@ func (pc *gemPacksController) GetGemPackById(c *gin.Context) {
 // @Produce      json
 // @Param        request  body      dtos.CreateGemPackRequest  true  "Create gem pack payload"
 // @Success      201      {object}  dtos.GemPackResponse
-// @Failure      400      {string}  string "Bad request"
-// @Failure      401      {string}  string "Unauthorized"
-// @Failure      500      {string}  string "Internal server error"
+// @Failure      400      {object}  dtos.ErrorResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
 // @Router       /payments/gems/packs [post]
 func (pc *gemPacksController) CreateGemPack(c *gin.Context) {
 	pack := &dtos.CreateGemPackRequest{}
@@ -131,10 +131,10 @@ func (pc *gemPacksController) CreateGemPack(c *gin.Context) {
 // @Param        id       path      string                   true  "Pack ID"
 // @Param        request  body      dtos.UpdateGemPackRequest true  "Update gem pack payload"
 // @Success      200      {object}  dtos.GemPackResponse
-// @Failure      400      {string}  string "Bad request"
-// @Failure      401      {string}  string "Unauthorized"
-// @Failure      404      {string}  string "Not found"
-// @Failure      500      {string}  string "Internal server error"
+// @Failure      400      {object}  dtos.ErrorResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      404      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
 // @Router       /payments/gems/packs/{id} [put]
 func (pc *gemPacksController) UpdateGemPack(c *gin.Context) {
 	req := &dtos.UpdateGemPackRequest{}
@@ -175,10 +175,10 @@ func (pc *gemPacksController) UpdateGemPack(c *gin.Context) {
 // @Produce      json
 // @Param        id    path      string                     true  "Pack ID"
 // @Success      200   {object}  dtos.GemPackDeletedResponse
-// @Failure      400   {string}  string "Bad request"
-// @Failure      401   {string}  string "Unauthorized"
-// @Failure      404   {string}  string "Not found"
-// @Failure      500   {string}  string "Internal server error"
+// @Failure      400   {object}  dtos.ErrorResponse
+// @Failure      401   {object}  dtos.ErrorResponse
+// @Failure      404   {object}  dtos.ErrorResponse
+// @Failure      500   {object}  dtos.ErrorResponse
 // @Router       /payments/gems/packs/{id} [delete]
 func (pc *gemPacksController) DeleteGemPack(c *gin.Context) {
 	packId, err := uuid.Parse(c.Param("id"))
