@@ -6,7 +6,6 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
-	assets_errors "github.com/FeedTheRealm-org/core-service/internal/assets-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/services/items"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
@@ -27,56 +26,19 @@ func NewItemController(conf *config.Config, service items.ItemService) ItemContr
 	}
 }
 
-// GetCategoriesList godoc
-// @Summary      Get item categories
-// @Description  Retrieves a list of all item categories.
-// @Tags         assets-service
-// @Security     BearerAuth
-// @Accept       json
-// @Produce      json
-// @Success      200  {object}  dtos.ItemCategoryListResponse
-// @Failure      401  {object} dtos.ErrorResponse
-// @Router       /assets/items/categories [get]
-func (ic *itemController) GetCategoriesList(c *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(c)
-	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
-	categories, err := ic.service.GetCategoriesList()
-	if err != nil {
-		_ = c.Error(err)
-		return
-	}
-
-	res := &dtos.ItemCategoryListResponse{
-		CategoryList: make([]dtos.ItemCategoryResponse, len(categories)),
-	}
-	for idx, c := range categories {
-		res.CategoryList[idx] = dtos.ItemCategoryResponse{
-			CategoryId:   c.Id,
-			CategoryName: c.Name,
-		}
-	}
-
-	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
-}
-
-// GetItemsListByCategory godoc
-// @Summary      Get items by world and category
-// @Description  Retrieves an items list specific to a world ID and category ID.
+// GetItemsListByWorld godoc
+// @Summary      Get items by world
+// @Description  Retrieves an items list specific to a world ID.
 // @Tags         assets-service
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        world_id path string true "World UUID"
-// @Param        category_id path string true "Category UUID"
 // @Success      200  {object}  dtos.ItemListResponse
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse
-// @Router       /assets/items/world/{world_id}/categories/{category_id} [get]
-func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
+// @Router       /assets/items/world/{world_id} [get]
+func (ic *itemController) GetItemsListByWorld(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
@@ -89,13 +51,7 @@ func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
 		return
 	}
 
-	categoryId, err := uuid.Parse(c.Param("category_id"))
-	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid category_id: " + err.Error()))
-		return
-	}
-
-	itemsList, err := ic.service.GetItemsListByCategory(worldId, categoryId)
+	itemsList, err := ic.service.GetItemsListByWorld(worldId)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -106,8 +62,10 @@ func (ic *itemController) GetItemsListByCategory(c *gin.Context) {
 	}
 	for idx, item := range itemsList {
 		res.Items[idx] = dtos.ItemResponse{
-			Id:  item.Id,
-			Url: item.Url,
+			Id:        item.Id,
+			Url:       item.Url,
+			CreatedAt: item.CreatedAt,
+			UpdatedAt: item.UpdatedAt,
 		}
 	}
 
@@ -146,8 +104,10 @@ func (ic *itemController) GetItemById(c *gin.Context) {
 	}
 
 	res := &dtos.ItemResponse{
-		Id:  item.Id,
-		Url: item.Url,
+		Id:        item.Id,
+		Url:       item.Url,
+		CreatedAt: item.CreatedAt,
+		UpdatedAt: item.UpdatedAt,
 	}
 
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
@@ -155,19 +115,18 @@ func (ic *itemController) GetItemById(c *gin.Context) {
 
 // UploadItems godoc
 // @Summary      Upload items and sprites
-// @Description  Upload item IDs alongside sprite files mapping to a world and category.
+// @Description  Upload item IDs alongside sprite files mapping to a world.
 // @Tags         assets-service
 // @Security     BearerAuth
 // @Accept       multipart/form-data
 // @Produce      json
 // @Param        world_id path string true "World UUID"
-// @Param        category_id path string true "Category UUID"
 // @Param        ids formData []string true "Array of exact item IDs"
 // @Param        sprites formData file true "Muti-part chunk array of files"
 // @Success      201  {object}  dtos.ItemListResponse
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse
-// @Router       /assets/items/world/{world_id}/categories/{category_id} [put]
+// @Router       /assets/items/world/{world_id} [put]
 func (ic *itemController) UploadItems(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -181,18 +140,11 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 		return
 	}
 
-	categoryId, err := uuid.Parse(c.Param("category_id"))
-	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid category_id format"))
-		return
-	}
-
 	responseSprites := make([]dtos.ItemResponse, 0)
 
 	i := 0
 	for {
-		i++
-		idKey := fmt.Sprintf("id[%d]", i)
+		idKey := fmt.Sprintf("ids[%d]", i)
 		idVal := c.PostForm(idKey)
 
 		if idVal == "" {
@@ -201,17 +153,17 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 
 		id, err := uuid.Parse(idVal)
 		if err != nil {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid id format for id[%d]: %s", i, err.Error())))
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid id format for ids[%d]: %s", i, err.Error())))
 			return
 		}
 
-		spriteFile, err := c.FormFile(fmt.Sprintf("sprite[%d]", i))
+		spriteFile, err := c.FormFile(fmt.Sprintf("sprites[%d]", i))
 		if err != nil {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("Missing sprite file for id[%d]", i)))
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("Missing sprite file for ids[%d]", i)))
 			return
 		}
 
-		item, err := ic.service.UploadSprite(worldId, categoryId, id, spriteFile, userId)
+		item, err := ic.service.UploadSprite(worldId, id, spriteFile, userId)
 		if err != nil {
 			_ = c.Error(err)
 			return
@@ -223,6 +175,8 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 			CreatedAt: item.CreatedAt,
 			UpdatedAt: item.UpdatedAt,
 		})
+
+		i++
 	}
 
 	res := &dtos.ItemListResponse{
@@ -281,46 +235,4 @@ func (ic *itemController) DeleteItem(c *gin.Context) {
 	}
 
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
-}
-
-// AddCategory godoc
-// @Summary      Adds a new item category
-// @Description  Creates a new item category globally.
-// @Tags         assets-service
-// @Security     BearerAuth
-// @Accept       json
-// @Produce      json
-// @Param        category body dtos.AddItemCategoryRequest true "Category data"
-// @Success      201  {object}  dtos.ItemCategoryResponse
-// @Failure      400  {object} dtos.ErrorResponse
-// @Failure      401  {object} dtos.ErrorResponse
-// @Failure      409  {object} dtos.ErrorResponse
-// @Router       /assets/items/categories [post]
-func (ic *itemController) AddCategory(c *gin.Context) {
-	req := &dtos.AddItemCategoryRequest{}
-	if err := c.ShouldBindJSON(req); err != nil {
-		_ = c.Error(errors.NewBadRequestError(err.Error()))
-		return
-	}
-
-	if len(req.CategoryName) < 3 || len(req.CategoryName) > 32 {
-		_ = c.Error(errors.NewBadRequestError("category name must be between 3 and 32 characters"))
-		return
-	}
-
-	category, err := ic.service.AddCategory(req.CategoryName)
-	if err != nil {
-		if _, ok := err.(*assets_errors.CategoryConflict); ok {
-			_ = c.Error(errors.NewConflictError("item category name already exists"))
-			return
-		}
-		_ = c.Error(err)
-		return
-	}
-
-	res := &dtos.ItemCategoryResponse{
-		CategoryId:   category.Id,
-		CategoryName: category.Name,
-	}
-	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }

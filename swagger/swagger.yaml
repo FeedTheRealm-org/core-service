@@ -7,13 +7,6 @@ definitions:
     required:
     - category_name
     type: object
-  dtos.AddItemCategoryRequest:
-    properties:
-      category_name:
-        type: string
-    required:
-    - category_name
-    type: object
   dtos.CharacterInfoResponse:
     properties:
       category_sprites:
@@ -145,20 +138,6 @@ definitions:
       price:
         type: number
       updated_at:
-        type: string
-    type: object
-  dtos.ItemCategoryListResponse:
-    properties:
-      category_list:
-        items:
-          $ref: '#/definitions/dtos.ItemCategoryResponse'
-        type: array
-    type: object
-  dtos.ItemCategoryResponse:
-    properties:
-      category_id:
-        type: string
-      category_name:
         type: string
     type: object
   dtos.ItemListResponse:
@@ -334,13 +313,6 @@ definitions:
       user_id:
         type: string
     type: object
-  dtos.WorldZoneData:
-    properties:
-      zone_data:
-        type: string
-      zone_id:
-        type: integer
-    type: object
   dtos.WorldZoneResponse:
     properties:
       world_id:
@@ -356,7 +328,7 @@ definitions:
         type: string
       zones:
         items:
-          $ref: '#/definitions/dtos.WorldZoneData'
+          type: integer
         type: array
     type: object
   dtos.WorldsListResponse:
@@ -624,76 +596,15 @@ paths:
       summary: Get item by ID
       tags:
       - assets-service
-  /assets/items/categories:
+  /assets/items/world/{world_id}:
     get:
       consumes:
       - application/json
-      description: Retrieves a list of all item categories.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dtos.ItemCategoryListResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get item categories
-      tags:
-      - assets-service
-    post:
-      consumes:
-      - application/json
-      description: Creates a new item category globally.
-      parameters:
-      - description: Category data
-        in: body
-        name: category
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.AddItemCategoryRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/dtos.ItemCategoryResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Adds a new item category
-      tags:
-      - assets-service
-  /assets/items/world/{world_id}/categories/{category_id}:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves an items list specific to a world ID and category ID.
+      description: Retrieves an items list specific to a world ID.
       parameters:
       - description: World UUID
         in: path
         name: world_id
-        required: true
-        type: string
-      - description: Category UUID
-        in: path
-        name: category_id
         required: true
         type: string
       produces:
@@ -713,22 +624,17 @@ paths:
             $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Get items by world and category
+      summary: Get items by world
       tags:
       - assets-service
     put:
       consumes:
       - multipart/form-data
-      description: Upload item IDs alongside sprite files mapping to a world and category.
+      description: Upload item IDs alongside sprite files mapping to a world.
       parameters:
       - description: World UUID
         in: path
         name: world_id
-        required: true
-        type: string
-      - description: Category UUID
-        in: path
-        name: category_id
         required: true
         type: string
       - collectionFormat: csv
@@ -1716,6 +1622,46 @@ paths:
       security:
       - BearerAuth: []
       summary: Retrieve zones for a world
+      tags:
+      - world-service
+  /world/{id}/zones/{zone_id}:
+    get:
+      consumes:
+      - application/json
+      description: Returns data for a specific zone in a world.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Zone ID
+        in: path
+        name: zone_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WorldZoneResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Retrieve specific zone data
       tags:
       - world-service
   /world/orchestrator/{id}/zones/{zone_id}/address:
