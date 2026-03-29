@@ -6,6 +6,10 @@ info:
 http:
   method: GET
   url: "{{baseUrl}}/world/:world_id/zones"
+  params:
+    - name: world_id
+      value: ""
+      type: path
   auth: inherit
 
 settings:
