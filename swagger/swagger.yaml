@@ -34,6 +34,24 @@ definitions:
       message:
         type: string
     type: object
+  dtos.CheckoutRequest:
+    properties:
+      cancel_url:
+        type: string
+      gem_pack_id:
+        type: string
+      success_url:
+        type: string
+    required:
+    - cancel_url
+    - gem_pack_id
+    - success_url
+    type: object
+  dtos.CheckoutResponse:
+    properties:
+      checkout_url:
+        type: string
+    type: object
   dtos.CosmeticCategoryListResponse:
     properties:
       category_list:
@@ -76,6 +94,19 @@ definitions:
       email:
         type: string
     type: object
+  dtos.CreateGemPackRequest:
+    properties:
+      gems:
+        type: integer
+      name:
+        type: string
+      price:
+        type: number
+    required:
+    - gems
+    - name
+    - price
+    type: object
   dtos.ErrorResponse:
     properties:
       detail:
@@ -87,6 +118,33 @@ definitions:
       title:
         type: string
       type:
+        type: string
+    type: object
+  dtos.GemBalanceResponse:
+    properties:
+      gems:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  dtos.GemPackDeletedResponse:
+    properties:
+      id:
+        type: string
+    type: object
+  dtos.GemPackResponse:
+    properties:
+      created_at:
+        type: string
+      gems:
+        type: integer
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      updated_at:
         type: string
     type: object
   dtos.ItemCategoryListResponse:
@@ -180,6 +238,22 @@ definitions:
       email:
         type: string
     type: object
+  dtos.UpdateGemBalanceRequest:
+    properties:
+      gems:
+        type: integer
+    required:
+    - gems
+    type: object
+  dtos.UpdateGemPackRequest:
+    properties:
+      gems:
+        type: integer
+      name:
+        type: string
+      price:
+        type: number
+    type: object
   dtos.VerifyAccountRequestDTO:
     properties:
       code:
@@ -193,6 +267,8 @@ definitions:
         type: string
       verified:
         type: boolean
+    type: object
+  dtos.WebhookResponse:
     type: object
   dtos.WorldAddressResponse:
     properties:
@@ -944,6 +1020,306 @@ paths:
       summary: Verify an account
       tags:
       - authentication-service
+  /payments/checkout:
+    post:
+      consumes:
+      - application/json
+      description: Creates a checkout session URL to purchase a gem pack.
+      parameters:
+      - description: Checkout request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CheckoutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.CheckoutResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create checkout session
+      tags:
+      - payment-service
+  /payments/gems/balances:
+    get:
+      description: Returns the authenticated user's gem balance. Creates one if missing.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.GemBalanceResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get current user gem balance
+      tags:
+      - payment-service
+  /payments/gems/balances/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates gem balance for a user. Admin only.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Gem balance update payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateGemBalanceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.GemBalanceResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update a user's gem balance
+      tags:
+      - payment-service
+  /payments/gems/packs:
+    get:
+      description: Returns all available gem packs.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.GemPackResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: List gem packs
+      tags:
+      - payment-service
+    post:
+      consumes:
+      - application/json
+      description: Creates a new gem pack. Admin only.
+      parameters:
+      - description: Create gem pack payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateGemPackRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.GemPackResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create gem pack
+      tags:
+      - payment-service
+  /payments/gems/packs/{id}:
+    delete:
+      description: Deletes a gem pack by ID. Admin only.
+      parameters:
+      - description: Pack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.GemPackDeletedResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete gem pack
+      tags:
+      - payment-service
+    get:
+      description: Returns details for a specific gem pack.
+      parameters:
+      - description: Pack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.GemPackResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get gem pack by ID
+      tags:
+      - payment-service
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing gem pack. Admin only.
+      parameters:
+      - description: Pack ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update gem pack payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateGemPackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.GemPackResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update gem pack
+      tags:
+      - payment-service
+  /payments/webhook/stripe:
+    post:
+      consumes:
+      - application/json
+      description: Processes Stripe webhook events for completed payments.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WebhookResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Handle Stripe webhook
+      tags:
+      - payment-service
   /player/character:
     get:
       consumes:
