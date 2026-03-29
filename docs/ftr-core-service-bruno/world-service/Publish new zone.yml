@@ -10,7 +10,7 @@ http:
     type: json
     data: |-
       {
-        "world_id": "b0247402-9183-4303-9662-6d113c0ae179",
+        "world_id": "fd318259-6e77-466c-b7aa-4b3e0342c31b",
         "zone_id": 1,
         "data": "{'hola': false}"
       }

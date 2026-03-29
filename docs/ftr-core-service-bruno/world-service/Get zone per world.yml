@@ -8,7 +8,7 @@ http:
   url: "{{baseUrl}}/world/:world_id/zones"
   params:
     - name: world_id
-      value: ""
+      value: fd318259-6e77-466c-b7aa-4b3e0342c31b
       type: path
   auth: inherit
 
