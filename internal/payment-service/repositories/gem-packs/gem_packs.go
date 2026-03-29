@@ -45,12 +45,8 @@ func (pr *gemPacksRepository) GetGemPackById(id uuid.UUID) (*models.GemPack, err
 	return &pack, nil
 }
 
-func (pr *gemPacksRepository) UpdateGemPack(id uuid.UUID, updatedPack *models.GemPack) (*models.GemPack, error) {
-	var pack models.GemPack
-	if err := pr.db.Conn.Where("id = ?", id).First(&pack).Error; err != nil {
-		return nil, err
-	}
-	return &pack, nil
+func (pr *gemPacksRepository) UpdateGemPack(id uuid.UUID, updatedPack *models.GemPack) error {
+	return pr.db.Conn.Model(&models.GemPack{}).Where("id = ?", id).Updates(updatedPack).Error
 }
 
 func (pr *gemPacksRepository) DeleteGemPack(id uuid.UUID) error {

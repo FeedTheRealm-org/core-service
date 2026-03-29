@@ -10,6 +10,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/payment-service/dtos"
 	gem_balances "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/gem-balances"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type gemBalancesController struct {
@@ -24,6 +25,15 @@ func NewGemBalancesController(conf *config.Config, gemBalanceService gem_balance
 	}
 }
 
+// GetAllGemBalances godoc
+// @Summary      List all gem balances
+// @Description  Returns all gem balances. Admin only.
+// @Tags         payment-service
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {array}   dtos.GemBalanceResponse
+// @Failure      401  {string}  string "Unauthorized"
+// @Failure      500  {string}  string "Internal server error"
 func (bc *gemBalancesController) GetAllGemBalances(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -45,6 +55,16 @@ func (bc *gemBalancesController) GetAllGemBalances(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, balances)
 }
 
+// GetGemBalanceByUserId godoc
+// @Summary      Get current user gem balance
+// @Description  Returns the authenticated user's gem balance. Creates one if missing.
+// @Tags         payment-service
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {object}  dtos.GemBalanceResponse
+// @Failure      401  {string}  string "Unauthorized"
+// @Failure      500  {string}  string "Internal server error"
+// @Router       /payments/gems/balances [get]
 func (bc *gemBalancesController) GetGemBalanceByUserId(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -77,19 +97,39 @@ func (bc *gemBalancesController) GetGemBalanceByUserId(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
 
+// UpdateGemBalance godoc
+// @Summary      Update a user's gem balance
+// @Description  Updates gem balance for a user. Admin only.
+// @Tags         payment-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id       path      string                        true  "User ID"
+// @Param        request  body      dtos.UpdateGemBalanceRequest  true  "Gem balance update payload"
+// @Success      200      {object}  dtos.GemBalanceResponse
+// @Failure      400      {string}  string "Bad request"
+// @Failure      401      {string}  string "Unauthorized"
+// @Failure      500      {string}  string "Internal server error"
+// @Router       /payments/gems/balances/{id} [put]
 func (bc *gemBalancesController) UpdateGemBalance(c *gin.Context) {
+	userId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid user_id: " + err.Error()))
+		return
+	}
+
 	req := dtos.UpdateGemBalanceRequest{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))
 		return
 	}
 
-	if err := bc.gemBalanceService.UpdateGemBalance(req.UserId, req.Gems); err != nil {
+	if err := bc.gemBalanceService.UpdateGemBalance(userId, req.Gems); err != nil {
 		_ = c.Error(err)
 		return
 	}
 
-	balance, err := bc.gemBalanceService.GetGemBalanceByUserId(req.UserId)
+	balance, err := bc.gemBalanceService.GetGemBalanceByUserId(userId)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -103,6 +143,19 @@ func (bc *gemBalancesController) UpdateGemBalance(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
 
+// CreateCheckoutSession godoc
+// @Summary      Create checkout session
+// @Description  Creates a checkout session URL to purchase a gem pack.
+// @Tags         payment-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      dtos.CheckoutRequest   true  "Checkout request"
+// @Success      200      {object}  dtos.CheckoutResponse
+// @Failure      400      {string}  string "Bad request"
+// @Failure      401      {string}  string "Unauthorized"
+// @Failure      500      {string}  string "Internal server error"
+// @Router       /payments/checkout [post]
 func (bc *gemBalancesController) CreateCheckoutSession(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -129,6 +182,16 @@ func (bc *gemBalancesController) CreateCheckoutSession(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
 
+// HandleStripeWebhook godoc
+// @Summary      Handle Stripe webhook
+// @Description  Processes Stripe webhook events for completed payments.
+// @Tags         payment-service
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  dtos.WebhookResponse
+// @Failure      400  {string}  string "Bad request"
+// @Failure      500  {string}  string "Internal server error"
+// @Router       /payments/webhook/stripe [post]
 func (bc *gemBalancesController) HandleStripeWebhook(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(65536))
 

@@ -88,29 +88,29 @@ func (s *gemPacksService) CreateGemPack(name string, gems int, price decimal.Dec
 	return createdPackage, nil
 }
 
-func (s *gemPacksService) UpdateGemPack(packId uuid.UUID, name *string, gems *int, price *decimal.Decimal) (*models.GemPack, error) {
+func (s *gemPacksService) UpdateGemPack(packId uuid.UUID, name string, gems int, price decimal.Decimal) (*models.GemPack, error) {
 	pack, err := s.repo.GetGemPackById(packId)
 	if err != nil {
 		return nil, err
 	}
 
-	if name != nil {
-		pack.Name = *name
+	if name != "" {
+		pack.Name = name
 	}
 
-	if gems != nil {
-		pack.Gems = *gems
+	if gems != 0 {
+		pack.Gems = gems
 	}
 
-	if price != nil {
-		pack.Price = *price
+	if price.IsPositive() {
+		pack.Price = price
 	}
 
-	updatedPackage, err := s.repo.UpdateGemPack(packId, pack)
+	err = s.repo.UpdateGemPack(packId, pack)
 	if err != nil {
 		return nil, err
 	}
-	return updatedPackage, nil
+	return pack, nil
 }
 
 func (s *gemPacksService) DeleteGemPack(packId uuid.UUID) error {

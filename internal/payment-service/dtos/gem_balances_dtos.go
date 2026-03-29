@@ -8,8 +8,7 @@ type GemBalanceResponse struct {
 }
 
 type UpdateGemBalanceRequest struct {
-	UserId uuid.UUID `json:"user_id"`
-	Gems   int       `json:"gems" binding:"required"`
+	Gems int `json:"gems" binding:"required"`
 }
 
 type CheckoutRequest struct {
