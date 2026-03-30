@@ -13,7 +13,5 @@ type UpdateCreateableDataRequest struct {
 }
 
 type PublishZoneRequest struct {
-	WorldID string `json:"world_id"`
-	ZoneID  int    `json:"zone_id"`
-	Data    any    `json:"data"`
+	Data any `json:"data"`
 }

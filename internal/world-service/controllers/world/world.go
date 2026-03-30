@@ -546,12 +546,14 @@ func (c *worldController) UpdateCreateableData(ctx *gin.Context) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
+// @Param        id path string true "World UUID"
+// @Param        zone_id path int true "Zone ID"
 // @Param        request body dtos.PublishZoneRequest true "Zone publish data"
 // @Success      200  {object}  dtos.WorldZoneResponse
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse
 // @Failure      404  {object} dtos.ErrorResponse
-// @Router       /world/zones [post]
+// @Router       /world/{id}/zones/{zone_id} [put]
 func (c *worldController) PublishZone(ctx *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {
@@ -559,19 +561,20 @@ func (c *worldController) PublishZone(ctx *gin.Context) {
 		return
 	}
 
-	var req dtos.PublishZoneRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("invalid JSON payload: " + err.Error()))
+	worldID, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid world_id: " + ctx.Param("id")))
+		return
+	}
+	zoneID, err := strconv.Atoi(ctx.Param("zone_id"))
+	if err != nil || zoneID <= 0 {
+		_ = ctx.Error(errors.NewBadRequestError("zone_id must be a positive integer"))
 		return
 	}
 
-	worldID, err := uuid.Parse(req.WorldID)
-	if err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("invalid world_id: " + req.WorldID))
-		return
-	}
-	if req.ZoneID <= 0 {
-		_ = ctx.Error(errors.NewBadRequestError("zone_id must be a positive integer"))
+	var req dtos.PublishZoneRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid JSON payload: " + err.Error()))
 		return
 	}
 
@@ -595,7 +598,7 @@ func (c *worldController) PublishZone(ctx *gin.Context) {
 		return
 	}
 
-	zone, err := c.worldService.PublishZone(worldID, req.ZoneID, zoneDataBytes)
+	zone, err := c.worldService.PublishZone(worldID, zoneID, zoneDataBytes)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

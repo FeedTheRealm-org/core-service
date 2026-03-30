@@ -31,7 +31,7 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 	serverRegistryController := server_registry_controller.NewServerRegistryController(conf, nomadService)
 
 	worldGroup.POST("", worldController.PublishWorld)
-	worldGroup.POST("/zones", worldController.PublishZone)
+	worldGroup.PUT("/:id/zones/:zone_id", worldController.PublishZone)
 	worldGroup.GET("", worldController.GetWorldsList)
 	worldGroup.PUT("/:id", worldController.UpdateWorld)
 	worldGroup.PUT("/:id/createable-data", worldController.UpdateCreateableData)
