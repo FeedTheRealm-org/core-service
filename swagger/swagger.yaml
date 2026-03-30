@@ -210,10 +210,6 @@ definitions:
   dtos.PublishZoneRequest:
     properties:
       data: {}
-      world_id:
-        type: string
-      zone_id:
-        type: integer
     type: object
   dtos.RefreshVerificationRequestDTO:
     properties:
@@ -1664,6 +1660,51 @@ paths:
       summary: Retrieve specific zone data
       tags:
       - world-service
+    put:
+      consumes:
+      - application/json
+      description: Publishes or updates a zone for a world by world_id and zone_id.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Zone ID
+        in: path
+        name: zone_id
+        required: true
+        type: integer
+      - description: Zone publish data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.PublishZoneRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WorldZoneResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Publish zone
+      tags:
+      - world-service
   /world/orchestrator/{id}/zones/{zone_id}/address:
     get:
       description: Returns resolved dynamically routed TCP/UDP IP and Port mappings
@@ -1783,42 +1824,6 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: Development DB reset
-      tags:
-      - world-service
-  /world/zones:
-    post:
-      consumes:
-      - application/json
-      description: Publishes or updates a zone for a world by world_id and zone_id.
-      parameters:
-      - description: Zone publish data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.PublishZoneRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dtos.WorldZoneResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Publish zone
       tags:
       - world-service
 swagger: "2.0"

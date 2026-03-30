@@ -4,14 +4,19 @@ info:
   seq: 10
 
 http:
-  method: POST
-  url: "{{baseUrl}}/world/zones"
+  method: PUT
+  url: "{{baseUrl}}/world/:world_id/zones/:zone_id"
+  params:
+    - name: world_id
+      value: fd318259-6e77-466c-b7aa-4b3e0342c31b
+      type: path
+    - name: zone_id
+      value: "1"
+      type: path
   body:
     type: json
     data: |-
       {
-        "world_id": "fd318259-6e77-466c-b7aa-4b3e0342c31b",
-        "zone_id": 1,
         "data": "{'hola': false}"
       }
   auth: inherit
