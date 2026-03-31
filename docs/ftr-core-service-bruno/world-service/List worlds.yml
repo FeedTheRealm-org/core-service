@@ -7,7 +7,7 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/world?limit=20&offset=0&filter="
+  url: "{{baseUrl}}/world?limit=20&offset=0&filter=maxo"
   params:
     - name: limit
       value: "20"
@@ -16,7 +16,7 @@ http:
       value: "0"
       type: query
     - name: filter
-      value: ""
+      value: maxo
       type: query
     - name: offset
       value: ""

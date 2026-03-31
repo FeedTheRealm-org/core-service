@@ -1,8 +1,0 @@
-BEGIN;
-
-ALTER TABLE IF EXISTS world_data
-	DROP COLUMN IF EXISTS createable_data;
-
-DROP TABLE IF EXISTS world_zones;
-
-COMMIT;

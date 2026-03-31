@@ -74,6 +74,21 @@ func NewItemSpriteNotFound(details string) *ItemSpriteNotFound {
 	}
 }
 
+// ItemCategoryNotFound is returned when a requested item category cannot be found.
+type ItemCategoryNotFound struct {
+	CategoryId string
+}
+
+func (e *ItemCategoryNotFound) Error() string {
+	return "Category with ID " + e.CategoryId + " does not exist"
+}
+
+func NewItemCategoryNotFound(categoryId string) *ItemCategoryNotFound {
+	return &ItemCategoryNotFound{
+		CategoryId: categoryId,
+	}
+}
+
 // WorldNotFound is returned when a requested world cannot be found.
 type WorldNotFound struct {
 	WorldId string

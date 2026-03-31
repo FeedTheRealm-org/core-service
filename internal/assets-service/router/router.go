@@ -40,10 +40,14 @@ func SetupEndpointsForItemsService(conf *config.Config, db *config.DB, g *gin.Ro
 
 	/* Items Endpoints */
 	itemsGroup := g.Group("/items")
-	itemsGroup.GET("/world/:world_id", itemsController.GetItemsListByWorld)
+	itemsGroup.GET("/categories", itemsController.GetCategoriesList)
+	itemsGroup.GET("/world/:world_id/categories/:category_id", itemsController.GetItemsListByCategory)
 	itemsGroup.GET(":id", itemsController.GetItemById)
-	itemsGroup.PUT("/world/:world_id", itemsController.UploadItems)
+	itemsGroup.PUT("/world/:world_id/categories/:category_id", itemsController.UploadItems)
 	itemsGroup.DELETE(":id", itemsController.DeleteItem)
+
+	/* ADMIN ONLY */
+	itemsGroup.POST("/categories", middleware.AdminCheckMiddleware(), itemsController.AddCategory)
 }
 
 func SetupEndpointsForModelsService(conf *config.Config, db *config.DB, g *gin.RouterGroup, worldBucketRepo bucket.BucketRepository) {

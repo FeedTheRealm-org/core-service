@@ -8,14 +8,14 @@ http:
   url: "{{baseUrl}}/payments/gems/packs/:pack_id"
   params:
     - name: pack_id
-      value: 773ac382-426a-4408-8023-a8c74757844f
+      value: 244dcd4b-b2de-4649-8e02-e97321e98388
       type: path
   body:
     type: json
     data: |-
       {
         "name": "proof22",
-        "gems": 11,
+        "gems": 10,
         "price": "9.99"
       }
   auth: inherit

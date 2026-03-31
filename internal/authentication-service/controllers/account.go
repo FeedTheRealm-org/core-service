@@ -61,8 +61,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 	}
 
 	if req.IsAdmin == nil {
-		isAdmin := false
-		req.IsAdmin = &isAdmin
+		*req.IsAdmin = false
 	}
 
 	if err := common_handlers.IsAdminSession(c); err != nil && req.IsAdmin != nil && *req.IsAdmin {
