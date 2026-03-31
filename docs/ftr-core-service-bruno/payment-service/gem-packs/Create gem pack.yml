@@ -6,6 +6,14 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/payments/gems/packs"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "proof2",
+        "gems": 10,
+        "price": "9.99"
+      }
   auth: inherit
 
 settings:

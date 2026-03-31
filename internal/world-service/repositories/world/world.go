@@ -65,6 +65,52 @@ func (r *worldRepository) UpdateWorldData(worldID uuid.UUID, userId uuid.UUID, d
 	return &wd, nil
 }
 
+func (r *worldRepository) UpdateCreateableData(worldID uuid.UUID, userId uuid.UUID, createableData []byte) (*models.WorldData, error) {
+	var wd models.WorldData
+	if err := r.db.Conn.First(&wd, "id = ?", worldID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, world_errors.NewWorldNotFound(err.Error())
+		}
+		return nil, err
+	}
+	if wd.UserId != userId {
+		return nil, errors.New("forbidden: user does not own this world")
+	}
+	wd.CreateableData = datatypes.JSON(createableData)
+	wd.UpdatedAt = time.Now().UTC()
+	if err := r.db.Conn.Save(&wd).Error; err != nil {
+		return nil, err
+	}
+	return &wd, nil
+}
+
+func (r *worldRepository) UpsertWorldZone(worldID uuid.UUID, zoneID int, zoneData []byte) (*models.WorldZone, error) {
+	var wz models.WorldZone
+	err := r.db.Conn.Where("world_id = ? AND id = ?", worldID, zoneID).First(&wz).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		wz = models.WorldZone{
+			ID:       zoneID,
+			WorldID:  worldID,
+			ZoneData: datatypes.JSON(zoneData),
+		}
+		if err := r.db.Conn.Create(&wz).Error; err != nil {
+			return nil, err
+		}
+		return &wz, nil
+	}
+
+	wz.ZoneData = datatypes.JSON(zoneData)
+	if err := r.db.Conn.Save(&wz).Error; err != nil {
+		return nil, err
+	}
+
+	return &wz, nil
+}
+
 func (r *worldRepository) DeleteWorldData(worldID uuid.UUID) error {
 	result := r.db.Conn.Delete(&models.WorldData{}, "id = ?", worldID)
 	if result.Error != nil {
@@ -89,7 +135,27 @@ func (r *worldRepository) GetWorldsList(offset int, limit int, filter string) ([
 	return worlds, err
 }
 
+func (r *worldRepository) GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, error) {
+	var worldZones []*models.WorldZone
+	if err := r.db.Conn.Where("world_id = ?", worldID).Order("id ASC").Find(&worldZones).Error; err != nil {
+		return nil, err
+	}
+
+	return worldZones, nil
+}
+
+func (r *worldRepository) GetWorldZone(worldID uuid.UUID, zoneID int) (*models.WorldZone, error) {
+	var worldZone models.WorldZone
+	if err := r.db.Conn.Where("world_id = ? AND id = ?", worldID, zoneID).First(&worldZone).Error; err != nil {
+		return nil, err
+	}
+	return &worldZone, nil
+}
+
 func (r *worldRepository) ClearDatabase() error {
+	if err := r.db.Conn.Delete(&models.WorldZone{}, "1 = 1").Error; err != nil {
+		return err
+	}
 	err := r.db.Conn.Delete(&models.WorldData{}, "1 = 1").Error
 	return err
 }

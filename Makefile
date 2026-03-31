@@ -28,7 +28,7 @@ up-build: down # Build and start containers
 .PHONY: up-build
 
 dev: # Starts containers detatched and starts interactive shell in app container for manual runs
-	docker compose -f $(COMPOSE_DEV) --profile dev up -d --build app-dev db buckets stripe-webhook
+	docker compose -f $(COMPOSE_DEV) --profile dev up -d --build
 	docker compose -f $(COMPOSE_DEV) exec app-dev swag init -g cmd/main.go -o ./swagger
 	docker compose -f $(COMPOSE_DEV) exec app-dev /bin/bash
 	docker compose -f $(COMPOSE_DEV) down

@@ -3,7 +3,6 @@ package config
 import (
 	"os"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -34,7 +33,6 @@ type DatabaseConfig struct {
 
 type AssetsConfig struct {
 	MaxUploadSizeBytes  int64
-	InitialCategories   []string
 	CosmeticsBucketName string
 	WorldsBucketName    string
 }
@@ -74,7 +72,6 @@ func CreateConfig() *Config {
 
 	assetsConf := &AssetsConfig{
 		MaxUploadSizeBytes:  int64(getEnvOrDefaultInt("ASSETS_MAX_UPLOAD_SIZE_BYTES", 20*1024*1024)),
-		InitialCategories:   getEnvOrDefaultStringList("ASSETS_INITIAL_CATEGORIES", []string{"weapons", "consumables"}),
 		CosmeticsBucketName: getEnvOrDefaultString("ASSETS_COSMETICS_BUCKET_NAME", "cosmetics"),
 		WorldsBucketName:    getEnvOrDefaultString("ASSETS_WORLDS_BUCKET_NAME", "worlds"),
 	}
@@ -138,28 +135,6 @@ func getEnvOrDefaultDuration(key string, defaultValue time.Duration) time.Durati
 		return defaultValue
 	}
 	return value
-}
-
-func getEnvOrDefaultStringList(key string, defaultValue []string) []string {
-	value := strings.TrimSpace(os.Getenv(key))
-	if value == "" {
-		return defaultValue
-	}
-
-	parts := strings.Split(value, ",")
-	result := make([]string, 0, len(parts))
-	for _, part := range parts {
-		trimmed := strings.TrimSpace(part)
-		if trimmed != "" {
-			result = append(result, trimmed)
-		}
-	}
-
-	if len(result) == 0 {
-		return defaultValue
-	}
-
-	return result
 }
 
 func getEnvironmentType(env string) EnvironmentType {

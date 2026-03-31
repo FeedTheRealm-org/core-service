@@ -12,8 +12,8 @@ http:
     type: json
     data: |-
       {
-        "email": "mutrera@fi.uba.ar",
-        "password": "qwerty123"
+        "email": "admin@admin.admin",
+        "password": "admin123"
       }
   auth: inherit
 

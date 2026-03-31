@@ -10,7 +10,7 @@ http:
   url: "{{baseUrl}}/assets/items/:id"
   params:
     - name: id
-      value: ""
+      value: d21a2d53-a00c-406a-88a9-2ae3e05e3c78
       type: path
       description: Item UUID
   auth: inherit
