@@ -1,0 +1,25 @@
+info:
+  name: Update Createable data
+  type: http
+  seq: 11
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/world/:world_id/createable-data"
+  params:
+    - name: world_id
+      value: b0247402-9183-4303-9662-6d113c0ae179
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "createable_data": "{'hola': 1}"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

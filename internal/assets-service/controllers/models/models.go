@@ -166,14 +166,10 @@ func (mc *modelsController) UploadModels(c *gin.Context) {
 
 	modelsRequest := []models.Model{}
 	for i := 0; ; i++ {
-		name := c.PostForm(fmt.Sprintf("models[%d].name", i))
-		if name == "" {
-			break
-		}
+
 		modelIDStr := c.PostForm(fmt.Sprintf("models[%d].model_id", i))
 		if modelIDStr == "" {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("model_id is required for model %d", i)))
-			return
+			break
 		}
 
 		modelID, err := uuid.Parse(modelIDStr)
