@@ -1,8 +1,0 @@
-BEGIN;
-
-ALTER TABLE items
-DROP COLUMN IF EXISTS category_id;
-
-DROP TABLE IF EXISTS items_categories;
-
-COMMIT;

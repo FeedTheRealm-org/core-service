@@ -7,6 +7,7 @@ import (
 
 // ItemRepository defines the interface for item-related database operations.
 type ItemRepository interface {
+	GetCategoriesList() ([]*models.ItemCategory, error)
 	// UpsertItem inserts or updates an item in the database.
 	UpsertItem(item *models.Item) error
 
@@ -16,8 +17,10 @@ type ItemRepository interface {
 	// GetAllItems retrieves all items.
 	GetAllItems() ([]*models.Item, error)
 
-	GetItemsListByWorld(worldId uuid.UUID) ([]*models.Item, error)
+	GetItemsListByCategory(worldId uuid.UUID, categoryId uuid.UUID) ([]*models.Item, error)
 
 	// DeleteSprite deletes a sprite by its ID.
 	DeleteSprite(id uuid.UUID) error
+
+	AddCategory(name string) (*models.ItemCategory, error)
 }
