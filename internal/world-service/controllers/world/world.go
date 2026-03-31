@@ -61,8 +61,8 @@ func (c *worldController) PublishWorld(ctx *gin.Context) {
 	// TODO: Add basic validation for world data structure, currently just storing raw data
 	bytes, _ := json.Marshal(req.Data)
 
-	if len(req.FileName) < 6 || len(req.FileName) > 24 {
-		_ = ctx.Error(errors.NewBadRequestError("world name must be between 6 and 24 characters"))
+	if len(req.FileName) < 1 || len(req.FileName) > 24 {
+		_ = ctx.Error(errors.NewBadRequestError("world name must be between 1 and 24 characters"))
 		return
 	}
 
