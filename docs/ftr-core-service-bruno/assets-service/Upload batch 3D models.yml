@@ -1,7 +1,7 @@
 info:
   name: Upload batch 3D models
   type: http
-  seq: 13
+  seq: 14
   tags:
     - assets-service
 

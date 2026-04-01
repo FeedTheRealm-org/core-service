@@ -13,6 +13,15 @@ type UploadItemSpritesRequest struct {
 	Sprites []*multipart.FileHeader `form:"sprites[]" binding:"required"`
 }
 
+type AddItemCategoryRequest struct {
+	CategoryName string `json:"category_name" binding:"required"`
+}
+
+type ItemCategoryResponse struct {
+	CategoryId   uuid.UUID `json:"category_id"`
+	CategoryName string    `json:"category_name"`
+}
+
 // ItemResponse represents an item sprite response.
 type ItemResponse struct {
 	Id        uuid.UUID `json:"id"`
@@ -24,4 +33,8 @@ type ItemResponse struct {
 // ItemListResponse represents a list of item sprites.
 type ItemListResponse struct {
 	Items []ItemResponse `json:"items"`
+}
+
+type ItemCategoryListResponse struct {
+	CategoryList []ItemCategoryResponse `json:"category_list"`
 }
