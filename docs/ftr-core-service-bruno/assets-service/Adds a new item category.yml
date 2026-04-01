@@ -1,7 +1,7 @@
 info:
   name: Adds a new item category
   type: http
-  seq: 10
+  seq: 9
   tags:
     - assets-service
 
