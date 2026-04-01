@@ -12,7 +12,8 @@ help: # Show this help message
 .PHONY: help
 
 down: # Stop and remove containers
-	docker compose -f $(COMPOSE_DEV) down -t 2 --remove-orphans
+	docker compose -f $(COMPOSE_DEV) down --remove-orphans -t 2
+	docker network prune -f
 .PHONY: down
 
 build: down # Build containers
@@ -20,11 +21,11 @@ build: down # Build containers
 .PHONY: build
 
 up: down # Start containers
-	docker compose -f $(COMPOSE_DEV) --profile prod up
+	docker compose -f $(COMPOSE_DEV) --profile prod up --force-recreate
 .PHONY: up
 
 up-build: down # Build and start containers
-	docker compose -f $(COMPOSE_DEV) --profile prod up --build
+	docker compose -f $(COMPOSE_DEV) --profile prod up --build --force-recreate
 .PHONY: up-build
 
 dev: # Starts containers detatched and starts interactive shell in app container for manual runs
@@ -43,8 +44,8 @@ test: # Execute all tests
 .PHONY: test
 
 clean: # Remove all containers and images
-	docker compose -f $(COMPOSE_BASE) down -v --remove-orphans
-	docker compose -f $(COMPOSE_DEV) down -v --remove-orphans
+	docker compose -f $(COMPOSE_DEV) down --remove-orphans -v
+	docker compose -f $(COMPOSE_TEST) down --remove-orphans -v
 .PHONY: clean
 
 swagger: # Generate Swagger documentation
