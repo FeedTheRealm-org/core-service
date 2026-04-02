@@ -24,13 +24,12 @@ type WorldsListResponse struct {
 }
 
 type WorldMetadata struct {
-	ID             string    `json:"id"`
-	UserId         string    `json:"user_id"`
-	Name           string    `json:"name"`
-	Description    string    `json:"description,omitempty"`
-	CreateableData string    `json:"createable_data"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID          string    `json:"id"`
+	UserId      string    `json:"user_id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type WorldAddressResponse struct {

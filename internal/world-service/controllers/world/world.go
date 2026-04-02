@@ -225,13 +225,12 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 	resList := make([]dtos.WorldMetadata, 0, len(worldsList))
 	for _, worldInfo := range worldsList {
 		resList = append(resList, dtos.WorldMetadata{
-			ID:             worldInfo.ID.String(),
-			UserId:         worldInfo.UserId.String(),
-			Name:           worldInfo.Name,
-			Description:    worldInfo.Description,
-			CreateableData: worldInfo.CreateableData.String(),
-			CreatedAt:      worldInfo.CreatedAt,
-			UpdatedAt:      worldInfo.UpdatedAt,
+			ID:          worldInfo.ID.String(),
+			UserId:      worldInfo.UserId.String(),
+			Name:        worldInfo.Name,
+			Description: worldInfo.Description,
+			CreatedAt:   worldInfo.CreatedAt,
+			UpdatedAt:   worldInfo.UpdatedAt,
 		})
 	}
 	res := &dtos.WorldsListResponse{
