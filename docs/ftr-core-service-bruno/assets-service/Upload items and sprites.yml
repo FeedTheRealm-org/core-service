@@ -1,22 +1,29 @@
 info:
   name: Upload items and sprites
   type: http
-  seq: 12
+  seq: 11
   tags:
     - assets-service
 
 http:
   method: PUT
-  url: "{{baseUrl}}/assets/items/world/:world_id/categories/:category_id"
+  url: "{{baseUrl}}/assets/items/world/:world_id"
   params:
     - name: world_id
-      value: ""
+      value: 60f45758-9acd-4ae8-86c6-c08db4ecede2
       type: path
       description: World UUID
-    - name: category_id
-      value: ""
-      type: path
-      description: Category UUID
+  body:
+    type: multipart-form
+    data:
+      - name: ids[0]
+        type: text
+        value: fd318259-6e77-466c-b7aa-4b3e0342c31b
+      - name: sprites[0]
+        type: file
+        value:
+          - C:\Users\Terminator 2\Pictures\Screenshots\Captura de pantalla (5).png
+        contentType: image/png
   auth: inherit
 
 settings:

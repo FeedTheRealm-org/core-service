@@ -9,20 +9,19 @@ import (
 
 // ItemService defines the interface for item-related business logic operations.
 type ItemService interface {
-	GetCategoriesList() ([]*models.ItemCategory, error)
 	// UploadSprite uploads or overwrites a single sprite file with the provided ID for a given world and saves its metadata.
 	// idStr is the raw ID value from the client (string). The service will validate/parse it as a UUID.
-	UploadSprite(worldID uuid.UUID, categoryId uuid.UUID, id uuid.UUID, file *multipart.FileHeader, userId uuid.UUID) (*models.Item, error)
+	UploadSprite(worldID uuid.UUID, id uuid.UUID, file *multipart.FileHeader, userId uuid.UUID) (*models.Item, error)
 
 	// GetItemById retrieves an item by its ID.
 	GetItemById(id uuid.UUID) (*models.Item, error)
 
-	GetItemsListByCategory(worldId uuid.UUID, categoryId uuid.UUID) ([]*models.Item, error)
+	// GetItemsListByWorld retrieves a list of items for a specific world.
+	GetItemsListByWorld(worldId uuid.UUID) ([]*models.Item, error)
 
 	// GetAllItems retrieves all items.
 	GetAllItems() ([]*models.Item, error)
 
-	AddCategory(name string) (*models.ItemCategory, error)
-
+	// DeleteItem deletes an item by its ID.
 	DeleteItem(id uuid.UUID) error
 }
