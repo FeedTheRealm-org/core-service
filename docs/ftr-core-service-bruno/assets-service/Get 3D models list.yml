@@ -1,7 +1,7 @@
 info:
   name: Get 3D models list
   type: http
-  seq: 13
+  seq: 12
   tags:
     - assets-service
 
@@ -10,7 +10,7 @@ http:
   url: "{{baseUrl}}/assets/models/world/:world_id"
   params:
     - name: world_id
-      value: ""
+      value: d21a2d53-a00c-406a-88a9-2ae3e05e3c78
       type: path
       description: World UUID
   auth: inherit

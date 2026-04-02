@@ -300,14 +300,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/assets/items/categories": {
+        "/assets/items/world/{world_id}": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieves a list of all item categories.",
+                "description": "Retrieves an items list specific to a world ID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -317,108 +317,12 @@ const docTemplate = `{
                 "tags": [
                     "assets-service"
                 ],
-                "summary": "Get item categories",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ItemCategoryListResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates a new item category globally.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "Adds a new item category",
-                "parameters": [
-                    {
-                        "description": "Category data",
-                        "name": "category",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dtos.AddItemCategoryRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ItemCategoryResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/assets/items/world/{world_id}/categories/{category_id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Retrieves an items list specific to a world ID and category ID.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "Get items by world and category",
+                "summary": "Get items by world",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "World UUID",
                         "name": "world_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Category UUID",
-                        "name": "category_id",
                         "in": "path",
                         "required": true
                     }
@@ -450,7 +354,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Upload item IDs alongside sprite files mapping to a world and category.",
+                "description": "Upload item IDs alongside sprite files mapping to a world.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -466,13 +370,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "World UUID",
                         "name": "world_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Category UUID",
-                        "name": "category_id",
                         "in": "path",
                         "required": true
                     },
@@ -2154,21 +2051,260 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/world/{id}/createable-data": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates createable_data by world ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Update world createable data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Createable data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdateCreateableDataRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/world/{id}/zones": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all available zone IDs for a specific world.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Retrieve zones for a world",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldZonesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/world/{id}/zones/{zone_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns data for a specific zone in a world.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Retrieve specific zone data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Zone ID",
+                        "name": "zone_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldZoneResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Publishes or updates a zone for a world by world_id and zone_id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Publish zone",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Zone ID",
+                        "name": "zone_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Zone publish data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.PublishZoneRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WorldZoneResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
         "dtos.AddCosmeticCategoryRequest": {
-            "type": "object",
-            "required": [
-                "category_name"
-            ],
-            "properties": {
-                "category_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.AddItemCategoryRequest": {
             "type": "object",
             "required": [
                 "category_name"
@@ -2384,28 +2520,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dtos.ItemCategoryListResponse": {
-            "type": "object",
-            "properties": {
-                "category_list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.ItemCategoryResponse"
-                    }
-                }
-            }
-        },
-        "dtos.ItemCategoryResponse": {
-            "type": "object",
-            "properties": {
-                "category_id": {
-                    "type": "string"
-                },
-                "category_name": {
-                    "type": "string"
-                }
-            }
-        },
         "dtos.ItemListResponse": {
             "type": "object",
             "properties": {
@@ -2510,6 +2624,12 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.PublishZoneRequest": {
+            "type": "object",
+            "properties": {
+                "data": {}
+            }
+        },
         "dtos.RefreshVerificationRequestDTO": {
             "type": "object",
             "properties": {
@@ -2524,6 +2644,12 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 }
+            }
+        },
+        "dtos.UpdateCreateableDataRequest": {
+            "type": "object",
+            "properties": {
+                "createable_data": {}
             }
         },
         "dtos.UpdateGemBalanceRequest": {
@@ -2590,6 +2716,9 @@ const docTemplate = `{
         "dtos.WorldMetadata": {
             "type": "object",
             "properties": {
+                "createable_data": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -2613,6 +2742,7 @@ const docTemplate = `{
         "dtos.WorldRequest": {
             "type": "object",
             "properties": {
+                "createable_data": {},
                 "data": {},
                 "description": {
                     "type": "string"
@@ -2625,6 +2755,9 @@ const docTemplate = `{
         "dtos.WorldResponse": {
             "type": "object",
             "properties": {
+                "createable_data": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -2645,6 +2778,34 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.WorldZoneResponse": {
+            "type": "object",
+            "properties": {
+                "world_id": {
+                    "type": "string"
+                },
+                "zone_data": {
+                    "type": "string"
+                },
+                "zone_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.WorldZonesResponse": {
+            "type": "object",
+            "properties": {
+                "world_id": {
+                    "type": "string"
+                },
+                "zones": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },

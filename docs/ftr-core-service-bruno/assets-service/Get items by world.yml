@@ -1,16 +1,16 @@
 info:
-  name: Upload batch 3D models
+  name: Get items by world
   type: http
-  seq: 13
+  seq: 10
   tags:
     - assets-service
 
 http:
-  method: PUT
-  url: "{{baseUrl}}/assets/models/world/:world_id"
+  method: GET
+  url: "{{baseUrl}}/assets/items/world/:world_id"
   params:
     - name: world_id
-      value: ""
+      value: 60f45758-9acd-4ae8-86c6-c08db4ecede2
       type: path
       description: World UUID
   auth: inherit
@@ -22,32 +22,40 @@ settings:
   maxRedirects: 5
 
 examples:
-  - name: 201 Response
-    description: Created
+  - name: 200 Response
+    description: OK
     request:
-      url: "{{baseUrl}}/assets/models/world/:world_id"
-      method: PUT
+      url: "{{baseUrl}}/assets/items/world/:world_id/categories/:category_id"
+      method: GET
       params:
         - name: world_id
           value: ""
           type: path
           description: World UUID
+        - name: category_id
+          value: ""
+          type: path
+          description: Category UUID
     response:
-      status: 201
-      statusText: Created
+      status: 200
+      statusText: OK
       body:
         type: text
         data: ""
   - name: 400 Response
     description: Bad Request
     request:
-      url: "{{baseUrl}}/assets/models/world/:world_id"
-      method: PUT
+      url: "{{baseUrl}}/assets/items/world/:world_id/categories/:category_id"
+      method: GET
       params:
         - name: world_id
           value: ""
           type: path
           description: World UUID
+        - name: category_id
+          value: ""
+          type: path
+          description: Category UUID
     response:
       status: 400
       statusText: Bad Request
@@ -57,32 +65,20 @@ examples:
   - name: 401 Response
     description: Unauthorized
     request:
-      url: "{{baseUrl}}/assets/models/world/:world_id"
-      method: PUT
+      url: "{{baseUrl}}/assets/items/world/:world_id/categories/:category_id"
+      method: GET
       params:
         - name: world_id
           value: ""
           type: path
           description: World UUID
+        - name: category_id
+          value: ""
+          type: path
+          description: Category UUID
     response:
       status: 401
       statusText: Unauthorized
-      body:
-        type: text
-        data: ""
-  - name: 500 Response
-    description: Internal Server Error
-    request:
-      url: "{{baseUrl}}/assets/models/world/:world_id"
-      method: PUT
-      params:
-        - name: world_id
-          value: ""
-          type: path
-          description: World UUID
-    response:
-      status: 500
-      statusText: Internal Server Error
       body:
         type: text
         data: ""
