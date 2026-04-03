@@ -3,6 +3,7 @@ package cosmetics
 import (
 	"net/http"
 	"path/filepath"
+	"strconv"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
@@ -71,6 +72,8 @@ func (cc *cosmeticsController) GetCategoriesList(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id path string true "Category UUID"
+// @Param        offset query int false "Pagination offset" default(0)
+// @Param        limit query int false "Pagination limit" default(24)
 // @Success      200  {object}  dtos.CosmeticsListResponse
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse
@@ -88,7 +91,23 @@ func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 		return
 	}
 
-	cosmeticsList, err := cc.cosmeticsService.GetCosmeticsListByCategory(categoryId)
+	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	if err != nil || offset < 0 {
+		_ = c.Error(errors.NewBadRequestError("offset must be a non-negative integer"))
+		return
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "24"))
+	if err != nil || limit <= 0 {
+		_ = c.Error(errors.NewBadRequestError("limit must be a positive integer"))
+		return
+	}
+
+	if limit > 200 {
+		limit = 200
+	}
+
+	cosmeticsList, totalCount, err := cc.cosmeticsService.GetCosmeticsListByCategory(categoryId, offset, limit)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -96,6 +115,7 @@ func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 
 	res := &dtos.CosmeticsListResponse{
 		CosmeticsList: make([]dtos.CosmeticResponse, len(cosmeticsList)),
+		TotalCount:    totalCount,
 	}
 	for idx, cosmetic := range cosmeticsList {
 		res.CosmeticsList[idx] = dtos.CosmeticResponse{

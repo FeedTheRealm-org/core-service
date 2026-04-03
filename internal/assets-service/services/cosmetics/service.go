@@ -12,7 +12,7 @@ type CosmeticsService interface {
 	GetCategoriesList() ([]*models.CosmeticCategory, error)
 
 	// GetCosmeticsListByCategory retrieves a list of cosmetics for a given category.
-	GetCosmeticsListByCategory(category uuid.UUID) ([]*models.Cosmetic, error)
+	GetCosmeticsListByCategory(category uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error)
 
 	// GetCosmeticById handles the retrieval of a cosmetic by its ID.
 	GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error)

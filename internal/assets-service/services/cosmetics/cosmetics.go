@@ -33,8 +33,8 @@ func (ss *cosmeticsService) GetCategoriesList() ([]*models.CosmeticCategory, err
 	return ss.cosmeticsRepository.GetCategoriesList()
 }
 
-func (ss *cosmeticsService) GetCosmeticsListByCategory(category uuid.UUID) ([]*models.Cosmetic, error) {
-	return ss.cosmeticsRepository.GetCosmeticsListByCategory(category)
+func (ss *cosmeticsService) GetCosmeticsListByCategory(category uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
+	return ss.cosmeticsRepository.GetCosmeticsListByCategory(category, offset, limit)
 }
 
 func (ss *cosmeticsService) GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error) {

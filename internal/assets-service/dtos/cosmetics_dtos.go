@@ -24,4 +24,5 @@ type CosmeticCategoryListResponse struct {
 // CosmeticsListResponse returns a list of sprites.
 type CosmeticsListResponse struct {
 	CosmeticsList []CosmeticResponse `json:"cosmetics_list"`
+	TotalCount    int64              `json:"total_count"`
 }
