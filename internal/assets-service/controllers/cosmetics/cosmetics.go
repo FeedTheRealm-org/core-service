@@ -211,6 +211,52 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
+// UploadCosmeticByID godoc
+// @Summary      Link existing cosmetic by ID
+// @Description  Creates a cosmetic entry in the target category using the URL from an existing sprite ID.
+// @Tags         assets-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "Category UUID"
+// @Param        sprite_id path string true "Existing Sprite UUID"
+// @Success      201  {object}  dtos.CosmeticResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Router       /assets/cosmetics/categories/{id}/sprites/{sprite_id} [put]
+func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
+	userId, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	categoryId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid category_id: " + err.Error()))
+		return
+	}
+
+	spriteId, err := uuid.Parse(c.Param("sprite_id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid sprite_id: " + err.Error()))
+		return
+	}
+
+	cosmetic, err := cc.cosmeticsService.UploadCosmeticByID(categoryId, spriteId, userId)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.CosmeticResponse{
+		CosmeticId:  cosmetic.Id,
+		CosmeticUrl: cosmetic.Url,
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
+}
+
 // DeleteCosmetic godoc
 // @Summary      Delete cosmetic
 // @Description  Delete a specific cosmetic by ID (requires ownership)

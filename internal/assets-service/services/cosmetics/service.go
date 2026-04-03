@@ -20,6 +20,9 @@ type CosmeticsService interface {
 	// UploadCosmeticData handles the upload of cosmetic file.
 	UploadCosmeticData(category uuid.UUID, cosmeticData multipart.File, ext string, userId uuid.UUID) (*models.Cosmetic, error)
 
+	// UploadCosmeticByID links an existing cosmetic sprite to another category.
+	UploadCosmeticByID(categoryId uuid.UUID, spriteId uuid.UUID, userId uuid.UUID) (*models.Cosmetic, error)
+
 	// DeleteCosmetic handles the deletion of a cosmetic by its ID.
 	DeleteCosmetic(cosmeticId uuid.UUID) error
 

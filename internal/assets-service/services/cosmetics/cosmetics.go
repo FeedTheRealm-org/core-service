@@ -75,6 +75,29 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticDat
 	return cosmetic, nil
 }
 
+func (ss *cosmeticsService) UploadCosmeticByID(categoryId uuid.UUID, spriteId uuid.UUID, userId uuid.UUID) (*models.Cosmetic, error) {
+	if _, err := ss.cosmeticsRepository.GetCategoryById(categoryId); err != nil {
+		logger.Logger.Errorf("Error getting category by id: %v", err)
+		return nil, err
+	}
+
+	sourceCosmetic, err := ss.cosmeticsRepository.GetCosmeticById(spriteId)
+	if err != nil {
+		logger.Logger.Errorf("Error getting source cosmetic by id: %v", err)
+		return nil, err
+	}
+
+	cosmetic := &models.Cosmetic{
+		Url: sourceCosmetic.Url,
+	}
+	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, cosmetic, userId); err != nil {
+		logger.Logger.Errorf("Error creating linked cosmetic: %v", err)
+		return nil, err
+	}
+
+	return cosmetic, nil
+}
+
 func (ss *cosmeticsService) DeleteCosmetic(cosmeticId uuid.UUID) error {
 	cosmetic, err := ss.cosmeticsRepository.GetCosmeticById(cosmeticId)
 	if err != nil {
