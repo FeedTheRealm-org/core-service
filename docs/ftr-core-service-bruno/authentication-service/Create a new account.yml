@@ -8,6 +8,13 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/auth/signup"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "mutrera@fi.uba.ar",
+        "password": "qwerty123"
+      }
   auth: inherit
 
 settings:
