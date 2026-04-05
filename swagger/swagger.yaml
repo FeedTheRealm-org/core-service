@@ -45,6 +45,20 @@ definitions:
       checkout_url:
         type: string
     type: object
+  dtos.ConsumeWorldJoinTokenRequest:
+    properties:
+      token_id:
+        type: string
+    required:
+    - token_id
+    type: object
+  dtos.ConsumeWorldJoinTokenResponse:
+    properties:
+      user_id:
+        type: string
+      world_id:
+        type: string
+    type: object
   dtos.CosmeticCategoryListResponse:
     properties:
       category_list:
@@ -72,6 +86,8 @@ definitions:
         items:
           $ref: '#/definitions/dtos.CosmeticResponse'
         type: array
+      total_count:
+        type: integer
     type: object
   dtos.CreateAccountRequestDTO:
     properties:
@@ -138,6 +154,20 @@ definitions:
       price:
         type: number
       updated_at:
+        type: string
+    type: object
+  dtos.IssueWorldJoinTokenRequest:
+    properties:
+      world_id:
+        type: string
+    required:
+    - world_id
+    type: object
+  dtos.IssueWorldJoinTokenResponse:
+    properties:
+      expires_at:
+        type: string
+      token_id:
         type: string
     type: object
   dtos.ItemListResponse:
@@ -477,6 +507,16 @@ paths:
         name: id
         required: true
         type: string
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 24
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -531,6 +571,43 @@ paths:
       security:
       - BearerAuth: []
       summary: Upload cosmetic data
+      tags:
+      - assets-service
+  /assets/cosmetics/categories/{id}/sprites/{sprite_id}:
+    put:
+      consumes:
+      - application/json
+      description: Creates a cosmetic entry in the target category using the URL from
+        an existing sprite ID.
+      parameters:
+      - description: Category UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Existing Sprite UUID
+        in: path
+        name: sprite_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.CosmeticResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Link existing cosmetic by ID
       tags:
       - assets-service
   /assets/items/{id}:
@@ -1360,6 +1437,76 @@ paths:
       security:
       - BearerAuth: []
       summary: Get character metadata
+      tags:
+      - players-service
+  /player/world-access/token:
+    post:
+      consumes:
+      - application/json
+      description: Creates a short-lived token tied to the current authenticated user
+        and target world.
+      parameters:
+      - description: Issue world join token DTO
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.IssueWorldJoinTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.IssueWorldJoinTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Issue one-time world join token
+      tags:
+      - players-service
+  /player/world-access/token/consume:
+    post:
+      consumes:
+      - application/json
+      description: Validates and burns a one-time token, returning the associated
+        user ID.
+      parameters:
+      - description: Consume world join token DTO
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ConsumeWorldJoinTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ConsumeWorldJoinTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Consume one-time world join token
       tags:
       - players-service
   /world:
