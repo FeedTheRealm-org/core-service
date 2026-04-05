@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Get jwt token with:
-# curl -X POST localhost:8000/auth/login -H "Content-Type: text/json" -d '{"email": "admin@admin.admin", "password": "admin123"}' | jq . | grep access_token
+# curl -X POST localhost:8000/auth/login -H "Content-Type: text/json" -d '{"email": "admin@admin.admin", "password": "admin123"}' | jq -r '.data.access_token'
 
 import getpass
 import os
