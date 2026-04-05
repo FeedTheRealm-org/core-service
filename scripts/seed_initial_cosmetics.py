@@ -109,26 +109,54 @@ def create_category(server_url: str, category_name: str, token: str):
     return None
 
 
-def fetch_cosmetics_by_category(server_url: str, category_id, token: str) -> list:
+def fetch_cosmetics_by_category(server_url: str, category_id, token: str, limit: int = 24) -> list:
     url = f"{server_url}/assets/cosmetics/categories/{category_id}"
-    try:
-        response = requests.get(url, headers=build_headers(token), timeout=30)
-    except requests.RequestException as exc:
-        print(f"  Failed fetching cosmetics for category {category_id}: {exc}")
-        return []
+    offset = 0
+    cosmetics_list = []
 
-    if response.status_code != 200:
-        print(
-            f"  Failed fetching cosmetics for category {category_id}: HTTP {response.status_code} - {response.text}")
-        return []
+    while True:
+        params = {"offset": offset, "limit": limit}
+        try:
+            response = requests.get(
+                url,
+                headers=build_headers(token),
+                params=params,
+                timeout=30,
+            )
+        except requests.RequestException as exc:
+            print(
+                f"  Failed fetching cosmetics for category {category_id}: {exc}")
+            return []
 
-    try:
-        payload = response.json()
-    except ValueError:
-        print(f"  Failed parsing cosmetics JSON for category {category_id}")
-        return []
+        if response.status_code != 200:
+            print(
+                f"  Failed fetching cosmetics for category {category_id}: HTTP {response.status_code} - {response.text}")
+            return []
 
-    return payload.get("data", {}).get("cosmetics_list", [])
+        try:
+            payload = response.json()
+        except ValueError:
+            print(
+                f"  Failed parsing cosmetics JSON for category {category_id}")
+            return []
+
+        data = payload.get("data", {})
+        page_cosmetics = data.get("cosmetics_list", [])
+        total_count = data.get("total_count")
+
+        if not page_cosmetics:
+            break
+
+        cosmetics_list.extend(page_cosmetics)
+        offset += len(page_cosmetics)
+
+        if isinstance(total_count, int) and offset >= total_count:
+            break
+
+        if len(page_cosmetics) < limit and total_count is None:
+            break
+
+    return cosmetics_list
 
 
 def upload_sprite(server_url: str, category_id, sprite_path: Path, token: str):
@@ -226,7 +254,8 @@ def main() -> int:
                     f"  No source sprites found in '{source_category_name}'. Skipping shared linking.")
                 continue
 
-            target_sprites = fetch_cosmetics_by_category(server_url, category_id, token)
+            target_sprites = fetch_cosmetics_by_category(
+                server_url, category_id, token)
             target_urls = {
                 sprite.get("cosmetic_url")
                 for sprite in target_sprites
@@ -251,7 +280,8 @@ def main() -> int:
                     print(f"  Linked sprite: {source_sprite_id}")
                 else:
                     failed_uploads += 1
-                    print(f"  Failed linking sprite {source_sprite_id} ({reason})")
+                    print(
+                        f"  Failed linking sprite {source_sprite_id} ({reason})")
 
             continue
 
