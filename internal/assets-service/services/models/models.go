@@ -7,6 +7,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
 	repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/models"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 )
 
@@ -35,7 +36,9 @@ func (ms *modelsService) UploadModels(worldId uuid.UUID, models []models.Model) 
 		return nil, err
 	}
 
-	PublishedModels, err := ms.modelsRepository.UploadModels(models)
+	publishedModels, err := ms.modelsRepository.UploadModels(models)
+
+	logger.Logger.Infof("SERVICE: Published %d models to the db", len(publishedModels))
 
 	if err != nil {
 		// If publishing to the database fails, roll back the file uploads
@@ -45,7 +48,7 @@ func (ms *modelsService) UploadModels(worldId uuid.UUID, models []models.Model) 
 		}
 		return nil, fmt.Errorf("failed publishing models: %w", err)
 	}
-	return PublishedModels, nil
+	return publishedModels, nil
 }
 
 func (ms *modelsService) GetModelsByWorld(worldId uuid.UUID) ([]models.Model, error) {

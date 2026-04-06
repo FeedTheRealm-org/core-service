@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	assetModels "github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 	"gorm.io/gorm/clause"
 )
@@ -22,13 +23,11 @@ func NewModelsRepository(conf *config.Config, db *config.DB) ModelsRepository {
 
 func (mr *modelsRepository) UploadModels(modelsList []assetModels.Model) ([]assetModels.Model, error) {
 	tx := mr.db.Conn.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
+
+	logger.Logger.Infof("REPO: Uploading %d models to the database", len(modelsList))
 
 	for _, model := range modelsList {
+
 		if err := tx.
 			Clauses(
 				clause.OnConflict{
@@ -39,6 +38,8 @@ func (mr *modelsRepository) UploadModels(modelsList []assetModels.Model) ([]asse
 			tx.Rollback()
 			return nil, err
 		}
+
+		logger.Logger.Infof("REPO: Model uploaded: %s", model.ToString())
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -46,6 +47,9 @@ func (mr *modelsRepository) UploadModels(modelsList []assetModels.Model) ([]asse
 	}
 
 	publishedModels, err := mr.GetModelsByWorld(modelsList[0].WorldID)
+
+	logger.Logger.Infof("REPO: Published %d models to the db", len(publishedModels))
+
 	if err != nil {
 		return nil, err
 	}
