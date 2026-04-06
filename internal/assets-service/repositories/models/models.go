@@ -22,28 +22,23 @@ func NewModelsRepository(conf *config.Config, db *config.DB) ModelsRepository {
 }
 
 func (mr *modelsRepository) UploadModels(modelsList []assetModels.Model) ([]assetModels.Model, error) {
-	tx := mr.db.Conn.Begin()
 
 	logger.Logger.Infof("REPO: Uploading %d models to the database", len(modelsList))
 
 	for _, model := range modelsList {
+		result := mr.db.Conn.Clauses(
+			clause.OnConflict{
+				Columns:   []clause.Column{{Name: "id"}},
+				DoUpdates: clause.AssignmentColumns([]string{"url", "updated_at"}),
+			},
+		).Create(&model)
 
-		if err := tx.
-			Clauses(
-				clause.OnConflict{
-					Columns:   []clause.Column{{Name: "id"}},
-					DoUpdates: clause.AssignmentColumns([]string{"url", "updated_at"}),
-				},
-			).Create(&model).Error; err != nil {
-			tx.Rollback()
-			return nil, err
+		if result.Error != nil {
+			logger.Logger.Errorf("REPO: Failed to upload model %s: %v", model.Id, result.Error)
+			return nil, result.Error
 		}
 
-		logger.Logger.Infof("REPO: Model uploaded: %s", model.ToString())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		return nil, err
+		logger.Logger.Infof("REPO: Model uploaded (rows affected: %d): %s", result.RowsAffected, model.ToString())
 	}
 
 	logger.Logger.Infof("REPO: Published %d models to the db", len(modelsList))
