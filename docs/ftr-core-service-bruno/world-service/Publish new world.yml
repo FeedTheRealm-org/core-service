@@ -8,6 +8,13 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/world"
+  body:
+    type: json
+    data: |-
+      {
+        "file_name": "proofs.world",
+        "data": "{}"
+      }
   auth: inherit
 
 settings:
