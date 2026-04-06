@@ -165,11 +165,13 @@ func (mc *modelsController) UploadModels(c *gin.Context) {
 	}
 
 	modelsRequest := []models.Model{}
-	for i := 0; ; i++ {
+	hasModels := true
+	for i := 0; hasModels; i++ {
 
 		modelIDStr := c.PostForm(fmt.Sprintf("models[%d].model_id", i))
 		if modelIDStr == "" {
-			break
+			hasModels = false
+			continue
 		}
 
 		modelID, err := uuid.Parse(modelIDStr)
@@ -195,7 +197,7 @@ func (mc *modelsController) UploadModels(c *gin.Context) {
 		return
 	}
 
-	savedModels, err := mc.modelService.PublishModels(worldID, modelsRequest)
+	savedModels, err := mc.modelService.UploadModels(worldID, modelsRequest)
 	if err != nil {
 		_ = c.Error(errors.NewInternalServerError(err.Error()))
 		return

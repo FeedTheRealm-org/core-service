@@ -6,6 +6,6 @@ import (
 )
 
 type ModelsService interface {
-	PublishModels(worldId uuid.UUID, models []models.Model) ([]models.Model, error)
+	UploadModels(worldId uuid.UUID, models []models.Model) ([]models.Model, error)
 	GetModelsByWorld(worldId uuid.UUID) ([]models.Model, error)
 }

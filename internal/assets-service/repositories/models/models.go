@@ -20,7 +20,7 @@ func NewModelsRepository(conf *config.Config, db *config.DB) ModelsRepository {
 	}
 }
 
-func (mr *modelsRepository) PublishModels(modelsList []assetModels.Model) ([]assetModels.Model, error) {
+func (mr *modelsRepository) UploadModels(modelsList []assetModels.Model) ([]assetModels.Model, error) {
 	tx := mr.db.Conn.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -29,13 +29,14 @@ func (mr *modelsRepository) PublishModels(modelsList []assetModels.Model) ([]ass
 	}()
 
 	for _, model := range modelsList {
-		if err := mr.db.Conn.
+		if err := tx.
 			Clauses(
 				clause.OnConflict{
 					Columns:   []clause.Column{{Name: "id"}},
 					DoUpdates: clause.AssignmentColumns([]string{"url", "updated_at"}),
 				},
 			).Create(&model).Error; err != nil {
+			tx.Rollback()
 			return nil, err
 		}
 	}

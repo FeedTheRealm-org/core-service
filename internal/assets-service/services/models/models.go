@@ -26,36 +26,25 @@ func NewModelsService(conf *config.Config, modelsRepository repo.ModelsRepositor
 	}
 }
 
-func (ms *modelsService) PublishModels(worldId uuid.UUID, models []models.Model) ([]models.Model, error) {
+func (ms *modelsService) UploadModels(worldId uuid.UUID, models []models.Model) ([]models.Model, error) {
 	if len(models) == 0 {
 		return nil, fmt.Errorf("model list is empty")
 	}
 
-	for i := range models {
-		models[i].WorldID = worldId
-
-		file, err := models[i].ModelFile.Open()
-		if err != nil {
-			return nil, err
-		}
-
-		defer func() {
-			_ = file.Close()
-		}()
-
-		filePath := fmt.Sprintf("worlds/%s/models/%s/model.glb", worldId, models[i].Id)
-		if err := ms.bucketRepo.UploadFile(filePath, models[i].ModelFile.Header.Get("Content-Type"), file); err != nil {
-			return nil, fmt.Errorf("failed uploading model file to bucket: %w", err)
-		}
-
-		models[i].Url = fmt.Sprintf("/%s", filePath)
+	if err := ms.uploadToBucket(worldId, models); err != nil {
+		return nil, err
 	}
 
-	PublishedModels, err := ms.modelsRepository.PublishModels(models)
+	PublishedModels, err := ms.modelsRepository.UploadModels(models)
+
 	if err != nil {
+		// If publishing to the database fails, roll back the file uploads
+		for _, model := range models {
+			filePath := fmt.Sprintf("worlds/%s/models/%s/model.glb", worldId, model.Id)
+			_ = ms.bucketRepo.DeleteFile(filePath)
+		}
 		return nil, fmt.Errorf("failed publishing models: %w", err)
 	}
-
 	return PublishedModels, nil
 }
 
@@ -65,4 +54,33 @@ func (ms *modelsService) GetModelsByWorld(worldId uuid.UUID) ([]models.Model, er
 		return nil, fmt.Errorf("failed to get models by world: %w", err)
 	}
 	return modelsList, nil
+}
+
+// ---- Private methods ----
+
+func (ms *modelsService) uploadToBucket(worldId uuid.UUID, models []models.Model) error {
+	uploadedFilePaths := []string{}
+
+	for i := range models {
+		models[i].WorldID = worldId
+
+		file, err := models[i].ModelFile.Open()
+		if err != nil {
+			return err
+		}
+		filePath := fmt.Sprintf("worlds/%s/models/%s/model.glb", worldId, models[i].Id)
+		if err := ms.bucketRepo.UploadFile(filePath, models[i].ModelFile.Header.Get("Content-Type"), file); err != nil {
+			_ = file.Close()
+			// Rollback previously uploaded files from this batch
+			for _, uploadedPath := range uploadedFilePaths {
+				_ = ms.bucketRepo.DeleteFile(uploadedPath)
+			}
+			return fmt.Errorf("failed uploading model file to bucket: %w", err)
+		}
+		_ = file.Close()
+		uploadedFilePaths = append(uploadedFilePaths, filePath)
+		models[i].Url = fmt.Sprintf("/%s", filePath)
+	}
+
+	return nil
 }
