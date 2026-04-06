@@ -46,15 +46,8 @@ func (mr *modelsRepository) UploadModels(modelsList []assetModels.Model) ([]asse
 		return nil, err
 	}
 
-	publishedModels, err := mr.GetModelsByWorld(modelsList[0].WorldID)
-
-	logger.Logger.Infof("REPO: Published %d models to the db", len(publishedModels))
-
-	if err != nil {
-		return nil, err
-	}
-
-	return publishedModels, nil
+	logger.Logger.Infof("REPO: Published %d models to the db", len(modelsList))
+	return modelsList, nil
 }
 
 func (mr *modelsRepository) GetModelsByWorld(worldId uuid.UUID) ([]assetModels.Model, error) {

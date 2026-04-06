@@ -8,7 +8,6 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
-	models "github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/models"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
@@ -165,7 +164,7 @@ func (mc *modelsController) UploadModels(c *gin.Context) {
 		return
 	}
 
-	modelsRequest := []models.Model{}
+	models := []dtos.ModelRequest{}
 	hasModels := true
 	for i := 0; hasModels; i++ {
 
@@ -185,21 +184,26 @@ func (mc *modelsController) UploadModels(c *gin.Context) {
 			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("model_file is required for model %d", i)))
 			return
 		}
-		// Collect metadata and file headers
-		modelsRequest = append(modelsRequest, models.Model{
+		models = append(models, dtos.ModelRequest{
 			Id:        modelID,
+			Url:       c.PostForm(fmt.Sprintf("models[%d].url", i)),
 			ModelFile: modelFile,
-			CreatedBy: userId,
 		})
 	}
-	logger.Logger.Infof("CONTROLLER: Models request parsed with %d models", len(modelsRequest))
 
-	if len(modelsRequest) == 0 {
+	if len(models) == 0 {
 		_ = c.Error(errors.NewBadRequestError("no models uploaded"))
 		return
 	}
 
-	savedModels, err := mc.modelService.UploadModels(worldID, modelsRequest)
+	batchModelsRequest := dtos.BatchModelsRequest{
+		WorldID:   worldID,
+		CreatedBy: userId,
+		Models:    models,
+	}
+	logger.Logger.Infof("CONTROLLER: Models request parsed with %d models", len(batchModelsRequest.Models))
+
+	savedModels, err := mc.modelService.UploadModels(batchModelsRequest)
 	if err != nil {
 		_ = c.Error(errors.NewInternalServerError(err.Error()))
 		return

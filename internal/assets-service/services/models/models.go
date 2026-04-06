@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
 	repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/models"
@@ -27,23 +28,36 @@ func NewModelsService(conf *config.Config, modelsRepository repo.ModelsRepositor
 	}
 }
 
-func (ms *modelsService) UploadModels(worldId uuid.UUID, models []models.Model) ([]models.Model, error) {
-	if len(models) == 0 {
+func (ms *modelsService) UploadModels(batchRequest dtos.BatchModelsRequest) ([]models.Model, error) {
+	if len(batchRequest.Models) == 0 {
 		return nil, fmt.Errorf("model list is empty")
 	}
 
-	if err := ms.uploadToBucket(worldId, models); err != nil {
+	if err := ms.uploadToBucket(batchRequest.WorldID, batchRequest.Models); err != nil {
+		logger.Logger.Errorf("SERVICE: Failed to upload models to bucket: %v", err)
 		return nil, err
 	}
 
-	publishedModels, err := ms.modelsRepository.UploadModels(models)
+	// Convert DTOs to domain models
+	modelsList := make([]models.Model, len(batchRequest.Models))
+
+	for i, modelReq := range batchRequest.Models {
+		modelsList[i] = models.Model{
+			Id:        modelReq.Id,
+			Url:       modelReq.Url,
+			WorldID:   batchRequest.WorldID,
+			CreatedBy: batchRequest.CreatedBy,
+		}
+	}
+
+	publishedModels, err := ms.modelsRepository.UploadModels(modelsList)
 
 	logger.Logger.Infof("SERVICE: Published %d models to the db", len(publishedModels))
 
 	if err != nil {
 		// If publishing to the database fails, roll back the file uploads
-		for _, model := range models {
-			filePath := fmt.Sprintf("worlds/%s/models/%s/model.glb", worldId, model.Id)
+		for _, model := range modelsList {
+			filePath := fmt.Sprintf("worlds/%s/models/%s/model.glb", batchRequest.WorldID, model.Id)
 			_ = ms.bucketRepo.DeleteFile(filePath)
 		}
 		return nil, fmt.Errorf("failed publishing models: %w", err)
@@ -61,11 +75,10 @@ func (ms *modelsService) GetModelsByWorld(worldId uuid.UUID) ([]models.Model, er
 
 // ---- Private methods ----
 
-func (ms *modelsService) uploadToBucket(worldId uuid.UUID, models []models.Model) error {
+func (ms *modelsService) uploadToBucket(worldId uuid.UUID, models []dtos.ModelRequest) error {
 	uploadedFilePaths := []string{}
 
 	for i := range models {
-		models[i].WorldID = worldId
 
 		file, err := models[i].ModelFile.Open()
 		if err != nil {
@@ -84,6 +97,5 @@ func (ms *modelsService) uploadToBucket(worldId uuid.UUID, models []models.Model
 		uploadedFilePaths = append(uploadedFilePaths, filePath)
 		models[i].Url = fmt.Sprintf("/%s", filePath)
 	}
-
 	return nil
 }
