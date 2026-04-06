@@ -12,6 +12,7 @@ import (
 	service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/models"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -191,6 +192,7 @@ func (mc *modelsController) UploadModels(c *gin.Context) {
 			CreatedBy: userId,
 		})
 	}
+	logger.Logger.Infof("CONTROLLER: Models request parsed with %d models", len(modelsRequest))
 
 	if len(modelsRequest) == 0 {
 		_ = c.Error(errors.NewBadRequestError("no models uploaded"))
@@ -202,6 +204,8 @@ func (mc *modelsController) UploadModels(c *gin.Context) {
 		_ = c.Error(errors.NewInternalServerError(err.Error()))
 		return
 	}
+
+	logger.Logger.Infof("CONTROLLER: Models uploaded and metadata saved for %d models", len(savedModels))
 
 	modelResponses := make([]dtos.ModelResponse, len(savedModels))
 	for i, model := range savedModels {

@@ -20,3 +20,7 @@ type Model struct {
 func (Model) TableName() string {
 	return "models"
 }
+
+func (m *Model) ToString() string {
+	return "Model{id: " + m.Id.String() + ", url: " + m.Url + ", worldId: " + m.WorldID.String() + ", createdAt: " + m.CreatedAt.String() + ", updatedAt: " + m.UpdatedAt.String() + ", createdBy: " + m.CreatedBy.String() + "}"
+}
