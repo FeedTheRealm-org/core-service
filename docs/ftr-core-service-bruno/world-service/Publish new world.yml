@@ -13,7 +13,9 @@ http:
     data: |-
       {
         "file_name": "proofs.world",
-        "data": "{}"
+        "data": {
+          "atus": ""
+        }
       }
   auth: inherit
 

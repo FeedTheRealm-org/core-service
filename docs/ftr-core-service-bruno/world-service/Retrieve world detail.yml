@@ -10,9 +10,8 @@ http:
   url: "{{baseUrl}}/world/:id"
   params:
     - name: id
-      value: ""
+      value: 79efad69-d55e-4282-99cc-5989e76494e6
       type: path
-      description: World UUID
   auth: inherit
 
 settings:
