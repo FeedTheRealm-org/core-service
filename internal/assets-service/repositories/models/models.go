@@ -5,7 +5,6 @@ import (
 	assetModels "github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
-	"gorm.io/gorm/clause"
 )
 
 type modelsRepository struct {
@@ -26,18 +25,11 @@ func (mr *modelsRepository) UploadModels(modelsList []assetModels.Model) ([]asse
 	logger.Logger.Infof("REPO: Uploading %d models to the database", len(modelsList))
 
 	for _, model := range modelsList {
-		result := mr.db.Conn.Clauses(
-			clause.OnConflict{
-				Columns:   []clause.Column{{Name: "id"}},
-				DoUpdates: clause.AssignmentColumns([]string{"url", "updated_at"}),
-			},
-		).Create(&model)
-
+		result := mr.db.Conn.Save(model)
 		if result.Error != nil {
 			logger.Logger.Errorf("REPO: Failed to upload model %s: %v", model.Id, result.Error)
 			return nil, result.Error
 		}
-
 		logger.Logger.Infof("REPO: Model uploaded (rows affected: %d): %s", result.RowsAffected, model.ToString())
 	}
 
