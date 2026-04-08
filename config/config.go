@@ -38,8 +38,11 @@ type AssetsConfig struct {
 }
 
 type StripeConfig struct {
-	StripeApiKey        string
-	StripeWebhookSecret string
+	StripeApiKey           string
+	StripeWebhookSecret    string
+	StripeZonePrice        float64
+	StripeZonePriceID      string
+	StringBillingAnchorDay int
 }
 
 type Config struct {
@@ -87,8 +90,11 @@ func CreateConfig() *Config {
 	}
 
 	stripeConf := &StripeConfig{
-		StripeApiKey:        os.Getenv("STRIPE_API_KEY"),
-		StripeWebhookSecret: os.Getenv("STRIPE_WEBHOOK_SECRET"),
+		StripeApiKey:           os.Getenv("STRIPE_API_KEY"),
+		StripeWebhookSecret:    os.Getenv("STRIPE_WEBHOOK_SECRET"),
+		StripeZonePrice:        getEnvOrDefaultFloat("STRIPE_ZONE_PRICE", 5.00),
+		StripeZonePriceID:      os.Getenv("STRIPE_ZONE_PRICE_ID"),
+		StringBillingAnchorDay: getEnvOrDefaultInt("STRIPE_BILLING_ANCHOR_DAY", 5),
 	}
 
 	return &Config{
@@ -123,6 +129,14 @@ func getEnvOrDefaultString(key string, defaultValue string) string {
 
 func getEnvOrDefaultInt(key string, defaultValue int) int {
 	value, err := strconv.Atoi(os.Getenv(key))
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
+func getEnvOrDefaultFloat(key string, defaultValue float64) float64 {
+	value, err := strconv.ParseFloat(os.Getenv(key), 64)
 	if err != nil {
 		return defaultValue
 	}

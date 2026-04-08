@@ -1,7 +1,10 @@
 package world
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/models"
@@ -17,7 +20,6 @@ type worldService struct {
 	serverRegistryService server_registry.ServerRegistryService
 }
 
-// NewWorldService creates a new instance of WorldService.
 func NewWorldService(
 	conf *config.Config,
 	worldRepository world.WorldRepository,
@@ -60,7 +62,52 @@ func (cs *worldService) UpdateCreateableData(worldID uuid.UUID, userId uuid.UUID
 	return cs.worldRepository.UpdateCreateableData(worldID, userId, createableData)
 }
 
+// This function checks if the zone is already published,
+// if not it checks with payment service
+// if the user has available slots to publish a new zone, and if so it allows publishing.
+func (cs *worldService) CheckAvaliableZonesForPublish(worldId uuid.UUID, zoneId int) error {
+	_, err := cs.worldRepository.GetWorldZone(worldId, zoneId)
+	if err != nil {
+		userId, wErr := cs.worldRepository.GetUserIdByWorldId(worldId)
+		if wErr != nil {
+			return wErr
+		}
+
+		url := fmt.Sprintf("http://127.0.0.1:%d/internal/subscriptions/users/%s/availability", cs.conf.Server.Port, userId)
+		resp, httpErr := http.Get(url)
+		if httpErr != nil || resp.StatusCode != http.StatusOK {
+			return errors.New("failed to reach payment service to verify slots")
+		}
+		defer func() {
+			_ = resp.Body.Close()
+		}()
+
+		var slotsData struct {
+			Allowed    bool  `json:"allowed"`
+			TotalSlots int64 `json:"total_slots"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&slotsData); err != nil {
+			return errors.New("failed to decode slots response")
+		}
+
+		if !slotsData.Allowed {
+			return errors.New("forbidden: active slots subscription required")
+		}
+
+		usedZonesCount, _ := cs.worldRepository.GetTotalZonesCountByUserId(userId)
+		if usedZonesCount >= slotsData.TotalSlots {
+			return errors.New("forbidden: you have reached the maximum allowed slots for your subscription")
+		}
+	}
+
+	return nil
+}
+
 func (cs *worldService) PublishZone(worldID uuid.UUID, zoneID int, zoneData []byte) (*models.WorldZone, error) {
+	// if err := cs.CheckAvaliableZonesForPublish(worldID, zoneID); err != nil {
+	// 	return nil, err
+	// }
+
 	zone, err := cs.worldRepository.UpsertWorldZone(worldID, zoneID, zoneData)
 	if err != nil {
 		return nil, err

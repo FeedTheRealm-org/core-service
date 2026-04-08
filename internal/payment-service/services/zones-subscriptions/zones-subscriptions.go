@@ -1,0 +1,338 @@
+package zones_subscriptions
+
+import (
+	"encoding/json"
+	"time"
+
+	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/payment-service/models"
+	zones_subscriptions "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/zones-subscriptions"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
+	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+
+	stripe "github.com/stripe/stripe-go/v84"
+	"github.com/stripe/stripe-go/v84/checkout/session"
+	"github.com/stripe/stripe-go/v84/customer"
+	"github.com/stripe/stripe-go/v84/subscription"
+	"github.com/stripe/stripe-go/v84/subscriptionitem"
+	"github.com/stripe/stripe-go/v84/webhook"
+)
+
+type zoneSubscriptionService struct {
+	conf *config.Config
+	repo zones_subscriptions.ZonesSubscriptionsRepository
+}
+
+func NewSubscriptionService(conf *config.Config, repo zones_subscriptions.ZonesSubscriptionsRepository) SubscriptionService {
+	stripe.Key = conf.Stripe.StripeApiKey
+	return &zoneSubscriptionService{conf: conf, repo: repo}
+}
+
+func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, email string, slots int, successURL string, cancelURL string) (string, error) {
+	logger.Logger.Infof("Creating checkout session for user %s (%d slots)", userID, slots)
+
+	sub, err := zs.repo.GetByUserID(userID)
+	if err == nil && sub != nil && sub.Status == "active" {
+		logger.Logger.Warnf("User %s already has an active subscription", userID)
+		return "", err
+	}
+
+	sub, err = zs.ensureCustomer(userID, email, slots, sub)
+	if err != nil {
+		return "", err
+	}
+
+	params := &stripe.CheckoutSessionParams{
+		SuccessURL: stripe.String(successURL),
+		CancelURL:  stripe.String(cancelURL),
+		Mode:       stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			{
+				Price:    stripe.String(zs.conf.Stripe.StripeZonePriceID),
+				Quantity: stripe.Int64(int64(slots)),
+			},
+		},
+		Customer: stripe.String(sub.StripeCustomerID),
+		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
+			BillingCycleAnchor: stripe.Int64(zs.nextBillingDate().Unix()),
+			Metadata: map[string]string{
+				"user_id": userID.String(),
+			},
+		},
+		ClientReferenceID:   stripe.String(userID.String()),
+		AllowPromotionCodes: stripe.Bool(false),
+	}
+
+	sess, err := session.New(params)
+	if err != nil {
+		logger.Logger.Errorf("Failed to create Stripe Checkout session for user %s: %v", userID, err)
+		return "", err
+	}
+
+	logger.Logger.Infof("Checkout session created for user %s", userID)
+	return sess.URL, nil
+}
+
+func (zs *zoneSubscriptionService) UpdateSlots(userID uuid.UUID, newSlots int) (*models.ZonesSubscriptions, error) {
+	logger.Logger.Infof("Updating subscription slots for user %s to %d", userID, newSlots)
+
+	sub, err := zs.repo.GetByUserID(userID)
+	if err != nil {
+		logger.Logger.Errorf("Subscription not found for user %s: %v", userID, err)
+		return nil, err
+	}
+
+	if sub.StripeSubscriptionID == "" {
+		return nil, err
+	}
+	if sub.Status != "active" {
+		return nil, err
+	}
+
+	stripeSub, err := subscription.Get(sub.StripeSubscriptionID, nil)
+	if err != nil {
+		logger.Logger.Errorf("Failed to fetch Stripe subscription %s: %v", sub.StripeSubscriptionID, err)
+		return nil, err
+	}
+
+	if len(stripeSub.Items.Data) == 0 {
+		return nil, err
+	}
+
+	_, err = subscriptionitem.Update(stripeSub.Items.Data[0].ID, &stripe.SubscriptionItemParams{
+		Quantity:          stripe.Int64(int64(newSlots)),
+		ProrationBehavior: stripe.String("none"),
+	})
+	if err != nil {
+		logger.Logger.Errorf("Failed to update Stripe subscription item for user %s: %v", userID, err)
+		return nil, err
+	}
+
+	sub.TotalSlots = newSlots
+	sub, err = zs.repo.Update(sub)
+	if err != nil {
+		logger.Logger.Errorf("Failed to update subscription record for user %s after slot update: %v", userID, err)
+		return nil, err
+	}
+
+	logger.Logger.Infof("Successfully updated slots to %d for user %s", newSlots, userID)
+	return sub, nil
+}
+
+func (zs *zoneSubscriptionService) GetByUserID(userID uuid.UUID) (*models.ZonesSubscriptions, error) {
+	sub, err := zs.repo.GetByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+	return sub, nil
+}
+
+func (zs *zoneSubscriptionService) CheckAvalibility(userID uuid.UUID, requiredSlots int) (bool, int, error) {
+	sub, err := zs.repo.GetByUserID(userID)
+	if err != nil {
+		return false, 0, err
+	}
+
+	if sub.Status != stripe.SubscriptionStatusActive {
+		return false, 0, nil
+	}
+
+	if sub.TotalSlots-sub.UsedSlots < requiredSlots {
+		return false, sub.TotalSlots, nil
+	}
+
+	return true, sub.TotalSlots, nil
+}
+
+func (zs *zoneSubscriptionService) CancelSubscription(userID uuid.UUID) (*models.ZonesSubscriptions, error) {
+	logger.Logger.Infof("Cancelling subscription for user %s", userID)
+
+	sub, err := zs.repo.GetByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if sub.StripeSubscriptionID == "" {
+		return nil, err
+	}
+
+	if sub.Status != stripe.SubscriptionStatusActive {
+		return nil, err
+	}
+
+	params := &stripe.SubscriptionCancelParams{
+		InvoiceNow: stripe.Bool(true),
+		Prorate:    stripe.Bool(true),
+	}
+
+	_, err = subscription.Cancel(sub.StripeSubscriptionID, params)
+	if err != nil {
+		logger.Logger.Errorf("Failed to cancel Stripe subscription %s for user %s: %v", sub.StripeSubscriptionID, userID, err)
+		return nil, err
+	}
+
+	sub.Status = stripe.SubscriptionStatusCanceled
+	if _, err = zs.repo.Update(sub); err != nil {
+		logger.Logger.Errorf("Failed to update DB status to canceled for user %s: %v", userID, err)
+		return nil, err
+	}
+
+	logger.Logger.Infof("Subscription for user %s cancelled", userID)
+	return sub, nil
+}
+
+func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature string) error {
+	event, err := webhook.ConstructEvent(payload, signature, zs.conf.Stripe.StripeWebhookSecret)
+	if err != nil {
+		logger.Logger.Error("Failed to verify Stripe webhook signature: " + err.Error())
+		return err
+	}
+
+	switch event.Type {
+	case "customer.subscription.created":
+		var stripeSub stripe.Subscription
+		if err := json.Unmarshal(event.Data.Raw, &stripeSub); err != nil {
+			return err
+		}
+
+		userIDStr, ok := stripeSub.Metadata["user_id"]
+		if !ok || userIDStr == "" {
+			return err
+		}
+		userID, err := uuid.Parse(userIDStr)
+		if err != nil {
+			return err
+		}
+
+		dbSub, err := zs.repo.GetByUserID(userID)
+		if err != nil {
+			return err
+		}
+
+		dbSub.StripeSubscriptionID = stripeSub.ID
+		dbSub.Status = "active"
+		dbSub.NextBillingDate = zs.nextBillingDate()
+		if len(stripeSub.Items.Data) > 0 {
+			dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
+		}
+
+		if _, err = zs.repo.Update(dbSub); err != nil {
+			return err
+		}
+
+		logger.Logger.Infof("Handled subscription.created for user %s, stripe sub %s", userID, stripeSub.ID)
+		return nil
+	case "customer.subscription.updated":
+		var stripeSub stripe.Subscription
+		if err := json.Unmarshal(event.Data.Raw, &stripeSub); err != nil {
+			return err
+		}
+
+		userIDStr, ok := stripeSub.Metadata["user_id"]
+		if !ok || userIDStr == "" {
+			return err
+		}
+		userID, err := uuid.Parse(userIDStr)
+		if err != nil {
+			return err
+		}
+
+		dbSub, err := zs.repo.GetByUserID(userID)
+		if err != nil {
+			return err
+		}
+
+		dbSub.StripeSubscriptionID = stripeSub.ID
+		dbSub.Status = stripeSub.Status
+		dbSub.NextBillingDate = zs.nextBillingDate()
+		if len(stripeSub.Items.Data) > 0 {
+			dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
+		}
+
+		if _, err = zs.repo.Update(dbSub); err != nil {
+			return err
+		}
+
+		logger.Logger.Infof("Handled subscription.updated for user %s", userID)
+		return nil
+	case "customer.subscription.deleted":
+		var stripeSub stripe.Subscription
+		if err := json.Unmarshal(event.Data.Raw, &stripeSub); err != nil {
+			return err
+		}
+
+		dbSub, err := zs.repo.GetByStripeSubscriptionID(stripeSub.ID)
+		if err != nil {
+			return err
+		}
+
+		dbSub.Status = stripeSub.Status
+		if len(stripeSub.Items.Data) > 0 {
+			dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
+		}
+
+		if _, err = zs.repo.Update(dbSub); err != nil {
+			return err
+		}
+
+		logger.Logger.Infof("Handled subscription.deleted for stripe sub %s", stripeSub.ID)
+		return nil
+	default:
+		logger.Logger.Warnf("Unhandled Stripe webhook event type: %s", event.Type)
+		return nil
+	}
+}
+
+func (zs *zoneSubscriptionService) ensureCustomer(
+	userID uuid.UUID,
+	email string,
+	slots int,
+	existingSub *models.ZonesSubscriptions,
+) (sub *models.ZonesSubscriptions, err error) {
+	if existingSub != nil && existingSub.StripeCustomerID != "" {
+		return existingSub, nil
+	}
+
+	c, err := customer.New(&stripe.CustomerParams{
+		Email: stripe.String(email),
+		Metadata: map[string]string{
+			"user_id": userID.String(),
+		},
+	})
+	if err != nil {
+		logger.Logger.Errorf("Failed to create Stripe customer for user %s: %v", userID, err)
+		return nil, err
+	}
+
+	sub = &models.ZonesSubscriptions{
+		UserID:           userID,
+		StripeCustomerID: c.ID,
+		TotalSlots:       slots,
+		PricePerSlot:     decimal.NewFromFloat(zs.conf.Stripe.StripeZonePrice),
+		Status:           "pending",
+	}
+	if sub, err = zs.repo.Create(sub); err != nil {
+		logger.Logger.Errorf("Failed to create subscription DB record for user %s: %v", userID, err)
+		return nil, err
+	}
+
+	logger.Logger.Infof("Created Stripe customer %s for user %s", c.ID, userID)
+	return sub, nil
+}
+
+func (zs *zoneSubscriptionService) nextBillingDate() time.Time {
+	anchorDay := zs.conf.Stripe.StringBillingAnchorDay
+	now := time.Now().UTC()
+	candidate := time.Date(now.Year(), now.Month(), anchorDay, 0, 0, 0, 0, time.UTC)
+
+	if !candidate.After(now) {
+		candidate = time.Date(now.Year(), now.Month()+1, anchorDay, 0, 0, 0, 0, time.UTC)
+	}
+
+	if candidate.Month() != time.Month((now.Month()%12)+1) {
+		candidate = time.Date(candidate.Year(), candidate.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, 0, -1)
+	}
+
+	return candidate
+}

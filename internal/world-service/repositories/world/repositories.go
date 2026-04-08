@@ -34,5 +34,10 @@ type WorldRepository interface {
 	// GetWorldZone retrieves a specific zone for a world.
 	GetWorldZone(worldID uuid.UUID, zoneID int) (*models.WorldZone, error)
 
+	GetUserIdByWorldId(worldID uuid.UUID) (uuid.UUID, error)
+
+	// GetUserWorlds retrieves all worlds owned by a specific user.
+	GetTotalZonesCountByUserId(userId uuid.UUID) (int64, error)
+
 	ClearDatabase() error
 }
