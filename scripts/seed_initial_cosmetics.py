@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Get jwt token with:
-# curl -X POST localhost:8000/auth/login -H "Content-Type: text/json" -d '{"email": "admin@admin.admin", "password": "admin123"}' | jq -r '.data.access_token'
+# curl -X POST localhost:8000/auth/login -H "Content-Type: application/json" -d '{"email": "admin@admin.admin", "password": "admin123"}' | jq -r '.data.access_token'
 
 import getpass
 import os
@@ -32,7 +32,7 @@ SHARED_CATEGORY_SOURCES = {
 
 
 def usage() -> None:
-    print("Usage: seed_categories_and_sprites.py <SERVER_URL> <SPRITES_BASE_PATH>")
+    print("Usage: seed_initial_cosmetics.py <SERVER_URL> <SPRITES_BASE_PATH>")
     print("Reads token from JWT_TOKEN env var; if empty/unset, asks via stdin.")
 
 

@@ -236,7 +236,6 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 // @Description  Creates a cosmetic entry in the target category using the URL from an existing sprite ID.
 // @Tags         assets-service
 // @Security     BearerAuth
-// @Accept       json
 // @Produce      json
 // @Param        id path string true "Category UUID"
 // @Param        sprite_id path string true "Existing Sprite UUID"

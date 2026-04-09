@@ -37,17 +37,19 @@ func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, of
 		return nil, 0, err
 	}
 
+	if totalCount == 0 {
+		return nil, 0, assets_errors.NewCategoryNotFound("category not found")
+	}
+
 	var cosmetics []*models.Cosmetic
 	if err := cr.db.Conn.Where("category_id = ?", category).
 		Order("id ASC").
 		Offset(offset).
 		Limit(limit).
 		Find(&cosmetics).Error; err != nil {
-		if errors.IsRecordNotFound(err) {
-			return nil, 0, assets_errors.NewCategoryNotFound("category not found")
-		}
 		return nil, 0, err
 	}
+
 	return cosmetics, totalCount, nil
 }
 

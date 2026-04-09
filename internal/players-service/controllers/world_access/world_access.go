@@ -58,6 +58,9 @@ func (c *worldAccessController) IssueWorldJoinToken(ctx *gin.Context) {
 		if _, ok := err.(*player_errors.WorldJoinTokenInvalid); ok {
 			_ = ctx.Error(errors.NewBadRequestError(err.Error()))
 			return
+		} else if _, ok := err.(*player_errors.CharacterInfoNotFound); ok {
+			_ = ctx.Error(errors.NewForbiddenError("user does not have a character and cannot join worlds"))
+			return
 		}
 		_ = ctx.Error(err)
 		return
