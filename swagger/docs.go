@@ -129,6 +129,20 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 24,
+                        "description": "Pagination limit",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -182,6 +196,62 @@ const docTemplate = `{
                         "description": "Cosmetic File",
                         "name": "sprite",
                         "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CosmeticResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/cosmetics/categories/{id}/sprites/{sprite_id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a cosmetic entry in the target category using the URL from an existing sprite ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Link existing cosmetic by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Existing Sprite UUID",
+                        "name": "sprite_id",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -1585,6 +1655,114 @@ const docTemplate = `{
                 }
             }
         },
+        "/player/world-access/token": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a short-lived token tied to the current authenticated user and target world.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "players-service"
+                ],
+                "summary": "Issue one-time world join token",
+                "parameters": [
+                    {
+                        "description": "Issue world join token DTO",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.IssueWorldJoinTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.IssueWorldJoinTokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/world-access/token/consume": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Validates and burns a one-time token, returning the associated user ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "players-service"
+                ],
+                "summary": "Consume one-time world join token",
+                "parameters": [
+                    {
+                        "description": "Consume world join token DTO",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ConsumeWorldJoinTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ConsumeWorldJoinTokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/world": {
             "get": {
                 "security": [
@@ -2373,6 +2551,28 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.ConsumeWorldJoinTokenRequest": {
+            "type": "object",
+            "required": [
+                "token_id"
+            ],
+            "properties": {
+                "token_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ConsumeWorldJoinTokenResponse": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                },
+                "world_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.CosmeticCategoryListResponse": {
             "type": "object",
             "properties": {
@@ -2414,6 +2614,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dtos.CosmeticResponse"
                     }
+                },
+                "total_count": {
+                    "type": "integer"
                 }
             }
         },
@@ -2516,6 +2719,28 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.IssueWorldJoinTokenRequest": {
+            "type": "object",
+            "required": [
+                "world_id"
+            ],
+            "properties": {
+                "world_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.IssueWorldJoinTokenResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "token_id": {
                     "type": "string"
                 }
             }

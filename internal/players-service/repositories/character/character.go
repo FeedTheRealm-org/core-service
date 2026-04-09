@@ -50,6 +50,14 @@ func (cr *characterRepository) UpdateCategorySprites(newCategorySprites []models
 	}).Create(&newCategorySprites).Error
 }
 
+func (cr *characterRepository) DeleteCategorySprites(userId uuid.UUID, categoryIds []uuid.UUID) error {
+	if len(categoryIds) == 0 {
+		return nil
+	}
+
+	return cr.db.Conn.Where("user_id = ? AND category_id IN ?", userId, categoryIds).Delete(&models.CategorySprite{}).Error
+}
+
 func (cr *characterRepository) GetCategorySprites(userId uuid.UUID) ([]models.CategorySprite, error) {
 	var categorySprites []models.CategorySprite
 	if err := cr.db.Conn.Where("user_id = ?", userId).Find(&categorySprites).Error; err != nil {

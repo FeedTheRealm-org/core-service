@@ -76,7 +76,8 @@ services:
 
   buckets:
     image: python:3.12-alpine
-    command: python -m http.server 8000
+    init: true
+    command: ["python", "-m", "http.server", "8000"]
     working_dir: /buckets
     ports:
       - "8081:8000"

@@ -63,6 +63,7 @@ test-acceptance: # Execute only Python/behave acceptance tests
 clean: # Remove all containers and images
 	docker compose -f $(COMPOSE_DEV) down --remove-orphans -v
 	docker compose -f $(COMPOSE_TEST) down --remove-orphans -v
+	rm -rf local_buckets/
 .PHONY: clean
 
 swagger: # Generate Swagger documentation
