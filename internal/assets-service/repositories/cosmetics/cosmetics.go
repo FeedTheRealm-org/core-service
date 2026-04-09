@@ -38,7 +38,7 @@ func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, of
 	}
 
 	if totalCount == 0 {
-		return nil, 0, assets_errors.NewCategoryNotFound("category not found")
+		return []*models.Cosmetic{}, 0, nil
 	}
 
 	var cosmetics []*models.Cosmetic

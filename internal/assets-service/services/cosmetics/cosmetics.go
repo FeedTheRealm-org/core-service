@@ -5,6 +5,7 @@ import (
 	"mime/multipart"
 
 	"github.com/FeedTheRealm-org/core-service/config"
+	assets_errors "github.com/FeedTheRealm-org/core-service/internal/assets-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/cosmetics"
@@ -34,6 +35,10 @@ func (ss *cosmeticsService) GetCategoriesList() ([]*models.CosmeticCategory, err
 }
 
 func (ss *cosmeticsService) GetCosmeticsListByCategory(category uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
+	_, err := ss.cosmeticsRepository.GetCategoryById(category)
+	if err != nil {
+		return nil, 0, assets_errors.NewCategoryNotFound("category not found")
+	}
 	return ss.cosmeticsRepository.GetCosmeticsListByCategory(category, offset, limit)
 }
 

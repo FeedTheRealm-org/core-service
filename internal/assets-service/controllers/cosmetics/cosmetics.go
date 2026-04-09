@@ -109,7 +109,12 @@ func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 
 	cosmeticsList, totalCount, err := cc.cosmeticsService.GetCosmeticsListByCategory(categoryId, offset, limit)
 	if err != nil {
-		_ = c.Error(err)
+		switch err.(type) {
+		case *assets_errors.CategoryNotFound:
+			_ = c.Error(errors.NewNotFoundError("category not found"))
+		default:
+			_ = c.Error(err)
+		}
 		return
 	}
 
