@@ -154,7 +154,12 @@ func (cc *cosmeticsController) GetCosmeticById(c *gin.Context) {
 
 	cosmetic, err := cc.cosmeticsService.GetCosmeticById(cosmeticId)
 	if err != nil {
-		_ = c.Error(err)
+		switch err.(type) {
+		case *assets_errors.CosmeticNotFound:
+			_ = c.Error(errors.NewNotFoundError("cosmetic not found"))
+		default:
+			_ = c.Error(err)
+		}
 		return
 	}
 
