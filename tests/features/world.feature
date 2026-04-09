@@ -12,5 +12,5 @@ Feature: World Creation
     And other players should see the world in the world listings
 
   Scenario: AC-2 Name length validation error
-    Given I publish a world with name "Abc"
-    Then I should see an error message "world name must be between 6 and 24 characters"
+    Given I publish a world with name ""
+    Then I should see an error message "world name must be between 1 and 24 characters"
