@@ -18,9 +18,9 @@ Feature: World Models Management
 
   Scenario: AC-3 Cannot publish without World ID
     Given I publish world models without a world ID
-    Then I get the error "world id is required"
+    Then I get the error "invalid world_id format"
 
   Scenario: AC-4 Cannot publish without models
     Given I published a world with the name "fantasy.land"
     When I attempt to publish models without models
-    Then I get the error "models list cannot be empty"
+    Then I get the error "no models uploaded"
