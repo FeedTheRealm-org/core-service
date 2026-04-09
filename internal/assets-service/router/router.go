@@ -58,7 +58,7 @@ func SetupEndpointsForModelsService(conf *config.Config, db *config.DB, g *gin.R
 }
 
 func getNewBucketRepository(name string, conf *config.Config) (bucket.BucketRepository, error) {
-	if conf.Server.Environment == config.Development {
+	if conf.Server.Environment == config.Development || conf.Server.Environment == config.Testing {
 		return bucket.NewOnDiskBucketRepository(name, conf)
 	}
 	return bucket.NewAwsS3BucketRepository(name, conf)
