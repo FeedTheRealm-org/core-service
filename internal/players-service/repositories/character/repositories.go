@@ -16,6 +16,9 @@ type CharacterRepository interface {
 	// UpdateCategorySprites updates the category sprites for a user.
 	UpdateCategorySprites(newCategorySprite []models.CategorySprite) error
 
+	// DeleteCategorySprites removes category sprite rows for a user.
+	DeleteCategorySprites(userId uuid.UUID, categoryIds []uuid.UUID) error
+
 	// GetCategorySprites retrieves the category sprites for a user.
 	GetCategorySprites(userId uuid.UUID) ([]models.CategorySprite, error)
 }

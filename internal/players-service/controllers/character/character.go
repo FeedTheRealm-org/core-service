@@ -77,7 +77,8 @@ func (c *characterController) PatchCharacterInfo(ctx *gin.Context) {
 		CharacterBio:  req.CharacterBio,
 	}
 	categorySprites := models.MapToCategorySprites(userId, req.CategorySprites)
-	if err := c.characterService.UpdateCharacterInfo(userId, characterInfo, categorySprites); err != nil {
+	categorySpriteDeletes := models.MapToCategorySpriteDeletes(req.CategorySprites)
+	if err := c.characterService.UpdateCharacterInfo(userId, characterInfo, categorySprites, categorySpriteDeletes); err != nil {
 		if _, ok := err.(*player_errors.CharacterNameTaken); ok {
 			_ = ctx.Error(errors.NewConflictError("character name is already taken"))
 			return

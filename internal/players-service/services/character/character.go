@@ -21,14 +21,24 @@ func NewCharacterService(conf *config.Config, characterRepository character.Char
 	}
 }
 
-func (cs *characterService) UpdateCharacterInfo(userId uuid.UUID, newCharacterInfo *models.CharacterInfo, newCategorySprites []models.CategorySprite) error {
+func (cs *characterService) UpdateCharacterInfo(userId uuid.UUID, newCharacterInfo *models.CharacterInfo, newCategorySprites []models.CategorySprite, categorySpriteDeletes []uuid.UUID) error {
 	newCharacterInfo.UserId = userId
 	if err := cs.characterRepository.UpdateCharacterInfo(newCharacterInfo); err != nil {
 		return err
 	}
-	if err := cs.characterRepository.UpdateCategorySprites(newCategorySprites); err != nil {
-		return err
+
+	if len(categorySpriteDeletes) > 0 {
+		if err := cs.characterRepository.DeleteCategorySprites(userId, categorySpriteDeletes); err != nil {
+			return err
+		}
 	}
+
+	if len(newCategorySprites) > 0 {
+		if err := cs.characterRepository.UpdateCategorySprites(newCategorySprites); err != nil {
+			return err
+		}
+	}
+
 	logger.Logger.Infof("Character info updated for user ID: %s", userId)
 	return nil
 }

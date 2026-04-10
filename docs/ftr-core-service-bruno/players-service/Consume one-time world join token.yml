@@ -1,22 +1,13 @@
 info:
-  name: Publish new world
+  name: Consume one-time world join token
   type: http
-  seq: 2
+  seq: 5
   tags:
-    - world-service
+    - players-service
 
 http:
   method: POST
-  url: "{{baseUrl}}/world"
-  body:
-    type: json
-    data: |-
-      {
-        "file_name": "proofs.world",
-        "data": {
-          "atus": ""
-        }
-      }
+  url: "{{baseUrl}}/player/world-access/token/consume"
   auth: inherit
 
 settings:
@@ -26,21 +17,21 @@ settings:
   maxRedirects: 5
 
 examples:
-  - name: 201 Response
-    description: Created
+  - name: 200 Response
+    description: OK
     request:
-      url: "{{baseUrl}}/world"
+      url: "{{baseUrl}}/player/world-access/token/consume"
       method: POST
     response:
-      status: 201
-      statusText: Created
+      status: 200
+      statusText: OK
       body:
         type: text
         data: ""
   - name: 400 Response
     description: Bad Request
     request:
-      url: "{{baseUrl}}/world"
+      url: "{{baseUrl}}/player/world-access/token/consume"
       method: POST
     response:
       status: 400
@@ -51,7 +42,7 @@ examples:
   - name: 401 Response
     description: Unauthorized
     request:
-      url: "{{baseUrl}}/world"
+      url: "{{baseUrl}}/player/world-access/token/consume"
       method: POST
     response:
       status: 401
@@ -59,14 +50,14 @@ examples:
       body:
         type: text
         data: ""
-  - name: 409 Response
-    description: Conflict
+  - name: 404 Response
+    description: Not Found
     request:
-      url: "{{baseUrl}}/world"
+      url: "{{baseUrl}}/player/world-access/token/consume"
       method: POST
     response:
-      status: 409
-      statusText: Conflict
+      status: 404
+      statusText: Not Found
       body:
         type: text
         data: ""

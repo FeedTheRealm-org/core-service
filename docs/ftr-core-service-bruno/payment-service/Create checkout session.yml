@@ -1,20 +1,13 @@
 info:
-  name: Create a new account
+  name: Create checkout session
   type: http
-  seq: 6
+  seq: 1
   tags:
-    - authentication-service
+    - payment-service
 
 http:
   method: POST
-  url: "{{baseUrl}}/auth/signup"
-  body:
-    type: json
-    data: |-
-      {
-        "email": "mutrera@fi.uba.ar",
-        "password": "qwerty123"
-      }
+  url: "{{baseUrl}}/payments/checkout"
   auth: inherit
 
 settings:
@@ -24,21 +17,21 @@ settings:
   maxRedirects: 5
 
 examples:
-  - name: 201 Response
-    description: Created
+  - name: 200 Response
+    description: OK
     request:
-      url: "{{baseUrl}}/auth/signup"
+      url: "{{baseUrl}}/payments/checkout"
       method: POST
     response:
-      status: 201
-      statusText: Created
+      status: 200
+      statusText: OK
       body:
         type: text
         data: ""
   - name: 400 Response
     description: Bad Request
     request:
-      url: "{{baseUrl}}/auth/signup"
+      url: "{{baseUrl}}/payments/checkout"
       method: POST
     response:
       status: 400
@@ -49,7 +42,7 @@ examples:
   - name: 401 Response
     description: Unauthorized
     request:
-      url: "{{baseUrl}}/auth/signup"
+      url: "{{baseUrl}}/payments/checkout"
       method: POST
     response:
       status: 401
@@ -57,21 +50,10 @@ examples:
       body:
         type: text
         data: ""
-  - name: 409 Response
-    description: Conflict
-    request:
-      url: "{{baseUrl}}/auth/signup"
-      method: POST
-    response:
-      status: 409
-      statusText: Conflict
-      body:
-        type: text
-        data: ""
   - name: 500 Response
     description: Internal Server Error
     request:
-      url: "{{baseUrl}}/auth/signup"
+      url: "{{baseUrl}}/payments/checkout"
       method: POST
     response:
       status: 500

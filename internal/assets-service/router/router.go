@@ -27,10 +27,11 @@ func SetupEndpointsForCosmeticsService(conf *config.Config, db *config.DB, g *gi
 	cosmeticsGroup.GET("/categories/:id", cosmeticsController.GetCosmeticsListByCategory)
 	cosmeticsGroup.GET(":id", cosmeticsController.GetCosmeticById)
 	cosmeticsGroup.PUT("/categories/:id", cosmeticsController.UploadCosmeticData)
-	cosmeticsGroup.DELETE(":id", cosmeticsController.DeleteCosmetic)
+	cosmeticsGroup.PUT("/categories/:id/sprites/:sprite_id", cosmeticsController.UploadCosmeticByID)
 
 	/* ADMIN ONLY */
 	cosmeticsGroup.POST("/categories", middleware.AdminCheckMiddleware(), cosmeticsController.AddCategory)
+	cosmeticsGroup.DELETE(":id", middleware.AdminCheckMiddleware(), cosmeticsController.DeleteCosmetic)
 }
 
 func SetupEndpointsForItemsService(conf *config.Config, db *config.DB, g *gin.RouterGroup, itemsBucketRepo bucket.BucketRepository) {
