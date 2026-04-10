@@ -18,7 +18,7 @@ func SetupPlayerServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 	characterService := character_service.NewCharacterService(conf, characterRepo)
 	characterController := character_controller.NewCharacterController(conf, characterService)
 	worldAccessRepo := world_access_repo.NewWorldAccessRepository(conf, db)
-	worldAccessService := world_access_service.NewWorldAccessService(conf, worldAccessRepo)
+	worldAccessService := world_access_service.NewWorldAccessService(conf, worldAccessRepo, characterRepo)
 	worldAccessController := world_access_controller.NewWorldAccessController(conf, worldAccessService)
 
 	characterGroup := g.Group("/character")

@@ -229,9 +229,6 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Creates a cosmetic entry in the target category using the URL from an existing sprite ID.",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],

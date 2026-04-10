@@ -109,7 +109,12 @@ func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 
 	cosmeticsList, totalCount, err := cc.cosmeticsService.GetCosmeticsListByCategory(categoryId, offset, limit)
 	if err != nil {
-		_ = c.Error(err)
+		switch err.(type) {
+		case *assets_errors.CategoryNotFound:
+			_ = c.Error(errors.NewNotFoundError("category not found"))
+		default:
+			_ = c.Error(err)
+		}
 		return
 	}
 
@@ -154,7 +159,12 @@ func (cc *cosmeticsController) GetCosmeticById(c *gin.Context) {
 
 	cosmetic, err := cc.cosmeticsService.GetCosmeticById(cosmeticId)
 	if err != nil {
-		_ = c.Error(err)
+		switch err.(type) {
+		case *assets_errors.CosmeticNotFound:
+			_ = c.Error(errors.NewNotFoundError("cosmetic not found"))
+		default:
+			_ = c.Error(err)
+		}
 		return
 	}
 
@@ -236,7 +246,6 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 // @Description  Creates a cosmetic entry in the target category using the URL from an existing sprite ID.
 // @Tags         assets-service
 // @Security     BearerAuth
-// @Accept       json
 // @Produce      json
 // @Param        id path string true "Category UUID"
 // @Param        sprite_id path string true "Existing Sprite UUID"

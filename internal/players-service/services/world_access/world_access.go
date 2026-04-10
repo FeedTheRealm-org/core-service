@@ -7,6 +7,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	player_errors "github.com/FeedTheRealm-org/core-service/internal/players-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/players-service/models"
+	"github.com/FeedTheRealm-org/core-service/internal/players-service/repositories/character"
 	"github.com/FeedTheRealm-org/core-service/internal/players-service/repositories/world_access"
 	"github.com/google/uuid"
 )
@@ -16,13 +17,27 @@ const worldJoinTokenTTL = 5 * time.Minute
 type worldAccessService struct {
 	conf                  *config.Config
 	worldAccessRepository world_access.WorldAccessRepository
+	characterRepository   character.CharacterRepository
 }
 
-func NewWorldAccessService(conf *config.Config, worldAccessRepository world_access.WorldAccessRepository) WorldAccessService {
-	return &worldAccessService{conf: conf, worldAccessRepository: worldAccessRepository}
+func NewWorldAccessService(
+	conf *config.Config,
+	worldAccessRepository world_access.WorldAccessRepository,
+	characterRepository character.CharacterRepository,
+) WorldAccessService {
+	return &worldAccessService{
+		conf:                  conf,
+		worldAccessRepository: worldAccessRepository,
+		characterRepository:   characterRepository,
+	}
 }
 
 func (ws *worldAccessService) IssueWorldJoinToken(userId uuid.UUID, worldId string) (*models.WorldJoinToken, error) {
+	_, err := ws.characterRepository.GetCharacterInfo(userId)
+	if err != nil {
+		return nil, err
+	}
+
 	trimmedWorldId := strings.TrimSpace(worldId)
 	if trimmedWorldId == "" {
 		return nil, player_errors.NewWorldJoinTokenInvalid("world_id is required")

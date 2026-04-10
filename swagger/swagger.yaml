@@ -575,8 +575,6 @@ paths:
       - assets-service
   /assets/cosmetics/categories/{id}/sprites/{sprite_id}:
     put:
-      consumes:
-      - application/json
       description: Creates a cosmetic entry in the target category using the URL from
         an existing sprite ID.
       parameters:

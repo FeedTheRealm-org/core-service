@@ -58,6 +58,9 @@ func (c *worldAccessController) IssueWorldJoinToken(ctx *gin.Context) {
 		if _, ok := err.(*player_errors.WorldJoinTokenInvalid); ok {
 			_ = ctx.Error(errors.NewBadRequestError(err.Error()))
 			return
+		} else if _, ok := err.(*player_errors.CharacterInfoNotFound); ok {
+			_ = ctx.Error(errors.NewForbiddenError("user does not have a character and cannot join worlds"))
+			return
 		}
 		_ = ctx.Error(err)
 		return
@@ -100,20 +103,16 @@ func (c *worldAccessController) ConsumeWorldJoinToken(ctx *gin.Context) {
 		switch err.(type) {
 		case *player_errors.WorldJoinTokenInvalid:
 			_ = ctx.Error(errors.NewBadRequestError(err.Error()))
-			return
 		case *player_errors.WorldJoinTokenExpired:
 			_ = ctx.Error(errors.NewBadRequestError(err.Error()))
-			return
 		case *player_errors.WorldJoinTokenConsumed:
 			_ = ctx.Error(errors.NewBadRequestError(err.Error()))
-			return
 		case *player_errors.WorldJoinTokenNotFound:
 			_ = ctx.Error(errors.NewNotFoundError(err.Error()))
-			return
 		default:
 			_ = ctx.Error(err)
-			return
 		}
+		return
 	}
 
 	res := &dtos.ConsumeWorldJoinTokenResponse{
