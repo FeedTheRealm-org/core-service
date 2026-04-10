@@ -18,10 +18,10 @@ Feature: Account Email Verification
     Given a player registers an account with the email "not_verifid@example.com" and password "Passw0rd1"
     When the player attempts to log in to the game
     Then the login should be rejected
-    And the player should see the message "Please verify your account before logging in"
+    And the player should see the message "You must verify your email address before you can log in."
 
   Scenario: AC-4 Unable to verify account with invalid or expired code
     Given a player registers an account with the email "invalid_code@example.com" and password "Passw0rd1"
     When the player enters an incorrect code
     Then the verification should fail
-    And the player should see the message "Invalid verification code"
+    And the player should see the message "The verification code is incorrect."

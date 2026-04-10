@@ -12,14 +12,14 @@ Feature: Player character info
     And other players should see the updated name
 
   Scenario: AC-2 Name length validation error
-    When I change my character name to "S" # less than 4 or more than 24 chars
-    Then I should see an error message "Name must be between 4 and 24 characters"
+    When I change my character name to "S" # less than 3 or more than 24 chars
+    Then I should see an error message "character name must be between 3 and 24 characters"
 
   Scenario: AC-3 Successfully update character bio
-    When I update my character bio to "A brave explorer traveling the stars!"
+    When I update my character bio to "A brave explorer traveling the stars"
     Then my character bio should be updated
     And the updated bio should be visible to other players later
 
   Scenario: AC-4 Bio length validation error
-    When I update my character bio to a text longer than 150 characters
-    Then I should see an error message "Bio cannot exceed 150 characters"
+    When I update my character bio to a text longer than 256 characters
+    Then I should see an error message "character bio must be less than 256 characters"

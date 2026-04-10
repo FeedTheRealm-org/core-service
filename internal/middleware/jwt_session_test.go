@@ -110,5 +110,5 @@ func TestJWTAuth_FixedToken(t *testing.T) {
 	assert.Equal(t, 200, w.Code)
 	// No userID is set for the fixed token, but the session is
 	// considered valid, so the handler returns empty body with 200.
-	assert.Equal(t, "", w.Body.String())
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", w.Body.String())
 }

@@ -35,13 +35,30 @@ dev: # Starts containers detatched and starts interactive shell in app container
 	docker compose -f $(COMPOSE_DEV) down
 .PHONY: dev
 
-test: # Execute all tests
+test: # Execute all tests (unit + acceptance)
+	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
+	docker compose -f $(COMPOSE_TEST) --profile acceptance build
+	docker compose -f $(COMPOSE_TEST) up -d --remove-orphans
+	docker compose -f $(COMPOSE_TEST) exec -T app sh run_tests.sh
+	docker compose -f $(COMPOSE_TEST) --profile acceptance run --rm python-tests
+	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
+.PHONY: test
+
+test-unit: # Execute only Go unit tests
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
 	docker compose -f $(COMPOSE_TEST) build
 	docker compose -f $(COMPOSE_TEST) up -d --remove-orphans
-	docker compose -f $(COMPOSE_TEST) exec -T app-dev sh run_tests.sh
+	docker compose -f $(COMPOSE_TEST) exec -T app sh run_tests.sh
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
-.PHONY: test
+.PHONY: test-unit
+
+test-acceptance: # Execute only Python/behave acceptance tests
+	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
+	docker compose -f $(COMPOSE_TEST) --profile acceptance build
+	docker compose -f $(COMPOSE_TEST) up -d --remove-orphans
+	docker compose -f $(COMPOSE_TEST) --profile acceptance run --rm python-tests
+	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
+.PHONY: test-acceptance
 
 clean: # Remove all containers and images
 	docker compose -f $(COMPOSE_DEV) down --remove-orphans -v

@@ -41,6 +41,8 @@ FROM builder AS test
 
 WORKDIR /usr/src/app
 
+COPY ./scripts/run_tests.sh .
+COPY migrations ./migrations
 COPY --from=builder /usr/local/bin/app /usr/src/app/app
 
 RUN chmod +x run_tests.sh

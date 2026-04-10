@@ -25,7 +25,7 @@ func (mr *modelsRepository) UploadModels(modelsList []assetModels.Model) ([]asse
 	logger.Logger.Infof("REPO: Uploading %d models to the database", len(modelsList))
 
 	for _, model := range modelsList {
-		result := mr.db.Conn.Save(model)
+		result := mr.db.Conn.Save(&model)
 		if result.Error != nil {
 			logger.Logger.Errorf("REPO: Failed to upload model %s: %v", model.Id, result.Error)
 			return nil, result.Error

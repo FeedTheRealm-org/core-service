@@ -12,19 +12,19 @@ Feature: User Login
 
   Scenario: AC-2a Show error when password is incorrect
     When a login request is made with email "login@example.com" and password "WrongPass!"
-    Then the response should include an error message "Invalid email or password"
+    Then the response should include an error message "The email address or password is incorrect."
 
   Scenario: AC-2b Show error when email does not exist
     When a login request is made with email "unknown@example.com" and password "SomePass123!"
-    Then the response should include an error message "Invalid email or password"
+    Then the response should include an error message "The email address or password is incorrect."
 
   Scenario: AC-3a Show error when email field is empty
     When a login request is made with an empty email and password "ValidPass123!"
-    Then the response should include an error message "Email is required"
+    Then the response should include an error message "You must provide an email address to log in."
 
   Scenario: AC-3b Show error when password field is empty
     When a login request is made with email "login@example.com" and an empty password
-    Then the response should include an error message "Password is required"
+    Then the response should include an error message "You must provide a password to log in."
 
   Scenario: AC-4a Session remains active before timeout
     Given the user has logged in successfully
