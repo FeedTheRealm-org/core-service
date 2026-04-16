@@ -29,16 +29,28 @@ func (cr *cosmeticsRepository) GetCategoriesList() ([]*models.CosmeticCategory, 
 	return categories, nil
 }
 
-func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID) ([]*models.Cosmetic, error) {
+func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
+	var totalCount int64
+	if err := cr.db.Conn.Model(&models.Cosmetic{}).
+		Where("category_id = ?", category).
+		Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if totalCount == 0 {
+		return []*models.Cosmetic{}, 0, nil
+	}
+
 	var cosmetics []*models.Cosmetic
 	if err := cr.db.Conn.Where("category_id = ?", category).
+		Order("id ASC").
+		Offset(offset).
+		Limit(limit).
 		Find(&cosmetics).Error; err != nil {
-		if errors.IsRecordNotFound(err) {
-			return nil, assets_errors.NewCategoryNotFound("category not found")
-		}
-		return nil, err
+		return nil, 0, err
 	}
-	return cosmetics, nil
+
+	return cosmetics, totalCount, nil
 }
 
 func (cr *cosmeticsRepository) GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error) {

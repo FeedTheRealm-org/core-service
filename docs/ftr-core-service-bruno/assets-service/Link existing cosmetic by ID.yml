@@ -1,0 +1,88 @@
+info:
+  name: Link existing cosmetic by ID
+  type: http
+  seq: 7
+  tags:
+    - assets-service
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/assets/cosmetics/categories/:id/sprites/:sprite_id"
+  params:
+    - name: id
+      value: ""
+      type: path
+      description: Category UUID
+    - name: sprite_id
+      value: ""
+      type: path
+      description: Existing Sprite UUID
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 201 Response
+    description: Created
+    request:
+      url: "{{baseUrl}}/assets/cosmetics/categories/:id/sprites/:sprite_id"
+      method: PUT
+      params:
+        - name: id
+          value: ""
+          type: path
+          description: Category UUID
+        - name: sprite_id
+          value: ""
+          type: path
+          description: Existing Sprite UUID
+    response:
+      status: 201
+      statusText: Created
+      body:
+        type: text
+        data: ""
+  - name: 400 Response
+    description: Bad Request
+    request:
+      url: "{{baseUrl}}/assets/cosmetics/categories/:id/sprites/:sprite_id"
+      method: PUT
+      params:
+        - name: id
+          value: ""
+          type: path
+          description: Category UUID
+        - name: sprite_id
+          value: ""
+          type: path
+          description: Existing Sprite UUID
+    response:
+      status: 400
+      statusText: Bad Request
+      body:
+        type: text
+        data: ""
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/assets/cosmetics/categories/:id/sprites/:sprite_id"
+      method: PUT
+      params:
+        - name: id
+          value: ""
+          type: path
+          description: Category UUID
+        - name: sprite_id
+          value: ""
+          type: path
+          description: Existing Sprite UUID
+    response:
+      status: 401
+      statusText: Unauthorized
+      body:
+        type: text
+        data: ""

@@ -48,3 +48,22 @@ func MapToCategorySprites(userId uuid.UUID, spriteMap map[string]string) []Categ
 	}
 	return sprites
 }
+
+// MapToCategorySpriteDeletes returns category IDs that should be unequipped.
+func MapToCategorySpriteDeletes(spriteMap map[string]string) []uuid.UUID {
+	categoryIds := make([]uuid.UUID, 0)
+	for categoryId, spriteId := range spriteMap {
+		if spriteId != "" {
+			continue
+		}
+
+		categoryUUID, err := uuid.Parse(categoryId)
+		if err != nil {
+			continue
+		}
+
+		categoryIds = append(categoryIds, categoryUUID)
+	}
+
+	return categoryIds
+}

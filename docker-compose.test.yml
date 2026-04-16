@@ -8,11 +8,7 @@ services:
       - "8000:8000"
     environment:
       - SERVER_ENVIRONMENT=testing
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=test_db
-      - DB_PORT=5432
-      - DB_NAME=postgres
+      - DATABASE_URL=postgresql://postgres:postgres@test_db:5432/postgres
       - DB_SHOULD_MIGRATE=true
       - SESSION_TOKEN_SECRET_KEY=test_secret_key
       - SESSION_TOKEN_DURATION=1h
@@ -21,6 +17,20 @@ services:
         condition: service_healthy
     networks:
       - app-network
+
+  python-tests:
+    build:
+      context: ./tests
+      dockerfile: Dockerfile
+    environment:
+      - APP_BASE_URL=http://app:8000
+    depends_on:
+      - app
+    networks:
+      - app-network
+    profiles:
+      - acceptance
+
   test_db:
     image: postgres:17-alpine
     environment:
@@ -34,6 +44,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
 networks:
   app-network:
     driver: bridge
