@@ -322,6 +322,7 @@ func (zs *zoneSubscriptionService) ensureCustomer(
 		TotalSlots:       slots,
 		PricePerSlot:     decimal.NewFromFloat(zs.conf.Stripe.StripeZonePrice),
 		Status:           "pending",
+		NextBillingDate:  zs.nextBillingDate(),
 	}
 	if sub, err = zs.repo.Create(sub); err != nil {
 		logger.Logger.Errorf("Failed to create subscription DB record for user %s: %v", userID, err)
@@ -333,17 +334,19 @@ func (zs *zoneSubscriptionService) ensureCustomer(
 }
 
 func (zs *zoneSubscriptionService) nextBillingDate() time.Time {
-	anchorDay := zs.conf.Stripe.StringBillingAnchorDay
-	now := time.Now().UTC()
-	candidate := time.Date(now.Year(), now.Month(), anchorDay, 0, 0, 0, 0, time.UTC)
+	loc := time.FixedZone("UTC-3", -3*60*60)
+	anchorDay := 5
 
+	now := time.Now().In(loc)
+
+	candidate := time.Date(now.Year(), now.Month(), anchorDay, 0, 0, 0, 0, loc)
 	if !candidate.After(now) {
-		candidate = time.Date(now.Year(), now.Month()+1, anchorDay, 0, 0, 0, 0, time.UTC)
+		candidate = time.Date(now.Year(), now.Month()+1, anchorDay, 0, 0, 0, 0, loc)
 	}
 
-	if candidate.Month() != time.Month((now.Month()%12)+1) {
-		candidate = time.Date(candidate.Year(), candidate.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, 0, -1)
-	}
-
-	return candidate
+	return time.Date(
+		candidate.Year(), candidate.Month(), candidate.Day(),
+		0, 0, 0, 0,
+		loc,
+	)
 }
