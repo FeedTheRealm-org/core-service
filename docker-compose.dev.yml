@@ -86,15 +86,25 @@ services:
     volumes:
       - ./local_buckets:/buckets
 
-  stripe-webhook-dev:
+  stripe-payments-dev:
     <<: *stripe-base
     profiles: ["dev"]
     command: listen --forward-to app-dev:8000/payments/webhook/stripe
 
-  stripe-webhook-prod:
+  stripe-payments-prod:
     <<: *stripe-base
     profiles: ["prod"]
     command: listen --forward-to app-prod:8000/payments/webhook/stripe
+
+  stripe-subscriptions-dev:
+    <<: *stripe-base
+    profiles: ["dev"]
+    command: listen --forward-to app-dev:8000/payments/webhook/stripe/subscriptions
+
+  stripe-subscriptions-prod:
+    <<: *stripe-base
+    profiles: ["prod"]
+    command: listen --forward-to app-prod:8000/payments/webhook/stripe/subscriptions
 
 networks:
   dev-app-network:
