@@ -23,10 +23,9 @@ func NewZonesSubscriptionsController(conf *config.Config, zonesSubscriptionsServ
 }
 
 func (zc *subscriptionController) CreateCheckoutSession(c *gin.Context) {
-	userID, err := uuid.Parse(c.GetString("user_id"))
+	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
-		logger.Logger.Error("Failed to parse user_id from context: " + err.Error())
-		_ = c.Error(errors.NewBadRequestError("Invalid user_id in context"))
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
 		return
 	}
 
@@ -103,17 +102,16 @@ func (zc *subscriptionController) CancelSubscription(c *gin.Context) {
 }
 
 func (zc *subscriptionController) GetStatus(c *gin.Context) {
-	userID, err := uuid.Parse(c.GetString("user_id"))
+	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
-		logger.Logger.Error("Failed to parse user_id from context: " + err.Error())
-		_ = c.Error(errors.NewBadRequestError("Invalid user_id in context"))
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
 		return
 	}
 
 	sub, err := zc.zonesSubscriptionsService.GetByUserID(userID)
 	if err != nil {
-		logger.Logger.Error("Failed to get subscription status for user " + userID.String() + ": " + err.Error())
-		_ = c.Error(errors.NewInternalServerError("Failed to get subscription status: " + err.Error()))
+		logger.Logger.Warn("User " + userID.String() + " does not have an active subscription")
+		_ = c.Error(errors.NewNotFoundError("User does not have an active subscription"))
 		return
 	}
 
