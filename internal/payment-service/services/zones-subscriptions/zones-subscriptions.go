@@ -43,17 +43,28 @@ func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, email
 		return "", err
 	}
 
+	stripeParamsPriceData := &stripe.CheckoutSessionLineItemPriceDataParams{
+		Currency: stripe.String("usd"),
+		ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+			Name: stripe.String("Zone"),
+		},
+		UnitAmount: stripe.Int64(500),
+		Recurring: &stripe.CheckoutSessionLineItemPriceDataRecurringParams{
+			Interval: stripe.String(string(stripe.PriceRecurringIntervalMonth)),
+		},
+	}
+
+	stripeParamsSession := &stripe.CheckoutSessionLineItemParams{
+		PriceData: stripeParamsPriceData,
+		Quantity:  stripe.Int64(1),
+	}
+
 	params := &stripe.CheckoutSessionParams{
 		SuccessURL: stripe.String(successURL),
 		CancelURL:  stripe.String(cancelURL),
 		Mode:       stripe.String(string(stripe.CheckoutSessionModeSubscription)),
-		LineItems: []*stripe.CheckoutSessionLineItemParams{
-			{
-				Price:    stripe.String(zs.conf.Stripe.StripeZonePriceID),
-				Quantity: stripe.Int64(int64(slots)),
-			},
-		},
-		Customer: stripe.String(sub.StripeCustomerID),
+		LineItems:  []*stripe.CheckoutSessionLineItemParams{stripeParamsSession},
+		Customer:   stripe.String(sub.StripeCustomerID),
 		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
 			BillingCycleAnchor: stripe.Int64(zs.nextBillingDate().Unix()),
 			Metadata: map[string]string{
