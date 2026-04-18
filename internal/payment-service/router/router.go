@@ -62,6 +62,7 @@ func SetupSubscriptionsServiceRouter(conf *config.Config, db *config.DB, payment
 	// Internal routes bypassed by JWT
 	internalGroup := subscriptionGroup.Group("/internal")
 	internalGroup.GET("/users/:user_id/status", zonesSubscriptionsController.CheckInternalAvailability)
+	internalGroup.PUT("/users/:user_id/used-slots", zonesSubscriptionsController.InternalUpdateUsedSlots)
 }
 
 func SetupPaymentServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {

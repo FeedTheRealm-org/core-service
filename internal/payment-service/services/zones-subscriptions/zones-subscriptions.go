@@ -2,6 +2,7 @@ package zones_subscriptions
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
@@ -19,6 +20,12 @@ import (
 	"github.com/stripe/stripe-go/v84/subscriptionitem"
 	"github.com/stripe/stripe-go/v84/webhook"
 )
+
+type CannotExceedTotalSlotsError struct{}
+
+func (e *CannotExceedTotalSlotsError) Error() string {
+	return "used slots cannot exceed total slots"
+}
 
 type zoneSubscriptionService struct {
 	conf *config.Config
@@ -97,10 +104,14 @@ func (zs *zoneSubscriptionService) UpdateSlots(userID uuid.UUID, newSlots int) (
 	}
 
 	if sub.StripeSubscriptionID == "" {
-		return nil, err
+		return nil, fmt.Errorf("subscription not found for user")
 	}
 	if sub.Status != stripe.SubscriptionStatusActive {
-		return nil, err
+		return nil, fmt.Errorf("subscription is not active")
+	}
+
+	if newSlots < sub.UsedSlots {
+		return nil, &CannotExceedTotalSlotsError{}
 	}
 
 	stripeSub, err := subscription.Get(sub.StripeSubscriptionID, nil)
@@ -126,6 +137,35 @@ func (zs *zoneSubscriptionService) UpdateSlots(userID uuid.UUID, newSlots int) (
 	return sub, nil
 }
 
+func (zs *zoneSubscriptionService) UpdateUsedSlots(userID uuid.UUID, slots int, areUsed bool) error {
+	logger.Logger.Infof("Updating used slots for user %s, slots: %d, areUsed: %v", userID, slots, areUsed)
+
+	sub, err := zs.repo.GetByUserID(userID)
+	if err != nil {
+		logger.Logger.Errorf("Subscription not found for user %s: %v", userID, err)
+		return err
+	}
+
+	if areUsed {
+		sub.UsedSlots += slots
+	} else {
+		sub.UsedSlots -= slots
+	}
+
+	if sub.UsedSlots < 0 {
+		sub.UsedSlots = 0
+	}
+	if sub.UsedSlots > sub.TotalSlots {
+		return &CannotExceedTotalSlotsError{}
+	}
+
+	if _, err := zs.repo.Update(sub); err != nil {
+		logger.Logger.Errorf("Failed to update used slots for user %s: %v", userID, err)
+		return err
+	}
+	return nil
+}
+
 func (zs *zoneSubscriptionService) GetByUserID(userID uuid.UUID) (*models.ZonesSubscriptions, error) {
 	sub, err := zs.repo.GetByUserID(userID)
 	if err != nil {
@@ -146,7 +186,7 @@ func (zs *zoneSubscriptionService) GetByUserID(userID uuid.UUID) (*models.ZonesS
 	return sub, nil
 }
 
-func (zs *zoneSubscriptionService) CheckAvalibility(userID uuid.UUID, requiredSlots int) (bool, int, error) {
+func (zs *zoneSubscriptionService) CheckAvalibility(userID uuid.UUID) (bool, int, error) {
 	sub, err := zs.repo.GetByUserID(userID)
 	if err != nil {
 		return false, 0, err
@@ -156,11 +196,7 @@ func (zs *zoneSubscriptionService) CheckAvalibility(userID uuid.UUID, requiredSl
 		return false, 0, nil
 	}
 
-	if sub.TotalSlots-sub.UsedSlots < requiredSlots {
-		return false, sub.TotalSlots, nil
-	}
-
-	return true, sub.TotalSlots, nil
+	return (sub.TotalSlots - sub.UsedSlots) > 0, max(sub.TotalSlots-sub.UsedSlots, 0), nil
 }
 
 func (zs *zoneSubscriptionService) CancelSubscription(userID uuid.UUID) (*models.ZonesSubscriptions, error) {

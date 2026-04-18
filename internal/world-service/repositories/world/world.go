@@ -161,9 +161,9 @@ func (r *worldRepository) ClearDatabase() error {
 }
 
 func (r *worldRepository) GetUserIdByWorldId(worldID uuid.UUID) (uuid.UUID, error) {
-	var userId uuid.UUID
-	err := r.db.Conn.Model(&models.WorldData{}).Select("user_id").Where("id = ?", worldID).Scan(&userId).Error
-	return userId, err
+	var world models.WorldData
+	err := r.db.Conn.Select("user_id").Where("id = ?", worldID).First(&world).Error
+	return world.UserId, err
 }
 
 func (r *worldRepository) GetTotalZonesCountByUserId(userId uuid.UUID) (int64, error) {

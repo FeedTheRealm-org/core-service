@@ -1,16 +1,18 @@
 package zones_subscriptions
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
-	"github.com/FeedTheRealm-org/core-service/internal/errors"
+	custom_errors "github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/payment-service/dtos"
 	zones_subscriptions "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/zones-subscriptions"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type subscriptionController struct {
@@ -24,20 +26,20 @@ func NewZonesSubscriptionsController(conf *config.Config, zonesSubscriptionsServ
 func (zc *subscriptionController) CreateCheckoutSession(c *gin.Context) {
 	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		_ = c.Error(custom_errors.NewUnauthorizedError(err.Error()))
 		return
 	}
 
 	var req dtos.CheckoutSessionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))
+		_ = c.Error(custom_errors.NewBadRequestError("invalid request body: " + err.Error()))
 		return
 	}
 
 	url, err := zc.zonesSubscriptionsService.CreateCheckoutSession(userID, req.Slots, req.SuccessUrl, req.CancelUrl)
 	if err != nil {
 		logger.Logger.Error("Failed to create checkout session for user " + userID.String() + ": " + err.Error())
-		_ = c.Error(errors.NewInternalServerError("Failed to create checkout session for user: " + err.Error()))
+		_ = c.Error(custom_errors.NewInternalServerError("Failed to create checkout session for user: " + err.Error()))
 		return
 	}
 
@@ -48,20 +50,26 @@ func (zc *subscriptionController) UpdateSlots(c *gin.Context) {
 	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		logger.Logger.Error("Failed to parse user_id from context: " + err.Error())
-		_ = c.Error(errors.NewBadRequestError("Invalid user_id in context"))
+		_ = c.Error(custom_errors.NewBadRequestError("Invalid user_id in context"))
 		return
 	}
 
 	var req dtos.UpdateSubscriptionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))
+		_ = c.Error(custom_errors.NewBadRequestError("invalid request body: " + err.Error()))
 		return
 	}
 
 	sub, err := zc.zonesSubscriptionsService.UpdateSlots(userID, req.Slots)
 	if err != nil {
+		logger.Logger.Info(err.Error())
+		if _, ok := err.(*zones_subscriptions.CannotExceedTotalSlotsError); ok {
+			logger.Logger.Warnf("User %s attempted to reduce slots to %d, but is currently using more slots than that", userID.String(), req.Slots)
+			_ = c.Error(custom_errors.NewBadRequestError(fmt.Sprintf("cannot reduce slots to %d because you are currently using more than that. Please delete some zones first", req.Slots)))
+			return
+		}
 		logger.Logger.Error("Failed to update subscription slots for user " + userID.String() + ": " + err.Error())
-		_ = c.Error(errors.NewInternalServerError("Failed to update subscription slots: " + err.Error()))
+		_ = c.Error(custom_errors.NewInternalServerError("Failed to update subscription slots: " + err.Error()))
 		return
 	}
 
@@ -79,14 +87,14 @@ func (zc *subscriptionController) CancelSubscription(c *gin.Context) {
 	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		logger.Logger.Error("Failed to parse user_id from context: " + err.Error())
-		_ = c.Error(errors.NewBadRequestError("Invalid user_id in context"))
+		_ = c.Error(custom_errors.NewBadRequestError("Invalid user_id in context"))
 		return
 	}
 
 	sub, err := zc.zonesSubscriptionsService.CancelSubscription(userID)
 	if err != nil {
 		logger.Logger.Error("Failed to cancel subscription for user " + userID.String() + ": " + err.Error())
-		_ = c.Error(errors.NewInternalServerError("Failed to cancel subscription: " + err.Error()))
+		_ = c.Error(custom_errors.NewInternalServerError("Failed to cancel subscription: " + err.Error()))
 		return
 	}
 
@@ -103,14 +111,14 @@ func (zc *subscriptionController) CancelSubscription(c *gin.Context) {
 func (zc *subscriptionController) GetStatus(c *gin.Context) {
 	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		_ = c.Error(custom_errors.NewUnauthorizedError(err.Error()))
 		return
 	}
 
 	sub, err := zc.zonesSubscriptionsService.GetByUserID(userID)
 	if err != nil {
 		logger.Logger.Warn("User " + userID.String() + " does not have an active subscription")
-		_ = c.Error(errors.NewNotFoundError("User does not have an active subscription"))
+		_ = c.Error(custom_errors.NewNotFoundError("User does not have an active subscription"))
 		return
 	}
 
@@ -125,30 +133,49 @@ func (zc *subscriptionController) GetStatus(c *gin.Context) {
 }
 
 func (zc *subscriptionController) CheckInternalAvailability(c *gin.Context) {
-	userID, err := common_handlers.GetUserIDFromSession(c)
+	userIdStr := c.Param("user_id")
+	userID, err := uuid.Parse(userIdStr)
 	if err != nil {
-		logger.Logger.Error("Failed to parse user_id from context: " + err.Error())
-		_ = c.Error(errors.NewBadRequestError("Invalid user_id in context"))
+		logger.Logger.Error("Failed to parse user_id from param: " + err.Error())
+		_ = c.Error(custom_errors.NewBadRequestError("Invalid user_id in path"))
 		return
 	}
 
-	var req dtos.InternalSlotsCheckRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))
-		return
-	}
-
-	allowed, totalSlots, err := zc.zonesSubscriptionsService.CheckAvalibility(userID, req.RequiredSlots)
+	allowed, freeSlots, err := zc.zonesSubscriptionsService.CheckAvalibility(userID)
 	if err != nil {
-		logger.Logger.Warn("User " + userID.String() + " does not have an active subscription")
-		_ = c.Error(errors.NewUnauthorizedError("User does not have an active subscription"))
+		logger.Logger.Warn("User " + userID.String() + " does not have an active subscription: " + err.Error())
+		_ = c.Error(custom_errors.NewUnauthorizedError("User does not have an active subscription"))
 		return
 	}
 
 	common_handlers.HandleSuccessResponse(c, 200, dtos.InternalSlotsCheckResponse{
-		Allowed:    allowed,
-		TotalSlots: totalSlots,
+		Allowed:   allowed,
+		FreeSlots: freeSlots,
 	})
+}
+
+func (zc *subscriptionController) InternalUpdateUsedSlots(c *gin.Context) {
+	userIdStr := c.Param("user_id")
+	userID, err := uuid.Parse(userIdStr)
+	if err != nil {
+		logger.Logger.Error("Failed to parse user_id from param: " + err.Error())
+		_ = c.Error(custom_errors.NewBadRequestError("Invalid user_id in path"))
+		return
+	}
+
+	var req dtos.InternalUpdateUsedSlotsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		_ = c.Error(custom_errors.NewBadRequestError("invalid request body: " + err.Error()))
+		return
+	}
+
+	if err := zc.zonesSubscriptionsService.UpdateUsedSlots(userID, req.Slots, req.AreUsed); err != nil {
+		logger.Logger.Error("Failed to update used slots: " + err.Error())
+		_ = c.Error(custom_errors.NewBadRequestError(err.Error()))
+		return
+	}
+
+	common_handlers.HandleSuccessResponse(c, 200, gin.H{"status": "ok"})
 }
 
 func (zc *subscriptionController) HandleWebhook(c *gin.Context) {
@@ -156,18 +183,18 @@ func (zc *subscriptionController) HandleWebhook(c *gin.Context) {
 
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("failed to read request body"))
+		_ = c.Error(custom_errors.NewBadRequestError("failed to read request body"))
 		return
 	}
 
 	signature := c.GetHeader("Stripe-Signature")
 	if signature == "" {
-		_ = c.Error(errors.NewBadRequestError("missing Stripe-Signature header"))
+		_ = c.Error(custom_errors.NewBadRequestError("missing Stripe-Signature header"))
 		return
 	}
 
 	if err := zc.zonesSubscriptionsService.HandleWebhook(body, signature); err != nil {
-		_ = c.Error(errors.NewInternalServerError("cannot process webhook: " + err.Error()))
+		_ = c.Error(custom_errors.NewInternalServerError("cannot process webhook: " + err.Error()))
 		return
 	}
 

@@ -30,11 +30,12 @@ type SubscriptionStatusResponse struct {
 	AmountDue       decimal.Decimal           `json:"amount_due"`
 }
 
-type InternalSlotsCheckRequest struct {
-	RequiredSlots int `json:"required_slots" validate:"required"`
+type InternalSlotsCheckResponse struct {
+	Allowed   bool `json:"allowed"`
+	FreeSlots int  `json:"free_slots"`
 }
 
-type InternalSlotsCheckResponse struct {
-	Allowed    bool `json:"allowed"`
-	TotalSlots int  `json:"total_slots"`
+type InternalUpdateUsedSlotsRequest struct {
+	Slots   int  `json:"slots" binding:"required"`
+	AreUsed bool `json:"are_used"`
 }
