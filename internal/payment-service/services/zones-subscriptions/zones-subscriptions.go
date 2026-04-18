@@ -64,7 +64,7 @@ func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, slots
 
 	stripeParamsSession := &stripe.CheckoutSessionLineItemParams{
 		PriceData: stripeParamsPriceData,
-		Quantity:  stripe.Int64(1),
+		Quantity:  stripe.Int64((int64)(slots)),
 	}
 
 	params := &stripe.CheckoutSessionParams{
