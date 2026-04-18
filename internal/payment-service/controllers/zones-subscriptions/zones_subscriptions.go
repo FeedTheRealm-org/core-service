@@ -94,7 +94,7 @@ func (zc *subscriptionController) CancelSubscription(c *gin.Context) {
 	sub, err := zc.zonesSubscriptionsService.CancelSubscription(userID)
 	if err != nil {
 		logger.Logger.Error("Failed to cancel subscription for user " + userID.String() + ": " + err.Error())
-		_ = c.Error(custom_errors.NewInternalServerError("Failed to cancel subscription: " + err.Error()))
+		_ = c.Error(custom_errors.NewBadRequestError("Failed to cancel subscription: " + err.Error()))
 		return
 	}
 

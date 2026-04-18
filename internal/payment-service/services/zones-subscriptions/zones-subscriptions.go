@@ -208,11 +208,15 @@ func (zs *zoneSubscriptionService) CancelSubscription(userID uuid.UUID) (*models
 	}
 
 	if sub.StripeSubscriptionID == "" {
-		return nil, err
+		return nil, fmt.Errorf("subscription not found for user")
 	}
 
 	if sub.Status != stripe.SubscriptionStatusActive {
-		return nil, err
+		return nil, fmt.Errorf("subscription is not active")
+	}
+
+	if sub.UsedSlots > 0 {
+		return nil, fmt.Errorf("cannot cancel subscription because %d slots are currently in use. Please delete your zones first", sub.UsedSlots)
 	}
 
 	params := &stripe.SubscriptionCancelParams{
