@@ -11,7 +11,6 @@ import (
 	zones_subscriptions "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/zones-subscriptions"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type subscriptionController struct {
@@ -35,7 +34,7 @@ func (zc *subscriptionController) CreateCheckoutSession(c *gin.Context) {
 		return
 	}
 
-	url, err := zc.zonesSubscriptionsService.CreateCheckoutSession(userID, req.Email, req.Slots, req.SuccessUrl, req.CancelUrl)
+	url, err := zc.zonesSubscriptionsService.CreateCheckoutSession(userID, req.Slots, req.SuccessUrl, req.CancelUrl)
 	if err != nil {
 		logger.Logger.Error("Failed to create checkout session for user " + userID.String() + ": " + err.Error())
 		_ = c.Error(errors.NewInternalServerError("Failed to create checkout session for user: " + err.Error()))
@@ -46,7 +45,7 @@ func (zc *subscriptionController) CreateCheckoutSession(c *gin.Context) {
 }
 
 func (zc *subscriptionController) UpdateSlots(c *gin.Context) {
-	userID, err := uuid.Parse(c.GetString("user_id"))
+	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		logger.Logger.Error("Failed to parse user_id from context: " + err.Error())
 		_ = c.Error(errors.NewBadRequestError("Invalid user_id in context"))
@@ -71,13 +70,13 @@ func (zc *subscriptionController) UpdateSlots(c *gin.Context) {
 		UsedSlots:       sub.UsedSlots,
 		Status:          sub.Status,
 		NextBillingDate: sub.NextBillingDate,
-		PricePerSlot:    sub.PricePerSlot,
+		AmountDue:       sub.AmountDue,
 	}
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
 
 func (zc *subscriptionController) CancelSubscription(c *gin.Context) {
-	userID, err := uuid.Parse(c.GetString("user_id"))
+	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		logger.Logger.Error("Failed to parse user_id from context: " + err.Error())
 		_ = c.Error(errors.NewBadRequestError("Invalid user_id in context"))
@@ -96,7 +95,7 @@ func (zc *subscriptionController) CancelSubscription(c *gin.Context) {
 		UsedSlots:       sub.UsedSlots,
 		Status:          sub.Status,
 		NextBillingDate: sub.NextBillingDate,
-		PricePerSlot:    sub.PricePerSlot,
+		AmountDue:       sub.AmountDue,
 	}
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
@@ -120,13 +119,13 @@ func (zc *subscriptionController) GetStatus(c *gin.Context) {
 		UsedSlots:       sub.UsedSlots,
 		Status:          sub.Status,
 		NextBillingDate: sub.NextBillingDate,
-		PricePerSlot:    sub.PricePerSlot,
+		AmountDue:       sub.AmountDue,
 	}
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
 
 func (zc *subscriptionController) CheckInternalAvailability(c *gin.Context) {
-	userID, err := uuid.Parse(c.GetString("user_id"))
+	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		logger.Logger.Error("Failed to parse user_id from context: " + err.Error())
 		_ = c.Error(errors.NewBadRequestError("Invalid user_id in context"))

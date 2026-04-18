@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS zones_subscriptions (
   stripe_subscription_id VARCHAR(255),
   total_slots            INT         NOT NULL DEFAULT 0,
   used_slots             INT         NOT NULL DEFAULT 0,
-  price_per_slot         DECIMAL(10,2) NOT NULL,
+  amount_due             DECIMAL(10,2) NOT NULL DEFAULT 0,
   status                 VARCHAR(50) NOT NULL DEFAULT 'inactive',
   next_billing_date      TIMESTAMPTZ,
   created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),

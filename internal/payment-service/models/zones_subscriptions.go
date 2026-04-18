@@ -15,7 +15,7 @@ type ZonesSubscriptions struct {
 	StripeSubscriptionID string                    `json:"stripe_subscription_id" gorm:"type:varchar(255)"`
 	TotalSlots           int                       `json:"total_slots" gorm:"type:int;not null;default:0"`
 	UsedSlots            int                       `json:"used_slots" gorm:"type:int;not null;default:0"`
-	PricePerSlot         decimal.Decimal           `json:"price_per_slot" gorm:"type:decimal(10,2);not null"`
+	AmountDue            decimal.Decimal           `json:"amount_due" gorm:"type:decimal(10,2);not null"`
 	Status               stripe.SubscriptionStatus `json:"status" gorm:"type:varchar(50);not null;default:'inactive'"`
 	NextBillingDate      time.Time                 `json:"next_billing_date"`
 	CreatedAt            time.Time                 `json:"created_at"`

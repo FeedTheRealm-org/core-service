@@ -14,6 +14,7 @@ import (
 	stripe "github.com/stripe/stripe-go/v84"
 	"github.com/stripe/stripe-go/v84/checkout/session"
 	"github.com/stripe/stripe-go/v84/customer"
+	"github.com/stripe/stripe-go/v84/invoice"
 	"github.com/stripe/stripe-go/v84/subscription"
 	"github.com/stripe/stripe-go/v84/subscriptionitem"
 	"github.com/stripe/stripe-go/v84/webhook"
@@ -29,16 +30,16 @@ func NewSubscriptionService(conf *config.Config, repo zones_subscriptions.ZonesS
 	return &zoneSubscriptionService{conf: conf, repo: repo}
 }
 
-func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, email string, slots int, successURL string, cancelURL string) (string, error) {
+func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, slots int, successURL string, cancelURL string) (string, error) {
 	logger.Logger.Infof("Creating checkout session for user %s (%d slots)", userID, slots)
 
 	sub, err := zs.repo.GetByUserID(userID)
-	if err == nil && sub != nil && sub.Status == "active" {
+	if err == nil && sub != nil && sub.Status == stripe.SubscriptionStatusActive {
 		logger.Logger.Warnf("User %s already has an active subscription", userID)
 		return "", err
 	}
 
-	sub, err = zs.ensureCustomer(userID, email, slots, sub)
+	sub, err = zs.ensureCustomer(userID, slots, sub)
 	if err != nil {
 		return "", err
 	}
@@ -67,6 +68,7 @@ func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, email
 		Customer:   stripe.String(sub.StripeCustomerID),
 		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
 			BillingCycleAnchor: stripe.Int64(zs.nextBillingDate().Unix()),
+			ProrationBehavior:  stripe.String("create_prorations"),
 			Metadata: map[string]string{
 				"user_id": userID.String(),
 			},
@@ -97,7 +99,7 @@ func (zs *zoneSubscriptionService) UpdateSlots(userID uuid.UUID, newSlots int) (
 	if sub.StripeSubscriptionID == "" {
 		return nil, err
 	}
-	if sub.Status != "active" {
+	if sub.Status != stripe.SubscriptionStatusActive {
 		return nil, err
 	}
 
@@ -113,17 +115,10 @@ func (zs *zoneSubscriptionService) UpdateSlots(userID uuid.UUID, newSlots int) (
 
 	_, err = subscriptionitem.Update(stripeSub.Items.Data[0].ID, &stripe.SubscriptionItemParams{
 		Quantity:          stripe.Int64(int64(newSlots)),
-		ProrationBehavior: stripe.String("none"),
+		ProrationBehavior: stripe.String("create_prorations"),
 	})
 	if err != nil {
 		logger.Logger.Errorf("Failed to update Stripe subscription item for user %s: %v", userID, err)
-		return nil, err
-	}
-
-	sub.TotalSlots = newSlots
-	sub, err = zs.repo.Update(sub)
-	if err != nil {
-		logger.Logger.Errorf("Failed to update subscription record for user %s after slot update: %v", userID, err)
 		return nil, err
 	}
 
@@ -136,6 +131,18 @@ func (zs *zoneSubscriptionService) GetByUserID(userID uuid.UUID) (*models.ZonesS
 	if err != nil {
 		return nil, err
 	}
+
+	amountDue, err := zs.getNextInvoiceAmount(userID)
+	if err != nil {
+		logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s during subscription deletion: %v", userID, err)
+		return nil, err
+	}
+	sub.AmountDue = amountDue
+
+	if _, err = zs.repo.Update(sub); err != nil {
+		return nil, err
+	}
+
 	return sub, nil
 }
 
@@ -222,11 +229,10 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		}
 
 		dbSub.StripeSubscriptionID = stripeSub.ID
-		dbSub.Status = "active"
+		dbSub.Status = stripe.SubscriptionStatusActive
 		dbSub.NextBillingDate = zs.nextBillingDate()
-		if len(stripeSub.Items.Data) > 0 {
-			dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
-		}
+		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
+		dbSub.AmountDue = decimal.NewFromInt(5)
 
 		if _, err = zs.repo.Update(dbSub); err != nil {
 			return err
@@ -257,9 +263,14 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		dbSub.StripeSubscriptionID = stripeSub.ID
 		dbSub.Status = stripeSub.Status
 		dbSub.NextBillingDate = zs.nextBillingDate()
-		if len(stripeSub.Items.Data) > 0 {
-			dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
+		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
+
+		amountDue, err := zs.getNextInvoiceAmount(dbSub.UserID)
+		if err != nil {
+			logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s during subscription deletion: %v", dbSub.UserID, err)
+			return err
 		}
+		dbSub.AmountDue = amountDue
 
 		if _, err = zs.repo.Update(dbSub); err != nil {
 			return err
@@ -279,9 +290,14 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		}
 
 		dbSub.Status = stripeSub.Status
-		if len(stripeSub.Items.Data) > 0 {
-			dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
+		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
+
+		amountDue, err := zs.getNextInvoiceAmount(dbSub.UserID)
+		if err != nil {
+			logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s during subscription deletion: %v", dbSub.UserID, err)
+			return err
 		}
+		dbSub.AmountDue = amountDue
 
 		if _, err = zs.repo.Update(dbSub); err != nil {
 			return err
@@ -295,9 +311,24 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 	}
 }
 
+func (zs *zoneSubscriptionService) getNextInvoiceAmount(userID uuid.UUID) (decimal.Decimal, error) {
+	sub, err := zs.repo.GetByUserID(userID)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	inv, err := invoice.CreatePreview(&stripe.InvoiceCreatePreviewParams{
+		Subscription: stripe.String(sub.StripeSubscriptionID),
+	})
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	return decimal.NewFromInt(inv.AmountDue).Div(decimal.NewFromInt(100)), nil
+}
+
 func (zs *zoneSubscriptionService) ensureCustomer(
 	userID uuid.UUID,
-	email string,
 	slots int,
 	existingSub *models.ZonesSubscriptions,
 ) (sub *models.ZonesSubscriptions, err error) {
@@ -306,7 +337,6 @@ func (zs *zoneSubscriptionService) ensureCustomer(
 	}
 
 	c, err := customer.New(&stripe.CustomerParams{
-		Email: stripe.String(email),
 		Metadata: map[string]string{
 			"user_id": userID.String(),
 		},
@@ -320,7 +350,7 @@ func (zs *zoneSubscriptionService) ensureCustomer(
 		UserID:           userID,
 		StripeCustomerID: c.ID,
 		TotalSlots:       slots,
-		PricePerSlot:     decimal.NewFromFloat(zs.conf.Stripe.StripeZonePrice),
+		AmountDue:        decimal.NewFromFloat(zs.conf.Stripe.StripeZonePrice).Mul(decimal.NewFromInt(int64(slots))),
 		Status:           "pending",
 		NextBillingDate:  zs.nextBillingDate(),
 	}
@@ -334,19 +364,28 @@ func (zs *zoneSubscriptionService) ensureCustomer(
 }
 
 func (zs *zoneSubscriptionService) nextBillingDate() time.Time {
-	loc := time.FixedZone("UTC-3", -3*60*60)
+	loc, _ := time.LoadLocation("America/Argentina/Buenos_Aires")
 	anchorDay := 5
 
 	now := time.Now().In(loc)
 
-	candidate := time.Date(now.Year(), now.Month(), anchorDay, 0, 0, 0, 0, loc)
-	if !candidate.After(now) {
-		candidate = time.Date(now.Year(), now.Month()+1, anchorDay, 0, 0, 0, 0, loc)
-	}
-
-	return time.Date(
-		candidate.Year(), candidate.Month(), candidate.Day(),
-		0, 0, 0, 0,
+	candidate := time.Date(
+		now.Year(),
+		now.Month(),
+		anchorDay,
+		12, 0, 0, 0,
 		loc,
 	)
+
+	if !candidate.After(now) {
+		candidate = time.Date(
+			now.Year(),
+			now.Month()+1,
+			anchorDay,
+			12, 0, 0, 0,
+			loc,
+		)
+	}
+
+	return candidate.UTC()
 }

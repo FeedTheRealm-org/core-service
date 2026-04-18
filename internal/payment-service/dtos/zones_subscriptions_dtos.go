@@ -14,7 +14,6 @@ type SubscriptionRequest struct {
 
 type CheckoutSessionRequest struct {
 	Slots      int    `json:"slots" validate:"required"`
-	Email      string `json:"email" validate:"required,email"`
 	SuccessUrl string `json:"success_url" validate:"required"`
 	CancelUrl  string `json:"cancel_url" validate:"required"`
 }
@@ -28,7 +27,7 @@ type SubscriptionStatusResponse struct {
 	UsedSlots       int                       `json:"used_slots"`
 	Status          stripe.SubscriptionStatus `json:"status"` // active, trailing, canceled
 	NextBillingDate time.Time                 `json:"next_billing_date"`
-	PricePerSlot    decimal.Decimal           `json:"price_per_slot"`
+	AmountDue       decimal.Decimal           `json:"amount_due"`
 }
 
 type InternalSlotsCheckRequest struct {
