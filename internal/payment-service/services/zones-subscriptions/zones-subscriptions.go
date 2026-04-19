@@ -404,8 +404,11 @@ func (zs *zoneSubscriptionService) ensureCustomer(
 }
 
 func (zs *zoneSubscriptionService) nextBillingDate() time.Time {
-	loc, _ := time.LoadLocation("America/Argentina/Buenos_Aires")
-	anchorDay := 5
+	loc, err := time.LoadLocation(zs.conf.Stripe.StripeBillingTimezone)
+	if err != nil {
+		loc = time.UTC
+	}
+	anchorDay := zs.conf.Stripe.StripeBillingAnchorDay
 
 	now := time.Now().In(loc)
 

@@ -42,7 +42,8 @@ type StripeConfig struct {
 	StripeWebhookSecret    string
 	StripeZonePrice        float64
 	StripeZonePriceID      string
-	StringBillingAnchorDay int
+	StripeBillingAnchorDay int
+	StripeBillingTimezone  string
 }
 
 type Config struct {
@@ -94,7 +95,8 @@ func CreateConfig() *Config {
 		StripeWebhookSecret:    os.Getenv("STRIPE_WEBHOOK_SECRET"),
 		StripeZonePrice:        getEnvOrDefaultFloat("STRIPE_ZONE_PRICE", 5.00),
 		StripeZonePriceID:      os.Getenv("STRIPE_ZONE_PRICE_ID"),
-		StringBillingAnchorDay: getEnvOrDefaultInt("STRIPE_BILLING_ANCHOR_DAY", 5),
+		StripeBillingAnchorDay: getEnvOrDefaultInt("STRIPE_BILLING_ANCHOR_DAY", 5),
+		StripeBillingTimezone:  getEnvOrDefaultString("STRIPE_BILLING_TIMEZONE", "America/Argentina/Buenos_Aires"),
 	}
 
 	return &Config{
