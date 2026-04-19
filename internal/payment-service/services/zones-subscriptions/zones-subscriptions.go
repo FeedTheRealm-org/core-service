@@ -429,3 +429,7 @@ func (zs *zoneSubscriptionService) nextBillingDate() time.Time {
 
 	return candidate.UTC()
 }
+
+func (zs *zoneSubscriptionService) GetPricingInfo() (float64, time.Time) {
+	return zs.conf.Stripe.StripeZonePrice, zs.nextBillingDate()
+}

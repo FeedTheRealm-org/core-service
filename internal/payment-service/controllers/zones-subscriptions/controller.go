@@ -7,6 +7,7 @@ type ZonesSubscriptionsController interface {
 	UpdateSlots(c *gin.Context)
 	CancelSubscription(c *gin.Context)
 	GetStatus(c *gin.Context)
+	GetPricingInfo(c *gin.Context)
 	CheckInternalAvailability(c *gin.Context)
 	InternalUpdateUsedSlots(c *gin.Context)
 	HandleWebhook(c *gin.Context)

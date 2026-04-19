@@ -45,7 +45,7 @@ func SetupBalancesServiceRouter(conf *config.Config, db *config.DB, paymentGroup
 	paymentGroup.POST("/webhook/stripe", gemBalancesController.HandleStripeWebhook)
 }
 
-func SetupSubscriptionsServiceRouter(conf *config.Config, db *config.DB, paymentGroup *gin.RouterGroup, subscriptionGroup *gin.RouterGroup) {
+func SetupSubscriptionsServiceRouter(conf *config.Config, db *config.DB, subscriptionGroup *gin.RouterGroup) {
 	zonesSubscriptionsRepo := zones_subscriptions_repo.NewSubscriptionRepository(conf, db)
 	zonesSubscriptionsService := zones_subscriptions_service.NewSubscriptionService(conf, zonesSubscriptionsRepo)
 	zonesSubscriptionsController := zones_subscriptions_controller.NewZonesSubscriptionsController(conf, zonesSubscriptionsService)
@@ -54,10 +54,11 @@ func SetupSubscriptionsServiceRouter(conf *config.Config, db *config.DB, payment
 	subscriptionGroup.POST("/checkout", zonesSubscriptionsController.CreateCheckoutSession)
 	subscriptionGroup.PUT("/slots", zonesSubscriptionsController.UpdateSlots)
 	subscriptionGroup.GET("/status", zonesSubscriptionsController.GetStatus)
+	subscriptionGroup.GET("/pricing", zonesSubscriptionsController.GetPricingInfo)
 	subscriptionGroup.DELETE("", zonesSubscriptionsController.CancelSubscription)
 
 	// Webhook for Subscriptions
-	paymentGroup.POST("/webhook/stripe/subscriptions", zonesSubscriptionsController.HandleWebhook)
+	subscriptionGroup.POST("/webhook/stripe", zonesSubscriptionsController.HandleWebhook)
 
 	// Internal routes bypassed by JWT
 	internalGroup := subscriptionGroup.Group("/internal")
@@ -67,12 +68,12 @@ func SetupSubscriptionsServiceRouter(conf *config.Config, db *config.DB, payment
 
 func SetupPaymentServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	paymentGroup := r.Group("/payments")
+	subscriptionGroup := r.Group("/subscriptions")
 	gemsGroup := paymentGroup.Group("/gems")
-	subscriptionGroup := paymentGroup.Group("/subscriptions")
 
 	SetupGemPacksServiceRouter(conf, db, gemsGroup)
 	SetupBalancesServiceRouter(conf, db, paymentGroup, gemsGroup)
-	SetupSubscriptionsServiceRouter(conf, db, paymentGroup, subscriptionGroup)
+	SetupSubscriptionsServiceRouter(conf, db, subscriptionGroup)
 
 	return nil
 }

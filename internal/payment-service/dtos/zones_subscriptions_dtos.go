@@ -2,9 +2,6 @@ package dtos
 
 import (
 	"time"
-
-	"github.com/shopspring/decimal"
-	"github.com/stripe/stripe-go/v84"
 )
 
 type SubscriptionRequest struct {
@@ -23,11 +20,11 @@ type UpdateSubscriptionRequest struct {
 }
 
 type SubscriptionStatusResponse struct {
-	Slots           int                       `json:"slots"`
-	UsedSlots       int                       `json:"used_slots"`
-	Status          stripe.SubscriptionStatus `json:"status"` // active, trailing, canceled
-	NextBillingDate time.Time                 `json:"next_billing_date"`
-	AmountDue       decimal.Decimal           `json:"amount_due"`
+	Slots           int       `json:"slots"`
+	UsedSlots       int       `json:"used_slots"`
+	Status          string    `json:"status"`
+	NextBillingDate time.Time `json:"next_billing_date"`
+	AmountDue       float64   `json:"amount_due"`
 }
 
 type InternalSlotsCheckResponse struct {
@@ -38,4 +35,9 @@ type InternalSlotsCheckResponse struct {
 type InternalUpdateUsedSlotsRequest struct {
 	Slots   int  `json:"slots" binding:"required"`
 	AreUsed bool `json:"are_used"`
+}
+
+type PricingInfoResponse struct {
+	PricePerSlot    float64   `json:"price_per_slot"`
+	NextBillingDate time.Time `json:"next_billing_date"`
 }

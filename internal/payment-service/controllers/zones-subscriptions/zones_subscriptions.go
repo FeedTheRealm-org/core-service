@@ -73,12 +73,14 @@ func (zc *subscriptionController) UpdateSlots(c *gin.Context) {
 		return
 	}
 
+	amountDue, _ := sub.AmountDue.Float64()
+
 	res := &dtos.SubscriptionStatusResponse{
 		Slots:           sub.TotalSlots,
 		UsedSlots:       sub.UsedSlots,
-		Status:          sub.Status,
+		Status:          string(sub.Status),
 		NextBillingDate: sub.NextBillingDate,
-		AmountDue:       sub.AmountDue,
+		AmountDue:       amountDue,
 	}
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
@@ -98,12 +100,14 @@ func (zc *subscriptionController) CancelSubscription(c *gin.Context) {
 		return
 	}
 
+	amountDue, _ := sub.AmountDue.Float64()
+
 	res := &dtos.SubscriptionStatusResponse{
 		Slots:           sub.TotalSlots,
 		UsedSlots:       sub.UsedSlots,
-		Status:          sub.Status,
+		Status:          string(sub.Status),
 		NextBillingDate: sub.NextBillingDate,
-		AmountDue:       sub.AmountDue,
+		AmountDue:       amountDue,
 	}
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
@@ -122,12 +126,14 @@ func (zc *subscriptionController) GetStatus(c *gin.Context) {
 		return
 	}
 
+	amountDue, _ := sub.AmountDue.Float64()
+
 	res := &dtos.SubscriptionStatusResponse{
 		Slots:           sub.TotalSlots,
 		UsedSlots:       sub.UsedSlots,
-		Status:          sub.Status,
+		Status:          string(sub.Status),
 		NextBillingDate: sub.NextBillingDate,
-		AmountDue:       sub.AmountDue,
+		AmountDue:       amountDue,
 	}
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
@@ -199,4 +205,15 @@ func (zc *subscriptionController) HandleWebhook(c *gin.Context) {
 	}
 
 	common_handlers.HandleSuccessResponse(c, 200, &dtos.WebhookResponse{})
+}
+
+func (zc *subscriptionController) GetPricingInfo(c *gin.Context) {
+	price, nextBilling := zc.zonesSubscriptionsService.GetPricingInfo()
+
+	res := &dtos.PricingInfoResponse{
+		PricePerSlot:    price,
+		NextBillingDate: nextBilling,
+	}
+
+	common_handlers.HandleSuccessResponse(c, 200, res)
 }

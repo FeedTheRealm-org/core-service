@@ -69,7 +69,7 @@ func (cs *worldService) CheckAvaliableZonesForPublish(worldId uuid.UUID, zoneId 
 		return wErr
 	}
 
-	url := fmt.Sprintf("http://127.0.0.1:%d/payments/subscriptions/internal/users/%s/status", cs.conf.Server.Port, userId)
+	url := fmt.Sprintf("http://127.0.0.1:%d/subscriptions/internal/users/%s/status", cs.conf.Server.Port, userId)
 	resp, httpErr := http.Get(url)
 	if httpErr != nil {
 		return errors.New("failed to reach payment service to verify slots")
@@ -114,7 +114,7 @@ func (cs *worldService) UpdateUsedSlots(userId uuid.UUID, numberOfSlots int, are
 		return err
 	}
 
-	url := fmt.Sprintf("http://127.0.0.1:%d/payments/subscriptions/internal/users/%s/used-slots", cs.conf.Server.Port, userId)
+	url := fmt.Sprintf("http://127.0.0.1:%d/subscriptions/internal/users/%s/used-slots", cs.conf.Server.Port, userId)
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return err

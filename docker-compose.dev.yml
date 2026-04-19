@@ -99,12 +99,12 @@ services:
   stripe-subscriptions-dev:
     <<: *stripe-base
     profiles: ["dev"]
-    command: listen --forward-to app-dev:8000/payments/webhook/stripe/subscriptions
+    command: listen --forward-to app-dev:8000/subscriptions/webhook/stripe
 
   stripe-subscriptions-prod:
     <<: *stripe-base
     profiles: ["prod"]
-    command: listen --forward-to app-prod:8000/payments/webhook/stripe/subscriptions
+    command: listen --forward-to app-prod:8000/subscriptions/webhook/stripe
 
 networks:
   dev-app-network:
