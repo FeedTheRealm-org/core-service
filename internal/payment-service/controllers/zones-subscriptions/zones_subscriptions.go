@@ -23,6 +23,19 @@ func NewZonesSubscriptionsController(conf *config.Config, zonesSubscriptionsServ
 	return &subscriptionController{zonesSubscriptionsService: zonesSubscriptionsService}
 }
 
+// CreateCheckoutSession godoc
+// @Summary      Create subscription checkout session
+// @Description  Creates a Stripe checkout session for a zone subscription.
+// @Tags         payment-service-subscriptions
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      dtos.CheckoutSessionRequest  true  "Checkout session request payload"
+// @Success      200      {object}  dtos.CheckoutResponse
+// @Failure      400      {object}  dtos.ErrorResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
+// @Router       /subscriptions/checkout [post]
 func (zc *subscriptionController) CreateCheckoutSession(c *gin.Context) {
 	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -46,6 +59,19 @@ func (zc *subscriptionController) CreateCheckoutSession(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, &dtos.CheckoutResponse{CheckoutUrl: url})
 }
 
+// UpdateSlots godoc
+// @Summary      Update subscription slots
+// @Description  Updates the total number of slots in the active subscription.
+// @Tags         payment-service-subscriptions
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      dtos.UpdateSubscriptionRequest  true  "Update subscription slots payload"
+// @Success      200      {object}  dtos.SubscriptionStatusResponse
+// @Failure      400      {object}  dtos.ErrorResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
+// @Router       /subscriptions/slots [put]
 func (zc *subscriptionController) UpdateSlots(c *gin.Context) {
 	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -85,6 +111,17 @@ func (zc *subscriptionController) UpdateSlots(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
 
+// CancelSubscription godoc
+// @Summary      Cancel subscription
+// @Description  Cancels the user's active subscription if no slots are being used.
+// @Tags         payment-service-subscriptions
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200      {object}  dtos.SubscriptionStatusResponse
+// @Failure      400      {object}  dtos.ErrorResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
+// @Router       /subscriptions [delete]
 func (zc *subscriptionController) CancelSubscription(c *gin.Context) {
 	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -112,6 +149,17 @@ func (zc *subscriptionController) CancelSubscription(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
 
+// GetStatus godoc
+// @Summary      Get subscription status
+// @Description  Retrieves the active subscription status for the user.
+// @Tags         payment-service-subscriptions
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200      {object}  dtos.SubscriptionStatusResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      404      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
+// @Router       /subscriptions/status [get]
 func (zc *subscriptionController) GetStatus(c *gin.Context) {
 	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
@@ -138,6 +186,17 @@ func (zc *subscriptionController) GetStatus(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
 
+// CheckInternalAvailability godoc
+// @Summary      Internal slots availability check
+// @Description  Internal endpoint used by world-service to verify available spots.
+// @Tags         payment-service-subscriptions
+// @Security     ServerFixedToken
+// @Produce      json
+// @Param        user_id  path      string  true  "User ID"
+// @Success      200      {object}  dtos.InternalSlotsCheckResponse
+// @Failure      400      {object}  dtos.ErrorResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Router       /subscriptions/internal/users/{user_id}/status [get]
 func (zc *subscriptionController) CheckInternalAvailability(c *gin.Context) {
 	userIdStr := c.Param("user_id")
 	userID, err := uuid.Parse(userIdStr)
@@ -160,6 +219,19 @@ func (zc *subscriptionController) CheckInternalAvailability(c *gin.Context) {
 	})
 }
 
+// InternalUpdateUsedSlots godoc
+// @Summary      Internal modify used slots count
+// @Description  Internal endpoint used by world-service to add or remove consumed slots for a user.
+// @Tags         payment-service-subscriptions
+// @Security     ServerFixedToken
+// @Accept       json
+// @Produce      json
+// @Param        user_id  path      string                               true  "User ID"
+// @Param        request  body      dtos.InternalUpdateUsedSlotsRequest  true  "Slots payload"
+// @Success      200      {object}  map[string]string
+// @Failure      400      {object}  dtos.ErrorResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Router       /subscriptions/internal/users/{user_id}/used-slots [put]
 func (zc *subscriptionController) InternalUpdateUsedSlots(c *gin.Context) {
 	userIdStr := c.Param("user_id")
 	userID, err := uuid.Parse(userIdStr)
@@ -184,6 +256,16 @@ func (zc *subscriptionController) InternalUpdateUsedSlots(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, gin.H{"status": "ok"})
 }
 
+// HandleWebhook godoc
+// @Summary      Handle Stripe webhook for Subscriptions
+// @Description  Processes Stripe webhook events for subscriptions changes/cancellations.
+// @Tags         payment-service-subscriptions
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  dtos.WebhookResponse
+// @Failure      400  {object}  dtos.ErrorResponse
+// @Failure      500  {object}  dtos.ErrorResponse
+// @Router       /subscriptions/webhook/stripe [post]
 func (zc *subscriptionController) HandleWebhook(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(65536))
 
@@ -207,6 +289,15 @@ func (zc *subscriptionController) HandleWebhook(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, &dtos.WebhookResponse{})
 }
 
+// GetPricingInfo godoc
+// @Summary      Get price metrics and dates
+// @Description  Return the price per slot alongside the next system-wide billing date.
+// @Tags         payment-service-subscriptions
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {object}  dtos.PricingInfoResponse
+// @Failure      500  {object}  dtos.ErrorResponse
+// @Router       /subscriptions/pricing [get]
 func (zc *subscriptionController) GetPricingInfo(c *gin.Context) {
 	price, nextBilling := zc.zonesSubscriptionsService.GetPricingInfo()
 

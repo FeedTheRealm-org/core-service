@@ -1753,6 +1753,379 @@
                 }
             }
         },
+        "/subscriptions": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cancels the user's active subscription if no slots are being used.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service-subscriptions"
+                ],
+                "summary": "Cancel subscription",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SubscriptionStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/checkout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a Stripe checkout session for a zone subscription.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service-subscriptions"
+                ],
+                "summary": "Create subscription checkout session",
+                "parameters": [
+                    {
+                        "description": "Checkout session request payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CheckoutSessionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CheckoutResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/internal/users/{user_id}/status": {
+            "get": {
+                "security": [
+                    {
+                        "ServerFixedToken": []
+                    }
+                ],
+                "description": "Internal endpoint used by world-service to verify available spots.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service-subscriptions"
+                ],
+                "summary": "Internal slots availability check",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.InternalSlotsCheckResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/internal/users/{user_id}/used-slots": {
+            "put": {
+                "security": [
+                    {
+                        "ServerFixedToken": []
+                    }
+                ],
+                "description": "Internal endpoint used by world-service to add or remove consumed slots for a user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service-subscriptions"
+                ],
+                "summary": "Internal modify used slots count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Slots payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.InternalUpdateUsedSlotsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/pricing": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Return the price per slot alongside the next system-wide billing date.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service-subscriptions"
+                ],
+                "summary": "Get price metrics and dates",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.PricingInfoResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/slots": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates the total number of slots in the active subscription.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service-subscriptions"
+                ],
+                "summary": "Update subscription slots",
+                "parameters": [
+                    {
+                        "description": "Update subscription slots payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdateSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SubscriptionStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves the active subscription status for the user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service-subscriptions"
+                ],
+                "summary": "Get subscription status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SubscriptionStatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/webhook/stripe": {
+            "post": {
+                "description": "Processes Stripe webhook events for subscriptions changes/cancellations.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service-subscriptions"
+                ],
+                "summary": "Handle Stripe webhook for Subscriptions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.WebhookResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/world": {
             "get": {
                 "security": [
@@ -2541,6 +2914,25 @@
                 }
             }
         },
+        "dtos.CheckoutSessionRequest": {
+            "type": "object",
+            "required": [
+                "cancel_url",
+                "slots",
+                "success_url"
+            ],
+            "properties": {
+                "cancel_url": {
+                    "type": "string"
+                },
+                "slots": {
+                    "type": "integer"
+                },
+                "success_url": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.ConsumeWorldJoinTokenRequest": {
             "type": "object",
             "required": [
@@ -2713,6 +3105,31 @@
                 }
             }
         },
+        "dtos.InternalSlotsCheckResponse": {
+            "type": "object",
+            "properties": {
+                "allowed": {
+                    "type": "boolean"
+                },
+                "free_slots": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.InternalUpdateUsedSlotsRequest": {
+            "type": "object",
+            "required": [
+                "slots"
+            ],
+            "properties": {
+                "are_used": {
+                    "type": "boolean"
+                },
+                "slots": {
+                    "type": "integer"
+                }
+            }
+        },
         "dtos.IssueWorldJoinTokenRequest": {
             "type": "object",
             "required": [
@@ -2839,6 +3256,17 @@
                 }
             }
         },
+        "dtos.PricingInfoResponse": {
+            "type": "object",
+            "properties": {
+                "next_billing_date": {
+                    "type": "string"
+                },
+                "price_per_slot": {
+                    "type": "number"
+                }
+            }
+        },
         "dtos.PublishZoneRequest": {
             "type": "object",
             "properties": {
@@ -2858,6 +3286,26 @@
             "properties": {
                 "email": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.SubscriptionStatusResponse": {
+            "type": "object",
+            "properties": {
+                "amount_due": {
+                    "type": "number"
+                },
+                "next_billing_date": {
+                    "type": "string"
+                },
+                "slots": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "used_slots": {
+                    "type": "integer"
                 }
             }
         },
@@ -2889,6 +3337,17 @@
                 },
                 "price": {
                     "type": "number"
+                }
+            }
+        },
+        "dtos.UpdateSubscriptionRequest": {
+            "type": "object",
+            "required": [
+                "slots"
+            ],
+            "properties": {
+                "slots": {
+                    "type": "integer"
                 }
             }
         },
