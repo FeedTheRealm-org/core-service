@@ -139,14 +139,16 @@ func (cs *worldService) UpdateUsedSlots(userId uuid.UUID, numberOfSlots int, are
 
 func (cs *worldService) PublishZone(worldID uuid.UUID, zoneID int, zoneData []byte) (*models.WorldZone, error) {
 	isNewZone := false
-	_, err := cs.worldRepository.GetWorldZone(worldID, zoneID)
-	if err != nil {
-		isNewZone = true
-	}
+	if cs.conf.Server.Environment == config.Production {
+		_, err := cs.worldRepository.GetWorldZone(worldID, zoneID)
+		if err != nil {
+			isNewZone = true
+		}
 
-	if isNewZone {
-		if err := cs.CheckAvaliableZonesForPublish(worldID, zoneID); err != nil {
-			return nil, err
+		if isNewZone {
+			if err := cs.CheckAvaliableZonesForPublish(worldID, zoneID); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -159,7 +161,7 @@ func (cs *worldService) PublishZone(worldID uuid.UUID, zoneID int, zoneData []by
 		return nil, err
 	}
 
-	if isNewZone {
+	if cs.conf.Server.Environment == config.Production && isNewZone {
 		userId, err := cs.worldRepository.GetUserIdByWorldId(worldID)
 		if err == nil {
 			if err := cs.UpdateUsedSlots(userId, 1, true); err != nil {
@@ -195,7 +197,7 @@ func (cs *worldService) DeleteWorld(worldID uuid.UUID, userId uuid.UUID) error {
 		}
 	}
 
-	if len(zones) > 0 {
+	if cs.conf.Server.Environment == config.Production && len(zones) > 0 {
 		if err := cs.UpdateUsedSlots(userId, len(zones), false); err != nil {
 			return err
 		}
