@@ -272,7 +272,12 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		dbSub.Status = stripe.SubscriptionStatusActive
 		dbSub.NextBillingDate = zs.nextBillingDate()
 		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
-		dbSub.AmountDue = decimal.NewFromInt(5)
+		amountDue, err := zs.getNextInvoiceAmount(dbSub.UserID)
+		if err != nil {
+			logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s during subscription creation: %v", dbSub.UserID, err)
+			return err
+		}
+		dbSub.AmountDue = amountDue
 
 		if _, err = zs.repo.Update(dbSub); err != nil {
 			return err
