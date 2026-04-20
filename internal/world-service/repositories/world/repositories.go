@@ -36,7 +36,7 @@ type WorldRepository interface {
 
 	GetUserIdByWorldId(worldID uuid.UUID) (uuid.UUID, error)
 
-	// GetUserWorlds retrieves all worlds owned by a specific user.
+	// GetTotalZonesCountByUserId returns the total number of zones owned by a specific user.
 	GetTotalZonesCountByUserId(userId uuid.UUID) (int64, error)
 
 	ClearDatabase() error
