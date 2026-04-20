@@ -56,7 +56,7 @@ func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, slots
 		ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
 			Name: stripe.String("Zone"),
 		},
-		UnitAmount: stripe.Int64(500),
+		UnitAmount: stripe.Int64(int64(zs.conf.Stripe.StripeZonePrice * 100)),
 		Recurring: &stripe.CheckoutSessionLineItemPriceDataRecurringParams{
 			Interval: stripe.String(string(stripe.PriceRecurringIntervalMonth)),
 		},
