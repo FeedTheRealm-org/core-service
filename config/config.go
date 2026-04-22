@@ -22,6 +22,7 @@ type ServerConfig struct {
 	AdminEmail      string
 	AdminPassword   string
 	PublicIP        string
+	SubscriptionOn  bool
 }
 
 type DatabaseConfig struct {
@@ -87,6 +88,7 @@ func CreateConfig() *Config {
 		AdminEmail:      getEnvOrDefaultString("SERVER_ADMIN_EMAIL", ""),
 		AdminPassword:   getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
 		PublicIP:        os.Getenv("PUBLIC_IP"),
+		SubscriptionOn:  getEnvOrDefaultBool("SUBSCRIPTION_ON", true),
 	}
 
 	stripeConf := &StripeConfig{
@@ -145,6 +147,14 @@ func getEnvOrDefaultFloat(key string, defaultValue float64) float64 {
 
 func getEnvOrDefaultDuration(key string, defaultValue time.Duration) time.Duration {
 	value, err := time.ParseDuration(os.Getenv(key))
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
+func getEnvOrDefaultBool(key string, defaultValue bool) bool {
+	value, err := strconv.ParseBool(os.Getenv(key))
 	if err != nil {
 		return defaultValue
 	}

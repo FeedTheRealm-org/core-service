@@ -362,7 +362,7 @@ func (zs *zoneSubscriptionService) getNextInvoiceAmount(userID uuid.UUID) (decim
 		return decimal.Zero, err
 	}
 
-	if sub.StripeSubscriptionID == "" {
+	if (sub.StripeSubscriptionID == "" && sub.Status == "pending") || sub.Status == stripe.SubscriptionStatusCanceled {
 		return decimal.NewFromFloat(zs.conf.Stripe.StripeZonePrice).Mul(decimal.NewFromInt(int64(sub.TotalSlots))), nil
 	}
 
