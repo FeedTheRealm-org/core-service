@@ -362,6 +362,10 @@ func (zs *zoneSubscriptionService) getNextInvoiceAmount(userID uuid.UUID) (decim
 		return decimal.Zero, err
 	}
 
+	if sub.StripeSubscriptionID == "" {
+		return decimal.NewFromFloat(zs.conf.Stripe.StripeZonePrice).Mul(decimal.NewFromInt(int64(sub.TotalSlots))), nil
+	}
+
 	inv, err := invoice.CreatePreview(&stripe.InvoiceCreatePreviewParams{
 		Subscription: stripe.String(sub.StripeSubscriptionID),
 	})
