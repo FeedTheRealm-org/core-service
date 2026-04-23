@@ -13,6 +13,9 @@ type CosmeticsController interface {
 	// GetCosmeticById retrieves a cosmetic by its ID.
 	GetCosmeticById(c *gin.Context)
 
+	// GetCosmeticsListByWorld retrieves a list of cosmetics for a given world.
+	GetCosmeticsListByWorld(c *gin.Context)
+
 	// UploadCosmeticData handles the upload of cosmetic file.
 	UploadCosmeticData(c *gin.Context)
 

@@ -17,7 +17,9 @@ type CosmeticsRepository interface {
 
 	GetCategoryById(categoryId uuid.UUID) (*models.CosmeticCategory, error)
 
-	CreateCosmetic(category uuid.UUID, cosmetic *models.Cosmetic, userId uuid.UUID) error
+	GetCosmeticsListByWorld(worldId uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error)
+
+	CreateCosmetic(category uuid.UUID, worldId uuid.UUID, cosmetic *models.Cosmetic, userId uuid.UUID) error
 
 	DeleteCosmetic(cosmeticId uuid.UUID) error
 }

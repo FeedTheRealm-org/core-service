@@ -10,6 +10,7 @@ type Cosmetic struct {
 	Id         uuid.UUID        `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Url        string           `gorm:"not null"`
 	CategoryID uuid.UUID        `gorm:"type:uuid;not null;index"`
+	WorldID    uuid.UUID        `gorm:"type:uuid;not null;index"`
 	Category   CosmeticCategory `gorm:"foreignKey:CategoryID;references:Id"`
 	CreatedAt  time.Time        `gorm:"autoCreateTime"`
 	UpdatedAt  time.Time        `gorm:"autoUpdateTime"`

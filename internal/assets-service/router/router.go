@@ -26,6 +26,7 @@ func SetupEndpointsForCosmeticsService(conf *config.Config, db *config.DB, g *gi
 	cosmeticsGroup.GET("/categories", cosmeticsController.GetCategoriesList)
 	cosmeticsGroup.GET("/categories/:id", cosmeticsController.GetCosmeticsListByCategory)
 	cosmeticsGroup.GET(":id", cosmeticsController.GetCosmeticById)
+	cosmeticsGroup.GET("/worlds/:world_id", cosmeticsController.GetCosmeticsListByWorld)
 	cosmeticsGroup.PUT("/categories/:id", cosmeticsController.UploadCosmeticData)
 	cosmeticsGroup.PUT("/categories/:id/sprites/:sprite_id", cosmeticsController.UploadCosmeticByID)
 

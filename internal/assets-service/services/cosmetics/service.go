@@ -17,11 +17,14 @@ type CosmeticsService interface {
 	// GetCosmeticById handles the retrieval of a cosmetic by its ID.
 	GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error)
 
+	// GetCosmeticsListByWorld retrieves a list of cosmetics for a given world.
+	GetCosmeticsListByWorld(worldId uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error)
+
 	// UploadCosmeticData handles the upload of cosmetic file.
-	UploadCosmeticData(category uuid.UUID, cosmeticData multipart.File, ext string, userId uuid.UUID) (*models.Cosmetic, error)
+	UploadCosmeticData(category uuid.UUID, worldId uuid.UUID, cosmeticData multipart.File, ext string, userId uuid.UUID) (*models.Cosmetic, error)
 
 	// UploadCosmeticByID links an existing cosmetic sprite to another category.
-	UploadCosmeticByID(categoryId uuid.UUID, spriteId uuid.UUID, userId uuid.UUID) (*models.Cosmetic, error)
+	UploadCosmeticByID(categoryId uuid.UUID, worldId uuid.UUID, spriteId uuid.UUID, userId uuid.UUID) (*models.Cosmetic, error)
 
 	// DeleteCosmetic handles the deletion of a cosmetic by its ID.
 	DeleteCosmetic(cosmeticId uuid.UUID) error
