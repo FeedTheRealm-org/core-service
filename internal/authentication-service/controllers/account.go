@@ -215,7 +215,7 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 			return
 		}
 		logger.Logger.Errorf("CheckSessionExpiration: service error: %v", err)
-		_ = c.Error(errors.NewInternalServerError("Internal server error"))
+		_ = c.Error(errors.NewUnauthorizedError("Invalid session token"))
 		return
 	}
 

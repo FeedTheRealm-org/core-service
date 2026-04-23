@@ -22,6 +22,7 @@ type ServerConfig struct {
 	AdminEmail      string
 	AdminPassword   string
 	PublicIP        string
+	SubscriptionOn  bool
 }
 
 type DatabaseConfig struct {
@@ -38,8 +39,11 @@ type AssetsConfig struct {
 }
 
 type StripeConfig struct {
-	StripeApiKey        string
-	StripeWebhookSecret string
+	StripeApiKey           string
+	StripeWebhookSecret    string
+	StripeZonePrice        float64
+	StripeBillingAnchorDay int
+	StripeBillingTimezone  string
 }
 
 type Config struct {
@@ -84,11 +88,15 @@ func CreateConfig() *Config {
 		AdminEmail:      getEnvOrDefaultString("SERVER_ADMIN_EMAIL", ""),
 		AdminPassword:   getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
 		PublicIP:        os.Getenv("PUBLIC_IP"),
+		SubscriptionOn:  getEnvOrDefaultBool("SUBSCRIPTION_ON", true),
 	}
 
 	stripeConf := &StripeConfig{
-		StripeApiKey:        os.Getenv("STRIPE_API_KEY"),
-		StripeWebhookSecret: os.Getenv("STRIPE_WEBHOOK_SECRET"),
+		StripeApiKey:           os.Getenv("STRIPE_API_KEY"),
+		StripeWebhookSecret:    os.Getenv("STRIPE_WEBHOOK_SECRET"),
+		StripeZonePrice:        getEnvOrDefaultFloat("STRIPE_ZONE_PRICE", 5.00),
+		StripeBillingAnchorDay: getEnvOrDefaultInt("STRIPE_BILLING_ANCHOR_DAY", 5),
+		StripeBillingTimezone:  getEnvOrDefaultString("STRIPE_BILLING_TIMEZONE", "America/Argentina/Buenos_Aires"),
 	}
 
 	return &Config{
@@ -129,8 +137,24 @@ func getEnvOrDefaultInt(key string, defaultValue int) int {
 	return value
 }
 
+func getEnvOrDefaultFloat(key string, defaultValue float64) float64 {
+	value, err := strconv.ParseFloat(os.Getenv(key), 64)
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
 func getEnvOrDefaultDuration(key string, defaultValue time.Duration) time.Duration {
 	value, err := time.ParseDuration(os.Getenv(key))
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
+func getEnvOrDefaultBool(key string, defaultValue bool) bool {
+	value, err := strconv.ParseBool(os.Getenv(key))
 	if err != nil {
 		return defaultValue
 	}

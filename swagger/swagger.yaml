@@ -45,6 +45,19 @@ definitions:
       checkout_url:
         type: string
     type: object
+  dtos.CheckoutSessionRequest:
+    properties:
+      cancel_url:
+        type: string
+      slots:
+        type: integer
+      success_url:
+        type: string
+    required:
+    - cancel_url
+    - slots
+    - success_url
+    type: object
   dtos.ConsumeWorldJoinTokenRequest:
     properties:
       token_id:
@@ -156,6 +169,22 @@ definitions:
       updated_at:
         type: string
     type: object
+  dtos.InternalSlotsCheckResponse:
+    properties:
+      allowed:
+        type: boolean
+      free_slots:
+        type: integer
+    type: object
+  dtos.InternalUpdateUsedSlotsRequest:
+    properties:
+      are_used:
+        type: boolean
+      slots:
+        type: integer
+    required:
+    - slots
+    type: object
   dtos.IssueWorldJoinTokenRequest:
     properties:
       world_id:
@@ -237,6 +266,13 @@ definitions:
       character_name:
         type: string
     type: object
+  dtos.PricingInfoResponse:
+    properties:
+      next_billing_date:
+        type: string
+      price_per_slot:
+        type: number
+    type: object
   dtos.PublishZoneRequest:
     properties:
       data: {}
@@ -250,6 +286,19 @@ definitions:
     properties:
       email:
         type: string
+    type: object
+  dtos.SubscriptionStatusResponse:
+    properties:
+      amount_due:
+        type: number
+      next_billing_date:
+        type: string
+      slots:
+        type: integer
+      status:
+        type: string
+      used_slots:
+        type: integer
     type: object
   dtos.UpdateCreateableDataRequest:
     properties:
@@ -270,6 +319,13 @@ definitions:
         type: string
       price:
         type: number
+    type: object
+  dtos.UpdateSubscriptionRequest:
+    properties:
+      slots:
+        type: integer
+    required:
+    - slots
     type: object
   dtos.VerifyAccountRequestDTO:
     properties:
@@ -1507,6 +1563,244 @@ paths:
       summary: Consume one-time world join token
       tags:
       - players-service
+  /subscriptions:
+    delete:
+      description: Cancels the user's active subscription if no slots are being used.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SubscriptionStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cancel subscription
+      tags:
+      - payment-service-subscriptions
+  /subscriptions/checkout:
+    post:
+      consumes:
+      - application/json
+      description: Creates a Stripe checkout session for a zone subscription.
+      parameters:
+      - description: Checkout session request payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CheckoutSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.CheckoutResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create subscription checkout session
+      tags:
+      - payment-service-subscriptions
+  /subscriptions/internal/users/{user_id}/status:
+    get:
+      description: Internal endpoint used by world-service to verify available spots.
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.InternalSlotsCheckResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - ServerFixedToken: []
+      summary: Internal slots availability check
+      tags:
+      - payment-service-subscriptions
+  /subscriptions/internal/users/{user_id}/used-slots:
+    put:
+      consumes:
+      - application/json
+      description: Internal endpoint used by world-service to add or remove consumed
+        slots for a user.
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Slots payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.InternalUpdateUsedSlotsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - ServerFixedToken: []
+      summary: Internal modify used slots count
+      tags:
+      - payment-service-subscriptions
+  /subscriptions/pricing:
+    get:
+      description: Return the price per slot alongside the next system-wide billing
+        date.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.PricingInfoResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get price metrics and dates
+      tags:
+      - payment-service-subscriptions
+  /subscriptions/slots:
+    put:
+      consumes:
+      - application/json
+      description: Updates the total number of slots in the active subscription.
+      parameters:
+      - description: Update subscription slots payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SubscriptionStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update subscription slots
+      tags:
+      - payment-service-subscriptions
+  /subscriptions/status:
+    get:
+      description: Retrieves the active subscription status for the user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SubscriptionStatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get subscription status
+      tags:
+      - payment-service-subscriptions
+  /subscriptions/webhook/stripe:
+    post:
+      consumes:
+      - application/json
+      description: Processes Stripe webhook events for subscriptions changes/cancellations.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WebhookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Handle Stripe webhook for Subscriptions
+      tags:
+      - payment-service-subscriptions
   /world:
     get:
       consumes:

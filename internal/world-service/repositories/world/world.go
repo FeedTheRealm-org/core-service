@@ -159,3 +159,18 @@ func (r *worldRepository) ClearDatabase() error {
 	err := r.db.Conn.Delete(&models.WorldData{}, "1 = 1").Error
 	return err
 }
+
+func (r *worldRepository) GetUserIdByWorldId(worldID uuid.UUID) (uuid.UUID, error) {
+	var world models.WorldData
+	err := r.db.Conn.Select("user_id").Where("id = ?", worldID).First(&world).Error
+	return world.UserId, err
+}
+
+func (r *worldRepository) GetTotalZonesCountByUserId(userId uuid.UUID) (int64, error) {
+	var count int64
+	err := r.db.Conn.Table("world_zones wz").
+		Joins("INNER JOIN world_data wd ON wz.world_id = wd.id").
+		Where("wd.user_id = ?", userId).
+		Count(&count).Error
+	return count, err
+}
