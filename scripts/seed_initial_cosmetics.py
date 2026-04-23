@@ -167,7 +167,7 @@ def upload_sprite(server_url: str, category_id, sprite_path: Path, token: str):
 
     with sprite_path.open("rb") as sprite_file:
         files = {"sprite": (sprite_path.name, sprite_file, "image/png")}
-        data = {"category_id": str(category_id), "world_id": DEFAULT_WORLD_ID}
+        data = {"category_id": str(category_id), "world_id": DEFAULT_WORLD_ID, "price": 0.00}
         try:
             response = requests.put(
                 url, files=files, data=data, headers=headers, timeout=60)
@@ -181,7 +181,7 @@ def upload_sprite(server_url: str, category_id, sprite_path: Path, token: str):
 
 def link_sprite_by_id(server_url: str, category_id, sprite_id, token: str):
     url = f"{server_url}/assets/cosmetics/categories/{category_id}/sprites/{sprite_id}"
-    data = {"world_id": DEFAULT_WORLD_ID}
+    data = {"world_id": DEFAULT_WORLD_ID, "price": 0.00}
 
     try:
         response = requests.put(url, data=data, headers=build_headers(token), timeout=30)
