@@ -126,3 +126,12 @@ func (ss *cosmeticsService) DeleteCosmetic(cosmeticId uuid.UUID) error {
 
 	return nil
 }
+
+func (ss *cosmeticsService) PurchaseCosmeticForUserInternal(userId uuid.UUID, cosmeticId uuid.UUID) error {
+	if err := ss.cosmeticsRepository.AddPurchaseForUserId(cosmeticId, userId); err != nil {
+		logger.Logger.Errorf("Error adding purchase for user: %v", err)
+		return err
+	}
+
+	return nil
+}

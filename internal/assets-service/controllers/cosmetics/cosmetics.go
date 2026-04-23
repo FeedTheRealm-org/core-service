@@ -491,3 +491,59 @@ func (cc *cosmeticsController) AddCategory(c *gin.Context) {
 	}
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
+
+func (cc *cosmeticsController) GetCosmeticByIdInternal(c *gin.Context) {
+	cosmeticId, err := uuid.Parse(c.Param("cosmetic_id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid cosmetic_id: " + err.Error()))
+		return
+	}
+
+	cosmetic, err := cc.cosmeticsService.GetCosmeticById(cosmeticId)
+	if err != nil {
+		switch err.(type) {
+		case *assets_errors.CosmeticNotFound:
+			_ = c.Error(errors.NewNotFoundError("cosmetic not found"))
+		default:
+			_ = c.Error(err)
+		}
+		return
+	}
+
+	res := &dtos.InternalCosmeticResponse{
+		CosmeticId:    cosmetic.Id,
+		CosmeticPrice: cosmetic.Price,
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
+}
+
+func (cc *cosmeticsController) PurshaseCosmeticForUserInternal(c *gin.Context) {
+	userId, err := uuid.Parse(c.Param("user_id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid user_id: " + err.Error()))
+		return
+	}
+
+	req := &dtos.InternalPurchaseCosmeticForUserRequest{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		_ = c.Error(errors.NewBadRequestError(err.Error()))
+		return
+	}
+
+	err = cc.cosmeticsService.PurchaseCosmeticForUserInternal(userId, req.CosmeticId)
+	if err != nil {
+		if _, ok := err.(*assets_errors.CosmeticsWasPurchasedBefore); ok {
+			_ = c.Error(errors.NewConflictError("cosmetic was already purchased by the user"))
+			return
+		}
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.InternalPurchaseCosmeticForUserResponse{
+		UserId:     userId,
+		CosmeticId: req.CosmeticId,
+	}
+	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
+}

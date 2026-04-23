@@ -31,4 +31,7 @@ type CosmeticsService interface {
 
 	// AddCategory handles the addition of a new cosmetic category.
 	AddCategory(category string) (*models.CosmeticCategory, error)
+
+	// PurchaseCosmeticForUserInternal handles the purchase of a cosmetic for a user.
+	PurchaseCosmeticForUserInternal(userId uuid.UUID, cosmeticId uuid.UUID) error
 }

@@ -88,3 +88,18 @@ func NewWorldNotFound(worldId string) *WorldNotFound {
 		WorldId: worldId,
 	}
 }
+
+// CosmeticsWasPurchasedBefore is returned when a user attempts to purchase a cosmetic they already own.
+type CosmeticsWasPurchasedBefore struct {
+	details string
+}
+
+func (e *CosmeticsWasPurchasedBefore) Error() string {
+	return e.details
+}
+
+func NewCosmeticsWasPurchasedBefore(details string) *CosmeticsWasPurchasedBefore {
+	return &CosmeticsWasPurchasedBefore{
+		details: details,
+	}
+}

@@ -85,6 +85,25 @@ func (cr *cosmeticsRepository) AddCategory(categoryName string) (*models.Cosmeti
 	return category, nil
 }
 
+func (cr *cosmeticsRepository) AddPurchaseForUserId(cosmeticId uuid.UUID, userId uuid.UUID) error {
+	purchase := &models.Purchase{
+		CosmeticID: cosmeticId,
+		PlayerID:   userId,
+	}
+
+	if err := cr.db.Conn.Where("cosmetic_id = ? AND player_id = ?", cosmeticId, userId).First(&models.Purchase{}).Error; err == nil {
+		return assets_errors.NewCosmeticsWasPurchasedBefore("cosmetic was already purchased by the user")
+	} else if !errors.IsRecordNotFound(err) {
+		return err
+	}
+
+	if err := cr.db.Conn.Create(purchase).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (cr *cosmeticsRepository) GetCategoryById(categoryId uuid.UUID) (*models.CosmeticCategory, error) {
 	var category models.CosmeticCategory
 	if err := cr.db.Conn.First(&category, "id = ?", categoryId).Error; err != nil {

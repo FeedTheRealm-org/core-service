@@ -15,6 +15,8 @@ type CosmeticsRepository interface {
 
 	AddCategory(category string) (*models.CosmeticCategory, error)
 
+	AddPurchaseForUserId(cosmeticId uuid.UUID, userId uuid.UUID) error
+
 	GetCategoryById(categoryId uuid.UUID) (*models.CosmeticCategory, error)
 
 	GetCosmeticsListByWorld(worldId uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error)

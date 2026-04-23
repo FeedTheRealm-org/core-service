@@ -33,6 +33,10 @@ func SetupEndpointsForCosmeticsService(conf *config.Config, db *config.DB, g *gi
 	/* ADMIN ONLY */
 	cosmeticsGroup.POST("/categories", middleware.AdminCheckMiddleware(), cosmeticsController.AddCategory)
 	cosmeticsGroup.DELETE(":id", middleware.AdminCheckMiddleware(), cosmeticsController.DeleteCosmetic)
+
+	/* Internal Endpoints */
+	g.GET("/internal/cosmetics/:cosmetic_id", cosmeticsController.GetCosmeticByIdInternal)
+	g.POST("/internal/users/:user_id/cosmetics", cosmeticsController.PurshaseCosmeticForUserInternal)
 }
 
 func SetupEndpointsForItemsService(conf *config.Config, db *config.DB, g *gin.RouterGroup, itemsBucketRepo bucket.BucketRepository) {
