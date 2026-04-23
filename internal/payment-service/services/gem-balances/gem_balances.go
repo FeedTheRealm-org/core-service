@@ -1,7 +1,10 @@
 package gem_balances
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -10,6 +13,7 @@ import (
 	"github.com/stripe/stripe-go/v84/webhook"
 
 	"github.com/FeedTheRealm-org/core-service/config"
+	gem_balances_errors "github.com/FeedTheRealm-org/core-service/internal/payment-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/payment-service/models"
 	gem_balances "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-balances"
 	gem_packs "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-packs"
@@ -69,6 +73,110 @@ func (bs *gemBalancesService) UpdateGemBalance(userId uuid.UUID, gems int) error
 	}
 
 	logger.Logger.Info("Successfully updated balance for user " + userId.String())
+	return nil
+}
+
+func (bs *gemBalancesService) PurchaseCosmetic(userId uuid.UUID, cosmeticId uuid.UUID) error {
+	price, err := bs.fetchCosmeticPrice(cosmeticId)
+	if err != nil {
+		return err
+	}
+
+	if err := bs.ensureSufficientBalance(userId, price); err != nil {
+		return err
+	}
+
+	if err := bs.issueCosmeticPurchase(userId, cosmeticId); err != nil {
+		return err
+	}
+
+	if err := bs.gemBalancesRepo.AddToGemBalance(userId, -price); err != nil {
+		logger.Logger.Error("Failed to deduct gems after purchase: " + err.Error())
+		return err
+	}
+
+	logger.Logger.Info(fmt.Sprintf("Successfully purchased cosmetic %s for user %s", cosmeticId, userId))
+	return nil
+}
+
+func (bs *gemBalancesService) fetchCosmeticPrice(cosmeticId uuid.UUID) (int, error) {
+	url := fmt.Sprintf("http://127.0.0.1:%d/assets/internal/cosmetics/%s", bs.conf.Server.Port, cosmeticId.String())
+	resp, err := http.Get(url)
+	if err != nil {
+		logger.Logger.Error("Failed to fetch cosmetic details: " + err.Error())
+		return 0, err
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			logger.Logger.Error("Failed to close response body: " + closeErr.Error())
+		}
+	}()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return 0, gem_balances_errors.NewCosmeticNotFound("cosmetic not found")
+	} else if resp.StatusCode != http.StatusOK {
+		errStr := fmt.Sprintf("Failed to get cosmetic, status code: %d", resp.StatusCode)
+		logger.Logger.Error(errStr)
+		return 0, fmt.Errorf("%s", errStr)
+	}
+
+	var cosmeticResp struct {
+		Data struct {
+			CosmeticId    uuid.UUID `json:"cosmetic_id"`
+			CosmeticPrice float64   `json:"cosmetic_price"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&cosmeticResp); err != nil {
+		logger.Logger.Error("Failed to decode cosmetic response: " + err.Error())
+		return 0, err
+	}
+
+	return int(cosmeticResp.Data.CosmeticPrice), nil
+}
+
+func (bs *gemBalancesService) ensureSufficientBalance(userId uuid.UUID, price int) error {
+	balance, err := bs.gemBalancesRepo.GetGemBalanceByUserId(userId)
+	if err != nil {
+		logger.Logger.Error("Failed to get user balance: " + err.Error())
+		return err
+	}
+
+	if balance.Gems < price {
+		return gem_balances_errors.NewInsufficientGems("insufficient gems to purchase this cosmetic")
+	}
+
+	return nil
+}
+
+func (bs *gemBalancesService) issueCosmeticPurchase(userId uuid.UUID, cosmeticId uuid.UUID) error {
+	purchaseReqBody := map[string]string{
+		"cosmetic_id": cosmeticId.String(),
+	}
+	reqBodyBytes, err := json.Marshal(purchaseReqBody)
+	if err != nil {
+		return err
+	}
+
+	purchaseUrl := fmt.Sprintf("http://127.0.0.1:%d/assets/internal/users/%s/cosmetics", bs.conf.Server.Port, userId.String())
+	postResp, err := http.Post(purchaseUrl, "application/json", bytes.NewBuffer(reqBodyBytes))
+	if err != nil {
+		logger.Logger.Error("Failed to issue cosmetic purchase: " + err.Error())
+		return err
+	}
+	defer func() {
+		if closeErr := postResp.Body.Close(); closeErr != nil {
+			logger.Logger.Error("Failed to close response body: " + closeErr.Error())
+		}
+	}()
+
+	if postResp.StatusCode == http.StatusConflict {
+		return gem_balances_errors.NewCosmeticAlreadyPurchased("cosmetic was already purchased by this user")
+	} else if postResp.StatusCode != http.StatusCreated {
+		errStr := fmt.Sprintf("Failed to record cosmetic purchase, status code: %d", postResp.StatusCode)
+		logger.Logger.Error(errStr)
+		return fmt.Errorf("%s", errStr)
+	}
+
 	return nil
 }
 

@@ -18,6 +18,9 @@ type GemBalancesService interface {
 	// UpdateBalance updates the balance for a specific user.
 	UpdateGemBalance(userId uuid.UUID, gems int) error
 
+	// PurchaseCosmetic processes the purchase of a cosmetic item using gems.
+	PurchaseCosmetic(userId uuid.UUID, cosmeticId uuid.UUID) error
+
 	// CreateCheckoutSession creates a new checkout session for a user.
 	CreateCheckoutSession(userId uuid.UUID, packageId uuid.UUID, successUrl string, cancelUrl string) (string, error)
 

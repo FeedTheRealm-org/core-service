@@ -8,6 +8,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/payment-service/dtos"
+	gem_balances_errors "github.com/FeedTheRealm-org/core-service/internal/payment-service/errors"
 	gem_balances "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/gem-balances"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -132,6 +133,62 @@ func (bc *gemBalancesController) UpdateGemBalance(c *gin.Context) {
 	balance, err := bc.gemBalanceService.GetGemBalanceByUserId(userId)
 	if err != nil {
 		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.GemBalanceResponse{
+		UserId: balance.UserId,
+		Gems:   balance.Gems,
+	}
+
+	common_handlers.HandleSuccessResponse(c, 200, res)
+}
+
+// PurchaseCosmetic godoc
+// @Summary      Purchase a cosmetic
+// @Description  Deducts the appropriate gem amount and natively rewards a cosmetic to a given player.
+// @Tags         payment-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        cosmetic_id path string true "Cosmetic UUID"
+// @Success      200  {object}  dtos.GemBalanceResponse
+// @Failure      400  {object}  dtos.ErrorResponse
+// @Failure      401  {object}  dtos.ErrorResponse
+// @Failure      404  {object}  dtos.ErrorResponse
+// @Failure      409  {object}  dtos.ErrorResponse
+// @Failure      500  {object}  dtos.ErrorResponse
+// @Router       /payments/gems/balances/purchase/{cosmetic_id} [post]
+func (bc *gemBalancesController) PurchaseCosmetic(c *gin.Context) {
+	userId, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	cosmeticId, err := uuid.Parse(c.Param("cosmetic_id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid cosmetic_id: " + err.Error()))
+		return
+	}
+
+	if err := bc.gemBalanceService.PurchaseCosmetic(userId, cosmeticId); err != nil {
+		switch err.(type) {
+		case *gem_balances_errors.InsufficientGems:
+			_ = c.Error(errors.NewBadRequestError(err.Error()))
+		case *gem_balances_errors.CosmeticNotFound:
+			_ = c.Error(errors.NewNotFoundError(err.Error()))
+		case *gem_balances_errors.CosmeticAlreadyPurchased:
+			_ = c.Error(errors.NewConflictError(err.Error()))
+		default:
+			_ = c.Error(err)
+		}
+		return
+	}
+
+	balance, err := bc.gemBalanceService.GetGemBalanceByUserId(userId)
+	if err != nil {
+		_ = c.Error(errors.NewInternalServerError("failed to retrieve updated balance: " + err.Error()))
 		return
 	}
 
