@@ -139,7 +139,7 @@ func (cr *cosmeticsRepository) GetCosmeticsListByWorld(worldId uuid.UUID, offset
 	return cosmetics, totalCount, nil
 }
 
-func (cr *cosmeticsRepository) CreateCosmetic(categoryId uuid.UUID, worldId uuid.UUID, cosmetic *models.Cosmetic, userId uuid.UUID) error {
+func (cr *cosmeticsRepository) CreateCosmetic(categoryId uuid.UUID, worldId uuid.UUID, price float64, cosmetic *models.Cosmetic, userId uuid.UUID) error {
 	var category models.CosmeticCategory
 	if err := cr.db.Conn.First(&category, "id = ?", categoryId).Error; err != nil {
 		if errors.IsRecordNotFound(err) {
@@ -151,6 +151,8 @@ func (cr *cosmeticsRepository) CreateCosmetic(categoryId uuid.UUID, worldId uuid
 	cosmetic.CategoryID = category.Id
 	cosmetic.WorldID = worldId
 	cosmetic.CreatedBy = userId
+	cosmetic.Price = price
+
 	if err := cr.db.Conn.Create(cosmetic).Error; err != nil {
 		return err
 	}

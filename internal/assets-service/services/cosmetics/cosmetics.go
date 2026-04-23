@@ -58,7 +58,7 @@ func (ss *cosmeticsService) AddCategory(category string) (*models.CosmeticCatego
 	return ss.cosmeticsRepository.AddCategory(category)
 }
 
-func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, worldId uuid.UUID, cosmeticData multipart.File, ext string, userId uuid.UUID) (*models.Cosmetic, error) {
+func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, worldId uuid.UUID, price float64, cosmeticData multipart.File, ext string, userId uuid.UUID) (*models.Cosmetic, error) {
 	cosmeticUniqueUrl := uuid.New().String()
 
 	category, err := ss.cosmeticsRepository.GetCategoryById(categoryId)
@@ -76,7 +76,7 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, worldId uui
 	cosmetic := &models.Cosmetic{
 		Url: fmt.Sprintf("/%s", filePath),
 	}
-	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, worldId, cosmetic, userId); err != nil {
+	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, worldId, price, cosmetic, userId); err != nil {
 		logger.Logger.Errorf("Error creating cosmetic: %v", err)
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, worldId uui
 	return cosmetic, nil
 }
 
-func (ss *cosmeticsService) UploadCosmeticByID(categoryId uuid.UUID, worldId uuid.UUID, spriteId uuid.UUID, userId uuid.UUID) (*models.Cosmetic, error) {
+func (ss *cosmeticsService) UploadCosmeticByID(categoryId uuid.UUID, worldId uuid.UUID, price float64, spriteId uuid.UUID, userId uuid.UUID) (*models.Cosmetic, error) {
 	if _, err := ss.cosmeticsRepository.GetCategoryById(categoryId); err != nil {
 		logger.Logger.Errorf("Error getting category by id: %v", err)
 		return nil, err
@@ -99,7 +99,7 @@ func (ss *cosmeticsService) UploadCosmeticByID(categoryId uuid.UUID, worldId uui
 	cosmetic := &models.Cosmetic{
 		Url: sourceCosmetic.Url,
 	}
-	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, worldId, cosmetic, userId); err != nil {
+	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, worldId, price, cosmetic, userId); err != nil {
 		logger.Logger.Errorf("Error creating linked cosmetic: %v", err)
 		return nil, err
 	}

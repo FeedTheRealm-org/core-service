@@ -269,6 +269,7 @@ func (cc *cosmeticsController) GetCosmeticsListByWorld(c *gin.Context) {
 // @Produce      json
 // @Param        category_id formData string true "Category UUID"
 // @Param        world_id formData string true "World UUID"
+// @Param        price formData number false "Cosmetic price" default(0.00)
 // @Param        sprite formData file true "Cosmetic File"
 // @Success      201  {object}  dtos.CosmeticResponse
 // @Failure      400  {object} dtos.ErrorResponse
@@ -290,6 +291,12 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 	worldId, err := uuid.Parse(c.PostForm("world_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
+		return
+	}
+
+	price, err := strconv.ParseFloat(c.PostForm("price"), 64)
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid price: " + err.Error()))
 		return
 	}
 
@@ -326,7 +333,7 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 		_ = file.Close()
 	}()
 
-	cosmetic, err := cc.cosmeticsService.UploadCosmeticData(categoryId, worldId, file, filepath.Ext(reqFile.Filename), userId)
+	cosmetic, err := cc.cosmeticsService.UploadCosmeticData(categoryId, worldId, price, file, filepath.Ext(reqFile.Filename), userId)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -348,6 +355,7 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 // @Param        id path string true "Category UUID"
 // @Param        sprite_id path string true "Existing Sprite UUID"
 // @Param				 world_id formData string true "World UUID"
+// @Param				 price formData number false "Cosmetic price" default(0.00)
 // @Success      201  {object}  dtos.CosmeticResponse
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse
@@ -378,13 +386,19 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 		}
 	}
 
+	price, err := strconv.ParseFloat(c.PostForm("price"), 64)
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid price: " + err.Error()))
+		return
+	}
+
 	spriteId, err := uuid.Parse(c.Param("sprite_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid sprite_id: " + err.Error()))
 		return
 	}
 
-	cosmetic, err := cc.cosmeticsService.UploadCosmeticByID(categoryId, worldId, spriteId, userId)
+	cosmetic, err := cc.cosmeticsService.UploadCosmeticByID(categoryId, worldId, price, spriteId, userId)
 	if err != nil {
 		_ = c.Error(err)
 		return
