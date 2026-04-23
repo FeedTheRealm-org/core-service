@@ -506,6 +506,18 @@ func (cc *cosmeticsController) AddCategory(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
+// GetCosmeticByIdInternal godoc
+// @Summary      Get cosmetic by ID (Internal)
+// @Description  Retrieves a single cosmetic item by its ID. Intended for internal service communication.
+// @Tags         assets-service-internal
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        cosmetic_id path string true "Cosmetic UUID"
+// @Success      200  {object}  dtos.InternalCosmeticResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Router       /assets/internal/cosmetics/{cosmetic_id} [get]
 func (cc *cosmeticsController) GetCosmeticByIdInternal(c *gin.Context) {
 	cosmeticId, err := uuid.Parse(c.Param("cosmetic_id"))
 	if err != nil {
@@ -532,6 +544,19 @@ func (cc *cosmeticsController) GetCosmeticByIdInternal(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
+// PurshaseCosmeticForUserInternal godoc
+// @Summary      Purchase cosmetic for user (Internal)
+// @Description  Records a cosmetic purchase for a specific user. Intended for internal service communication.
+// @Tags         assets-service-internal
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        user_id path string true "User UUID"
+// @Param        request body dtos.InternalPurchaseCosmeticForUserRequest true "Purchase Details"
+// @Success      201  {object}  dtos.InternalPurchaseCosmeticForUserResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      409  {object} dtos.ErrorResponse
+// @Router       /assets/internal/users/{user_id}/cosmetics [post]
 func (cc *cosmeticsController) PurshaseCosmeticForUserInternal(c *gin.Context) {
 	userId, err := uuid.Parse(c.Param("user_id"))
 	if err != nil {
