@@ -167,6 +167,16 @@ func (zs *zoneSubscriptionService) UpdateUsedSlots(userID uuid.UUID, slots int, 
 }
 
 func (zs *zoneSubscriptionService) GetByUserID(userID uuid.UUID) (*models.ZonesSubscriptions, error) {
+	if !zs.conf.Server.SubscriptionOn && zs.conf.Server.Environment != config.Production {
+		logger.Logger.Infof("Subscription system is turned off, returning default subscription for user %s", userID)
+		return &models.ZonesSubscriptions{
+			UserID:     userID,
+			TotalSlots: 1000,
+			UsedSlots:  0,
+			Status:     stripe.SubscriptionStatusActive,
+		}, nil
+	}
+
 	sub, err := zs.repo.GetByUserID(userID)
 	if err != nil {
 		return nil, err
