@@ -82,7 +82,6 @@ logs-%: # Tail logs of a specific service. Usage: make logs-service_name
 	docker compose -f $(COMPOSE_DEV) logs -f $*
 .PHONY: logs-%
 
-
 db: # Open a psql shell in the postgres container
-	docker exec -it core-service-db-1 psql -U postgres -d postgres
+	docker compose -f $(COMPOSE_DEV) exec db psql -U postgres
 .PHONY: db
