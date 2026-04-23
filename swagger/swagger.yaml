@@ -169,6 +169,27 @@ definitions:
       updated_at:
         type: string
     type: object
+  dtos.InternalCosmeticResponse:
+    properties:
+      cosmetic_id:
+        type: string
+      cosmetic_price:
+        type: number
+    type: object
+  dtos.InternalPurchaseCosmeticForUserRequest:
+    properties:
+      cosmetic_id:
+        type: string
+    required:
+    - cosmetic_id
+    type: object
+  dtos.InternalPurchaseCosmeticForUserResponse:
+    properties:
+      cosmetic_id:
+        type: string
+      user_id:
+        type: string
+    type: object
   dtos.InternalSlotsCheckResponse:
     properties:
       allowed:
@@ -573,6 +594,16 @@ paths:
         in: query
         name: limit
         type: integer
+      - default: '"00000000-0000-0000-0000-000000000000"'
+        description: World UUID
+        in: query
+        name: world_id
+        type: string
+      - default: '"00000000-0000-0000-0000-000000000000"'
+        description: Player UUID
+        in: query
+        name: player_id
+        type: string
       produces:
       - application/json
       responses:
@@ -604,6 +635,16 @@ paths:
         name: category_id
         required: true
         type: string
+      - description: World UUID
+        in: formData
+        name: world_id
+        required: true
+        type: string
+      - default: 0
+        description: Cosmetic price
+        in: formData
+        name: price
+        type: number
       - description: Cosmetic File
         in: formData
         name: sprite
@@ -644,6 +685,16 @@ paths:
         name: sprite_id
         required: true
         type: string
+      - description: World UUID
+        in: formData
+        name: world_id
+        required: true
+        type: string
+      - default: 0
+        description: Cosmetic price
+        in: formData
+        name: price
+        type: number
       produces:
       - application/json
       responses:
@@ -664,6 +715,117 @@ paths:
       summary: Link existing cosmetic by ID
       tags:
       - assets-service
+  /assets/cosmetics/worlds/{world_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of cosmetics that belong to a specific world ID.
+      parameters:
+      - description: World UUID
+        in: path
+        name: world_id
+        required: true
+        type: string
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 24
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.CosmeticsListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get cosmetics by world
+      tags:
+      - assets-service
+  /assets/internal/cosmetics/{cosmetic_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a single cosmetic item by its ID. Intended for internal
+        service communication.
+      parameters:
+      - description: Cosmetic UUID
+        in: path
+        name: cosmetic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.InternalCosmeticResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get cosmetic by ID (Internal)
+      tags:
+      - assets-service-internal
+  /assets/internal/users/{user_id}/cosmetics:
+    post:
+      consumes:
+      - application/json
+      description: Records a cosmetic purchase for a specific user. Intended for internal
+        service communication.
+      parameters:
+      - description: User UUID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Purchase Details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.InternalPurchaseCosmeticForUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.InternalPurchaseCosmeticForUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Purchase cosmetic for user (Internal)
+      tags:
+      - assets-service-internal
   /assets/items/{id}:
     delete:
       description: Delete a specific item by ID (requires ownership)
@@ -1193,6 +1355,50 @@ paths:
       security:
       - BearerAuth: []
       summary: Update a user's gem balance
+      tags:
+      - payment-service
+  /payments/gems/balances/purchase/{cosmetic_id}:
+    post:
+      consumes:
+      - application/json
+      description: Deducts the appropriate gem amount and natively rewards a cosmetic
+        to a given player.
+      parameters:
+      - description: Cosmetic UUID
+        in: path
+        name: cosmetic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.GemBalanceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Purchase a cosmetic
       tags:
       - payment-service
   /payments/gems/packs:
