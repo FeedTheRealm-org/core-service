@@ -1,4 +1,4 @@
-BEGIN
+BEGIN;
 
 CREATE TABLE IF NOT EXISTS purchases (
   player_id UUID NOT NULL,
