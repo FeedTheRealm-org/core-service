@@ -29,11 +29,18 @@ func (cr *cosmeticsRepository) GetCategoriesList() ([]*models.CosmeticCategory, 
 	return categories, nil
 }
 
-func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
-	var totalCount int64
-	if err := cr.db.Conn.Model(&models.Cosmetic{}).
+func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, worldId uuid.UUID, playerId uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
+	query := cr.db.Conn.Model(&models.Cosmetic{}).
 		Where("category_id = ?", category).
-		Count(&totalCount).Error; err != nil {
+		Where("world_id = ?", worldId)
+
+	if playerId != uuid.Nil {
+		query = query.Joins("LEFT JOIN purchases ON purchases.cosmetic_id = cosmetics.id AND purchases.player_id = ?", playerId).
+			Where("purchases.cosmetic_id IS NOT NULL")
+	}
+
+	var totalCount int64
+	if err := query.Count(&totalCount).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -42,8 +49,7 @@ func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, of
 	}
 
 	var cosmetics []*models.Cosmetic
-	if err := cr.db.Conn.Where("category_id = ?", category).
-		Order("id ASC").
+	if err := query.Order("cosmetics.world_id ASC, cosmetics.id ASC").
 		Offset(offset).
 		Limit(limit).
 		Find(&cosmetics).Error; err != nil {

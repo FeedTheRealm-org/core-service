@@ -74,12 +74,14 @@ func (cc *cosmeticsController) GetCategoriesList(c *gin.Context) {
 // @Param        id path string true "Category UUID"
 // @Param        offset query int false "Pagination offset" default(0)
 // @Param        limit query int false "Pagination limit" default(24)
+// @Param        world_id query string false "World UUID" default("00000000-0000-0000-0000-000000000000")
+// @Param        player_id query string false "Player UUID" default("00000000-0000-0000-0000-000000000000")
 // @Success      200  {object}  dtos.CosmeticsListResponse
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse
 // @Router       /assets/cosmetics/categories/{id} [get]
 func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(c)
+	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
 		return
@@ -103,11 +105,30 @@ func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 		return
 	}
 
+	worldId, err := uuid.Parse(c.DefaultQuery("world_id", "00000000-0000-0000-0000-000000000000"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
+		return
+	}
+
+	playerId, err := uuid.Parse(c.DefaultQuery("player_id", "00000000-0000-0000-0000-000000000000"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid player_id: " + err.Error()))
+		return
+	}
+
+	if playerId != uuid.Nil && playerId != userID {
+		if err := common_handlers.IsAdminSession(c); err != nil {
+			_ = c.Error(errors.NewUnauthorizedError("invalid player_id"))
+			return
+		}
+	}
+
 	if limit > 200 {
 		limit = 200
 	}
 
-	cosmeticsList, totalCount, err := cc.cosmeticsService.GetCosmeticsListByCategory(categoryId, offset, limit)
+	cosmeticsList, totalCount, err := cc.cosmeticsService.GetCosmeticsListByCategory(categoryId, worldId, playerId, offset, limit)
 	if err != nil {
 		switch err.(type) {
 		case *assets_errors.CategoryNotFound:
