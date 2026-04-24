@@ -1,6 +1,8 @@
 package cosmetics
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -260,6 +262,38 @@ func (cc *cosmeticsController) GetCosmeticsListByWorld(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
+func (cc *cosmeticsController) checkWorldOwnership(c *gin.Context, worldId uuid.UUID, userId uuid.UUID) error {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/world/%s", cc.conf.Server.Port, worldId.String()), nil)
+	if err != nil {
+		return errors.NewInternalServerError("failed to check world ownership")
+	}
+	req.Header.Set("Authorization", c.GetHeader("Authorization"))
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errors.NewInternalServerError("failed to check world ownership")
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.NewBadRequestError("invalid world_id or world not found")
+	}
+
+	var envelope struct {
+		Data struct {
+			UserId string `json:"user_id"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&envelope); err != nil {
+		return errors.NewInternalServerError("failed to parse world data")
+	}
+	if envelope.Data.UserId != userId.String() {
+		return errors.NewUnauthorizedError("user does not own this world")
+	}
+	return nil
+}
+
 // UploadCosmeticData godoc
 // @Summary      Upload cosmetic data
 // @Description  Upload a cosmetic form-data payload containing category ID and cosmetic file.
@@ -304,6 +338,13 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 		if err := common_handlers.IsAdminSession(c); err != nil {
 			_ = c.Error(errors.NewUnauthorizedError("invalid world_id"))
 			return
+		}
+	} else {
+		if err := common_handlers.IsAdminSession(c); err != nil {
+			if err := cc.checkWorldOwnership(c, worldId, userId); err != nil {
+				_ = c.Error(err)
+				return
+			}
 		}
 	}
 
@@ -383,6 +424,13 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 		if err := common_handlers.IsAdminSession(c); err != nil {
 			_ = c.Error(errors.NewUnauthorizedError("invalid world_id"))
 			return
+		}
+	} else {
+		if err := common_handlers.IsAdminSession(c); err != nil {
+			if err := cc.checkWorldOwnership(c, worldId, userId); err != nil {
+				_ = c.Error(err)
+				return
+			}
 		}
 	}
 
