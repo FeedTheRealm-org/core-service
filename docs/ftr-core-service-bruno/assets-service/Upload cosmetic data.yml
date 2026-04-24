@@ -9,6 +9,17 @@ http:
   method: PUT
   url: "{{baseUrl}}/assets/cosmetics/categories/:id"
   auth: inherit
+  body: multipartForm
+
+body:
+  multipartForm:
+    - name: world_id
+      value: 00000000-0000-0000-0000-000000000000
+    - name: price
+      value: 0
+    - name: sprite
+      value:
+      type: file
 
 settings:
   encodeUrl: true

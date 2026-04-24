@@ -7,13 +7,19 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/assets/cosmetics/categories/:id?limit=24&offset=0"
+  url: "{{baseUrl}}/assets/cosmetics/categories/:id?limit=24&offset=0&world_id=00000000-0000-0000-0000-000000000000&player_id=00000000-0000-0000-0000-000000000000"
   params:
     - name: limit
       value: "24"
       type: query
     - name: offset
       value: "0"
+      type: query
+    - name: world_id
+      value: "00000000-0000-0000-0000-000000000000"
+      type: query
+    - name: player_id
+      value: "00000000-0000-0000-0000-000000000000"
       type: query
     - name: id
       value: 635b53d3-7a10-44e3-8d4e-c47cfd7fdb15

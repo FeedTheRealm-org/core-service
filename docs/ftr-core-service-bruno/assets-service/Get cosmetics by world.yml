@@ -1,0 +1,27 @@
+info:
+  name: Get cosmetics by world
+  type: http
+  seq: 6
+  tags:
+    - assets-service
+
+http:
+  method: GET
+  url: "{{baseUrl}}/assets/cosmetics/worlds/:world_id?limit=24&offset=0"
+  auth: inherit
+  params:
+    - name: limit
+      value: "24"
+      type: query
+    - name: offset
+      value: "0"
+      type: query
+    - name: world_id
+      value: "4b9712cf-a734-436f-b6fa-9a4f6645db9c"
+      type: path
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
