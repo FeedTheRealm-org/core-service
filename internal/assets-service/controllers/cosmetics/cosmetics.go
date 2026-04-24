@@ -267,7 +267,7 @@ func (cc *cosmeticsController) GetCosmeticsListByWorld(c *gin.Context) {
 // @Security     BearerAuth
 // @Accept       multipart/form-data
 // @Produce      json
-// @Param        category_id formData string true "Category UUID"
+// @Param        category_id path string true "Category UUID"
 // @Param        world_id formData string true "World UUID"
 // @Param        price formData number false "Cosmetic price" default(0.00)
 // @Param        sprite formData file true "Cosmetic File"
@@ -282,7 +282,7 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 		return
 	}
 
-	categoryId, err := uuid.Parse(c.PostForm("category_id"))
+	categoryId, err := uuid.Parse(c.Param("category_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid category_id: " + err.Error()))
 		return
@@ -352,7 +352,7 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 // @Tags         assets-service
 // @Security     BearerAuth
 // @Produce      json
-// @Param        id path string true "Category UUID"
+// @Param        category_id path string true "Category UUID"
 // @Param        sprite_id path string true "Existing Sprite UUID"
 // @Param				 world_id formData string true "World UUID"
 // @Param				 price formData number false "Cosmetic price" default(0.00)
@@ -367,7 +367,7 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 		return
 	}
 
-	categoryId, err := uuid.Parse(c.Param("id"))
+	categoryId, err := uuid.Parse(c.Param("category_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid category_id: " + err.Error()))
 		return

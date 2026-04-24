@@ -167,7 +167,7 @@ def upload_sprite(server_url: str, category_id, sprite_path: Path, token: str):
 
     with sprite_path.open("rb") as sprite_file:
         files = {"sprite": (sprite_path.name, sprite_file, "image/png")}
-        data = {"category_id": str(category_id), "world_id": DEFAULT_WORLD_ID, "price": 0.00}
+        data = {"world_id": DEFAULT_WORLD_ID, "price": 0.00}
         try:
             response = requests.put(
                 url, files=files, data=data, headers=headers, timeout=60)
