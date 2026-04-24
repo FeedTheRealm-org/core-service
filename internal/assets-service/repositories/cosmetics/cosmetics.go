@@ -161,7 +161,7 @@ func (cr *cosmeticsRepository) CreateCosmetic(categoryId uuid.UUID, worldId uuid
 }
 
 func (cr *cosmeticsRepository) DeleteCosmetic(cosmeticId uuid.UUID) error {
-	if err := cr.db.Conn.Delete(&models.Cosmetic{}, "id = ?", cosmeticId).Error; err != nil {
+	if err := cr.db.Conn.Model(&models.Cosmetic{}).Where("id = ?", cosmeticId).Update("world_id", nil).Error; err != nil {
 		return err
 	}
 	return nil
