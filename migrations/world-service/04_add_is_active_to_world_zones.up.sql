@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE IF EXISTS world_zones
+  ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT false;
+
+COMMIT;
