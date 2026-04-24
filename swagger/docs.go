@@ -202,7 +202,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Category UUID",
                         "name": "category_id",
-                        "in": "formData",
+                        "in": "path",
                         "required": true
                     },
                     {
@@ -268,7 +268,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Category UUID",
-                        "name": "id",
+                        "name": "category_id",
                         "in": "path",
                         "required": true
                     },

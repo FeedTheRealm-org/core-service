@@ -631,7 +631,7 @@ paths:
         cosmetic file.
       parameters:
       - description: Category UUID
-        in: formData
+        in: path
         name: category_id
         required: true
         type: string
@@ -677,7 +677,7 @@ paths:
       parameters:
       - description: Category UUID
         in: path
-        name: id
+        name: category_id
         required: true
         type: string
       - description: Existing Sprite UUID
