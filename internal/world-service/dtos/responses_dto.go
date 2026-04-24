@@ -47,4 +47,5 @@ type WorldZoneResponse struct {
 	WorldID  string `json:"world_id"`
 	ZoneID   int    `json:"zone_id"`
 	ZoneData string `json:"zone_data"`
+	IsActive bool   `json:"is_active"`
 }

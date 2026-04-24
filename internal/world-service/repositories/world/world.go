@@ -96,6 +96,7 @@ func (r *worldRepository) UpsertWorldZone(worldID uuid.UUID, zoneID int, zoneDat
 			ID:       zoneID,
 			WorldID:  worldID,
 			ZoneData: datatypes.JSON(zoneData),
+			IsActive: false,
 		}
 		if err := r.db.Conn.Create(&wz).Error; err != nil {
 			return nil, err
@@ -109,6 +110,20 @@ func (r *worldRepository) UpsertWorldZone(worldID uuid.UUID, zoneID int, zoneDat
 	}
 
 	return &wz, nil
+}
+
+func (r *worldRepository) SetWorldZoneActiveState(worldID uuid.UUID, zoneID int, isActive bool) (*models.WorldZone, error) {
+	var worldZone models.WorldZone
+	if err := r.db.Conn.Where("world_id = ? AND id = ?", worldID, zoneID).First(&worldZone).Error; err != nil {
+		return nil, err
+	}
+
+	worldZone.IsActive = isActive
+	if err := r.db.Conn.Save(&worldZone).Error; err != nil {
+		return nil, err
+	}
+
+	return &worldZone, nil
 }
 
 func (r *worldRepository) DeleteWorldData(worldID uuid.UUID) error {

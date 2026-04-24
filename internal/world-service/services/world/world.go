@@ -63,50 +63,6 @@ func (cs *worldService) UpdateCreateableData(worldID uuid.UUID, userId uuid.UUID
 	return cs.worldRepository.UpdateCreateableData(worldID, userId, createableData)
 }
 
-func (cs *worldService) CheckAvaliableZonesForPublish(worldId uuid.UUID, zoneId int) error {
-	userId, wErr := cs.worldRepository.GetUserIdByWorldId(worldId)
-	if wErr != nil {
-		return wErr
-	}
-
-	url := fmt.Sprintf("http://127.0.0.1:%d/subscriptions/internal/users/%s/status", cs.conf.Server.Port, userId)
-	resp, httpErr := http.Get(url)
-	if httpErr != nil {
-		return errors.New("failed to reach payment service to verify slots")
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusNotFound {
-		return errors.New("forbidden: active slots subscription required")
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to reach payment service to verify slots: status %d", resp.StatusCode)
-	}
-
-	var slotsData struct {
-		Data struct {
-			Allowed   bool `json:"allowed"`
-			FreeSlots int  `json:"free_slots"`
-		} `json:"data"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&slotsData); err != nil {
-		return errors.New("failed to decode slots response")
-	}
-
-	if !slotsData.Data.Allowed {
-		return errors.New("active slots subscription required")
-	}
-
-	if slotsData.Data.FreeSlots <= 0 {
-		return fmt.Errorf("forbidden: you have %d free zones available. Please upgrade your subscription to publish more zones", slotsData.Data.FreeSlots)
-	}
-
-	return nil
-}
-
 func (cs *worldService) UpdateUsedSlots(userId uuid.UUID, numberOfSlots int, areUsed bool) error {
 	payload := map[string]interface{}{"slots": numberOfSlots, "are_used": areUsed}
 	jsonData, err := json.Marshal(payload)
@@ -137,42 +93,6 @@ func (cs *worldService) UpdateUsedSlots(userId uuid.UUID, numberOfSlots int, are
 	return nil
 }
 
-func (cs *worldService) PublishZone(worldID uuid.UUID, zoneID int, zoneData []byte) (*models.WorldZone, error) {
-	isNewZone := false
-	if cs.conf.Server.SubscriptionOn {
-		_, err := cs.worldRepository.GetWorldZone(worldID, zoneID)
-		if err != nil {
-			isNewZone = true
-		}
-
-		if isNewZone {
-			if err := cs.CheckAvaliableZonesForPublish(worldID, zoneID); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	if err := cs.serverRegistryService.StartNewJob(worldID, zoneID); err != nil {
-		return nil, err
-	}
-
-	zone, err := cs.worldRepository.UpsertWorldZone(worldID, zoneID, zoneData)
-	if err != nil {
-		return nil, err
-	}
-
-	if cs.conf.Server.SubscriptionOn && isNewZone {
-		userId, err := cs.worldRepository.GetUserIdByWorldId(worldID)
-		if err == nil {
-			if err := cs.UpdateUsedSlots(userId, 1, true); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return zone, nil
-}
-
 func (cs *worldService) DeleteWorld(worldID uuid.UUID, userId uuid.UUID) error {
 	worldData, err := cs.worldRepository.GetWorldData(worldID)
 	if err != nil {
@@ -191,14 +111,21 @@ func (cs *worldService) DeleteWorld(worldID uuid.UUID, userId uuid.UUID) error {
 		return err
 	}
 
+	activeZonesCount := 0
 	for _, zone := range zones {
+		if !zone.IsActive {
+			continue
+		}
+
 		if err := cs.serverRegistryService.StopJob(worldID, zone.ID); err != nil {
 			return err
 		}
+
+		activeZonesCount++
 	}
 
-	if cs.conf.Server.SubscriptionOn && len(zones) > 0 {
-		if err := cs.UpdateUsedSlots(userId, len(zones), false); err != nil {
+	if cs.conf.Server.SubscriptionOn && activeZonesCount > 0 {
+		if err := cs.UpdateUsedSlots(userId, activeZonesCount, false); err != nil {
 			return err
 		}
 	}
@@ -208,14 +135,6 @@ func (cs *worldService) DeleteWorld(worldID uuid.UUID, userId uuid.UUID) error {
 
 func (cs *worldService) GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error) {
 	return cs.worldRepository.GetWorldsList(offset, limit, filter)
-}
-
-func (cs *worldService) GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, error) {
-	return cs.worldRepository.GetWorldZones(worldID)
-}
-
-func (cs *worldService) GetWorldZone(worldID uuid.UUID, zoneID int) (*models.WorldZone, error) {
-	return cs.worldRepository.GetWorldZone(worldID, zoneID)
 }
 
 func (cs *worldService) ClearDatabase() error {
