@@ -241,7 +241,7 @@ func (c *zonesController) ActivateZone(ctx *gin.Context) {
 
 	zone, err := c.zonesService.ActivateZone(worldID, zoneID)
 	if err != nil {
-		_ = ctx.Error(err)
+		_ = errors.NewForbiddenError(err.Error())
 		return
 	}
 

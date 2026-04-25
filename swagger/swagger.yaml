@@ -418,6 +418,8 @@ definitions:
     type: object
   dtos.WorldZoneResponse:
     properties:
+      is_active:
+        type: boolean
       world_id:
         type: string
       zone_data:
@@ -2348,6 +2350,84 @@ paths:
       security:
       - BearerAuth: []
       summary: Publish zone
+      tags:
+      - world-service
+  /world/{id}/zones/{zone_id}/activate:
+    get:
+      description: Starts server orchestration for a published zone and consumes one
+        subscription slot.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Zone ID
+        in: path
+        name: zone_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WorldZoneResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Activate zone
+      tags:
+      - world-service
+  /world/{id}/zones/{zone_id}/deactivate:
+    get:
+      description: Stops server orchestration for an active zone and releases one
+        subscription slot.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Zone ID
+        in: path
+        name: zone_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WorldZoneResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deactivate zone
       tags:
       - world-service
   /world/orchestrator/{id}/zones/{zone_id}/address:
