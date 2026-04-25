@@ -40,81 +40,79 @@ func (zs *zonesService) PublishZone(worldID uuid.UUID, zoneID int, zoneData []by
 	return zs.worldRepository.UpsertWorldZone(worldID, zoneID, zoneData)
 }
 
-func (zs *zonesService) ActivateZone(worldID uuid.UUID, zoneID int) (*models.WorldZone, error) {
-	zone, err := zs.worldRepository.GetWorldZone(worldID, zoneID)
+func (zs *zonesService) ActivateZone(worldID uuid.UUID, zoneID int) error {
+	isActive, err := zs.worldRepository.GetWorldZoneActiveState(worldID, zoneID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if zone.IsActive {
-		return zone, nil
+	if isActive {
+		return nil
 	}
 
 	if zs.conf.Server.SubscriptionOn {
 		if err := zs.checkAvailableZonesForActivation(worldID); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	if err := zs.serverRegistryService.StartNewJob(worldID, zoneID); err != nil {
-		return nil, err
+		return err
 	}
 
-	zone, err = zs.worldRepository.SetWorldZoneActiveState(worldID, zoneID, true)
-	if err != nil {
+	if err := zs.worldRepository.SetWorldZoneActiveState(worldID, zoneID, true); err != nil {
 		_ = zs.serverRegistryService.StopJob(worldID, zoneID)
-		return nil, err
+		return err
 	}
 
 	if zs.conf.Server.SubscriptionOn {
 		userID, err := zs.worldRepository.GetUserIdByWorldId(worldID)
 		if err != nil {
 			_ = zs.serverRegistryService.StopJob(worldID, zoneID)
-			_, _ = zs.worldRepository.SetWorldZoneActiveState(worldID, zoneID, false)
-			return nil, err
+			_ = zs.worldRepository.SetWorldZoneActiveState(worldID, zoneID, false)
+			return err
 		}
 
 		if err := zs.updateUsedSlots(userID, 1, true); err != nil {
 			_ = zs.serverRegistryService.StopJob(worldID, zoneID)
-			_, _ = zs.worldRepository.SetWorldZoneActiveState(worldID, zoneID, false)
-			return nil, err
+			_ = zs.worldRepository.SetWorldZoneActiveState(worldID, zoneID, false)
+			return err
 		}
 	}
 
-	return zone, nil
+	return nil
 }
 
-func (zs *zonesService) DeactivateZone(worldID uuid.UUID, zoneID int) (*models.WorldZone, error) {
-	zone, err := zs.worldRepository.GetWorldZone(worldID, zoneID)
+func (zs *zonesService) DeactivateZone(worldID uuid.UUID, zoneID int) error {
+	isActive, err := zs.worldRepository.GetWorldZoneActiveState(worldID, zoneID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if !zone.IsActive {
-		return zone, nil
+	if !isActive {
+		return nil
 	}
 
 	if err := zs.serverRegistryService.StopJob(worldID, zoneID); err != nil {
-		return nil, err
+		return err
 	}
 
-	zone, err = zs.worldRepository.SetWorldZoneActiveState(worldID, zoneID, false)
-	if err != nil {
-		return nil, err
+	if err := zs.worldRepository.SetWorldZoneActiveState(worldID, zoneID, false); err != nil {
+		return err
 	}
 
 	if zs.conf.Server.SubscriptionOn {
 		userID, err := zs.worldRepository.GetUserIdByWorldId(worldID)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		if err := zs.updateUsedSlots(userID, 1, false); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return zone, nil
+	return nil
 }
 
 func (zs *zonesService) GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, error) {

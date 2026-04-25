@@ -203,7 +203,7 @@ func (c *zonesController) GetWorldZoneData(ctx *gin.Context) {
 // @Produce      json
 // @Param        id path string true "World UUID"
 // @Param        zone_id path int true "Zone ID"
-// @Success      200  {object}  dtos.WorldZoneResponse
+// @Success      200  {string}  string "Acknowledge activation"
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse
 // @Failure      404  {object} dtos.ErrorResponse
@@ -242,18 +242,13 @@ func (c *zonesController) ActivateZone(ctx *gin.Context) {
 		return
 	}
 
-	zone, err := c.zonesService.ActivateZone(worldID, zoneID)
+	err = c.zonesService.ActivateZone(worldID, zoneID)
 	if err != nil {
-		_ = errors.NewForbiddenError(err.Error())
+		_ = ctx.Error(errors.NewForbiddenError(err.Error()))
 		return
 	}
 
-	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, &dtos.WorldZoneResponse{
-		WorldID:  zone.WorldID.String(),
-		ZoneID:   zone.ID,
-		ZoneData: zone.ZoneData.String(),
-		IsActive: zone.IsActive,
-	})
+	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
 }
 
 // DeactivateZone godoc
@@ -264,7 +259,7 @@ func (c *zonesController) ActivateZone(ctx *gin.Context) {
 // @Produce      json
 // @Param        id path string true "World UUID"
 // @Param        zone_id path int true "Zone ID"
-// @Success      200  {object}  dtos.WorldZoneResponse
+// @Success      200  {string}  string "Acknowledge deactivation"
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse
 // @Failure      404  {object} dtos.ErrorResponse
@@ -303,16 +298,11 @@ func (c *zonesController) DeactivateZone(ctx *gin.Context) {
 		return
 	}
 
-	zone, err := c.zonesService.DeactivateZone(worldID, zoneID)
+	err = c.zonesService.DeactivateZone(worldID, zoneID)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
 
-	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, &dtos.WorldZoneResponse{
-		WorldID:  zone.WorldID.String(),
-		ZoneID:   zone.ID,
-		ZoneData: zone.ZoneData.String(),
-		IsActive: zone.IsActive,
-	})
+	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
 }

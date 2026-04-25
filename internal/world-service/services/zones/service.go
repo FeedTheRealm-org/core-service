@@ -14,10 +14,10 @@ type ZonesService interface {
 	PublishZone(worldID uuid.UUID, zoneID int, zoneData []byte) (*models.WorldZone, error)
 
 	// ActivateZone starts orchestration for a zone and marks it active.
-	ActivateZone(worldID uuid.UUID, zoneID int) (*models.WorldZone, error)
+	ActivateZone(worldID uuid.UUID, zoneID int) error
 
 	// DeactivateZone stops orchestration for a zone and marks it inactive.
-	DeactivateZone(worldID uuid.UUID, zoneID int) (*models.WorldZone, error)
+	DeactivateZone(worldID uuid.UUID, zoneID int) error
 
 	// GetWorldZones returns zones for a world.
 	GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, error)

@@ -23,7 +23,10 @@ type WorldRepository interface {
 	UpsertWorldZone(worldID uuid.UUID, zoneID int, zoneData []byte) (*models.WorldZone, error)
 
 	// SetWorldZoneActiveState updates the active state for a specific zone.
-	SetWorldZoneActiveState(worldID uuid.UUID, zoneID int, isActive bool) (*models.WorldZone, error)
+	SetWorldZoneActiveState(worldID uuid.UUID, zoneID int, isActive bool) error
+
+	// GetWorldZoneActiveState retrieves only active state for a specific zone.
+	GetWorldZoneActiveState(worldID uuid.UUID, zoneID int) (bool, error)
 
 	// DeleteWorldData deletes a world from the database, only if owned by userId.
 	DeleteWorldData(worldID uuid.UUID) error
