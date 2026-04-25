@@ -155,6 +155,20 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 		return
 	}
 
+	zones, err := c.worldService.GetWorldZones(parsedWorldId)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	zoneMetadata := make([]dtos.WorldZoneMetadata, 0, len(zones))
+	for _, zone := range zones {
+		zoneMetadata = append(zoneMetadata, dtos.WorldZoneMetadata{
+			ZoneID:   zone.ID,
+			IsActive: zone.IsActive,
+		})
+	}
+
 	res := &dtos.WorldResponse{
 		ID:             worldInfo.ID.String(),
 		UserId:         worldInfo.UserId.String(),
@@ -162,6 +176,7 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 		Description:    worldInfo.Description,
 		Data:           worldInfo.Data.String(),
 		CreateableData: worldInfo.CreateableData.String(),
+		Zones:          zoneMetadata,
 		CreatedAt:      worldInfo.CreatedAt,
 		UpdatedAt:      worldInfo.UpdatedAt,
 	}
@@ -224,14 +239,28 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 	// Build a metadata-only list (do not include full world Data)
 	resList := make([]dtos.WorldMetadata, 0, len(worldsList))
 	for _, worldInfo := range worldsList {
+		zones, err := c.worldService.GetWorldZones(worldInfo.ID)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+
+		zoneMetadata := make([]dtos.WorldZoneMetadata, 0, len(zones))
+		for _, zone := range zones {
+			zoneMetadata = append(zoneMetadata, dtos.WorldZoneMetadata{
+				ZoneID:   zone.ID,
+				IsActive: zone.IsActive,
+			})
+		}
+
 		resList = append(resList, dtos.WorldMetadata{
-			ID:             worldInfo.ID.String(),
-			UserId:         worldInfo.UserId.String(),
-			Name:           worldInfo.Name,
-			Description:    worldInfo.Description,
-			CreateableData: worldInfo.CreateableData.String(),
-			CreatedAt:      worldInfo.CreatedAt,
-			UpdatedAt:      worldInfo.UpdatedAt,
+			ID:          worldInfo.ID.String(),
+			UserId:      worldInfo.UserId.String(),
+			Name:        worldInfo.Name,
+			Description: worldInfo.Description,
+			Zones:       zoneMetadata,
+			CreatedAt:   worldInfo.CreatedAt,
+			UpdatedAt:   worldInfo.UpdatedAt,
 		})
 	}
 	res := &dtos.WorldsListResponse{

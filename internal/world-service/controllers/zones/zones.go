@@ -134,14 +134,17 @@ func (c *zonesController) GetWorldZones(ctx *gin.Context) {
 		return
 	}
 
-	zoneIds := make([]int, 0, len(zones))
+	zoneMetadata := make([]dtos.WorldZoneMetadata, 0, len(zones))
 	for _, zone := range zones {
-		zoneIds = append(zoneIds, zone.ID)
+		zoneMetadata = append(zoneMetadata, dtos.WorldZoneMetadata{
+			ZoneID:   zone.ID,
+			IsActive: zone.IsActive,
+		})
 	}
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, &dtos.WorldZonesResponse{
 		WorldID: worldID.String(),
-		Zones:   zoneIds,
+		Zones:   zoneMetadata,
 	})
 }
 

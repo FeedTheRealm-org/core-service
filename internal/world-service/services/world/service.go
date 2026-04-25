@@ -24,5 +24,8 @@ type WorldService interface {
 	// GetWorldsList retrieves a paginated list of worlds.
 	GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error)
 
+	// GetWorldZones retrieves zones for a specific world.
+	GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, error)
+
 	ClearDatabase() error
 }

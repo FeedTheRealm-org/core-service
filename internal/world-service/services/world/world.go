@@ -137,6 +137,10 @@ func (cs *worldService) GetWorldsList(offset int, limit int, filter string) ([]*
 	return cs.worldRepository.GetWorldsList(offset, limit, filter)
 }
 
+func (cs *worldService) GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, error) {
+	return cs.worldRepository.GetWorldZones(worldID)
+}
+
 func (cs *worldService) ClearDatabase() error {
 	return cs.worldRepository.ClearDatabase()
 }

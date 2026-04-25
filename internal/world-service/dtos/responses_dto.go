@@ -6,14 +6,15 @@ import "time"
 
 // WorldResponse represents the response payload for retrieving world information.
 type WorldResponse struct {
-	ID             string    `json:"id"`
-	UserId         string    `json:"user_id"`
-	Name           string    `json:"name"`
-	Description    string    `json:"description,omitempty"`
-	Data           string    `json:"data"`
-	CreateableData string    `json:"createable_data"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID             string              `json:"id"`
+	UserId         string              `json:"user_id"`
+	Name           string              `json:"name"`
+	Description    string              `json:"description,omitempty"`
+	Data           string              `json:"data"`
+	CreateableData string              `json:"createable_data"`
+	Zones          []WorldZoneMetadata `json:"zones"`
+	CreatedAt      time.Time           `json:"created_at"`
+	UpdatedAt      time.Time           `json:"updated_at"`
 }
 
 type WorldsListResponse struct {
@@ -24,13 +25,18 @@ type WorldsListResponse struct {
 }
 
 type WorldMetadata struct {
-	ID             string    `json:"id"`
-	UserId         string    `json:"user_id"`
-	Name           string    `json:"name"`
-	Description    string    `json:"description,omitempty"`
-	CreateableData string    `json:"createable_data"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID          string              `json:"id"`
+	UserId      string              `json:"user_id"`
+	Name        string              `json:"name"`
+	Description string              `json:"description,omitempty"`
+	Zones       []WorldZoneMetadata `json:"zones"`
+	CreatedAt   time.Time           `json:"created_at"`
+	UpdatedAt   time.Time           `json:"updated_at"`
+}
+
+type WorldZoneMetadata struct {
+	ZoneID   int  `json:"zone_id"`
+	IsActive bool `json:"is_active"`
 }
 
 type WorldAddressResponse struct {
@@ -39,8 +45,8 @@ type WorldAddressResponse struct {
 }
 
 type WorldZonesResponse struct {
-	WorldID string `json:"world_id"`
-	Zones   []int  `json:"zones"`
+	WorldID string              `json:"world_id"`
+	Zones   []WorldZoneMetadata `json:"zones"`
 }
 
 type WorldZoneResponse struct {
