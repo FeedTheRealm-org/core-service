@@ -6,9 +6,10 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
+	assets_errors "github.com/FeedTheRealm-org/core-service/internal/assets-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/services/items"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
-	"github.com/FeedTheRealm-org/core-service/internal/errors"
+	internalErrors "github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -41,13 +42,13 @@ func NewItemController(conf *config.Config, service items.ItemService) ItemContr
 func (ic *itemController) GetItemsListByWorld(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		_ = c.Error(internalErrors.NewUnauthorizedError(err.Error()))
 		return
 	}
 
 	worldId, err := uuid.Parse(c.Param("world_id"))
 	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
+		_ = c.Error(internalErrors.NewBadRequestError("invalid world_id: " + err.Error()))
 		return
 	}
 
@@ -87,19 +88,24 @@ func (ic *itemController) GetItemsListByWorld(c *gin.Context) {
 func (ic *itemController) GetItemById(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		_ = c.Error(internalErrors.NewUnauthorizedError(err.Error()))
 		return
 	}
 
 	itemId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid item_id: " + err.Error()))
+		_ = c.Error(internalErrors.NewBadRequestError("invalid item_id: " + err.Error()))
 		return
 	}
 
 	item, err := ic.service.GetItemById(itemId)
 	if err != nil {
-		_ = c.Error(err)
+		switch err.(type) {
+		case *assets_errors.ItemSpriteNotFound:
+			_ = c.Error(internalErrors.NewNotFoundError("item not found"))
+		default:
+			_ = c.Error(err)
+		}
 		return
 	}
 
@@ -130,13 +136,13 @@ func (ic *itemController) GetItemById(c *gin.Context) {
 func (ic *itemController) UploadItems(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		_ = c.Error(internalErrors.NewUnauthorizedError(err.Error()))
 		return
 	}
 
 	worldId, err := uuid.Parse(c.Param("world_id"))
 	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid world_id format"))
+		_ = c.Error(internalErrors.NewBadRequestError("invalid world_id format"))
 		return
 	}
 
@@ -153,13 +159,13 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 
 		id, err := uuid.Parse(idVal)
 		if err != nil {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid id format for ids[%d]: %s", i, err.Error())))
+			_ = c.Error(internalErrors.NewBadRequestError(fmt.Sprintf("invalid id format for ids[%d]: %s", i, err.Error())))
 			return
 		}
 
 		spriteFile, err := c.FormFile(fmt.Sprintf("sprites[%d]", i))
 		if err != nil {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("Missing sprite file for ids[%d]", i)))
+			_ = c.Error(internalErrors.NewBadRequestError(fmt.Sprintf("Missing sprite file for ids[%d]", i)))
 			return
 		}
 
@@ -199,13 +205,13 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 func (ic *itemController) DeleteItem(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		_ = c.Error(internalErrors.NewUnauthorizedError(err.Error()))
 		return
 	}
 
 	itemId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid item_id format"))
+		_ = c.Error(internalErrors.NewBadRequestError("invalid item_id format"))
 		return
 	}
 
@@ -216,12 +222,12 @@ func (ic *itemController) DeleteItem(c *gin.Context) {
 	}
 
 	if item == nil {
-		_ = c.Error(errors.NewBadRequestError("item not found"))
+		_ = c.Error(internalErrors.NewBadRequestError("item not found"))
 		return
 	}
 
 	if item.CreatedBy != userId {
-		_ = c.Error(errors.NewUnauthorizedError("user is not authorized to delete this item"))
+		_ = c.Error(internalErrors.NewUnauthorizedError("user is not authorized to delete this item"))
 		return
 	}
 
