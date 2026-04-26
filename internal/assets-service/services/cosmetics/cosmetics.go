@@ -84,7 +84,7 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, worldId uui
 	return cosmetic, nil
 }
 
-func (ss *cosmeticsService) UploadCosmeticByID(categoryId uuid.UUID, worldId uuid.UUID, price float64, spriteId uuid.UUID, userId uuid.UUID) (*models.Cosmetic, error) {
+func (ss *cosmeticsService) UploadCosmeticByID(categoryId uuid.UUID, worldId uuid.UUID, price float64, spriteId uuid.UUID, userId uuid.UUID, cosmeticFile multipart.File, ext string) (*models.Cosmetic, error) {
 	if _, err := ss.cosmeticsRepository.GetCategoryById(categoryId); err != nil {
 		logger.Logger.Errorf("Error getting category by id: %v", err)
 		return nil, err
@@ -96,15 +96,30 @@ func (ss *cosmeticsService) UploadCosmeticByID(categoryId uuid.UUID, worldId uui
 		return nil, err
 	}
 
-	cosmetic := &models.Cosmetic{
-		Url: sourceCosmetic.Url,
+	if cosmeticFile != nil {
+		filePath := sourceCosmetic.Url[1:]
+		if err := ss.bucketRepo.UploadFile(filePath, "image/png", cosmeticFile); err != nil {
+			logger.Logger.Errorf("Error overwriting file in bucket: %v", err)
+			return nil, err
+		}
 	}
-	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, worldId, price, cosmetic, userId); err != nil {
+
+	existing, err := ss.cosmeticsRepository.GetCosmeticByUrlCategoryAndWorld(sourceCosmetic.Url, categoryId, worldId)
+	if err == nil && existing != nil {
+		if err := ss.cosmeticsRepository.UpdateCosmetic(existing.Id, price, ""); err != nil {
+			logger.Logger.Errorf("Error updating cosmetic price: %v", err)
+			return nil, err
+		}
+		return sourceCosmetic, nil
+	}
+
+	linked := &models.Cosmetic{Url: sourceCosmetic.Url}
+	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, worldId, price, linked, userId); err != nil {
 		logger.Logger.Errorf("Error creating linked cosmetic: %v", err)
 		return nil, err
 	}
 
-	return cosmetic, nil
+	return linked, nil
 }
 
 func (ss *cosmeticsService) DeleteCosmetic(cosmeticId uuid.UUID) error {

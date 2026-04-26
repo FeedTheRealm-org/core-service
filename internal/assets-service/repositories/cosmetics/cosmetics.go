@@ -173,6 +173,29 @@ func (cr *cosmeticsRepository) CreateCosmetic(categoryId uuid.UUID, worldId uuid
 	return nil
 }
 
+func (cr *cosmeticsRepository) UpdateCosmetic(cosmeticId uuid.UUID, price float64, url string) error {
+	updates := map[string]interface{}{"price": price}
+	if url != "" {
+		updates["url"] = url
+	}
+	return cr.db.Conn.Model(&models.Cosmetic{}).
+		Where("id = ?", cosmeticId).
+		Updates(updates).Error
+}
+
+func (cr *cosmeticsRepository) GetCosmeticByUrlCategoryAndWorld(url string, categoryId uuid.UUID, worldId uuid.UUID) (*models.Cosmetic, error) {
+	var cosmetic models.Cosmetic
+	if err := cr.db.Conn.
+		Where("url = ? AND category_id = ? AND world_id = ?", url, categoryId, worldId).
+		First(&cosmetic).Error; err != nil {
+		if errors.IsRecordNotFound(err) {
+			return nil, assets_errors.NewCosmeticNotFound("cosmetic not found")
+		}
+		return nil, err
+	}
+	return &cosmetic, nil
+}
+
 func (cr *cosmeticsRepository) DeleteCosmetic(cosmeticId uuid.UUID) error {
 	if err := cr.db.Conn.Model(&models.Cosmetic{}).Where("id = ?", cosmeticId).Update("world_id", nil).Error; err != nil {
 		return err
