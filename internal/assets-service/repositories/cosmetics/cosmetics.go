@@ -32,7 +32,7 @@ func (cr *cosmeticsRepository) GetCategoriesList() ([]*models.CosmeticCategory, 
 func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, worldId uuid.UUID, playerId uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
 	query := cr.db.Conn.Model(&models.Cosmetic{}).
 		Where("category_id = ?", category).
-		Where("world_id = ?", worldId)
+		Where("world_id = ? OR world_id = ?", worldId, uuid.Nil)
 
 	if playerId != uuid.Nil {
 		query = query.Joins("LEFT JOIN purchases ON purchases.cosmetic_id = cosmetics.id AND purchases.player_id = ?", playerId).
