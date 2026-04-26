@@ -3,6 +3,7 @@ package cosmetics
 import (
 	"encoding/json"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -446,7 +447,33 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 		return
 	}
 
-	cosmetic, err := cc.cosmeticsService.UploadCosmeticByID(categoryId, worldId, price, spriteId, userId)
+	var cosmeticFile multipart.File
+	var ext string
+	reqFile, err := c.FormFile("sprite")
+	if err != nil && err != http.ErrMissingFile {
+		_ = c.Error(errors.NewBadRequestError("failed to get sprite file from request: " + err.Error()))
+		return
+	}
+	if reqFile != nil {
+		if reqFile.Size > cc.conf.Assets.MaxUploadSizeBytes {
+			_ = c.Error(errors.NewBadRequestError("file size exceeds the limit"))
+			return
+		}
+		contentType := reqFile.Header.Get("Content-Type")
+		if contentType != "image/png" && contentType != "image/jpeg" {
+			_ = c.Error(errors.NewBadRequestError("file must be PNG or JPEG format"))
+			return
+		}
+		cosmeticFile, err = reqFile.Open()
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError("failed to open sprite file: " + err.Error()))
+			return
+		}
+		defer func() { _ = cosmeticFile.Close() }()
+		ext = filepath.Ext(reqFile.Filename)
+	}
+
+	cosmetic, err := cc.cosmeticsService.UploadCosmeticByID(categoryId, worldId, price, spriteId, userId, cosmeticFile, ext)
 	if err != nil {
 		switch err.(type) {
 		case *assets_errors.CategoryNotFound:
@@ -463,7 +490,6 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 		CosmeticId:  cosmetic.Id,
 		CosmeticUrl: cosmetic.Url,
 	}
-
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 

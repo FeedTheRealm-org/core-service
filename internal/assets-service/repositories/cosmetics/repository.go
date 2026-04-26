@@ -23,5 +23,9 @@ type CosmeticsRepository interface {
 
 	CreateCosmetic(category uuid.UUID, worldId uuid.UUID, price float64, cosmetic *models.Cosmetic, userId uuid.UUID) error
 
+	GetCosmeticByUrlCategoryAndWorld(url string, categoryId uuid.UUID, worldId uuid.UUID) (*models.Cosmetic, error)
+
+	UpdateCosmetic(cosmeticId uuid.UUID, price float64, url string) error
+
 	DeleteCosmetic(cosmeticId uuid.UUID) error
 }
