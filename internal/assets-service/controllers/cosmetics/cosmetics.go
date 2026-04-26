@@ -448,7 +448,14 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 
 	cosmetic, err := cc.cosmeticsService.UploadCosmeticByID(categoryId, worldId, price, spriteId, userId)
 	if err != nil {
-		_ = c.Error(err)
+		switch err.(type) {
+		case *assets_errors.CategoryNotFound:
+			_ = c.Error(errors.NewNotFoundError("category not found"))
+		case *assets_errors.CosmeticNotFound:
+			_ = c.Error(errors.NewNotFoundError("cosmetic not found"))
+		default:
+			_ = c.Error(err)
+		}
 		return
 	}
 
