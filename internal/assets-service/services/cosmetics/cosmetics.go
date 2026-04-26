@@ -34,7 +34,7 @@ func (ss *cosmeticsService) GetCategoriesList() ([]*models.CosmeticCategory, err
 	return ss.cosmeticsRepository.GetCategoriesList()
 }
 
-func (ss *cosmeticsService) GetCosmeticsListByCategory(category uuid.UUID, worldId uuid.UUID, playerId uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
+func (ss *cosmeticsService) GetCosmeticsListByCategory(category uuid.UUID, worldId *uuid.UUID, playerId *uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
 	_, err := ss.cosmeticsRepository.GetCategoryById(category)
 	if err != nil {
 		return nil, 0, assets_errors.NewCategoryNotFound("category not found")

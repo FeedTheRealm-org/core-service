@@ -29,14 +29,26 @@ func (cr *cosmeticsRepository) GetCategoriesList() ([]*models.CosmeticCategory, 
 	return categories, nil
 }
 
-func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, worldId uuid.UUID, playerId uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
+func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, worldId *uuid.UUID, playerId *uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
 	query := cr.db.Conn.Model(&models.Cosmetic{}).
-		Where("category_id = ?", category).
-		Where("world_id = ? OR world_id = ?", worldId, uuid.Nil)
+		Where("cosmetics.category_id = ?", category)
 
-	if playerId != uuid.Nil {
-		query = query.Joins("LEFT JOIN purchases ON purchases.cosmetic_id = cosmetics.id AND purchases.player_id = ?", playerId).
-			Where("purchases.cosmetic_id IS NOT NULL")
+	switch {
+	case worldId == nil && playerId == nil:
+		query = query.Where("cosmetics.world_id = ?", uuid.Nil)
+	case worldId != nil && playerId == nil:
+		query = query.Where("cosmetics.world_id = ? OR cosmetics.world_id = ?", *worldId, uuid.Nil)
+	case worldId == nil && playerId != nil:
+		query = query.
+			Joins("LEFT JOIN purchases ON purchases.cosmetic_id = cosmetics.id AND purchases.player_id = ?", *playerId).
+			Where("cosmetics.world_id = ? OR purchases.cosmetic_id IS NOT NULL", uuid.Nil)
+	case worldId != nil && playerId != nil:
+		query = query.
+			Joins("LEFT JOIN purchases ON purchases.cosmetic_id = cosmetics.id AND purchases.player_id = ?", *playerId).
+			Where(
+				"cosmetics.world_id = ? OR (cosmetics.world_id = ? AND purchases.cosmetic_id IS NOT NULL)",
+				uuid.Nil, *worldId,
+			)
 	}
 
 	var totalCount int64
@@ -49,7 +61,8 @@ func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, wo
 	}
 
 	var cosmetics []*models.Cosmetic
-	if err := query.Order("cosmetics.world_id ASC, cosmetics.id ASC").
+	if err := query.
+		Order("cosmetics.world_id ASC, cosmetics.id ASC").
 		Offset(offset).
 		Limit(limit).
 		Find(&cosmetics).Error; err != nil {

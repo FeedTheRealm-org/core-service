@@ -107,19 +107,25 @@ func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 		return
 	}
 
-	worldId, err := uuid.Parse(c.DefaultQuery("world_id", "00000000-0000-0000-0000-000000000000"))
-	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
-		return
+	var worldId *uuid.UUID
+	if raw := c.DefaultQuery("world_id", ""); raw != "" {
+		*worldId, err = uuid.Parse(raw)
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
+			return
+		}
 	}
 
-	playerId, err := uuid.Parse(c.DefaultQuery("player_id", "00000000-0000-0000-0000-000000000000"))
-	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid player_id: " + err.Error()))
-		return
+	var playerId *uuid.UUID
+	if raw := c.DefaultQuery("player_id", ""); raw != "" {
+		*playerId, err = uuid.Parse(raw)
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError("invalid player_id: " + err.Error()))
+			return
+		}
 	}
 
-	if playerId != uuid.Nil && playerId != userID {
+	if *playerId != uuid.Nil && *playerId != userID {
 		if err := common_handlers.IsAdminSession(c); err != nil {
 			_ = c.Error(errors.NewUnauthorizedError("invalid player_id"))
 			return

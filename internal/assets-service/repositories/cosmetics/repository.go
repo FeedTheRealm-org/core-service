@@ -9,7 +9,7 @@ import (
 type CosmeticsRepository interface {
 	GetCategoriesList() ([]*models.CosmeticCategory, error)
 
-	GetCosmeticsListByCategory(category uuid.UUID, worldId uuid.UUID, playerId uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error)
+	GetCosmeticsListByCategory(category uuid.UUID, worldId *uuid.UUID, playerId *uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error)
 
 	GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error)
 
