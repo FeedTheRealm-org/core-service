@@ -373,8 +373,6 @@ definitions:
     type: object
   dtos.WorldMetadata:
     properties:
-      createable_data:
-        type: string
       created_at:
         type: string
       description:
@@ -387,6 +385,10 @@ definitions:
         type: string
       user_id:
         type: string
+      zones:
+        items:
+          $ref: '#/definitions/dtos.WorldZoneMetadata'
+        type: array
     type: object
   dtos.WorldRequest:
     properties:
@@ -415,6 +417,17 @@ definitions:
         type: string
       user_id:
         type: string
+      zones:
+        items:
+          $ref: '#/definitions/dtos.WorldZoneMetadata'
+        type: array
+    type: object
+  dtos.WorldZoneMetadata:
+    properties:
+      is_active:
+        type: boolean
+      zone_id:
+        type: integer
     type: object
   dtos.WorldZoneResponse:
     properties:
@@ -433,7 +446,7 @@ definitions:
         type: string
       zones:
         items:
-          type: integer
+          $ref: '#/definitions/dtos.WorldZoneMetadata'
         type: array
     type: object
   dtos.WorldsListResponse:
@@ -596,12 +609,12 @@ paths:
         in: query
         name: limit
         type: integer
-      - default: '"00000000-0000-0000-0000-000000000000"'
+      - default: "null"
         description: World UUID
         in: query
         name: world_id
         type: string
-      - default: '"00000000-0000-0000-0000-000000000000"'
+      - default: "null"
         description: Player UUID
         in: query
         name: player_id
@@ -2371,9 +2384,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Acknowledge activation
           schema:
-            $ref: '#/definitions/dtos.WorldZoneResponse'
+            type: string
         "400":
           description: Bad Request
           schema:
@@ -2410,9 +2423,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Acknowledge deactivation
           schema:
-            $ref: '#/definitions/dtos.WorldZoneResponse'
+            type: string
         "400":
           description: Bad Request
           schema:

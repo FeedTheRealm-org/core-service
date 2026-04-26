@@ -76,8 +76,8 @@ func (cc *cosmeticsController) GetCategoriesList(c *gin.Context) {
 // @Param        id path string true "Category UUID"
 // @Param        offset query int false "Pagination offset" default(0)
 // @Param        limit query int false "Pagination limit" default(24)
-// @Param        world_id query string false "World UUID" default("00000000-0000-0000-0000-000000000000")
-// @Param        player_id query string false "Player UUID" default("00000000-0000-0000-0000-000000000000")
+// @Param        world_id query string false "World UUID" default(null)
+// @Param        player_id query string false "Player UUID" default(null)
 // @Success      200  {object}  dtos.CosmeticsListResponse
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse

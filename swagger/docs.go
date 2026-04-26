@@ -146,14 +146,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "\"00000000-0000-0000-0000-000000000000\"",
+                        "default": "null",
                         "description": "World UUID",
                         "name": "world_id",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "default": "\"00000000-0000-0000-0000-000000000000\"",
+                        "default": "null",
                         "description": "Player UUID",
                         "name": "player_id",
                         "in": "query"
@@ -3162,9 +3162,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Acknowledge activation",
                         "schema": {
-                            "$ref": "#/definitions/dtos.WorldZoneResponse"
+                            "type": "string"
                         }
                     },
                     "400": {
@@ -3221,9 +3221,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Acknowledge deactivation",
                         "schema": {
-                            "$ref": "#/definitions/dtos.WorldZoneResponse"
+                            "type": "string"
                         }
                     },
                     "400": {
@@ -3827,9 +3827,6 @@ const docTemplate = `{
         "dtos.WorldMetadata": {
             "type": "object",
             "properties": {
-                "createable_data": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -3847,6 +3844,12 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
+                },
+                "zones": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.WorldZoneMetadata"
+                    }
                 }
             }
         },
@@ -3889,6 +3892,23 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
+                },
+                "zones": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.WorldZoneMetadata"
+                    }
+                }
+            }
+        },
+        "dtos.WorldZoneMetadata": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean"
+                },
+                "zone_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -3918,7 +3938,7 @@ const docTemplate = `{
                 "zones": {
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "$ref": "#/definitions/dtos.WorldZoneMetadata"
                     }
                 }
             }
