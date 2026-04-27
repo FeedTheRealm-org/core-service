@@ -8,7 +8,7 @@ job "{{ .JobName }}" {
         interval = "5m"
         delay    = "10s"
         mode     = "delay"
-      }
+    }
 
     network {
       mode = "bridge"
@@ -28,7 +28,22 @@ job "{{ .JobName }}" {
       config {
         image = "{{ .ImageName }}"
         ports = ["game", "health"]
-        args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}"]
+        args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}", "--allow-bots={{ .AllowBots }}"]
+      }
+
+      template {
+        data = <<EOF
+{{ `{{- with $server_fixed_token := (aws_ssm "/ftr-server/SERVER_FIXED_TOKEN") }}
+SERVER_FIXED_TOKEN={{ $server_fixed_token }}
+{{- end }}
+{{ with $mongo_connection_string := (aws_ssm "/ftr-server/MONGO_CONNECTION_STRING") }}
+MONGO_CONNECTION_STRING={{ $mongo_connection_string }}
+{{- end }}` }}
+EOF
+
+        destination = "secrets/env"
+        env         = true
+        change_mode = "restart"
       }
 
       meta {
