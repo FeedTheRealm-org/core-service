@@ -251,7 +251,7 @@ func (zs *zoneSubscriptionService) CancelSubscription(userID uuid.UUID) (*models
 }
 
 func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature string) error {
-	event, err := webhook.ConstructEvent(payload, signature, zs.conf.Stripe.StripeWebhookSecret)
+	event, err := webhook.ConstructEvent(payload, signature, zs.conf.Stripe.StripeSubscriptionsWebhookSecret)
 	if err != nil {
 		logger.Logger.Error("Failed to verify Stripe webhook signature: " + err.Error())
 		return err
