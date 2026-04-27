@@ -117,7 +117,7 @@ func (bs *gemBalancesService) CreateCheckoutSession(userId uuid.UUID, packId uui
 }
 
 func (bs *gemBalancesService) HandleWebhook(payload []byte, signature string) error {
-	event, err := webhook.ConstructEvent(payload, signature, bs.conf.Stripe.StripeWebhookSecret)
+	event, err := webhook.ConstructEvent(payload, signature, bs.conf.Stripe.StripeGemsWebhookSecret)
 	if err != nil {
 		logger.Logger.Error("Failed to verify Stripe webhook signature: " + err.Error())
 		return err
