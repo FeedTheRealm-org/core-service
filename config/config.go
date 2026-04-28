@@ -15,14 +15,15 @@ const (
 )
 
 type ServerConfig struct {
-	Hostname        string
-	Port            int
-	ShutdownTimeout time.Duration
-	Environment     EnvironmentType
-	AdminEmail      string
-	AdminPassword   string
-	PublicIP        string
-	SubscriptionOn  bool
+	Hostname              string
+	Port                  int
+	ShutdownTimeout       time.Duration
+	Environment           EnvironmentType
+	AdminEmail            string
+	AdminPassword         string
+	PublicIP              string
+	SubscriptionOn        bool
+	CreatorRevenuePercent float64
 }
 
 type DatabaseConfig struct {
@@ -81,14 +82,15 @@ func CreateConfig() *Config {
 	}
 
 	serverConf := &ServerConfig{
-		Hostname:        getEnvOrDefaultString("SERVER_HOSTNAME", "localhost"),
-		Port:            getEnvOrDefaultInt("SERVER_PORT", 8000),
-		ShutdownTimeout: getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
-		Environment:     getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
-		AdminEmail:      getEnvOrDefaultString("SERVER_ADMIN_EMAIL", ""),
-		AdminPassword:   getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
-		PublicIP:        os.Getenv("PUBLIC_IP"),
-		SubscriptionOn:  getEnvOrDefaultBool("SUBSCRIPTION_ON", true),
+		Hostname:              getEnvOrDefaultString("SERVER_HOSTNAME", "localhost"),
+		Port:                  getEnvOrDefaultInt("SERVER_PORT", 8000),
+		ShutdownTimeout:       getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
+		Environment:           getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
+		AdminEmail:            getEnvOrDefaultString("SERVER_ADMIN_EMAIL", ""),
+		AdminPassword:         getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
+		PublicIP:              os.Getenv("PUBLIC_IP"),
+		SubscriptionOn:        getEnvOrDefaultBool("SUBSCRIPTION_ON", true),
+		CreatorRevenuePercent: getEnvOrDefaultFloat("CREATOR_REVENUE_PERCENT", 0.1),
 	}
 
 	stripeConf := &StripeConfig{
