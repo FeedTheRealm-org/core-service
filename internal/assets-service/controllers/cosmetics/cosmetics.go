@@ -626,6 +626,7 @@ func (cc *cosmeticsController) GetCosmeticByIdInternal(c *gin.Context) {
 	res := &dtos.InternalCosmeticResponse{
 		CosmeticId:    cosmetic.Id,
 		CosmeticPrice: cosmetic.Price,
+		CreatedBy:     cosmetic.CreatedBy,
 	}
 
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
