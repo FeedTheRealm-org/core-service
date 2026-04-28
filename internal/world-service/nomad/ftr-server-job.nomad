@@ -31,6 +31,10 @@ job "{{ .JobName }}" {
         args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}", "--allow-bots={{ .AllowBots }}"]
       }
 
+      env {
+        DD_AGENT_HOST = "172.17.0.1"
+      }
+
       meta {
         deployed_at = "{{ .DeployedAt }}"
       }
