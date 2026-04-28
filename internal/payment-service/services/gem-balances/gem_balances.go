@@ -15,20 +15,27 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	gem_balances_errors "github.com/FeedTheRealm-org/core-service/internal/payment-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/payment-service/models"
+	creator_balances_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/creator-balances"
 	gem_balances "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-balances"
 	gem_packs "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-packs"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 )
 
 type gemBalancesService struct {
-	conf            *config.Config
-	gemBalancesRepo gem_balances.GemBalancesRepository
-	packsRepo       gem_packs.GemPacksRepository
+	conf                *config.Config
+	gemBalancesRepo     gem_balances.GemBalancesRepository
+	packsRepo           gem_packs.GemPacksRepository
+	creatorBalancesRepo creator_balances_repo.CreatorBalancesRepository
 }
 
-func NewGemBalancesService(conf *config.Config, gemBalancesRepo gem_balances.GemBalancesRepository, packsRepo gem_packs.GemPacksRepository) GemBalancesService {
+func NewGemBalancesService(conf *config.Config, gemBalancesRepo gem_balances.GemBalancesRepository, packsRepo gem_packs.GemPacksRepository, creatorBalancesRepo creator_balances_repo.CreatorBalancesRepository) GemBalancesService {
 	stripe.Key = conf.Stripe.StripeApiKey
-	return &gemBalancesService{conf: conf, gemBalancesRepo: gemBalancesRepo, packsRepo: packsRepo}
+	return &gemBalancesService{
+		conf:                conf,
+		gemBalancesRepo:     gemBalancesRepo,
+		packsRepo:           packsRepo,
+		creatorBalancesRepo: creatorBalancesRepo,
+	}
 }
 
 func (bs *gemBalancesService) GetAllGemBalances() ([]*models.GemBalance, error) {
@@ -77,7 +84,7 @@ func (bs *gemBalancesService) UpdateGemBalance(userId uuid.UUID, gems int) error
 }
 
 func (bs *gemBalancesService) PurchaseCosmetic(userId uuid.UUID, cosmeticId uuid.UUID) error {
-	price, err := bs.fetchCosmeticPrice(cosmeticId)
+	price, creatorId, err := bs.fetchCosmeticPrice(cosmeticId)
 	if err != nil {
 		return err
 	}
@@ -95,16 +102,25 @@ func (bs *gemBalancesService) PurchaseCosmetic(userId uuid.UUID, cosmeticId uuid
 		return err
 	}
 
+	if creatorId != uuid.Nil && price > 0 {
+		creatorEarnings := float64(price) * bs.conf.Server.CreatorRevenuePercent
+		if creatorEarnings > 0 {
+			if err := bs.creatorBalancesRepo.AddBalance(creatorId, creatorEarnings); err != nil {
+				logger.Logger.Error(fmt.Sprintf("Failed to add revenue balance for creator %s: %s", creatorId, err.Error()))
+			}
+		}
+	}
+
 	logger.Logger.Info(fmt.Sprintf("Successfully purchased cosmetic %s for user %s", cosmeticId, userId))
 	return nil
 }
 
-func (bs *gemBalancesService) fetchCosmeticPrice(cosmeticId uuid.UUID) (int, error) {
+func (bs *gemBalancesService) fetchCosmeticPrice(cosmeticId uuid.UUID) (int, uuid.UUID, error) {
 	url := fmt.Sprintf("http://127.0.0.1:%d/assets/internal/cosmetics/%s", bs.conf.Server.Port, cosmeticId.String())
 	resp, err := http.Get(url)
 	if err != nil {
 		logger.Logger.Error("Failed to fetch cosmetic details: " + err.Error())
-		return 0, err
+		return 0, uuid.Nil, err
 	}
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
@@ -113,25 +129,26 @@ func (bs *gemBalancesService) fetchCosmeticPrice(cosmeticId uuid.UUID) (int, err
 	}()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return 0, gem_balances_errors.NewCosmeticNotFound("cosmetic not found")
+		return 0, uuid.Nil, gem_balances_errors.NewCosmeticNotFound("cosmetic not found")
 	} else if resp.StatusCode != http.StatusOK {
 		errStr := fmt.Sprintf("Failed to get cosmetic, status code: %d", resp.StatusCode)
 		logger.Logger.Error(errStr)
-		return 0, fmt.Errorf("%s", errStr)
+		return 0, uuid.Nil, fmt.Errorf("%s", errStr)
 	}
 
 	var cosmeticResp struct {
 		Data struct {
 			CosmeticId    uuid.UUID `json:"cosmetic_id"`
 			CosmeticPrice float64   `json:"cosmetic_price"`
+			CreatedBy     uuid.UUID `json:"created_by"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&cosmeticResp); err != nil {
 		logger.Logger.Error("Failed to decode cosmetic response: " + err.Error())
-		return 0, err
+		return 0, uuid.Nil, err
 	}
 
-	return int(cosmeticResp.Data.CosmeticPrice), nil
+	return int(cosmeticResp.Data.CosmeticPrice), cosmeticResp.Data.CreatedBy, nil
 }
 
 func (bs *gemBalancesService) ensureSufficientBalance(userId uuid.UUID, price int) error {
