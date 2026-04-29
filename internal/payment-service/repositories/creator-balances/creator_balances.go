@@ -35,12 +35,9 @@ func (r *creatorBalancesRepository) AddBalance(userId uuid.UUID, amount float64)
 }
 
 func (r *creatorBalancesRepository) GetBalance(userId uuid.UUID) (float64, error) {
-	var cb models.CreatorBalance
-	err := r.db.Conn.Where("user_id = ?", userId).First(&cb).Error
+	cb := models.CreatorBalance{UserID: userId, Balance: 0}
+	err := r.db.Conn.Where("user_id = ?", userId).FirstOrCreate(&cb).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return 0, nil
-		}
 		return 0, err
 	}
 	return cb.Balance, nil
