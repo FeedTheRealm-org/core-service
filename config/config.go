@@ -40,11 +40,12 @@ type AssetsConfig struct {
 }
 
 type StripeConfig struct {
-	StripeApiKey           string
-	StripeWebhookSecret    string
-	StripeZonePrice        float64
-	StripeBillingAnchorDay int
-	StripeBillingTimezone  string
+	StripeApiKey                     string
+	StripeGemsWebhookSecret          string
+	StripeSubscriptionsWebhookSecret string
+	StripeZonePrice                  float64
+	StripeBillingAnchorDay           int
+	StripeBillingTimezone            string
 }
 
 type Config struct {
@@ -94,11 +95,12 @@ func CreateConfig() *Config {
 	}
 
 	stripeConf := &StripeConfig{
-		StripeApiKey:           os.Getenv("STRIPE_API_KEY"),
-		StripeWebhookSecret:    os.Getenv("STRIPE_WEBHOOK_SECRET"),
-		StripeZonePrice:        getEnvOrDefaultFloat("STRIPE_ZONE_PRICE", 5.00),
-		StripeBillingAnchorDay: getEnvOrDefaultInt("STRIPE_BILLING_ANCHOR_DAY", 5),
-		StripeBillingTimezone:  getEnvOrDefaultString("STRIPE_BILLING_TIMEZONE", "America/Argentina/Buenos_Aires"),
+		StripeApiKey:                     os.Getenv("STRIPE_API_KEY"),
+		StripeGemsWebhookSecret:          os.Getenv("STRIPE_GEMS_WEBHOOK_SECRET"),
+		StripeSubscriptionsWebhookSecret: os.Getenv("STRIPE_SUBSCRIPTIONS_WEBHOOK_SECRET"),
+		StripeZonePrice:                  getEnvOrDefaultFloat("STRIPE_ZONE_PRICE", 5.00),
+		StripeBillingAnchorDay:           getEnvOrDefaultInt("STRIPE_BILLING_ANCHOR_DAY", 5),
+		StripeBillingTimezone:            getEnvOrDefaultString("STRIPE_BILLING_TIMEZONE", "America/Argentina/Buenos_Aires"),
 	}
 
 	return &Config{
