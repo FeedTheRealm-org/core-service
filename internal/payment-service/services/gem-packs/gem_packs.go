@@ -20,22 +20,14 @@ func (s *gemPacksService) seedPacksData() error {
 		return err
 	}
 
-	if len(packs) > 0 {
-		return nil
+	for _, pack := range packs {
+		if err := s.DeleteGemPack(pack.Id); err != nil {
+			return err
+		}
 	}
 
-	newPacks := []struct {
-		Name  string
-		Gems  int
-		Price decimal.Decimal
-	}{
-		{"Small Pack", 1, decimal.NewFromFloat(1.99)},
-		{"Medium Pack", 10, decimal.NewFromFloat(14.99)},
-		{"Large Pack", 50, decimal.NewFromFloat(24.99)},
-	}
-
-	for _, data := range newPacks {
-		_, err := s.CreateGemPack(data.Name, data.Gems, data.Price)
+	for _, data := range s.conf.Stripe.GemPacks {
+		_, err := s.CreateGemPack(data.Name, data.Amount, decimal.NewFromFloat(data.Price))
 		if err != nil {
 			return err
 		}
