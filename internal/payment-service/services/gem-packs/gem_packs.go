@@ -20,6 +20,11 @@ func (s *gemPacksService) seedPacksData() error {
 		return err
 	}
 
+	if len(s.conf.Stripe.GemPacks) == 0 {
+		logger.Logger.Warn("No gem packs defined in configuration, skipping seeding")
+		return nil
+	}
+
 	for _, pack := range packs {
 		if err := s.DeleteGemPack(pack.Id); err != nil {
 			return err
