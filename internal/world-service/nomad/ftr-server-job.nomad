@@ -8,7 +8,7 @@ job "{{ .JobName }}" {
         interval = "5m"
         delay    = "10s"
         mode     = "delay"
-      }
+    }
 
     network {
       mode = "bridge"
@@ -28,7 +28,11 @@ job "{{ .JobName }}" {
       config {
         image = "{{ .ImageName }}"
         ports = ["game", "health"]
-        args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}"]
+        args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}", "--allow-bots={{ .AllowBots }}"]
+      }
+
+      env {
+        DD_AGENT_HOST = "172.17.0.1"
       }
 
       meta {

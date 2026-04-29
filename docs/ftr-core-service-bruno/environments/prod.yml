@@ -1,6 +1,6 @@
 name: prod
 variables:
   - name: baseUrl
-    value: ec2-18-191-166-94.us-east-2.compute.amazonaws.com:34782
+    value: https://core.feedtherealm.world
   - secret: true
     name: token
