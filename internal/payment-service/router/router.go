@@ -81,7 +81,7 @@ func SetupCreatorBalancesRouter(conf *config.Config, db *config.DB, paymentGroup
 	creatorBalancesController := creator_balances_controller.NewCreatorBalancesController(creatorBalancesService)
 
 	/* Creator Balances Endpoints */
-	paymentGroup.GET("/balances/creators/:creator_id", creatorBalancesController.GetBalance)
+	paymentGroup.GET("/balances/creators", creatorBalancesController.GetBalance)
 }
 
 func SetupPaymentServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
