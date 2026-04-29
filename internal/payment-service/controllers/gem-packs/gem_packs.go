@@ -8,6 +8,7 @@ import (
 	gem_packs "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/gem-packs"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 type gemPacksController struct {
@@ -45,7 +46,22 @@ func (pc *gemPacksController) GetAllGemPacks(c *gin.Context) {
 		return
 	}
 
-	common_handlers.HandleSuccessResponse(c, 200, packs)
+	responses := make([]*dtos.GemPackResponse, 0, len(packs))
+
+	for _, pack := range packs {
+		price, _ := pack.Price.Float64()
+
+		responses = append(responses, &dtos.GemPackResponse{
+			Id:        pack.Id,
+			Name:      pack.Name,
+			Gems:      pack.Gems,
+			Price:     price,
+			CreatedAt: pack.CreatedAt,
+			UpdatedAt: pack.UpdatedAt,
+		})
+	}
+
+	common_handlers.HandleSuccessResponse(c, 200, responses)
 }
 
 // GetGemPackById godoc
@@ -80,7 +96,18 @@ func (pc *gemPacksController) GetGemPackById(c *gin.Context) {
 		return
 	}
 
-	common_handlers.HandleSuccessResponse(c, 200, pack)
+	price, _ := pack.Price.Float64()
+
+	res := &dtos.GemPackResponse{
+		Id:        pack.Id,
+		Name:      pack.Name,
+		Gems:      pack.Gems,
+		Price:     price,
+		CreatedAt: pack.CreatedAt,
+		UpdatedAt: pack.UpdatedAt,
+	}
+
+	common_handlers.HandleSuccessResponse(c, 200, res)
 }
 
 // CreateGemPack godoc
@@ -103,17 +130,19 @@ func (pc *gemPacksController) CreateGemPack(c *gin.Context) {
 		return
 	}
 
-	createdPack, err := pc.gemPacksService.CreateGemPack(pack.Name, pack.Gems, pack.Price)
+	createdPack, err := pc.gemPacksService.CreateGemPack(pack.Name, pack.Gems, decimal.NewFromFloat(pack.Price))
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
 
+	price, _ := createdPack.Price.Float64()
+
 	res := &dtos.GemPackResponse{
 		Id:        createdPack.Id,
 		Name:      createdPack.Name,
 		Gems:      createdPack.Gems,
-		Price:     createdPack.Price,
+		Price:     price,
 		CreatedAt: createdPack.CreatedAt,
 		UpdatedAt: createdPack.UpdatedAt,
 	}
@@ -149,17 +178,19 @@ func (pc *gemPacksController) UpdateGemPack(c *gin.Context) {
 		return
 	}
 
-	updatedPack, err := pc.gemPacksService.UpdateGemPack(packId, req.Name, req.Gems, req.Price)
+	updatedPack, err := pc.gemPacksService.UpdateGemPack(packId, req.Name, req.Gems, decimal.NewFromFloat(req.Price))
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
 
+	price, _ := updatedPack.Price.Float64()
+
 	res := &dtos.GemPackResponse{
 		Id:        updatedPack.Id,
 		Name:      updatedPack.Name,
 		Gems:      updatedPack.Gems,
-		Price:     updatedPack.Price,
+		Price:     price,
 		CreatedAt: updatedPack.CreatedAt,
 		UpdatedAt: updatedPack.UpdatedAt,
 	}
