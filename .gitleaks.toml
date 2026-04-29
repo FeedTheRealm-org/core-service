@@ -1,0 +1,15 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist"
+
+commits = [
+  "666199588eeeca5a7b09d0be9ac993b8016aab52",
+  "715fbdbe4aea2a0bb6773a4fcd939fd07a17c17d",
+  "8dba2d865fcca31c598008216b8f5e5c96c95955",
+  "d16b44d37c5b71e2bd219c12cee3dea72f3604f2",
+  "c4299bf1a41c861bc3361fb77c424c7dfbd5ba50",
+  "e76adf6440292fde0834da3b2131679c499f9908",
+  "1ede977e8a7b44527a1901d512c0f33025eeb7f2",
+]
