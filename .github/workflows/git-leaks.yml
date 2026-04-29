@@ -24,7 +24,6 @@ jobs:
       - name: Run Gitleaks
         run: |
           gitleaks detect \
-            --config .gitleaks.toml \
             --source . \
             --redact \
             --verbose
