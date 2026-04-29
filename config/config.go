@@ -194,14 +194,6 @@ func getEnvOrDefaultInt(key string, defaultValue int) int {
 	return value
 }
 
-func getEnvOrDefaultFloat(key string, defaultValue float64) float64 {
-	value, err := strconv.ParseFloat(os.Getenv(key), 64)
-	if err != nil {
-		return defaultValue
-	}
-	return value
-}
-
 func getEnvOrDefaultDuration(key string, defaultValue time.Duration) time.Duration {
 	value, err := time.ParseDuration(os.Getenv(key))
 	if err != nil {
