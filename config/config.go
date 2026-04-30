@@ -137,7 +137,7 @@ func CreateConfig() *Config {
 		SubscriptionOn:  getEnvOrDefaultBool("SUBSCRIPTION_ON", true),
 	}
 
-	stripeRealPrice := getEnvOrDefaultBool("STRIPE_REAL_PRICE", true)
+	stripeRealPrice := getEnvOrDefaultBool("STRIPE_REAL_PRICES", true)
 	gemPacks, zones := parseStripePrices(stripeRealPrice)
 
 	zonePrice := ZONES_DEFAULT_PRICE
