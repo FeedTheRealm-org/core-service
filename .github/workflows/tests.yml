@@ -1,12 +1,9 @@
 name: CI/CD Tests for core-service
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
   pull_request:
-    branches:
-      - main
+    branches: [main, dev]
 
 jobs:
   docker-compose:
