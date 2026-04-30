@@ -46,7 +46,7 @@ func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, wo
 		query = query.
 			Joins("LEFT JOIN purchases ON purchases.cosmetic_id = cosmetics.id AND purchases.player_id = ?", *playerId).
 			Where(
-				"cosmetics.world_id = ? OR (cosmetics.world_id = ? AND purchases.cosmetic_id IS NOT NULL)",
+				"cosmetics.world_id = ? OR cosmetics.world_id = ? OR purchases.cosmetic_id IS NOT NULL",
 				uuid.Nil, *worldId,
 			)
 	}

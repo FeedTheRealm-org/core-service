@@ -110,23 +110,25 @@ func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 
 	var worldId *uuid.UUID
 	if raw := c.DefaultQuery("world_id", ""); raw != "" {
-		*worldId, err = uuid.Parse(raw)
+		parsedWorldId, err := uuid.Parse(raw)
 		if err != nil {
 			_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
 			return
 		}
+		worldId = &parsedWorldId
 	}
 
 	var playerId *uuid.UUID
 	if raw := c.DefaultQuery("player_id", ""); raw != "" {
-		*playerId, err = uuid.Parse(raw)
+		parsedPlayerId, err := uuid.Parse(raw)
 		if err != nil {
 			_ = c.Error(errors.NewBadRequestError("invalid player_id: " + err.Error()))
 			return
 		}
+		playerId = &parsedPlayerId
 	}
 
-	if *playerId != uuid.Nil && *playerId != userID {
+	if playerId != nil && *playerId != userID {
 		if err := common_handlers.IsAdminSession(c); err != nil {
 			_ = c.Error(errors.NewUnauthorizedError("invalid player_id"))
 			return

@@ -183,8 +183,9 @@ def link_sprite_by_id(server_url: str, category_id, sprite_id, token: str):
     url = f"{server_url}/assets/cosmetics/categories/{category_id}/sprites/{sprite_id}"
     data = {"world_id": DEFAULT_WORLD_ID, "price": 0.00}
 
+    files = {"dummy": ("", b"")}
     try:
-        response = requests.put(url, data=data, headers=build_headers(token), timeout=30)
+        response = requests.put(url, data=data, files=files, headers=build_headers(token), timeout=30)
     except requests.RequestException as exc:
         return False, str(exc)
 
