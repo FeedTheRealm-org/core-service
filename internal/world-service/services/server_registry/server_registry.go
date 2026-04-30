@@ -58,19 +58,19 @@ func (s *serverRegistryService) StartNewJob(worldId uuid.UUID, zoneId int) error
 
 	jobName := fmt.Sprintf("zone-server-%s-%d", worldId.String(), zoneId)
 	templateData := struct {
-		JobName    string
-		WorldID    string
-		ZoneID     int
-		AllowBots  string
-		ImageName  string
-		DeployedAt string
+		JobName     string
+		WorldID     string
+		ZoneID      int
+		IsTestWorld string
+		ImageName   string
+		DeployedAt  string
 	}{
-		JobName:    jobName,
-		WorldID:    worldId.String(),
-		ZoneID:     zoneId,
-		AllowBots:  "true", // TODO: move to parameter for admin-only
-		ImageName:  s.conf.FTRServerImage,
-		DeployedAt: time.Now().UTC().Format(time.RFC3339),
+		JobName:     jobName,
+		WorldID:     worldId.String(),
+		ZoneID:      zoneId,
+		IsTestWorld: "true", // TODO: move to parameter for admin-only
+		ImageName:   s.conf.FTRServerImage,
+		DeployedAt:  time.Now().UTC().Format(time.RFC3339),
 	}
 
 	var rendered bytes.Buffer
