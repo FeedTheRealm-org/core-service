@@ -214,10 +214,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "number",
-                        "default": 0,
-                        "description": "Cosmetic price",
+                        "description": "Cosmetic price (must be \u003e 0)",
                         "name": "price",
-                        "in": "formData"
+                        "in": "formData",
+                        "required": true
                     },
                     {
                         "type": "file",
@@ -288,10 +288,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "number",
-                        "default": 0,
-                        "description": "Cosmetic price",
+                        "description": "Cosmetic price (must be \u003e 0)",
                         "name": "price",
-                        "in": "formData"
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1282,6 +1282,43 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/creator-balances": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the current creator balance of the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service"
+                ],
+                "summary": "Get creator balance",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreatorBalanceResponse"
                         }
                     },
                     "401": {
@@ -3447,6 +3484,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.CreatorBalanceResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "number"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -3517,6 +3565,9 @@ const docTemplate = `{
                 },
                 "cosmetic_price": {
                     "type": "number"
+                },
+                "created_by": {
+                    "type": "string"
                 }
             }
         },
