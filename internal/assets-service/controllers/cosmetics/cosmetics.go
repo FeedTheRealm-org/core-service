@@ -312,7 +312,7 @@ func (cc *cosmeticsController) checkWorldOwnership(c *gin.Context, worldId uuid.
 // @Produce      json
 // @Param        category_id path string true "Category UUID"
 // @Param        world_id formData string true "World UUID"
-// @Param        price formData number false "Cosmetic price" default(0.00)
+// @Param        price formData number true "Cosmetic price (must be > 0)"
 // @Param        sprite formData file true "Cosmetic File"
 // @Success      201  {object}  dtos.CosmeticResponse
 // @Failure      400  {object} dtos.ErrorResponse
@@ -385,7 +385,14 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 
 	cosmetic, err := cc.cosmeticsService.UploadCosmeticData(categoryId, worldId, price, file, filepath.Ext(reqFile.Filename), userId)
 	if err != nil {
-		_ = c.Error(err)
+		switch err.(type) {
+		case *assets_errors.InvalidPrice:
+			_ = c.Error(errors.NewBadRequestError(err.Error()))
+		case *assets_errors.CategoryNotFound:
+			_ = c.Error(errors.NewNotFoundError(err.Error()))
+		default:
+			_ = c.Error(err)
+		}
 		return
 	}
 
@@ -405,7 +412,7 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 // @Param        category_id path string true "Category UUID"
 // @Param        sprite_id path string true "Existing Sprite UUID"
 // @Param				 world_id formData string true "World UUID"
-// @Param				 price formData number false "Cosmetic price" default(0.00)
+// @Param				 price formData number true "Cosmetic price (must be > 0)"
 // @Success      201  {object}  dtos.CosmeticResponse
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse
@@ -484,6 +491,8 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 	cosmetic, err := cc.cosmeticsService.UploadCosmeticByID(categoryId, worldId, price, spriteId, userId, cosmeticFile, ext)
 	if err != nil {
 		switch err.(type) {
+		case *assets_errors.InvalidPrice:
+			_ = c.Error(errors.NewBadRequestError(err.Error()))
 		case *assets_errors.CategoryNotFound:
 			_ = c.Error(errors.NewNotFoundError("category not found"))
 		case *assets_errors.CosmeticNotFound:

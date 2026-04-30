@@ -103,3 +103,18 @@ func NewCosmeticsWasPurchasedBefore(details string) *CosmeticsWasPurchasedBefore
 		details: details,
 	}
 }
+
+// InvalidPrice is returned when a price is zero or negative.
+type InvalidPrice struct {
+	details string
+}
+
+func (e *InvalidPrice) Error() string {
+	return e.details
+}
+
+func NewInvalidPrice(details string) *InvalidPrice {
+	return &InvalidPrice{
+		details: details,
+	}
+}
