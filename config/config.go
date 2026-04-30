@@ -30,6 +30,7 @@ type ServerConfig struct {
 	PublicIP              string
 	SubscriptionOn        bool
 	CreatorRevenuePercent float64
+	DollarsGemsRatio      float64
 }
 
 type DatabaseConfig struct {
@@ -137,6 +138,7 @@ func CreateConfig() *Config {
 		PublicIP:              os.Getenv("PUBLIC_IP"),
 		SubscriptionOn:        getEnvOrDefaultBool("SUBSCRIPTION_ON", true),
 		CreatorRevenuePercent: getEnvOrDefaultFloat("CREATOR_REVENUE_PERCENT", 0.1),
+		DollarsGemsRatio:      getEnvOrDefaultFloat("DOLLARS_GEMS_RATIO", 0.25),
 	}
 
 	stripeRealPrice := getEnvOrDefaultBool("STRIPE_REAL_PRICE", true)

@@ -103,7 +103,7 @@ func (bs *gemBalancesService) PurchaseCosmetic(userId uuid.UUID, cosmeticId uuid
 	}
 
 	if creatorId != uuid.Nil && price > 0 {
-		creatorEarnings := float64(price) * bs.conf.Server.CreatorRevenuePercent
+		creatorEarnings := float64(price) * bs.conf.Server.DollarsGemsRatio * bs.conf.Server.CreatorRevenuePercent
 		if creatorEarnings > 0 {
 			if err := bs.creatorBalancesRepo.AddBalance(creatorId, creatorEarnings); err != nil {
 				logger.Logger.Error(fmt.Sprintf("Failed to add revenue balance for creator %s: %s", creatorId, err.Error()))
