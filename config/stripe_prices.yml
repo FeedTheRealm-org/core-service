@@ -1,0 +1,37 @@
+test:
+  gem_packs:
+    - id: "small_pack"
+      name: "Small Pack"
+      amount: 1
+      price: 0.51
+    - id: "medium_pack"
+      name: "Medium Pack"
+      amount: 10
+      price: 0.51
+    - id: "large_pack"
+      name: "Large Pack"
+      amount: 50
+      price: 0.51
+  zones:
+    - id: "zone_basic"
+      name: "Basic Zone Access"
+      price: 0.51
+
+prod:
+  gem_packs:
+    - id: "small_pack"
+      name: "Small Pack"
+      amount: 1
+      price: 1.99
+    - id: "medium_pack"
+      name: "Medium Pack"
+      amount: 10
+      price: 14.99
+    - id: "large_pack"
+      name: "Large Pack"
+      amount: 50
+      price: 24.99
+  zones:
+    - id: "zone_basic"
+      name: "Basic Zone Access"
+      price: 5.00
