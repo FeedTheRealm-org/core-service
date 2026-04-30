@@ -1,12 +1,18 @@
 package config
 
 import (
+	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 type EnvironmentType int
+
+const STRIPE_PRODUCTS_FILE = "config/stripe_prices.yml"
+const ZONES_DEFAULT_PRICE = 5.00
 
 const (
 	Development EnvironmentType = iota
@@ -38,6 +44,23 @@ type AssetsConfig struct {
 	WorldsBucketName    string
 }
 
+type StripeItem struct {
+	ID     string  `yaml:"id"`
+	Name   string  `yaml:"name"`
+	Amount int     `yaml:"amount,omitempty"`
+	Price  float64 `yaml:"price"`
+}
+
+type StripeEnvironmentPrices struct {
+	GemPacks []StripeItem `yaml:"gem_packs"`
+	Zones    []StripeItem `yaml:"zones"`
+}
+
+type StripePricesYML struct {
+	Prod StripeEnvironmentPrices `yaml:"prod"`
+	Test StripeEnvironmentPrices `yaml:"test"`
+}
+
 type StripeConfig struct {
 	StripeApiKey                     string
 	StripeGemsWebhookSecret          string
@@ -45,6 +68,9 @@ type StripeConfig struct {
 	StripeZonePrice                  float64
 	StripeBillingAnchorDay           int
 	StripeBillingTimezone            string
+	StripeRealPrice                  bool
+	GemPacks                         []StripeItem
+	Zones                            []StripeItem
 }
 
 type Config struct {
@@ -65,6 +91,25 @@ type Config struct {
 	NomadImageName        string
 	ConsulAddr            string
 	FTRServerImage        string
+}
+
+func parseStripePrices(isProd bool) (gemPacks []StripeItem, zones []StripeItem) {
+	data, err := os.ReadFile(STRIPE_PRODUCTS_FILE)
+	if err != nil {
+		log.Printf("Warning: Error reading %s: %v", STRIPE_PRODUCTS_FILE, err)
+		return nil, nil
+	}
+
+	var prices StripePricesYML
+	if err := yaml.Unmarshal(data, &prices); err != nil {
+		log.Printf("Warning: Error parsing %s: %v", STRIPE_PRODUCTS_FILE, err)
+		return nil, nil
+	}
+
+	if isProd {
+		return prices.Prod.GemPacks, prices.Prod.Zones
+	}
+	return prices.Test.GemPacks, prices.Test.Zones
 }
 
 func CreateConfig() *Config {
@@ -92,13 +137,27 @@ func CreateConfig() *Config {
 		SubscriptionOn:  getEnvOrDefaultBool("SUBSCRIPTION_ON", true),
 	}
 
+	stripeRealPrice := getEnvOrDefaultBool("STRIPE_REAL_PRICE", true)
+	gemPacks, zones := parseStripePrices(stripeRealPrice)
+
+	zonePrice := ZONES_DEFAULT_PRICE
+	switch len(zones) {
+	case 0:
+		log.Printf("Warning: No zones defined in %s, using default price of $%.2f", STRIPE_PRODUCTS_FILE, zonePrice)
+	default:
+		zonePrice = zones[0].Price
+	}
+
 	stripeConf := &StripeConfig{
 		StripeApiKey:                     os.Getenv("STRIPE_API_KEY"),
 		StripeGemsWebhookSecret:          os.Getenv("STRIPE_GEMS_WEBHOOK_SECRET"),
 		StripeSubscriptionsWebhookSecret: os.Getenv("STRIPE_SUBSCRIPTIONS_WEBHOOK_SECRET"),
-		StripeZonePrice:                  getEnvOrDefaultFloat("STRIPE_ZONE_PRICE", 5.00),
+		StripeZonePrice:                  zonePrice,
 		StripeBillingAnchorDay:           getEnvOrDefaultInt("STRIPE_BILLING_ANCHOR_DAY", 5),
 		StripeBillingTimezone:            getEnvOrDefaultString("STRIPE_BILLING_TIMEZONE", "America/Argentina/Buenos_Aires"),
+		StripeRealPrice:                  stripeRealPrice,
+		GemPacks:                         gemPacks,
+		Zones:                            zones,
 	}
 
 	return &Config{
@@ -133,14 +192,6 @@ func getEnvOrDefaultString(key string, defaultValue string) string {
 
 func getEnvOrDefaultInt(key string, defaultValue int) int {
 	value, err := strconv.Atoi(os.Getenv(key))
-	if err != nil {
-		return defaultValue
-	}
-	return value
-}
-
-func getEnvOrDefaultFloat(key string, defaultValue float64) float64 {
-	value, err := strconv.ParseFloat(os.Getenv(key), 64)
 	if err != nil {
 		return defaultValue
 	}
