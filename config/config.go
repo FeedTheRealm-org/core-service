@@ -12,6 +12,7 @@ import (
 type EnvironmentType int
 
 const STRIPE_PRODUCTS_FILE = "config/stripe_prices.yml"
+const ZONES_DEFAULT_PRICE = 5.00
 
 const (
 	Development EnvironmentType = iota
@@ -141,8 +142,11 @@ func CreateConfig() *Config {
 	stripeRealPrice := getEnvOrDefaultBool("STRIPE_REAL_PRICE", true)
 	gemPacks, zones := parseStripePrices(stripeRealPrice)
 
-	zonePrice := 5.00
-	if len(zones) > 0 {
+	zonePrice := ZONES_DEFAULT_PRICE
+	switch len(zones) {
+	case 0:
+		log.Printf("Warning: No zones defined in %s, using default price of $%.2f", STRIPE_PRODUCTS_FILE, zonePrice)
+	default:
 		zonePrice = zones[0].Price
 	}
 
@@ -196,14 +200,6 @@ func getEnvOrDefaultInt(key string, defaultValue int) int {
 	return value
 }
 
-func getEnvOrDefaultFloat(key string, defaultValue float64) float64 {
-	value, err := strconv.ParseFloat(os.Getenv(key), 64)
-	if err != nil {
-		return defaultValue
-	}
-	return value
-}
-
 func getEnvOrDefaultDuration(key string, defaultValue time.Duration) time.Duration {
 	value, err := time.ParseDuration(os.Getenv(key))
 	if err != nil {
@@ -214,6 +210,14 @@ func getEnvOrDefaultDuration(key string, defaultValue time.Duration) time.Durati
 
 func getEnvOrDefaultBool(key string, defaultValue bool) bool {
 	value, err := strconv.ParseBool(os.Getenv(key))
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
+func getEnvOrDefaultFloat(key string, defaultValue float64) float64 {
+	value, err := strconv.ParseFloat(os.Getenv(key), 64)
 	if err != nil {
 		return defaultValue
 	}
