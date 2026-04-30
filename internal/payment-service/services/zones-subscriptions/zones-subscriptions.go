@@ -12,13 +12,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	stripe "github.com/stripe/stripe-go/v84"
-	"github.com/stripe/stripe-go/v84/checkout/session"
-	"github.com/stripe/stripe-go/v84/customer"
-	"github.com/stripe/stripe-go/v84/invoice"
-	"github.com/stripe/stripe-go/v84/subscription"
-	"github.com/stripe/stripe-go/v84/subscriptionitem"
-	"github.com/stripe/stripe-go/v84/webhook"
+	stripe "github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v85/checkout/session"
+	"github.com/stripe/stripe-go/v85/customer"
+	"github.com/stripe/stripe-go/v85/invoice"
+	"github.com/stripe/stripe-go/v85/subscription"
+	"github.com/stripe/stripe-go/v85/subscriptionitem"
+	"github.com/stripe/stripe-go/v85/webhook"
 )
 
 type CannotExceedTotalSlotsError struct{}
