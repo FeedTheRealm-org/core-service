@@ -56,7 +56,7 @@ func (zs *zonesService) ActivateZone(worldID uuid.UUID, zoneID int) error {
 		}
 	}
 
-	if err := zs.serverRegistryService.StartNewJob(worldID, zoneID); err != nil {
+	if err := zs.serverRegistryService.StartNewJob(worldID, zoneID, false); err != nil {
 		return err
 	}
 
