@@ -9,7 +9,8 @@ export DB_SHOULD_MIGRATE=true
 
 run_unit_tests() {
   echo "==> Running Go unit tests..."
-  go test ./... \
+  PKGS=$(go list ./... | awk 'NR==FNR {ignore[$0]=1; next} {for (i in ignore) if (index($0, i) == 1) next} 1' .coverignore -)
+  go test $PKGS \
     -coverprofile=coverage/coverage.out \
     -covermode=atomic \
     -count=1
