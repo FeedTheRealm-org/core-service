@@ -6,7 +6,7 @@ on:
     branches: [main, dev]
 
 jobs:
-  docker-compose:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
