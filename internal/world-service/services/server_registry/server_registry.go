@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 	consul_api "github.com/hashicorp/consul/api"
 	nomad_api "github.com/hashicorp/nomad/api"
@@ -89,6 +90,9 @@ func (s *serverRegistryService) StartNewJob(worldId uuid.UUID, zoneId int, isTes
 		return fmt.Errorf("failed to register nomad job %q: %w", jobName, err)
 	}
 
+	logger.Logger.Infof("Successfully started nomad job %q for world %s zone %d as test=%s",
+		jobName, worldId, zoneId, strconv.FormatBool(isTest))
+
 	return nil
 }
 
@@ -99,6 +103,8 @@ func (s *serverRegistryService) StopJob(worldId uuid.UUID, zoneId int) error {
 	if err != nil {
 		return fmt.Errorf("failed to deregister nomad job %q: %w", jobName, err)
 	}
+
+	logger.Logger.Infof("Stopping job for world %s zone %d", worldId, zoneId)
 
 	return nil
 }
