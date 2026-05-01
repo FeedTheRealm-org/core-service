@@ -34,6 +34,7 @@ func NewServerRegistryController(conf *config.Config, nomadJobService server_reg
 // @Produce      json
 // @Param        id path string true "World UUID"
 // @Param        zone_id path int true "World Zone Number"
+// @Param        test query bool false "Whether to start the job in test mode, which uses a different image and resource allocation"
 // @Success      200  {string}  string "Acknowledge Boot"
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      500  {object} dtos.ErrorResponse
@@ -41,6 +42,7 @@ func NewServerRegistryController(conf *config.Config, nomadJobService server_reg
 func (c *serverRegistryController) StartNewJob(ctx *gin.Context) {
 	worldIdStr := ctx.Param("id")
 	zoneIdStr := ctx.Param("zone_id")
+	isTest := ctx.Query("test") == "true"
 
 	worldId, err := uuid.Parse(worldIdStr)
 	if err != nil {
@@ -54,7 +56,7 @@ func (c *serverRegistryController) StartNewJob(ctx *gin.Context) {
 		return
 	}
 
-	err = c.nomadJobSenderService.StartNewJob(worldId, zoneId)
+	err = c.nomadJobSenderService.StartNewJob(worldId, zoneId, isTest)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

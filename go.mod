@@ -13,8 +13,8 @@ require (
 	github.com/hashicorp/consul/api v1.33.4
 	github.com/hashicorp/nomad/api v0.0.0-20260314001232-211384eb84d3
 	github.com/shopspring/decimal v1.2.0
-	github.com/stretchr/testify v1.10.0
-	github.com/stripe/stripe-go/v84 v84.4.1
+	github.com/stretchr/testify v1.11.1
+	github.com/stripe/stripe-go/v85 v85.1.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
@@ -112,6 +112,6 @@ require (
 	golang.org/x/tools v0.36.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/datatypes v1.2.7
 )

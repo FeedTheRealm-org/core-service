@@ -2493,6 +2493,11 @@ paths:
         name: zone_id
         required: true
         type: integer
+      - description: Whether to start the job in test mode, which uses a different
+          image and resource allocation
+        in: query
+        name: test
+        type: boolean
       produces:
       - application/json
       responses:

@@ -1,6 +1,9 @@
 package server_registry
 
 import (
+	"strconv"
+
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 )
 
@@ -12,11 +15,14 @@ func NewStubServerRegistryService() ServerRegistryService {
 	return &stubServerRegistryService{}
 }
 
-func (ns *stubServerRegistryService) StartNewJob(worldId uuid.UUID, zoneId int) error {
+func (ns *stubServerRegistryService) StartNewJob(worldId uuid.UUID, zoneId int, isTest bool) error {
+	logger.Logger.Infof("Successfully started job for world %s zone %d as test=%s",
+		worldId, zoneId, strconv.FormatBool(isTest))
 	return nil
 }
 
 func (ns *stubServerRegistryService) StopJob(worldId uuid.UUID, zoneId int) error {
+	logger.Logger.Infof("Stopping job for world %s zone %d", worldId, zoneId)
 	return nil
 }
 

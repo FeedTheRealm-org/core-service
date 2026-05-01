@@ -5,7 +5,13 @@ on:
       - main
 
 jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
   build:
+    needs: tests
     uses: ./.github/workflows/build.yml
     secrets:
       AWS_REGION: ${{ secrets.AWS_REGION }}

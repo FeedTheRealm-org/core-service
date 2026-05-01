@@ -28,7 +28,7 @@ job "{{ .JobName }}" {
       config {
         image = "{{ .ImageName }}"
         ports = ["game", "health"]
-        args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}", "--allow-bots={{ .AllowBots }}"]
+        args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}", "--is-test-world={{ .IsTestWorld }}"]
       }
 
       env {

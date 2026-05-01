@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
-	"github.com/stripe/stripe-go/v84"
+	"github.com/stripe/stripe-go/v85"
 )
 
 type ZonesSubscriptions struct {

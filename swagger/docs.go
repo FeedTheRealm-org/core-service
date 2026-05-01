@@ -2615,6 +2615,12 @@ const docTemplate = `{
                         "name": "zone_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Whether to start the job in test mode, which uses a different image and resource allocation",
+                        "name": "test",
+                        "in": "query"
                     }
                 ],
                 "responses": {
