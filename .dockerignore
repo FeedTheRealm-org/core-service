@@ -1,8 +1,12 @@
-README.md
 .git/
 .github/
-docs/
 .gitignore
 .gitattributes
+.gitleaks.toml
+.pre-commit-config.yaml
+.env*
 *_test.go
+docs/
+swagger/
 *.md
+local_buckets/

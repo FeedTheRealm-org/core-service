@@ -17,6 +17,8 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    volumes:
+      - ./coverage/:/usr/src/app/coverage/
 
   python-tests:
     build:

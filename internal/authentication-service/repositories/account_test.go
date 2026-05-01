@@ -78,17 +78,24 @@ func TestAccountRepository_VerifyAccount(t *testing.T) {
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
-	email := "johndoe@example.com"
+	email := "johndoe_verify_success@example.com"
 	code := "verification_code"
 
-	user, err := repo.GetAccountByEmail(email)
+	user := &models.User{
+		Email:    email,
+		Password: "hashed_password",
+	}
+
+	err = repo.CreateAccount(user, code)
+	assert.Nil(t, err, "failed to create account")
+
+	userFromDb, err := repo.GetAccountByEmail(email)
 	assert.NoError(t, err, "failed to get account by email")
 
-	err = repo.VerifyAccount(user, code, time.Now())
+	err = repo.VerifyAccount(userFromDb, code, time.Now())
 	assert.Nil(t, err, "failed to verify account")
 
-	assert.Nil(t, err, "failed to check if account is verified")
-	assert.True(t, user.Verified, "expected account to be verified")
+	assert.True(t, userFromDb.Verified, "expected account to be verified")
 }
 
 func TestAccountRepository_VerifyAccount_Expired(t *testing.T) {

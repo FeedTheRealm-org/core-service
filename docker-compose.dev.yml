@@ -56,6 +56,7 @@ services:
       target: prod
     volumes:
       - ./local_buckets:/usr/src/app/local_buckets
+      - ./swagger:/usr/src/app/swagger
 
   db:
     image: postgres:17-alpine

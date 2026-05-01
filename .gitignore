@@ -1,5 +1,6 @@
 main
-.env
+.env*
 certs/
 local_buckets/
 bucket/
+coverage/
