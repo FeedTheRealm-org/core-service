@@ -18,10 +18,14 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 
 	// Setup global middleware
 	r.Use(middleware.ErrorHandlerMiddleware())
+
 	r.Use(middleware.JWTAuthMiddleware(jwtManager, conf.ServerFixedToken))
 
 	// Setup service routers
 	r.NoRoute(common_handlers.NotFoundController)
+
+	// Health check
+	r.GET("/health", common_handlers.HealthController)
 
 	if err := authRouter.SetupAuthenticationServiceRouter(r, conf, db, jwtManager); err != nil {
 		return err

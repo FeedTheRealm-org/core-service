@@ -14,6 +14,8 @@ WORKDIR /usr/src/app
 
 COPY --from=deps /go/pkg /go/pkg
 COPY . .
+COPY migrations /migrations
+COPY ./config/stripe_prices.yml /config/stripe_prices.yml
 
 # **Build App**
 FROM deps AS builder

@@ -214,10 +214,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "number",
-                        "default": 0,
-                        "description": "Cosmetic price",
+                        "description": "Cosmetic price (must be \u003e 0)",
                         "name": "price",
-                        "in": "formData"
+                        "in": "formData",
+                        "required": true
                     },
                     {
                         "type": "file",
@@ -288,10 +288,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "number",
-                        "default": 0,
-                        "description": "Cosmetic price",
+                        "description": "Cosmetic price (must be \u003e 0)",
                         "name": "price",
-                        "in": "formData"
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
