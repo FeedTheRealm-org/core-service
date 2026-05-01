@@ -16,8 +16,9 @@ import (
 )
 
 type DB struct {
-	dsn  string
-	Conn *gorm.DB
+	dsn      string
+	Conn     *gorm.DB
+	migrated bool
 }
 
 func NewDB(conf *Config) (*DB, error) {
@@ -64,7 +65,12 @@ func NewDB(conf *Config) (*DB, error) {
 }
 
 func (db *DB) runMigrations() error {
-	entries, err := os.ReadDir("migrations")
+	if db.migrated {
+		return nil
+	}
+	db.migrated = true
+
+	entries, err := os.ReadDir("/migrations")
 	if err != nil {
 		return err
 	}
@@ -88,7 +94,7 @@ func (db *DB) runMigrations() error {
 			return err
 		}
 
-		sourceURL := fmt.Sprintf("file://migrations/%s", folderName)
+		sourceURL := fmt.Sprintf("file:///migrations/%s", folderName)
 		m, err := migrate.NewWithDatabaseInstance(
 			sourceURL,
 			"postgres",

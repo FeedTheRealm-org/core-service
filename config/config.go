@@ -11,7 +11,7 @@ import (
 
 type EnvironmentType int
 
-const STRIPE_PRODUCTS_FILE = "config/stripe_prices.yml"
+const STRIPE_PRODUCTS_FILE = "/config/stripe_prices.yml"
 const ZONES_DEFAULT_PRICE = 5.00
 
 const (

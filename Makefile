@@ -39,16 +39,16 @@ test: # Execute all tests (unit + acceptance)
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
 	docker compose -f $(COMPOSE_TEST) --profile acceptance build
 	docker compose -f $(COMPOSE_TEST) up -d --remove-orphans
-	docker compose -f $(COMPOSE_TEST) exec -T app sh run_tests.sh
 	docker compose -f $(COMPOSE_TEST) --profile acceptance run --rm python-tests
+	docker compose -f $(COMPOSE_TEST) run --rm app sh run_tests.sh
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
 .PHONY: test
 
 test-unit: # Execute only Go unit tests
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
 	docker compose -f $(COMPOSE_TEST) build
-	docker compose -f $(COMPOSE_TEST) up -d --remove-orphans
-	docker compose -f $(COMPOSE_TEST) exec -T app sh run_tests.sh
+	docker compose -f $(COMPOSE_TEST) up test_db -d --remove-orphans
+	docker compose -f $(COMPOSE_TEST) run --rm app sh run_tests.sh
 	docker compose -f $(COMPOSE_TEST) down -v --remove-orphans
 .PHONY: test-unit
 

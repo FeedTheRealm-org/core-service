@@ -32,11 +32,23 @@ func CreateStartEmailSenderService() {
 	emailSenderService = services.NewEmailSenderService(conf)
 }
 
+func clearDatabase(db *config.DB) {
+	db.Conn.Exec("TRUNCATE TABLE users, account_verifications CASCADE;")
+}
+
 func TestMain(m *testing.M) {
 	if err := os.Setenv("SERVER_FIXED_TOKEN", "test-fixed-token"); err != nil {
 		panic(err)
 	}
 	CreateStartAccountService()
 	CreateStartEmailSenderService()
-	os.Exit(m.Run())
+
+	conf := config.CreateConfig()
+	db, _ := config.NewDB(conf)
+	clearDatabase(db)
+
+	code := m.Run()
+
+	clearDatabase(db)
+	os.Exit(code)
 }
