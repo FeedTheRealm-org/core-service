@@ -9,6 +9,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/server_registry"
+	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/world"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -16,13 +17,15 @@ import (
 // ServerRegistryController handles ftr-server reports and WorldId,ZoneId -> IP:port mapping
 type serverRegistryController struct {
 	conf                  *config.Config
+	worldService          world.WorldService
 	nomadJobSenderService server_registry.ServerRegistryService
 }
 
-func NewServerRegistryController(conf *config.Config, nomadJobService server_registry.ServerRegistryService) ServerRegistryController {
+func NewServerRegistryController(conf *config.Config, worldService world.WorldService, nomadJobSenderService server_registry.ServerRegistryService) ServerRegistryController {
 	return &serverRegistryController{
 		conf:                  conf,
-		nomadJobSenderService: nomadJobService,
+		worldService:          worldService,
+		nomadJobSenderService: nomadJobSenderService,
 	}
 }
 
