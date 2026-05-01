@@ -108,7 +108,7 @@ func (cs *worldService) CheckAvaliableZonesForPublish(worldId uuid.UUID, zoneId 
 }
 
 func (cs *worldService) UpdateUsedSlots(userId uuid.UUID, numberOfSlots int, areUsed bool) error {
-	payload := map[string]interface{}{"slots": numberOfSlots, "are_used": areUsed}
+	payload := map[string]any{"slots": numberOfSlots, "are_used": areUsed}
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func (cs *worldService) PublishZone(worldID uuid.UUID, zoneID int, zoneData []by
 		}
 	}
 
-	if err := cs.serverRegistryService.StartNewJob(worldID, zoneID); err != nil {
+	if err := cs.serverRegistryService.StartNewJob(worldID, zoneID, false); err != nil {
 		return nil, err
 	}
 

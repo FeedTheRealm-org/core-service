@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strconv"
 	"text/template"
 	"time"
 
@@ -45,7 +46,7 @@ func NewServerRegistryService(conf *config.Config) (ServerRegistryService, error
 	}, nil
 }
 
-func (s *serverRegistryService) StartNewJob(worldId uuid.UUID, zoneId int) error {
+func (s *serverRegistryService) StartNewJob(worldId uuid.UUID, zoneId int, isTest bool) error {
 	templateBytes, err := os.ReadFile(s.conf.NomadTemplatePath)
 	if err != nil {
 		return fmt.Errorf("failed to read nomad template file: %w", err)
@@ -68,7 +69,7 @@ func (s *serverRegistryService) StartNewJob(worldId uuid.UUID, zoneId int) error
 		JobName:     jobName,
 		WorldID:     worldId.String(),
 		ZoneID:      zoneId,
-		IsTestWorld: "true", // TODO: move to parameter for admin-only
+		IsTestWorld: strconv.FormatBool(isTest),
 		ImageName:   s.conf.FTRServerImage,
 		DeployedAt:  time.Now().UTC().Format(time.RFC3339),
 	}
