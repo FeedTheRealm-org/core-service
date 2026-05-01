@@ -12,7 +12,7 @@ func NewStubServerRegistryService() ServerRegistryService {
 	return &stubServerRegistryService{}
 }
 
-func (ns *stubServerRegistryService) StartNewJob(worldId uuid.UUID, zoneId int) error {
+func (ns *stubServerRegistryService) StartNewJob(worldId uuid.UUID, zoneId int, isTest bool) error {
 	return nil
 }
 
