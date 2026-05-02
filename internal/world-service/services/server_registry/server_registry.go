@@ -10,18 +10,20 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
+	"github.com/FeedTheRealm-org/core-service/internal/world-service/repositories/world"
 	"github.com/google/uuid"
 	consul_api "github.com/hashicorp/consul/api"
 	nomad_api "github.com/hashicorp/nomad/api"
 )
 
 type serverRegistryService struct {
-	conf         *config.Config
-	nomadClient  *nomad_api.Client
-	consulClient *consul_api.Client
+	conf            *config.Config
+	worldRepository world.WorldRepository
+	nomadClient     *nomad_api.Client
+	consulClient    *consul_api.Client
 }
 
-func NewServerRegistryService(conf *config.Config) (ServerRegistryService, error) {
+func NewServerRegistryService(conf *config.Config, worldRepository world.WorldRepository) (ServerRegistryService, error) {
 	nomadConfig := nomad_api.DefaultConfig()
 	nomadConfig.Address = conf.NomadAddr
 	nomadConfig.SecretID = conf.NomadToken
@@ -41,9 +43,10 @@ func NewServerRegistryService(conf *config.Config) (ServerRegistryService, error
 	}
 
 	return &serverRegistryService{
-		conf:         conf,
-		nomadClient:  nomadClient,
-		consulClient: consulClient,
+		conf:            conf,
+		worldRepository: worldRepository,
+		nomadClient:     nomadClient,
+		consulClient:    consulClient,
 	}, nil
 }
 
@@ -123,7 +126,15 @@ func (s *serverRegistryService) GetServerAddress(worldId uuid.UUID, zoneId int) 
 		return "", 0, fmt.Errorf("failed to query consul: %w", err)
 	}
 
+	zone, err := s.worldRepository.GetWorldZone(worldId, zoneId)
+	if err != nil {
+		return "", 0, fmt.Errorf("failed to retrieve world zone from repository: %w", err)
+	}
+
 	if len(services) == 0 {
+		if zone.IsActive {
+			zone.IsOnline = false
+		}
 		return "", 0, fmt.Errorf("no healthy server found for world %s zone %d", worldId, zoneId)
 	}
 
@@ -131,6 +142,10 @@ func (s *serverRegistryService) GetServerAddress(worldId uuid.UUID, zoneId int) 
 	publicIP, ok := svc.Service.Meta["public_ip"]
 	if !ok || publicIP == "" {
 		return "", 0, fmt.Errorf("server found but missing public_ip metadata for world %s zone %d", worldId, zoneId)
+	}
+
+	if zone.IsActive && !zone.IsOnline {
+		zone.IsOnline = true
 	}
 
 	return publicIP, svc.Service.Port, nil
