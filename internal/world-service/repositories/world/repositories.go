@@ -40,6 +40,9 @@ type WorldRepository interface {
 	// GetWorldZone retrieves a specific zone for a world.
 	GetWorldZone(worldID uuid.UUID, zoneID int) (*models.WorldZone, error)
 
+	// GetActiveWorldZones retrieves all active zones across all worlds.
+	GetActiveWorldZones() ([]*models.WorldZone, error)
+
 	// GetUserIdByWorldId retrieves the user ID associated with a specific world.
 	GetUserIdByWorldId(worldID uuid.UUID) (uuid.UUID, error)
 
