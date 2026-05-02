@@ -3,7 +3,8 @@ COMPOSE_TEST := docker-compose.test.yml
 
 EXEC_APP := go run cmd/main.go
 LOCAL_SERVER := http://localhost:8000
-SEED_SCRIPT := ./scripts/seed_initial_cosmetics.py
+SEED_COSMETICS_SCRIPT := ./scripts/seed_initial_cosmetics.py
+SEED_BOTS_SCRIPT := ./scripts/seed_bot_accounts.py
 
 help: # Show this help message
 	@awk -F'#' '/^[^[:space:]].*:/ && !/^\.PHONY/ { \
@@ -77,7 +78,8 @@ endif
 	docker compose -f $(COMPOSE_DEV) down -v --remove-orphans
 	docker compose -f $(COMPOSE_DEV) --profile prod up --build -d --wait --remove-orphans
 	export JWT_TOKEN=$$(curl -X POST localhost:8000/auth/login -H "Content-Type: text/json" -d '{"email": "admin@admin.admin", "password": "admin123"}'  | jq -r '.data.access_token'); \
-	$(SEED_SCRIPT) $(LOCAL_SERVER) $(SPRITE_BASE_PATH)
+	$(SEED_COSMETICS_SCRIPT) $(LOCAL_SERVER) $(SPRITE_BASE_PATH) && \
+	$(SEED_BOTS_SCRIPT) $(LOCAL_SERVER)
 	$(MAKE) down
 .PHONY: seed
 

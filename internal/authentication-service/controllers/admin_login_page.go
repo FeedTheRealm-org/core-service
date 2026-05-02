@@ -51,7 +51,7 @@ func (ac *AdminLoginController) AdminLoginHandler(c *gin.Context) {
 	email := c.PostForm("email")
 	password := c.PostForm("password")
 
-	_, token, err := ac.accountService.LoginAccount(email, password)
+	_, token, err := ac.accountService.LoginAccount(email, password, false)
 	if err != nil {
 		_ = c.Error(err)
 	}
