@@ -655,10 +655,10 @@ paths:
         name: world_id
         required: true
         type: string
-      - default: 0
-        description: Cosmetic price
+      - description: Cosmetic price (must be > 0)
         in: formData
         name: price
+        required: true
         type: number
       - description: Cosmetic File
         in: formData
@@ -705,10 +705,10 @@ paths:
         name: world_id
         required: true
         type: string
-      - default: 0
-        description: Cosmetic price
+      - description: Cosmetic price (must be > 0)
         in: formData
         name: price
+        required: true
         type: number
       produces:
       - application/json
