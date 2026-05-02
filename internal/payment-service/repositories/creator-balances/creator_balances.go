@@ -4,6 +4,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/payment-service/models"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -17,7 +18,7 @@ func NewCreatorBalancesRepository(conf *config.Config, db *config.DB) CreatorBal
 	return &creatorBalancesRepository{conf: conf, db: db}
 }
 
-func (r *creatorBalancesRepository) AddBalance(userId uuid.UUID, amount float64) error {
+func (r *creatorBalancesRepository) AddBalance(userId uuid.UUID, amount decimal.Decimal) error {
 	newBalance := models.CreatorBalance{
 		UserID:  userId,
 		Balance: amount,
@@ -34,11 +35,11 @@ func (r *creatorBalancesRepository) AddBalance(userId uuid.UUID, amount float64)
 	return result.Error
 }
 
-func (r *creatorBalancesRepository) GetBalance(userId uuid.UUID) (float64, error) {
-	cb := models.CreatorBalance{UserID: userId, Balance: 0}
+func (r *creatorBalancesRepository) GetBalance(userId uuid.UUID) (decimal.Decimal, error) {
+	cb := models.CreatorBalance{UserID: userId, Balance: decimal.Zero}
 	err := r.db.Conn.Where("user_id = ?", userId).FirstOrCreate(&cb).Error
 	if err != nil {
-		return 0, err
+		return decimal.Zero, err
 	}
 	return cb.Balance, nil
 }

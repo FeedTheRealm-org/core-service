@@ -41,9 +41,11 @@ func (c *creatorBalancesController) GetBalance(ctx *gin.Context) {
 		return
 	}
 
+	balanceParsed, _ := balance.Float64()
+
 	res := dtos.CreatorBalanceResponse{
 		UserID:  userId,
-		Balance: balance,
+		Balance: balanceParsed,
 	}
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
