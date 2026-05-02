@@ -13,6 +13,6 @@ type ServerRegistryController interface {
 	// UnRegisterServer removes the server entry.
 	GetServerAddress(c *gin.Context)
 
-	// UpdatedServer is a webhook endpoint for reload server when image is updated.
+	// UpdateServer is a webhook endpoint for reload server when image is updated.
 	UpdateServer(c *gin.Context)
 }
