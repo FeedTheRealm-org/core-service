@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/oidc_validation"
 	server_registry_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/server_registry"
 	world_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/world"
 	zones_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/zones"
@@ -41,7 +42,12 @@ func SetupEndpointsForZonesService(worldGroup *gin.RouterGroup, db *config.DB, c
 	worldGroup.GET("/:id/zones/:zone_id/deactivate", zonesController.DeactivateZone)
 }
 
-func SetupEndpointsForServiceRegistry(orchestratorGroup *gin.RouterGroup, db *config.DB, conf *config.Config, nomadService server_registry_service.ServerRegistryService) {
+func SetupEndpointsForServiceRegistry(orchestratorGroup *gin.RouterGroup, db *config.DB, conf *config.Config, nomadService server_registry_service.ServerRegistryService) error {
+	ghv, err := oidc_validation.NewGitHubOIDCVerifier(conf)
+	if err != nil {
+		return err
+	}
+
 	worldRepo := world_repo.NewWorldRepository(conf, db)
 	worldService := world_service.NewWorldService(conf, worldRepo, nomadService)
 	serverRegistryController := server_registry_controller.NewServerRegistryController(conf, worldService, nomadService)
@@ -49,6 +55,9 @@ func SetupEndpointsForServiceRegistry(orchestratorGroup *gin.RouterGroup, db *co
 	orchestratorGroup.GET("/:id/zones/:zone_id/start-job", middleware.AdminCheckMiddleware(), serverRegistryController.StartNewJob)
 	orchestratorGroup.GET("/:id/zones/:zone_id/stop-job", middleware.AdminCheckMiddleware(), serverRegistryController.StopJob)
 	orchestratorGroup.GET("/:id/zones/:zone_id/address", serverRegistryController.GetServerAddress)
+	orchestratorGroup.POST("/webhook/servers/update", middleware.GithubOIDCCheck(ghv), serverRegistryController.UpdateServer)
+
+	return nil
 }
 
 func CreateNomadService(conf *config.Config) (server_registry_service.ServerRegistryService, error) {
@@ -70,7 +79,9 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 
 	SetupEndpointsForWorldService(worldGroup, db, conf, nomadService)
 	SetupEndpointsForZonesService(worldGroup, db, conf, nomadService)
-	SetupEndpointsForServiceRegistry(orchestratorGroup, db, conf, nomadService)
+	if err := SetupEndpointsForServiceRegistry(orchestratorGroup, db, conf, nomadService); err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -28,7 +28,7 @@ type GitHubClaims struct {
 	RefType    string `json:"ref_type"`
 }
 
-func NewGitHubOIDCVerifier(conf config.Config) (*GitHubOIDCVerifier, error) {
+func NewGitHubOIDCVerifier(conf *config.Config) (*GitHubOIDCVerifier, error) {
 	jwks, err := keyfunc.Get(GITHUB_JWKS_URL, keyfunc.Options{})
 	if err != nil {
 		return nil, err
