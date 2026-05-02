@@ -2561,6 +2561,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
                     }
                 }
             }

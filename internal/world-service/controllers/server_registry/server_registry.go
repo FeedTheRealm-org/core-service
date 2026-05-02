@@ -153,6 +153,7 @@ func (c *serverRegistryController) GetServerAddress(ctx *gin.Context) {
 // @Success      200  {string}  string "OK"
 // @Failure      401  {object} dtos.ErrorResponse
 // @Failure      404  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
 // @Router       /world/orchestrator/webhook/servers/update [post]
 func (c *serverRegistryController) UpdateServer(ctx *gin.Context) {
 	if common_handlers.IsGithubOIDCTokenValid(ctx) != nil {
@@ -169,7 +170,7 @@ func (c *serverRegistryController) UpdateServer(ctx *gin.Context) {
 	for _, zone := range activeZones {
 		err := c.nomadJobSenderService.StartNewJob(zone.WorldID, zone.ID, false)
 		if err != nil {
-			_ = ctx.Error(errors.NewNotFoundError(err.Error()))
+			_ = ctx.Error(errors.NewInternalServerError(err.Error()))
 			return
 		}
 	}

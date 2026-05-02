@@ -2570,6 +2570,10 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
       summary: Update running servers
       tags:
       - world-service
