@@ -3,6 +3,7 @@ COMPOSE_TEST := docker-compose.test.yml
 
 EXEC_APP := go run cmd/main.go
 LOCAL_SERVER := http://localhost:8000
+PROD_SERVER := https://core.feedtherealm.world
 SEED_COSMETICS_SCRIPT := ./scripts/seed_initial_cosmetics.py
 SEED_BOTS_SCRIPT := ./scripts/seed_bot_accounts.py
 
@@ -77,10 +78,21 @@ endif
 	chmod -R 777 local_buckets
 	docker compose -f $(COMPOSE_DEV) down -v --remove-orphans
 	docker compose -f $(COMPOSE_DEV) --profile prod up --build -d --wait --remove-orphans
-	export JWT_TOKEN=$$(curl -X POST localhost:8000/auth/login -H "Content-Type: text/json" -d '{"email": "admin@admin.admin", "password": "admin123"}'  | jq -r '.data.access_token'); \
+	export JWT_TOKEN=$$(curl -X POST $(LOCAL_SERVER)/auth/login -H "Content-Type: text/json" -d '{"email": "admin@admin.admin", "password": "admin123"}'  | jq -r '.data.access_token'); \
 	$(SEED_COSMETICS_SCRIPT) $(LOCAL_SERVER) $(SPRITE_BASE_PATH) && \
 	$(SEED_BOTS_SCRIPT) $(LOCAL_SERVER)
 	$(MAKE) down
+.PHONY: seed
+
+seed-prod: # Seed the core-service local resources
+ifndef SPRITE_BASE_PATH
+	$(error SPRITE_BASE_PATH is required. Usage: export SPRITE_BASE_PATH=xxx, then make seed-prod)
+endif
+ifndef JWT_TOKEN
+	$(error $(JWT_HELP))
+endif
+	$(SEED_COSMETICS_SCRIPT) $(PROD_SERVER) $(SPRITE_BASE_PATH)
+	$(SEED_BOTS_SCRIPT) $(PROD_SERVER)
 .PHONY: seed
 
 swagger: # Generate Swagger documentation
@@ -102,3 +114,17 @@ logs-%: # Tail logs of a specific service. Usage: make logs-service_name
 db: # Open a psql shell in the postgres container
 	docker compose -f $(COMPOSE_DEV) exec db psql -U postgres
 .PHONY: db
+
+# --- Messages ---
+
+define JWT_HELP
+JWT_TOKEN is required, export it and then run the command again.
+
+Example:
+
+export JWT_TOKEN=$$(curl -X POST $(PROD_SERVER)/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@admin.admin","password":"admin123"}' \
+  | jq -r '.data.access_token')
+make <command>
+endef
