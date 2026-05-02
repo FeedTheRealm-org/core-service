@@ -4,7 +4,27 @@ import os
 import sys
 import random
 import requests
-import string
+
+ADJECTIVES = [
+    "Ancient", "Arcane", "Astral", "Blazing", "Brutal", "Celestial", "Chaotic",
+    "Crimson", "Cunning", "Cyber", "Dark", "Daring", "Deadly", "Divine",
+    "Doomed", "Eternal", "Feral", "Fierce", "Frozen", "Ghostly", "Golden",
+    "Grim", "Hollow", "Infernal", "Iron", "Ivory", "Jade", "Lone", "Lunar",
+    "Mystic", "Nebula", "Night", "Obsidian", "Phantom", "Plasma", "Prime",
+    "Raging", "Rapid", "Savage", "Shadow", "Silent", "Solar", "Spectral",
+    "Storm", "Titan", "Twisted", "Void", "Wild", "Zealous"
+]
+
+NOUNS = [
+    "Assassin", "Beast", "Blade", "Bot", "Champion", "Cleric", "Construct",
+    "Crawler", "Defender", "Destroyer", "Dragon", "Druid", "Enforcer",
+    "Entity", "Falcon", "Giant", "Gladiator", "Golem", "Guardian", "Hacker",
+    "Harbinger", "Hunter", "Juggernaut", "Knight", "Mage", "Mercenary",
+    "Monk", "Nomad", "Oracle", "Paladin", "Phantom", "Predator", "Ranger",
+    "Reaper", "Rogue", "Sentinel", "Serpent", "Shadow", "Slayer", "Sniper",
+    "Sorcerer", "Specter", "Spirit", "Striker", "Titan", "Vanguard",
+    "Warden", "Warlock", "Warrior", "Watcher", "Wraith"
+]
 
 def get_token() -> str:
     token = os.getenv("JWT_TOKEN", "")
@@ -20,13 +40,11 @@ def build_headers(token: str) -> dict:
     headers["Content-Type"] = "application/json"
     return headers
 
-def generate_random_name():
-    adjectives = ["Brave", "Dark", "Epic", "Fierce", "Giant", "Holy", "Iron", "Jade"]
-    nouns = ["Knight", "Mage", "Orc", "Elf", "Dragon", "Sword", "Shield", "Hunter"]
-    return f"{random.choice(adjectives)}{random.choice(nouns)}"
+def generate_random_name(bot_number: int) -> str:
+    return f"{random.choice(ADJECTIVES)}{random.choice(NOUNS)}-{bot_number}"
 
-def create_bot_accounts(server_url: str, admin_token: str, num_bots: int = 5):
-    for i in range(1, num_bots + 1):
+def create_bot_accounts(server_url: str, admin_token: str, start_at: int, end_at: int):
+    for i in range(start_at, end_at + 1):
         email = f"bot_{i}@feedtherealm.world"
         password = "qwerty123"
         print(f"Creating account for {email}...")
@@ -88,7 +106,7 @@ def create_bot_accounts(server_url: str, admin_token: str, num_bots: int = 5):
 
             # Update Character
             char_patch_url = f"{server_url}/player/character"
-            char_name = generate_random_name()
+            char_name = generate_random_name(i)
             patch_data = {
                 "character_name": char_name,
                 "category_sprites": sprites
@@ -104,9 +122,11 @@ def create_bot_accounts(server_url: str, admin_token: str, num_bots: int = 5):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: seed_bot_accounts.py <SERVER_URL>")
+        print("Usage: seed_bot_accounts.py <SERVER_URL> [<START_AT> <END_AT>]")
         sys.exit(1)
 
     url = sys.argv[1].rstrip("/")
     tkn = get_token()
-    create_bot_accounts(url, tkn)
+    start_at = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+    end_at = int(sys.argv[3]) if len(sys.argv) > 3 else 100
+    create_bot_accounts(url, tkn, start_at, end_at)
