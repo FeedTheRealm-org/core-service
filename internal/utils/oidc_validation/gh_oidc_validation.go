@@ -63,7 +63,3 @@ func (v *GitHubOIDCVerifier) IsValidRepo(claims *GitHubClaims) bool {
 func (v *GitHubOIDCVerifier) IsTriggerATag(claims *GitHubClaims) bool {
 	return claims.RefType == "tag"
 }
-
-func (v *GitHubOIDCVerifier) IsTriggerFromMain(claims *GitHubClaims) bool {
-	return strings.EqualFold(claims.BaseRef, MAIN_BRANCH_REF)
-}

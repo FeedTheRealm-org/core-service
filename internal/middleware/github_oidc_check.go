@@ -32,11 +32,6 @@ func GithubOIDCCheck(ghv *oidc_validation.GitHubOIDCVerifier) gin.HandlerFunc {
 			return
 		}
 
-		if !ghv.IsTriggerFromMain(&claims) {
-			c.Set("invalidGithubOIDC", true)
-			return
-		}
-
 		c.Set("invalidGithubOIDC", false)
 	}
 }
