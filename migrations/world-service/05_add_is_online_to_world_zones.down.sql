@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE IF EXISTS world_zones
+  DROP COLUMN IF EXISTS is_online;
+
+COMMIT;
