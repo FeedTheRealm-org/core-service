@@ -28,6 +28,9 @@ type WorldService interface {
 	// GetWorldZones retrieves zones for a specific world.
 	GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, error)
 
+	// GetActiveWorldZones retrieves all active zones across all worlds.
+	GetActiveWorldZones() ([]*models.WorldZone, error)
+
 	// ClearDatabase is a utility function to clear the database, intended for testing purposes.
 	ClearDatabase() error
 }
