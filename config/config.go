@@ -70,7 +70,7 @@ type StripeConfig struct {
 	StripeZonePrice                  float64
 	StripeBillingAnchorDay           int
 	StripeBillingTimezone            string
-	StripeRealPrice                  bool
+	StripeRealPrices                 bool
 	GemPacks                         []StripeItem
 	Zones                            []StripeItem
 }
@@ -141,8 +141,8 @@ func CreateConfig() *Config {
 		DollarsGemsRatio:      getEnvOrDefaultFloat("DOLLARS_GEMS_RATIO", 0.25),
 	}
 
-	stripeRealPrice := getEnvOrDefaultBool("STRIPE_REAL_PRICE", true)
-	gemPacks, zones := parseStripePrices(stripeRealPrice)
+	stripeRealPrices := getEnvOrDefaultBool("STRIPE_REAL_PRICES", true)
+	gemPacks, zones := parseStripePrices(stripeRealPrices)
 
 	zonePrice := ZONES_DEFAULT_PRICE
 	switch len(zones) {
@@ -159,7 +159,7 @@ func CreateConfig() *Config {
 		StripeZonePrice:                  zonePrice,
 		StripeBillingAnchorDay:           getEnvOrDefaultInt("STRIPE_BILLING_ANCHOR_DAY", 5),
 		StripeBillingTimezone:            getEnvOrDefaultString("STRIPE_BILLING_TIMEZONE", "America/Argentina/Buenos_Aires"),
-		StripeRealPrice:                  stripeRealPrice,
+		StripeRealPrices:                 stripeRealPrices,
 		GemPacks:                         gemPacks,
 		Zones:                            zones,
 	}
