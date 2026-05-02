@@ -168,7 +168,7 @@ func CreateConfig() *Config {
 
 	githubConf := &GithubConfig{
 		GithubAudienceWebhook: getEnvOrDefaultString("GITHUB_AUDIENCE_WEBHOOK", "ftr-update-server"),
-		GithubRepoURLWebhook:  getEnvOrDefaultString("GITHUB_REPO_URL_WEBHOOK", "https://github.com/FeedTheRealm-org/game"),
+		GithubRepoURLWebhook:  getEnvOrDefaultString("GITHUB_REPO_URL_WEBHOOK", "FeedTheRealm-org/game"),
 	}
 
 	return &Config{
