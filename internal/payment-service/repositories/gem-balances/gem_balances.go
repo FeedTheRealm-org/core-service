@@ -61,11 +61,11 @@ func (br *gemBalancesRepository) GetGemBalanceByUserId(userId uuid.UUID) (*model
 	return &balance, nil
 }
 
-func (br *gemBalancesRepository) AddToGemBalance(userId uuid.UUID, gems int) error {
+func (br *gemBalancesRepository) AddToGemBalance(userId uuid.UUID, gems int64) error {
 	return br.db.Conn.Model(&models.GemBalance{}).Where("user_id = ?", userId).UpdateColumn("gems", gorm.Expr("gems + ?", gems)).Error
 }
 
-func (br *gemBalancesRepository) ApplyStripeCheckoutCreditIfUnprocessed(userId uuid.UUID, gems int, eventID string, sessionID string) (bool, error) {
+func (br *gemBalancesRepository) ApplyStripeCheckoutCreditIfUnprocessed(userId uuid.UUID, gems int64, eventID string, sessionID string) (bool, error) {
 	applied := false
 
 	err := br.db.Conn.Transaction(func(tx *gorm.DB) error {
@@ -104,6 +104,6 @@ func (br *gemBalancesRepository) ApplyStripeCheckoutCreditIfUnprocessed(userId u
 	return applied, nil
 }
 
-func (br *gemBalancesRepository) UpdateGemBalance(userId uuid.UUID, newGems int) error {
+func (br *gemBalancesRepository) UpdateGemBalance(userId uuid.UUID, newGems int64) error {
 	return br.db.Conn.Model(&models.GemBalance{}).Where("user_id = ?", userId).Update("gems", newGems).Error
 }

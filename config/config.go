@@ -49,7 +49,7 @@ type AssetsConfig struct {
 type StripeItem struct {
 	ID     string  `yaml:"id"`
 	Name   string  `yaml:"name"`
-	Amount int     `yaml:"amount,omitempty"`
+	Amount int64   `yaml:"amount,omitempty"`
 	Price  float64 `yaml:"price"`
 }
 
@@ -142,17 +142,6 @@ func CreateConfig() *Config {
 	}
 
 	stripeRealPrice := getEnvOrDefaultBool("STRIPE_REAL_PRICE", true)
-	gemPacks, zones := parseStripePrices(stripeRealPrice)
-
-	zonePrice := ZONES_DEFAULT_PRICE
-	switch len(zones) {
-	case 0:
-		log.Printf("Warning: No zones defined in %s, using default price of $%.2f", STRIPE_PRODUCTS_FILE, zonePrice)
-	default:
-		zonePrice = zones[0].Price
-	}
-
-	stripeRealPrice := getEnvOrDefaultBool("STRIPE_REAL_PRICES", true)
 	gemPacks, zones := parseStripePrices(stripeRealPrice)
 
 	zonePrice := ZONES_DEFAULT_PRICE

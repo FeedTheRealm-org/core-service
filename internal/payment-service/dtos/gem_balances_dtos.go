@@ -4,11 +4,11 @@ import "github.com/google/uuid"
 
 type GemBalanceResponse struct {
 	UserId uuid.UUID `json:"user_id"`
-	Gems   int       `json:"gems"`
+	Gems   int64     `json:"gems"`
 }
 
 type UpdateGemBalanceRequest struct {
-	Gems int `json:"gems" binding:"required"`
+	Gems int64 `json:"gems" binding:"required"`
 }
 
 type CheckoutRequest struct {

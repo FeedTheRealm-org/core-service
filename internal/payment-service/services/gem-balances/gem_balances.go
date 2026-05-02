@@ -72,7 +72,7 @@ func (bs *gemBalancesService) CreateGemBalance(userId uuid.UUID) error {
 	return nil
 }
 
-func (bs *gemBalancesService) UpdateGemBalance(userId uuid.UUID, gems int) error {
+func (bs *gemBalancesService) UpdateGemBalance(userId uuid.UUID, gems int64) error {
 	err := bs.gemBalancesRepo.UpdateGemBalance(userId, gems)
 	if err != nil {
 		logger.Logger.Error("Failed to update balance for user " + userId.String() + ": " + err.Error())
@@ -115,7 +115,7 @@ func (bs *gemBalancesService) PurchaseCosmetic(userId uuid.UUID, cosmeticId uuid
 	return nil
 }
 
-func (bs *gemBalancesService) fetchCosmeticPrice(cosmeticId uuid.UUID) (int, uuid.UUID, error) {
+func (bs *gemBalancesService) fetchCosmeticPrice(cosmeticId uuid.UUID) (int64, uuid.UUID, error) {
 	url := fmt.Sprintf("http://127.0.0.1:%d/assets/internal/cosmetics/%s", bs.conf.Server.Port, cosmeticId.String())
 	resp, err := http.Get(url)
 	if err != nil {
@@ -139,7 +139,7 @@ func (bs *gemBalancesService) fetchCosmeticPrice(cosmeticId uuid.UUID) (int, uui
 	var cosmeticResp struct {
 		Data struct {
 			CosmeticId    uuid.UUID `json:"cosmetic_id"`
-			CosmeticPrice float64   `json:"cosmetic_price"`
+			CosmeticPrice int64     `json:"cosmetic_price"`
 			CreatedBy     uuid.UUID `json:"created_by"`
 		} `json:"data"`
 	}
@@ -148,17 +148,17 @@ func (bs *gemBalancesService) fetchCosmeticPrice(cosmeticId uuid.UUID) (int, uui
 		return 0, uuid.Nil, err
 	}
 
-	return int(cosmeticResp.Data.CosmeticPrice), cosmeticResp.Data.CreatedBy, nil
+	return cosmeticResp.Data.CosmeticPrice, cosmeticResp.Data.CreatedBy, nil
 }
 
-func (bs *gemBalancesService) ensureSufficientBalance(userId uuid.UUID, price int) error {
+func (bs *gemBalancesService) ensureSufficientBalance(userId uuid.UUID, price int64) error {
 	balance, err := bs.gemBalancesRepo.GetGemBalanceByUserId(userId)
 	if err != nil {
 		logger.Logger.Error("Failed to get user balance: " + err.Error())
 		return err
 	}
 
-	if balance.Gems < price {
+	if int64(balance.Gems) < price {
 		return gem_balances_errors.NewInsufficientGems("insufficient gems to purchase this cosmetic")
 	}
 
