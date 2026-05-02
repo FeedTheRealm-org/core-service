@@ -144,3 +144,35 @@ func (c *serverRegistryController) GetServerAddress(ctx *gin.Context) {
 		Port: port,
 	})
 }
+
+// UpdateServer godoc
+// @Summary      Update running servers
+// @Description  Webhook to update running world servers
+// @Tags         world-service
+// @Produce      json
+// @Success      200  {string}  string "OK"
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Router       /world/orchestrator/webhook/servers/update [post]
+func (c *serverRegistryController) UpdateServer(ctx *gin.Context) {
+	if common_handlers.IsGithubOIDCTokenValid(ctx) != nil {
+		_ = ctx.Error(errors.NewUnauthorizedError("Invalid GitHub OIDC token"))
+		return
+	}
+
+	activeZones, err := c.worldService.GetActiveWorldZones()
+	if err != nil {
+		_ = ctx.Error(errors.NewNotFoundError(err.Error()))
+		return
+	}
+
+	for _, zone := range activeZones {
+		err := c.nomadJobSenderService.StartNewJob(zone.WorldID, zone.ID, false)
+		if err != nil {
+			_ = ctx.Error(errors.NewNotFoundError(err.Error()))
+			return
+		}
+	}
+
+	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
+}
