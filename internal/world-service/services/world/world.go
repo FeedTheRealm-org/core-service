@@ -64,7 +64,7 @@ func (cs *worldService) UpdateCreateableData(worldID uuid.UUID, userId uuid.UUID
 }
 
 func (cs *worldService) UpdateUsedSlots(userId uuid.UUID, numberOfSlots int, areUsed bool) error {
-	payload := map[string]interface{}{"slots": numberOfSlots, "are_used": areUsed}
+	payload := map[string]any{"slots": numberOfSlots, "are_used": areUsed}
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return err

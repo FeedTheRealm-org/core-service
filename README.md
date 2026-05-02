@@ -1,5 +1,8 @@
 # Feed the Realm Core-service
 
+
+[![codecov](https://codecov.io/gh/FeedTheRealm-org/core-service/graph/badge.svg?token=S7NI26WBRL)](https://codecov.io/gh/FeedTheRealm-org/core-service)
+
 Monolithic backend for all adjacent services to the game.
 
 **Structure must always stay easy to divide into microservices and escalate if needed.**

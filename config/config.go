@@ -11,7 +11,7 @@ import (
 
 type EnvironmentType int
 
-const STRIPE_PRODUCTS_FILE = "config/stripe_prices.yml"
+const STRIPE_PRODUCTS_FILE = "/config/stripe_prices.yml"
 const ZONES_DEFAULT_PRICE = 5.00
 
 const (
@@ -142,6 +142,17 @@ func CreateConfig() *Config {
 	}
 
 	stripeRealPrice := getEnvOrDefaultBool("STRIPE_REAL_PRICE", true)
+	gemPacks, zones := parseStripePrices(stripeRealPrice)
+
+	zonePrice := ZONES_DEFAULT_PRICE
+	switch len(zones) {
+	case 0:
+		log.Printf("Warning: No zones defined in %s, using default price of $%.2f", STRIPE_PRODUCTS_FILE, zonePrice)
+	default:
+		zonePrice = zones[0].Price
+	}
+
+	stripeRealPrice := getEnvOrDefaultBool("STRIPE_REAL_PRICES", true)
 	gemPacks, zones := parseStripePrices(stripeRealPrice)
 
 	zonePrice := ZONES_DEFAULT_PRICE

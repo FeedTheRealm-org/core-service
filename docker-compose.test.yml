@@ -17,6 +17,14 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    volumes:
+      - ./coverage/:/usr/src/app/coverage/
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health > /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   python-tests:
     build:
