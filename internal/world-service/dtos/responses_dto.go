@@ -37,6 +37,7 @@ type WorldMetadata struct {
 type WorldZoneMetadata struct {
 	ZoneID   int  `json:"zone_id"`
 	IsActive bool `json:"is_active"`
+	IsOnline bool `json:"is_online"`
 }
 
 type WorldAddressResponse struct {
@@ -54,4 +55,5 @@ type WorldZoneResponse struct {
 	ZoneID   int    `json:"zone_id"`
 	ZoneData string `json:"zone_data"`
 	IsActive bool   `json:"is_active"`
+	IsOnline bool   `json:"is_online"`
 }
