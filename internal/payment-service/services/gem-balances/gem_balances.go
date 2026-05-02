@@ -110,7 +110,7 @@ func (bs *gemBalancesService) PurchaseCosmetic(userId uuid.UUID, cosmeticId uuid
 		if creatorEarnings.GreaterThan(decimal.Zero) {
 			if err := bs.creatorBalancesRepo.AddBalance(creatorId, creatorEarnings); err != nil {
 				logger.Logger.Error("Failed to add earnings to creator balance: " + err.Error())
-				return err
+				return fmt.Errorf("failed to credit creator %s for cosmetic purchase %s by user %s: %w", creatorId, cosmeticId, userId, err)
 			}
 		}
 	}
