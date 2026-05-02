@@ -181,7 +181,7 @@ definitions:
       cosmetic_id:
         type: string
       cosmetic_price:
-        type: number
+        type: integer
       created_by:
         type: string
     type: object
@@ -1281,6 +1281,29 @@ paths:
       summary: Verify an account
       tags:
       - authentication-service
+  /payments/balances/creators:
+    get:
+      description: Get the current creator balance of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.CreatorBalanceResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get creator balance
+      tags:
+      - payment-service
   /payments/checkout:
     post:
       consumes:
@@ -1315,29 +1338,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Create checkout session
-      tags:
-      - payment-service
-  /payments/creator-balances:
-    get:
-      description: Get the current creator balance of the authenticated user
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dtos.CreatorBalanceResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get creator balance
       tags:
       - payment-service
   /payments/gems/balances:

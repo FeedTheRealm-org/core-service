@@ -27,7 +27,7 @@ func NewCreatorBalancesController(service creator_balances.CreatorBalancesServic
 // @Success      200  {object}  dtos.CreatorBalanceResponse
 // @Failure      401  {object} dtos.ErrorResponse
 // @Failure      500  {object} dtos.ErrorResponse
-// @Router       /payments/creator-balances [get]
+// @Router       /payments/balances/creators [get]
 func (c *creatorBalancesController) GetBalance(ctx *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(ctx)
 	if err != nil {
