@@ -78,13 +78,13 @@ endif
 	chmod -R 777 local_buckets
 	docker compose -f $(COMPOSE_DEV) down -v --remove-orphans
 	docker compose -f $(COMPOSE_DEV) --profile prod up --build -d --wait --remove-orphans
-	export JWT_TOKEN=$$(curl -X POST $(LOCAL_SERVER)/auth/login -H "Content-Type: text/json" -d '{"email": "admin@admin.admin", "password": "admin123"}'  | jq -r '.data.access_token'); \
+	export JWT_TOKEN=$$(curl -X POST $(LOCAL_SERVER)/auth/login -H "Content-Type: application/json" -d '{"email": "admin@admin.admin", "password": "admin123"}'  | jq -r '.data.access_token'); \
 	$(SEED_COSMETICS_SCRIPT) $(LOCAL_SERVER) $(SPRITE_BASE_PATH) && \
 	$(SEED_BOTS_SCRIPT) $(LOCAL_SERVER)
 	$(MAKE) down
 .PHONY: seed
 
-seed-prod: # Seed the core-service local resources
+seed-prod: # Seed the core-service production resources
 ifndef SPRITE_BASE_PATH
 	$(error SPRITE_BASE_PATH is required. Usage: export SPRITE_BASE_PATH=xxx, then make seed-prod)
 endif
@@ -93,7 +93,7 @@ ifndef JWT_TOKEN
 endif
 	$(SEED_COSMETICS_SCRIPT) $(PROD_SERVER) $(SPRITE_BASE_PATH)
 	$(SEED_BOTS_SCRIPT) $(PROD_SERVER)
-.PHONY: seed
+.PHONY: seed-prod
 
 swagger: # Generate Swagger documentation
 	swag init -g cmd/main.go -o ./swagger
