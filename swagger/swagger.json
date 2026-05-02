@@ -2526,6 +2526,38 @@
                 }
             }
         },
+        "/world/orchestrator/webhook/servers/update": {
+            "post": {
+                "description": "Webhook to update running world servers",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Update running servers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/world/orchestrator/{id}/zones/{zone_id}/address": {
             "get": {
                 "security": [
