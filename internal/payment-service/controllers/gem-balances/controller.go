@@ -12,6 +12,9 @@ type GemBalancesController interface {
 	// UpdateGemBalance handles the request to update a specific user's gem balance.
 	UpdateGemBalance(ctx *gin.Context)
 
+	// PurchaseCosmetic handles the request to purchase a cosmetic item using gems.
+	PurchaseCosmetic(ctx *gin.Context)
+
 	// CreateCheckoutSession handles the request to create a checkout session for purchasing gems.
 	CreateCheckoutSession(ctx *gin.Context)
 

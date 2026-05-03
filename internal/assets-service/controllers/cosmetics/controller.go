@@ -13,6 +13,9 @@ type CosmeticsController interface {
 	// GetCosmeticById retrieves a cosmetic by its ID.
 	GetCosmeticById(c *gin.Context)
 
+	// GetCosmeticsListByWorld retrieves a list of cosmetics for a given world.
+	GetCosmeticsListByWorld(c *gin.Context)
+
 	// UploadCosmeticData handles the upload of cosmetic file.
 	UploadCosmeticData(c *gin.Context)
 
@@ -24,4 +27,10 @@ type CosmeticsController interface {
 
 	// AddCategory handles the addition of a new sprite category.
 	AddCategory(c *gin.Context)
+
+	// GetCosmeticByIdInternal retrieves a cosmetic by its ID for internal use.
+	GetCosmeticByIdInternal(c *gin.Context)
+
+	// PurshaseCosmeticForUserInternal handles the purchase of a cosmetic for a user.
+	PurshaseCosmeticForUserInternal(c *gin.Context)
 }

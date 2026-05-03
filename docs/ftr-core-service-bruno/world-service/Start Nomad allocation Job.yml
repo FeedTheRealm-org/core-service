@@ -7,14 +7,17 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/world/orchestrator/:id/zones/:zone_id/start-job"
+  url: "{{baseUrl}}/world/orchestrator/:id/zones/:zone_id/start-job?test=false"
   params:
+    - name: test
+      value: "false"
+      type: query
     - name: id
-      value: ""
+      value: 755fdc0d-32f5-4578-bdc5-8d83e9353557
       type: path
       description: World UUID
     - name: zone_id
-      value: ""
+      value: "1"
       type: path
       description: World Zone Number
   auth: inherit

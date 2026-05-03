@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE cosmetics
+DROP COLUMN IF EXISTS price;
+
+COMMIT;

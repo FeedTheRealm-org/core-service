@@ -1,0 +1,19 @@
+info:
+  name: Purchase a cosmetic
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/payments/gems/balances/purchase/:cosmetic_id"
+  auth: inherit
+  params:
+    - name: cosmetic_id
+      value: "00000000-0000-0000-0000-000000000000"
+      type: path
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

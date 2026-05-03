@@ -34,12 +34,12 @@ func (ss *cosmeticsService) GetCategoriesList() ([]*models.CosmeticCategory, err
 	return ss.cosmeticsRepository.GetCategoriesList()
 }
 
-func (ss *cosmeticsService) GetCosmeticsListByCategory(category uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
+func (ss *cosmeticsService) GetCosmeticsListByCategory(category uuid.UUID, worldId *uuid.UUID, playerId *uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
 	_, err := ss.cosmeticsRepository.GetCategoryById(category)
 	if err != nil {
 		return nil, 0, assets_errors.NewCategoryNotFound("category not found")
 	}
-	return ss.cosmeticsRepository.GetCosmeticsListByCategory(category, offset, limit)
+	return ss.cosmeticsRepository.GetCosmeticsListByCategory(category, worldId, playerId, offset, limit)
 }
 
 func (ss *cosmeticsService) GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error) {
@@ -50,11 +50,19 @@ func (ss *cosmeticsService) GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosme
 	return cosmetic, nil
 }
 
+func (ss *cosmeticsService) GetCosmeticsListByWorld(worldId uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
+	return ss.cosmeticsRepository.GetCosmeticsListByWorld(worldId, offset, limit)
+}
+
 func (ss *cosmeticsService) AddCategory(category string) (*models.CosmeticCategory, error) {
 	return ss.cosmeticsRepository.AddCategory(category)
 }
 
-func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticData multipart.File, ext string, userId uuid.UUID) (*models.Cosmetic, error) {
+func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, worldId uuid.UUID, price float64, cosmeticData multipart.File, ext string, userId uuid.UUID) (*models.Cosmetic, error) {
+	if price <= 0 {
+		return nil, assets_errors.NewInvalidPrice("price must be greater than 0")
+	}
+
 	cosmeticUniqueUrl := uuid.New().String()
 
 	category, err := ss.cosmeticsRepository.GetCategoryById(categoryId)
@@ -72,7 +80,7 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticDat
 	cosmetic := &models.Cosmetic{
 		Url: fmt.Sprintf("/%s", filePath),
 	}
-	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, cosmetic, userId); err != nil {
+	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, worldId, price, cosmetic, userId); err != nil {
 		logger.Logger.Errorf("Error creating cosmetic: %v", err)
 		return nil, err
 	}
@@ -80,7 +88,11 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, cosmeticDat
 	return cosmetic, nil
 }
 
-func (ss *cosmeticsService) UploadCosmeticByID(categoryId uuid.UUID, spriteId uuid.UUID, userId uuid.UUID) (*models.Cosmetic, error) {
+func (ss *cosmeticsService) UploadCosmeticByID(categoryId uuid.UUID, worldId uuid.UUID, price float64, spriteId uuid.UUID, userId uuid.UUID, cosmeticFile multipart.File, ext string) (*models.Cosmetic, error) {
+	if price <= 0 {
+		return nil, assets_errors.NewInvalidPrice("price must be greater than 0")
+	}
+
 	if _, err := ss.cosmeticsRepository.GetCategoryById(categoryId); err != nil {
 		logger.Logger.Errorf("Error getting category by id: %v", err)
 		return nil, err
@@ -92,15 +104,30 @@ func (ss *cosmeticsService) UploadCosmeticByID(categoryId uuid.UUID, spriteId uu
 		return nil, err
 	}
 
-	cosmetic := &models.Cosmetic{
-		Url: sourceCosmetic.Url,
+	if cosmeticFile != nil {
+		filePath := sourceCosmetic.Url[1:]
+		if err := ss.bucketRepo.UploadFile(filePath, "image/png", cosmeticFile); err != nil {
+			logger.Logger.Errorf("Error overwriting file in bucket: %v", err)
+			return nil, err
+		}
 	}
-	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, cosmetic, userId); err != nil {
+
+	existing, err := ss.cosmeticsRepository.GetCosmeticByUrlCategoryAndWorld(sourceCosmetic.Url, categoryId, worldId)
+	if err == nil && existing != nil {
+		if err := ss.cosmeticsRepository.UpdateCosmetic(existing.Id, price, ""); err != nil {
+			logger.Logger.Errorf("Error updating cosmetic price: %v", err)
+			return nil, err
+		}
+		return sourceCosmetic, nil
+	}
+
+	linked := &models.Cosmetic{Url: sourceCosmetic.Url}
+	if err := ss.cosmeticsRepository.CreateCosmetic(categoryId, worldId, price, linked, userId); err != nil {
 		logger.Logger.Errorf("Error creating linked cosmetic: %v", err)
 		return nil, err
 	}
 
-	return cosmetic, nil
+	return linked, nil
 }
 
 func (ss *cosmeticsService) DeleteCosmetic(cosmeticId uuid.UUID) error {
@@ -117,6 +144,15 @@ func (ss *cosmeticsService) DeleteCosmetic(cosmeticId uuid.UUID) error {
 
 	if err := ss.cosmeticsRepository.DeleteCosmetic(cosmeticId); err != nil {
 		logger.Logger.Errorf("Error deleting cosmetic: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (ss *cosmeticsService) PurchaseCosmeticForUserInternal(userId uuid.UUID, cosmeticId uuid.UUID) error {
+	if err := ss.cosmeticsRepository.AddPurchaseForUserId(cosmeticId, userId); err != nil {
+		logger.Logger.Errorf("Error adding purchase for user: %v", err)
 		return err
 	}
 

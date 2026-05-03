@@ -26,12 +26,17 @@ func SetupEndpointsForCosmeticsService(conf *config.Config, db *config.DB, g *gi
 	cosmeticsGroup.GET("/categories", cosmeticsController.GetCategoriesList)
 	cosmeticsGroup.GET("/categories/:id", cosmeticsController.GetCosmeticsListByCategory)
 	cosmeticsGroup.GET(":id", cosmeticsController.GetCosmeticById)
-	cosmeticsGroup.PUT("/categories/:id", cosmeticsController.UploadCosmeticData)
-	cosmeticsGroup.PUT("/categories/:id/sprites/:sprite_id", cosmeticsController.UploadCosmeticByID)
+	cosmeticsGroup.GET("/worlds/:world_id", cosmeticsController.GetCosmeticsListByWorld)
+	cosmeticsGroup.PUT("/categories/:category_id", cosmeticsController.UploadCosmeticData)
+	cosmeticsGroup.PUT("/categories/:category_id/sprites/:sprite_id", cosmeticsController.UploadCosmeticByID)
 
 	/* ADMIN ONLY */
 	cosmeticsGroup.POST("/categories", middleware.AdminCheckMiddleware(), cosmeticsController.AddCategory)
 	cosmeticsGroup.DELETE(":id", middleware.AdminCheckMiddleware(), cosmeticsController.DeleteCosmetic)
+
+	/* Internal Endpoints */
+	g.GET("/internal/cosmetics/:cosmetic_id", cosmeticsController.GetCosmeticByIdInternal)
+	g.POST("/internal/users/:user_id/cosmetics", cosmeticsController.PurshaseCosmeticForUserInternal)
 }
 
 func SetupEndpointsForItemsService(conf *config.Config, db *config.DB, g *gin.RouterGroup, itemsBucketRepo bucket.BucketRepository) {

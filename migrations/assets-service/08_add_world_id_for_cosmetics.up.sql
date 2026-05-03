@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE cosmetics
+ADD COLUMN IF NOT EXISTS world_id UUID;
+
+COMMIT;

@@ -30,6 +30,9 @@ SHARED_CATEGORY_SOURCES = {
     "ArmorLegR": "ArmorHelmet",
 }
 
+DEFAULT_WORLD_ID = "00000000-0000-0000-0000-000000000000"
+DEFAULT_PRICE = 1.00
+
 
 def usage() -> None:
     print("Usage: seed_initial_cosmetics.py <SERVER_URL> <SPRITES_BASE_PATH>")
@@ -165,7 +168,7 @@ def upload_sprite(server_url: str, category_id, sprite_path: Path, token: str):
 
     with sprite_path.open("rb") as sprite_file:
         files = {"sprite": (sprite_path.name, sprite_file, "image/png")}
-        data = {"category_id": str(category_id)}
+        data = {"world_id": DEFAULT_WORLD_ID, "price": DEFAULT_PRICE}
         try:
             response = requests.put(
                 url, files=files, data=data, headers=headers, timeout=60)
@@ -179,9 +182,11 @@ def upload_sprite(server_url: str, category_id, sprite_path: Path, token: str):
 
 def link_sprite_by_id(server_url: str, category_id, sprite_id, token: str):
     url = f"{server_url}/assets/cosmetics/categories/{category_id}/sprites/{sprite_id}"
+    data = {"world_id": DEFAULT_WORLD_ID, "price": DEFAULT_PRICE}
 
+    files = {"dummy": ("", b"")}
     try:
-        response = requests.put(url, headers=build_headers(token), timeout=30)
+        response = requests.put(url, data=data, files=files, headers=build_headers(token), timeout=30)
     except requests.RequestException as exc:
         return False, str(exc)
 

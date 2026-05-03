@@ -8,6 +8,24 @@ info:
 http:
   method: PUT
   url: "{{baseUrl}}/assets/cosmetics/categories/:id"
+  params:
+    - name: ""
+      value: ""
+      type: query
+  body:
+    type: multipart-form
+    data:
+      - name: world_id
+        type: text
+        value: e160ac19-d574-4d49-82ec-6044a100ae29
+        contentType: string
+      - name: price
+        type: text
+        value: "0"
+      - name: sprite
+        type: file
+        value:
+          - "path/to/sprite.png"
   auth: inherit
 
 settings:

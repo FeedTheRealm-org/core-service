@@ -155,6 +155,20 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 		return
 	}
 
+	zones, err := c.worldService.GetWorldZones(parsedWorldId)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	zoneMetadata := make([]dtos.WorldZoneMetadata, 0, len(zones))
+	for _, zone := range zones {
+		zoneMetadata = append(zoneMetadata, dtos.WorldZoneMetadata{
+			ZoneID:   zone.ID,
+			IsActive: zone.IsActive,
+		})
+	}
+
 	res := &dtos.WorldResponse{
 		ID:             worldInfo.ID.String(),
 		UserId:         worldInfo.UserId.String(),
@@ -162,6 +176,7 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 		Description:    worldInfo.Description,
 		Data:           worldInfo.Data.String(),
 		CreateableData: worldInfo.CreateableData.String(),
+		Zones:          zoneMetadata,
 		CreatedAt:      worldInfo.CreatedAt,
 		UpdatedAt:      worldInfo.UpdatedAt,
 	}
@@ -224,14 +239,28 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 	// Build a metadata-only list (do not include full world Data)
 	resList := make([]dtos.WorldMetadata, 0, len(worldsList))
 	for _, worldInfo := range worldsList {
+		zones, err := c.worldService.GetWorldZones(worldInfo.ID)
+		if err != nil {
+			_ = ctx.Error(err)
+			return
+		}
+
+		zoneMetadata := make([]dtos.WorldZoneMetadata, 0, len(zones))
+		for _, zone := range zones {
+			zoneMetadata = append(zoneMetadata, dtos.WorldZoneMetadata{
+				ZoneID:   zone.ID,
+				IsActive: zone.IsActive,
+			})
+		}
+
 		resList = append(resList, dtos.WorldMetadata{
-			ID:             worldInfo.ID.String(),
-			UserId:         worldInfo.UserId.String(),
-			Name:           worldInfo.Name,
-			Description:    worldInfo.Description,
-			CreateableData: worldInfo.CreateableData.String(),
-			CreatedAt:      worldInfo.CreatedAt,
-			UpdatedAt:      worldInfo.UpdatedAt,
+			ID:          worldInfo.ID.String(),
+			UserId:      worldInfo.UserId.String(),
+			Name:        worldInfo.Name,
+			Description: worldInfo.Description,
+			Zones:       zoneMetadata,
+			CreatedAt:   worldInfo.CreatedAt,
+			UpdatedAt:   worldInfo.UpdatedAt,
 		})
 	}
 	res := &dtos.WorldsListResponse{
@@ -385,99 +414,6 @@ func (c *worldController) ResetDatabase(ctx *gin.Context) {
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, "Successfully reset database")
 }
 
-// GetWorldZones godoc
-// @Summary      Retrieve zones for a world
-// @Description  Returns all available zone IDs for a specific world.
-// @Tags         world-service
-// @Security     BearerAuth
-// @Accept       json
-// @Produce      json
-// @Param        id path string true "World UUID"
-// @Success      200  {object}  dtos.WorldZonesResponse
-// @Failure      400  {object} dtos.ErrorResponse
-// @Failure      401  {object} dtos.ErrorResponse
-// @Failure      404  {object} dtos.ErrorResponse
-// @Router       /world/{id}/zones [get]
-func (c *worldController) GetWorldZones(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
-	worldID, err := uuid.Parse(ctx.Param("id"))
-	if err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + ctx.Param("id")))
-		return
-	}
-
-	zones, err := c.worldService.GetWorldZones(worldID)
-	if err != nil {
-		if _, ok := err.(*world_errors.WorldInfoNotFound); ok {
-			_ = ctx.Error(errors.NewNotFoundError("world info not found"))
-			return
-		}
-		_ = ctx.Error(err)
-		return
-	}
-
-	zoneIds := make([]int, 0, len(zones))
-	for _, zone := range zones {
-		zoneIds = append(zoneIds, zone.ID)
-	}
-
-	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, &dtos.WorldZonesResponse{
-		WorldID: worldID.String(),
-		Zones:   zoneIds,
-	})
-}
-
-// GetWorldZoneData godoc
-// @Summary      Retrieve specific zone data
-// @Description  Returns data for a specific zone in a world.
-// @Tags         world-service
-// @Security     BearerAuth
-// @Accept       json
-// @Produce      json
-// @Param        id path string true "World UUID"
-// @Param        zone_id path int true "Zone ID"
-// @Success      200  {object}  dtos.WorldZoneResponse
-// @Failure      400  {object} dtos.ErrorResponse
-// @Failure      401  {object} dtos.ErrorResponse
-// @Failure      404  {object} dtos.ErrorResponse
-// @Router       /world/{id}/zones/{zone_id} [get]
-func (c *worldController) GetWorldZoneData(ctx *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
-	worldID, err := uuid.Parse(ctx.Param("id"))
-	if err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + ctx.Param("id")))
-		return
-	}
-
-	zoneID, err := strconv.Atoi(ctx.Param("zone_id"))
-	if err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("invalid zone ID: " + ctx.Param("zone_id")))
-		return
-	}
-
-	zone, err := c.worldService.GetWorldZone(worldID, zoneID)
-	if err != nil {
-		_ = ctx.Error(errors.NewNotFoundError("zone not found"))
-		return
-	}
-
-	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, &dtos.WorldZoneResponse{
-		WorldID:  worldID.String(),
-		ZoneID:   zone.ID,
-		ZoneData: zone.ZoneData.String(),
-	})
-}
-
 // UpdateCreateableData godoc
 // @Summary      Update world createable data
 // @Description  Updates createable_data by world ID.
@@ -536,77 +472,5 @@ func (c *worldController) UpdateCreateableData(ctx *gin.Context) {
 		CreateableData: updatedWorld.CreateableData.String(),
 		CreatedAt:      updatedWorld.CreatedAt,
 		UpdatedAt:      updatedWorld.UpdatedAt,
-	})
-}
-
-// PublishZone godoc
-// @Summary      Publish zone
-// @Description  Publishes or updates a zone for a world by world_id and zone_id.
-// @Tags         world-service
-// @Security     BearerAuth
-// @Accept       json
-// @Produce      json
-// @Param        id path string true "World UUID"
-// @Param        zone_id path int true "Zone ID"
-// @Param        request body dtos.PublishZoneRequest true "Zone publish data"
-// @Success      200  {object}  dtos.WorldZoneResponse
-// @Failure      400  {object} dtos.ErrorResponse
-// @Failure      401  {object} dtos.ErrorResponse
-// @Failure      404  {object} dtos.ErrorResponse
-// @Router       /world/{id}/zones/{zone_id} [put]
-func (c *worldController) PublishZone(ctx *gin.Context) {
-	userId, err := common_handlers.GetUserIDFromSession(ctx)
-	if err != nil {
-		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
-	worldID, err := uuid.Parse(ctx.Param("id"))
-	if err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("invalid world_id: " + ctx.Param("id")))
-		return
-	}
-	zoneID, err := strconv.Atoi(ctx.Param("zone_id"))
-	if err != nil || zoneID <= 0 {
-		_ = ctx.Error(errors.NewBadRequestError("zone_id must be a positive integer"))
-		return
-	}
-
-	var req dtos.PublishZoneRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("invalid JSON payload: " + err.Error()))
-		return
-	}
-
-	worldInfo, err := c.worldService.GetWorld(worldID)
-	if err != nil {
-		if _, ok := err.(*world_errors.WorldInfoNotFound); ok {
-			_ = ctx.Error(errors.NewNotFoundError("world info not found"))
-			return
-		}
-		_ = ctx.Error(err)
-		return
-	}
-	if worldInfo.UserId != userId {
-		_ = ctx.Error(errors.NewUnauthorizedError("user does not own this world"))
-		return
-	}
-
-	zoneDataBytes, err := json.Marshal(req.Data)
-	if err != nil {
-		_ = ctx.Error(errors.NewBadRequestError("failed to marshal zone data: " + err.Error()))
-		return
-	}
-
-	zone, err := c.worldService.PublishZone(worldID, zoneID, zoneDataBytes)
-	if err != nil {
-		_ = ctx.Error(err)
-		return
-	}
-
-	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, &dtos.WorldZoneResponse{
-		WorldID:  zone.WorldID.String(),
-		ZoneID:   zone.ID,
-		ZoneData: string(zone.ZoneData),
 	})
 }

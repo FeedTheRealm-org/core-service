@@ -143,6 +143,20 @@ const docTemplate = `{
                         "description": "Pagination limit",
                         "name": "limit",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "null",
+                        "description": "World UUID",
+                        "name": "world_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "null",
+                        "description": "Player UUID",
+                        "name": "player_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -188,6 +202,20 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Category UUID",
                         "name": "category_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "world_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "Cosmetic price (must be \u003e 0)",
+                        "name": "price",
                         "in": "formData",
                         "required": true
                     },
@@ -240,7 +268,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Category UUID",
-                        "name": "id",
+                        "name": "category_id",
                         "in": "path",
                         "required": true
                     },
@@ -250,6 +278,20 @@ const docTemplate = `{
                         "name": "sprite_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "world_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "Cosmetic price (must be \u003e 0)",
+                        "name": "price",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -257,6 +299,69 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/dtos.CosmeticResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/cosmetics/worlds/{world_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of cosmetics that belong to a specific world ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Get cosmetics by world",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "world_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 24,
+                        "description": "Pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CosmeticsListResponse"
                         }
                     },
                     "400": {
@@ -360,6 +465,113 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/internal/cosmetics/{cosmetic_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a single cosmetic item by its ID. Intended for internal service communication.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service-internal"
+                ],
+                "summary": "Get cosmetic by ID (Internal)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cosmetic UUID",
+                        "name": "cosmetic_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.InternalCosmeticResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/internal/users/{user_id}/cosmetics": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Records a cosmetic purchase for a specific user. Intended for internal service communication.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service-internal"
+                ],
+                "summary": "Purchase cosmetic for user (Internal)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Purchase Details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.InternalPurchaseCosmeticForUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.InternalPurchaseCosmeticForUserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -1111,6 +1323,73 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/gems/balances/purchase/{cosmetic_id}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deducts the appropriate gem amount and natively rewards a cosmetic to a given player.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service"
+                ],
+                "summary": "Purchase a cosmetic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cosmetic UUID",
+                        "name": "cosmetic_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.GemBalanceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -2254,6 +2533,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/world/orchestrator/webhook/servers/update": {
+            "post": {
+                "description": "Webhook to update running world servers",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Update running servers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/world/orchestrator/{id}/zones/{zone_id}/address": {
             "get": {
                 "security": [
@@ -2855,6 +3172,124 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/world/{id}/zones/{zone_id}/activate": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Starts server orchestration for a published zone and consumes one subscription slot.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Activate zone",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Zone ID",
+                        "name": "zone_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Acknowledge activation",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/world/{id}/zones/{zone_id}/deactivate": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Stops server orchestration for an active zone and releases one subscription slot.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Deactivate zone",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Zone ID",
+                        "name": "zone_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Acknowledge deactivation",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -3114,6 +3549,39 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.InternalCosmeticResponse": {
+            "type": "object",
+            "properties": {
+                "cosmetic_id": {
+                    "type": "string"
+                },
+                "cosmetic_price": {
+                    "type": "number"
+                }
+            }
+        },
+        "dtos.InternalPurchaseCosmeticForUserRequest": {
+            "type": "object",
+            "required": [
+                "cosmetic_id"
+            ],
+            "properties": {
+                "cosmetic_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.InternalPurchaseCosmeticForUserResponse": {
+            "type": "object",
+            "properties": {
+                "cosmetic_id": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -3403,9 +3871,6 @@ const docTemplate = `{
         "dtos.WorldMetadata": {
             "type": "object",
             "properties": {
-                "createable_data": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -3423,6 +3888,12 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
+                },
+                "zones": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.WorldZoneMetadata"
+                    }
                 }
             }
         },
@@ -3465,12 +3936,32 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
+                },
+                "zones": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.WorldZoneMetadata"
+                    }
+                }
+            }
+        },
+        "dtos.WorldZoneMetadata": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean"
+                },
+                "zone_id": {
+                    "type": "integer"
                 }
             }
         },
         "dtos.WorldZoneResponse": {
             "type": "object",
             "properties": {
+                "is_active": {
+                    "type": "boolean"
+                },
                 "world_id": {
                     "type": "string"
                 },
@@ -3491,7 +3982,7 @@ const docTemplate = `{
                 "zones": {
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "$ref": "#/definitions/dtos.WorldZoneMetadata"
                     }
                 }
             }

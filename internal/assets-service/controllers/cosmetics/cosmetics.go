@@ -1,6 +1,9 @@
 package cosmetics
 
 import (
+	"encoding/json"
+	"fmt"
+	"mime/multipart"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -74,12 +77,14 @@ func (cc *cosmeticsController) GetCategoriesList(c *gin.Context) {
 // @Param        id path string true "Category UUID"
 // @Param        offset query int false "Pagination offset" default(0)
 // @Param        limit query int false "Pagination limit" default(24)
+// @Param        world_id query string false "World UUID" default(null)
+// @Param        player_id query string false "Player UUID" default(null)
 // @Success      200  {object}  dtos.CosmeticsListResponse
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse
 // @Router       /assets/cosmetics/categories/{id} [get]
 func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(c)
+	userID, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
 		return
@@ -103,11 +108,38 @@ func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 		return
 	}
 
+	var worldId *uuid.UUID
+	if raw := c.DefaultQuery("world_id", ""); raw != "" {
+		parsedWorldId, err := uuid.Parse(raw)
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
+			return
+		}
+		worldId = &parsedWorldId
+	}
+
+	var playerId *uuid.UUID
+	if raw := c.DefaultQuery("player_id", ""); raw != "" {
+		parsedPlayerId, err := uuid.Parse(raw)
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError("invalid player_id: " + err.Error()))
+			return
+		}
+		playerId = &parsedPlayerId
+	}
+
+	if playerId != nil && *playerId != userID {
+		if err := common_handlers.IsAdminSession(c); err != nil {
+			_ = c.Error(errors.NewUnauthorizedError("invalid player_id"))
+			return
+		}
+	}
+
 	if limit > 200 {
 		limit = 200
 	}
 
-	cosmeticsList, totalCount, err := cc.cosmeticsService.GetCosmeticsListByCategory(categoryId, offset, limit)
+	cosmeticsList, totalCount, err := cc.cosmeticsService.GetCosmeticsListByCategory(categoryId, worldId, playerId, offset, limit)
 	if err != nil {
 		switch err.(type) {
 		case *assets_errors.CategoryNotFound:
@@ -176,6 +208,101 @@ func (cc *cosmeticsController) GetCosmeticById(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
+// GetCosmeticsListByWorld godoc
+// @Summary      Get cosmetics by world
+// @Description  Retrieves a list of cosmetics that belong to a specific world ID.
+// @Tags         assets-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        world_id path string true "World UUID"
+// @Param        offset query int false "Pagination offset" default(0)
+// @Param        limit query int false "Pagination limit" default(24)
+// @Success      200  {object}  dtos.CosmeticsListResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Router       /assets/cosmetics/worlds/{world_id} [get]
+func (cc *cosmeticsController) GetCosmeticsListByWorld(c *gin.Context) {
+	_, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	worldId, err := uuid.Parse(c.Param("world_id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
+		return
+	}
+
+	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	if err != nil || offset < 0 {
+		_ = c.Error(errors.NewBadRequestError("offset must be a non-negative integer"))
+		return
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "24"))
+	if err != nil || limit <= 0 {
+		_ = c.Error(errors.NewBadRequestError("limit must be a positive integer"))
+		return
+	}
+
+	if limit > 200 {
+		limit = 200
+	}
+
+	cosmeticsList, totalCount, err := cc.cosmeticsService.GetCosmeticsListByWorld(worldId, offset, limit)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.CosmeticsListResponse{
+		CosmeticsList: make([]dtos.CosmeticResponse, len(cosmeticsList)),
+		TotalCount:    totalCount,
+	}
+	for idx, cosmetic := range cosmeticsList {
+		res.CosmeticsList[idx] = dtos.CosmeticResponse{
+			CosmeticId:  cosmetic.Id,
+			CosmeticUrl: cosmetic.Url,
+		}
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
+}
+
+func (cc *cosmeticsController) checkWorldOwnership(c *gin.Context, worldId uuid.UUID, userId uuid.UUID) error {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/world/%s", cc.conf.Server.Port, worldId.String()), nil)
+	if err != nil {
+		return errors.NewInternalServerError("failed to check world ownership")
+	}
+	req.Header.Set("Authorization", c.GetHeader("Authorization"))
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errors.NewInternalServerError("failed to check world ownership")
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.NewBadRequestError("invalid world_id or world not found")
+	}
+
+	var envelope struct {
+		Data struct {
+			UserId string `json:"user_id"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&envelope); err != nil {
+		return errors.NewInternalServerError("failed to parse world data")
+	}
+	if envelope.Data.UserId != userId.String() {
+		return errors.NewUnauthorizedError("user does not own this world")
+	}
+	return nil
+}
+
 // UploadCosmeticData godoc
 // @Summary      Upload cosmetic data
 // @Description  Upload a cosmetic form-data payload containing category ID and cosmetic file.
@@ -183,7 +310,9 @@ func (cc *cosmeticsController) GetCosmeticById(c *gin.Context) {
 // @Security     BearerAuth
 // @Accept       multipart/form-data
 // @Produce      json
-// @Param        category_id formData string true "Category UUID"
+// @Param        category_id path string true "Category UUID"
+// @Param        world_id formData string true "World UUID"
+// @Param        price formData number true "Cosmetic price (must be > 0)"
 // @Param        sprite formData file true "Cosmetic File"
 // @Success      201  {object}  dtos.CosmeticResponse
 // @Failure      400  {object} dtos.ErrorResponse
@@ -196,10 +325,36 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 		return
 	}
 
-	categoryId, err := uuid.Parse(c.PostForm("category_id"))
+	categoryId, err := uuid.Parse(c.Param("category_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid category_id: " + err.Error()))
 		return
+	}
+
+	worldId, err := uuid.Parse(c.PostForm("world_id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
+		return
+	}
+
+	price, err := strconv.ParseFloat(c.PostForm("price"), 64)
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid price: " + err.Error()))
+		return
+	}
+
+	if worldId == uuid.Nil {
+		if err := common_handlers.IsAdminSession(c); err != nil {
+			_ = c.Error(errors.NewUnauthorizedError("invalid world_id"))
+			return
+		}
+	} else {
+		if err := common_handlers.IsAdminSession(c); err != nil {
+			if err := cc.checkWorldOwnership(c, worldId, userId); err != nil {
+				_ = c.Error(err)
+				return
+			}
+		}
 	}
 
 	reqFile, err := c.FormFile("sprite")
@@ -228,9 +383,16 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 		_ = file.Close()
 	}()
 
-	cosmetic, err := cc.cosmeticsService.UploadCosmeticData(categoryId, file, filepath.Ext(reqFile.Filename), userId)
+	cosmetic, err := cc.cosmeticsService.UploadCosmeticData(categoryId, worldId, price, file, filepath.Ext(reqFile.Filename), userId)
 	if err != nil {
-		_ = c.Error(err)
+		switch err.(type) {
+		case *assets_errors.InvalidPrice:
+			_ = c.Error(errors.NewBadRequestError(err.Error()))
+		case *assets_errors.CategoryNotFound:
+			_ = c.Error(errors.NewNotFoundError(err.Error()))
+		default:
+			_ = c.Error(err)
+		}
 		return
 	}
 
@@ -247,8 +409,10 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 // @Tags         assets-service
 // @Security     BearerAuth
 // @Produce      json
-// @Param        id path string true "Category UUID"
+// @Param        category_id path string true "Category UUID"
 // @Param        sprite_id path string true "Existing Sprite UUID"
+// @Param				 world_id formData string true "World UUID"
+// @Param				 price formData number true "Cosmetic price (must be > 0)"
 // @Success      201  {object}  dtos.CosmeticResponse
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse
@@ -260,9 +424,35 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 		return
 	}
 
-	categoryId, err := uuid.Parse(c.Param("id"))
+	categoryId, err := uuid.Parse(c.Param("category_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid category_id: " + err.Error()))
+		return
+	}
+
+	worldId, err := uuid.Parse(c.PostForm("world_id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid world_id: " + err.Error()))
+		return
+	}
+
+	if worldId == uuid.Nil {
+		if err := common_handlers.IsAdminSession(c); err != nil {
+			_ = c.Error(errors.NewUnauthorizedError("invalid world_id"))
+			return
+		}
+	} else {
+		if err := common_handlers.IsAdminSession(c); err != nil {
+			if err := cc.checkWorldOwnership(c, worldId, userId); err != nil {
+				_ = c.Error(err)
+				return
+			}
+		}
+	}
+
+	price, err := strconv.ParseFloat(c.PostForm("price"), 64)
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid price: " + err.Error()))
 		return
 	}
 
@@ -272,9 +462,44 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 		return
 	}
 
-	cosmetic, err := cc.cosmeticsService.UploadCosmeticByID(categoryId, spriteId, userId)
+	var cosmeticFile multipart.File
+	var ext string
+	reqFile, err := c.FormFile("sprite")
+	if err != nil && err != http.ErrMissingFile {
+		_ = c.Error(errors.NewBadRequestError("failed to get sprite file from request: " + err.Error()))
+		return
+	}
+	if reqFile != nil {
+		if reqFile.Size > cc.conf.Assets.MaxUploadSizeBytes {
+			_ = c.Error(errors.NewBadRequestError("file size exceeds the limit"))
+			return
+		}
+		contentType := reqFile.Header.Get("Content-Type")
+		if contentType != "image/png" && contentType != "image/jpeg" {
+			_ = c.Error(errors.NewBadRequestError("file must be PNG or JPEG format"))
+			return
+		}
+		cosmeticFile, err = reqFile.Open()
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError("failed to open sprite file: " + err.Error()))
+			return
+		}
+		defer func() { _ = cosmeticFile.Close() }()
+		ext = filepath.Ext(reqFile.Filename)
+	}
+
+	cosmetic, err := cc.cosmeticsService.UploadCosmeticByID(categoryId, worldId, price, spriteId, userId, cosmeticFile, ext)
 	if err != nil {
-		_ = c.Error(err)
+		switch err.(type) {
+		case *assets_errors.InvalidPrice:
+			_ = c.Error(errors.NewBadRequestError(err.Error()))
+		case *assets_errors.CategoryNotFound:
+			_ = c.Error(errors.NewNotFoundError("category not found"))
+		case *assets_errors.CosmeticNotFound:
+			_ = c.Error(errors.NewNotFoundError("cosmetic not found"))
+		default:
+			_ = c.Error(err)
+		}
 		return
 	}
 
@@ -282,7 +507,6 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 		CosmeticId:  cosmetic.Id,
 		CosmeticUrl: cosmetic.Url,
 	}
-
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
 
@@ -376,6 +600,87 @@ func (cc *cosmeticsController) AddCategory(c *gin.Context) {
 	res := &dtos.CosmeticCategoryResponse{
 		CategoryId:   category.Id,
 		CategoryName: category.Name,
+	}
+	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
+}
+
+// GetCosmeticByIdInternal godoc
+// @Summary      Get cosmetic by ID (Internal)
+// @Description  Retrieves a single cosmetic item by its ID. Intended for internal service communication.
+// @Tags         assets-service-internal
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        cosmetic_id path string true "Cosmetic UUID"
+// @Success      200  {object}  dtos.InternalCosmeticResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Router       /assets/internal/cosmetics/{cosmetic_id} [get]
+func (cc *cosmeticsController) GetCosmeticByIdInternal(c *gin.Context) {
+	cosmeticId, err := uuid.Parse(c.Param("cosmetic_id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid cosmetic_id: " + err.Error()))
+		return
+	}
+
+	cosmetic, err := cc.cosmeticsService.GetCosmeticById(cosmeticId)
+	if err != nil {
+		switch err.(type) {
+		case *assets_errors.CosmeticNotFound:
+			_ = c.Error(errors.NewNotFoundError("cosmetic not found"))
+		default:
+			_ = c.Error(err)
+		}
+		return
+	}
+
+	res := &dtos.InternalCosmeticResponse{
+		CosmeticId:    cosmetic.Id,
+		CosmeticPrice: cosmetic.Price,
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
+}
+
+// PurshaseCosmeticForUserInternal godoc
+// @Summary      Purchase cosmetic for user (Internal)
+// @Description  Records a cosmetic purchase for a specific user. Intended for internal service communication.
+// @Tags         assets-service-internal
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        user_id path string true "User UUID"
+// @Param        request body dtos.InternalPurchaseCosmeticForUserRequest true "Purchase Details"
+// @Success      201  {object}  dtos.InternalPurchaseCosmeticForUserResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      409  {object} dtos.ErrorResponse
+// @Router       /assets/internal/users/{user_id}/cosmetics [post]
+func (cc *cosmeticsController) PurshaseCosmeticForUserInternal(c *gin.Context) {
+	userId, err := uuid.Parse(c.Param("user_id"))
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid user_id: " + err.Error()))
+		return
+	}
+
+	req := &dtos.InternalPurchaseCosmeticForUserRequest{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		_ = c.Error(errors.NewBadRequestError(err.Error()))
+		return
+	}
+
+	err = cc.cosmeticsService.PurchaseCosmeticForUserInternal(userId, req.CosmeticId)
+	if err != nil {
+		if _, ok := err.(*assets_errors.CosmeticsWasPurchasedBefore); ok {
+			_ = c.Error(errors.NewConflictError("cosmetic was already purchased by the user"))
+			return
+		}
+		_ = c.Error(err)
+		return
+	}
+
+	res := &dtos.InternalPurchaseCosmeticForUserResponse{
+		UserId:     userId,
+		CosmeticId: req.CosmeticId,
 	}
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }

@@ -141,7 +141,12 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 		return
 	}
 
-	user, token, err := ec.accountService.LoginAccount(req.Email, req.Password)
+	isAdminReq := false
+	if err := common_handlers.IsAdminSession(c); err == nil {
+		isAdminReq = true
+	}
+
+	user, token, err := ec.accountService.LoginAccount(req.Email, req.Password, isAdminReq)
 	if err != nil {
 		if _, ok := err.(*services.AccountNotFoundError); ok {
 			logger.Logger.Infof("LoginAccount: account not found for email=%s", req.Email)

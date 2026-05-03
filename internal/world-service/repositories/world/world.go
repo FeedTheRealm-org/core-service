@@ -96,6 +96,7 @@ func (r *worldRepository) UpsertWorldZone(worldID uuid.UUID, zoneID int, zoneDat
 			ID:       zoneID,
 			WorldID:  worldID,
 			ZoneData: datatypes.JSON(zoneData),
+			IsActive: false,
 		}
 		if err := r.db.Conn.Create(&wz).Error; err != nil {
 			return nil, err
@@ -109,6 +110,29 @@ func (r *worldRepository) UpsertWorldZone(worldID uuid.UUID, zoneID int, zoneDat
 	}
 
 	return &wz, nil
+}
+
+func (r *worldRepository) SetWorldZoneActiveState(worldID uuid.UUID, zoneID int, isActive bool) error {
+	result := r.db.Conn.Model(&models.WorldZone{}).
+		Where("world_id = ? AND id = ?", worldID, zoneID).
+		Update("is_active", isActive)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (r *worldRepository) GetWorldZoneActiveState(worldID uuid.UUID, zoneID int) (bool, error) {
+	var worldZone models.WorldZone
+	if err := r.db.Conn.Select("is_active").Where("world_id = ? AND id = ?", worldID, zoneID).First(&worldZone).Error; err != nil {
+		return false, err
+	}
+
+	return worldZone.IsActive, nil
 }
 
 func (r *worldRepository) DeleteWorldData(worldID uuid.UUID) error {
@@ -173,4 +197,12 @@ func (r *worldRepository) GetTotalZonesCountByUserId(userId uuid.UUID) (int64, e
 		Where("wd.user_id = ?", userId).
 		Count(&count).Error
 	return count, err
+}
+
+func (r *worldRepository) GetActiveWorldZones() ([]*models.WorldZone, error) {
+	var activeZones []*models.WorldZone
+	if err := r.db.Conn.Where("is_active = ?", true).Find(&activeZones).Error; err != nil {
+		return nil, err
+	}
+	return activeZones, nil
 }

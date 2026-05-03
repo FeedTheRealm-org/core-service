@@ -45,3 +45,12 @@ func GetUserIDFromSession(ctx *gin.Context) (uuid.UUID, error) {
 	}
 	return parsedUserID, nil
 }
+
+// IsGithubOIDCTokenValid checks if the request has a valid GitHub OIDC token
+// based on the context flags set by the GitHub OIDC middleware.
+func IsGithubOIDCTokenValid(ctx *gin.Context) error {
+	if ctx.GetBool("invalidGithubOIDC") {
+		return &errors.InvalidGithubOIDCTokenError{}
+	}
+	return nil
+}
