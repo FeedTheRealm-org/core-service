@@ -1,12 +1,14 @@
 package server_registry
 
 import (
+	"io"
 	"net/http"
 	"strconv"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/server_registry"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/world"
@@ -156,6 +158,18 @@ func (c *serverRegistryController) GetServerAddress(ctx *gin.Context) {
 // @Failure      500  {object} dtos.ErrorResponse
 // @Router       /world/orchestrator/webhook/servers/update [post]
 func (c *serverRegistryController) UpdateServer(ctx *gin.Context) {
+	logger.Logger.Info("Received server update webhook call")
+
+	// To be deleted
+	rawBody, _ := io.ReadAll(ctx.Request.Body)
+	logger.Logger.Infow("request log",
+		"method", ctx.Request.Method,
+		"path", ctx.Request.URL.Path,
+		"query", ctx.Request.URL.RawQuery,
+		"status", ctx.Writer.Status(),
+		"request_body", string(rawBody),
+	)
+
 	if common_handlers.IsGithubOIDCTokenValid(ctx) != nil {
 		_ = ctx.Error(errors.NewUnauthorizedError("Invalid GitHub OIDC token"))
 		return
