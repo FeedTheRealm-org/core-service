@@ -1,18 +1,18 @@
 info:
-  name: Delete item
+  name: Get cosmetic by ID
   type: http
-  seq: 7
+  seq: 1
   tags:
     - assets-service
 
 http:
-  method: DELETE
-  url: "{{baseUrl}}/assets/items/:id"
+  method: GET
+  url: "{{baseUrl}}/assets/cosmetics/:id"
   params:
     - name: id
       value: ""
       type: path
-      description: Item UUID
+      description: Cosmetic UUID
   auth: inherit
 
 settings:
@@ -22,32 +22,32 @@ settings:
   maxRedirects: 5
 
 examples:
-  - name: 204 Response
-    description: No Content
+  - name: 200 Response
+    description: OK
     request:
-      url: "{{baseUrl}}/assets/items/:id"
-      method: DELETE
+      url: "{{baseUrl}}/assets/cosmetics/:id"
+      method: GET
       params:
         - name: id
           value: ""
           type: path
-          description: Item UUID
+          description: Cosmetic UUID
     response:
-      status: 204
-      statusText: No Content
+      status: 200
+      statusText: OK
       body:
         type: text
         data: ""
   - name: 400 Response
     description: Bad Request
     request:
-      url: "{{baseUrl}}/assets/items/:id"
-      method: DELETE
+      url: "{{baseUrl}}/assets/cosmetics/:id"
+      method: GET
       params:
         - name: id
           value: ""
           type: path
-          description: Item UUID
+          description: Cosmetic UUID
     response:
       status: 400
       statusText: Bad Request
@@ -57,13 +57,13 @@ examples:
   - name: 401 Response
     description: Unauthorized
     request:
-      url: "{{baseUrl}}/assets/items/:id"
-      method: DELETE
+      url: "{{baseUrl}}/assets/cosmetics/:id"
+      method: GET
       params:
         - name: id
           value: ""
           type: path
-          description: Item UUID
+          description: Cosmetic UUID
     response:
       status: 401
       statusText: Unauthorized

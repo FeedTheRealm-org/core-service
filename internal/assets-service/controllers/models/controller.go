@@ -9,5 +9,5 @@ type ModelsController interface {
 	GetModelsList(c *gin.Context)
 
 	// UploadSpriteData handles the upload of sprite file.
-	UploadModels(c *gin.Context)
+	UploadModel(c *gin.Context)
 }

@@ -3,15 +3,12 @@ package sprites
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
 	service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/models"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
-	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -29,35 +26,16 @@ func NewModelsController(conf *config.Config, modelService service.ModelsService
 	}
 }
 
-// GetModelsList godoc
-// @Summary      Get 3D models list
-// @Description  Retrieve the metadata models available in a given world id.
-// @Tags         assets-service
-// @Security     BearerAuth
-// @Accept       json
-// @Produce      json
-// @Param        world_id path string true "World UUID"
-// @Success      200  {object}  dtos.ModelsListResponse
-// @Failure      400  {object} dtos.ErrorResponse
-// @Failure      401  {object} dtos.ErrorResponse
-// @Failure      404  {object} dtos.ErrorResponse
-// @Failure      500  {object} dtos.ErrorResponse
-// @Router       /assets/models/world/{world_id} [get]
 func (mc *modelsController) GetModelsList(c *gin.Context) {
 	_, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
 		return
 	}
-	worldIDStr := c.Param("world_id")
-	if worldIDStr == "" {
-		_ = c.Error(errors.NewNotFoundError("world_id is required"))
-		return
-	}
 
-	worldID, err := uuid.Parse(worldIDStr)
+	worldID, err := parseUUIDParam(c, "world_id")
 	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid world_id format"))
+		_ = c.Error(err)
 		return
 	}
 
@@ -65,6 +43,16 @@ func (mc *modelsController) GetModelsList(c *gin.Context) {
 	if err != nil {
 		_ = c.Error(errors.NewInternalServerError(err.Error()))
 		return
+	}
+
+	// Also fetch global default models (nil world ID)
+	if worldID != uuid.Nil {
+		defaultModels, err := mc.modelService.GetModelsByWorld(uuid.Nil)
+		if err != nil {
+			_ = c.Error(errors.NewInternalServerError(err.Error()))
+			return
+		}
+		modelsList = append(modelsList, defaultModels...)
 	}
 
 	modelResponseList := make([]dtos.ModelResponse, len(modelsList))
@@ -75,153 +63,103 @@ func (mc *modelsController) GetModelsList(c *gin.Context) {
 		}
 	}
 
-	response := dtos.ModelsListResponse{
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, dtos.ModelsListResponse{
 		WorldID: worldID,
 		List:    modelResponseList,
-	}
-	common_handlers.HandleSuccessResponse(c, http.StatusOK, response)
+	})
 }
 
-// DownloadModel godoc
-// @Summary      Download binary model
-// @Description  Stream/Download a .glb model file.
-// @Tags         assets-service
-// @Security     BearerAuth
-// @Produce      application/gltf-binary
-// @Param        world_id path string true "World UUID"
-// @Param        model_id path string true "Model UUID"
-// @Success      200  {string}  string "GLB file body"
-// @Failure      400  {object} dtos.ErrorResponse
-// @Failure      404  {object} dtos.ErrorResponse
-// @Failure      500  {object} dtos.ErrorResponse
-func (mc *modelsController) DownloadModel(c *gin.Context) {
-	// _, err := common_handlers.GetUserIDFromSession(c)
-	// if err != nil {
-	// 	_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-	// 	return
-	// }
-	worldID := c.Param("world_id")
-	assetID := c.Param("model_id")
-
-	if worldID == "" || assetID == "" {
-		_ = c.Error(errors.NewBadRequestError("world_id and model_id are required"))
-		return
-	}
-	// Path: bucket/worlds/<worldId>/models/<modelId>/model.glb
-	modelPath := filepath.Join(
-		"bucket",
-		"worlds",
-		worldID,
-		"models",
-		assetID,
-		"model.glb",
-	)
-
-	// Validate file exists
-	if _, err := os.Stat(modelPath); err != nil {
-		_ = c.Error(errors.NewNotFoundError("model not found for this asset"))
-		return
-	}
-
-	// Stream model file directly
-	c.Header("Content-Type", "model/gltf-binary") // official GLB MIME
-	c.Header("Content-Disposition",
-		fmt.Sprintf(`attachment; filename="%s_model.glb"`, assetID))
-
-	c.File(modelPath)
-}
-
-// UploadModels godoc
-// @Summary      Upload batch 3D models
-// @Description  Submit multiple custom models bounded to a specific world.
+// UploadModel godoc
+// @Summary      Upload a 3D model
+// @Description  Submit a single custom model bounded to a specific world.
 // @Tags         assets-service
 // @Security     BearerAuth
 // @Accept       multipart/form-data
 // @Produce      json
-// @Param        world_id path string true "World UUID"
-// @Param        models formData file true "Multipart upload array for model bindings"
-// @Success      201  {object}  dtos.ModelsListResponse
-// @Failure      400  {object} dtos.ErrorResponse
-// @Failure      401  {object} dtos.ErrorResponse
-// @Failure      500  {object} dtos.ErrorResponse
+// @Param        world_id  path      string true "World UUID"
+// @Param        model_id  formData  string true "Model UUID"
+// @Param        model_file formData file   true "Model GLB file"
+// @Success      201  {object}  dtos.ModelResponse
+// @Failure      400  {object}  dtos.ErrorResponse
+// @Failure      401  {object}  dtos.ErrorResponse
+// @Failure      500  {object}  dtos.ErrorResponse
 // @Router       /assets/models/world/{world_id} [put]
-func (mc *modelsController) UploadModels(c *gin.Context) {
+func (mc *modelsController) UploadModel(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
 		return
 	}
 
-	worldIDStr := c.Param("world_id")
-	if worldIDStr == "" {
-		_ = c.Error(errors.NewNotFoundError("world_id is required"))
-		return
-	}
-
-	worldID, err := uuid.Parse(worldIDStr)
+	worldID, err := parseUUIDParam(c, "world_id")
 	if err != nil {
-		_ = c.Error(errors.NewBadRequestError("invalid world_id format"))
+		_ = c.Error(err)
 		return
 	}
 
-	models := []dtos.ModelRequest{}
-	hasModels := true
-	for i := 0; hasModels; i++ {
-
-		modelIDStr := c.PostForm(fmt.Sprintf("models[%d].model_id", i))
-		if modelIDStr == "" {
-			hasModels = false
-			continue
-		}
-
-		modelID, err := uuid.Parse(modelIDStr)
-		if err != nil {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid model_id format for model %d", i)))
+	if worldID == uuid.Nil {
+		if err := common_handlers.IsAdminSession(c); err != nil {
+			_ = c.Error(errors.NewUnauthorizedError("only admins can upload global models"))
 			return
 		}
-		modelFile, err := c.FormFile(fmt.Sprintf("models[%d].model_file", i))
-		if err != nil {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("model_file is required for model %d", i)))
-			return
+	} else {
+		if err := common_handlers.IsAdminSession(c); err != nil {
+			if err := common_handlers.CheckWorldOwnership(c, mc.conf.Server.Port, worldID, userId); err != nil {
+				_ = c.Error(err)
+				return
+			}
 		}
-		models = append(models, dtos.ModelRequest{
-			Id:        modelID,
-			Url:       c.PostForm(fmt.Sprintf("models[%d].url", i)),
-			ModelFile: modelFile,
-		})
 	}
 
-	if len(models) == 0 {
-		_ = c.Error(errors.NewBadRequestError("no models uploaded"))
+	modelID, err := parseUUIDForm(c, "model_id")
+	if err != nil {
+		_ = c.Error(err)
 		return
 	}
 
-	batchModelsRequest := dtos.BatchModelsRequest{
+	modelFile, err := c.FormFile("model_file")
+	if err != nil {
+		_ = c.Error(errors.NewBadRequestError("model_file is required"))
+		return
+	}
+
+	savedModel, err := mc.modelService.UploadModel(dtos.ModelRequest{
 		WorldID:   worldID,
+		Id:        modelID,
 		CreatedBy: userId,
-		Models:    models,
-	}
-	logger.Logger.Infof("CONTROLLER: Models request parsed with %d models", len(batchModelsRequest.Models))
-
-	savedModels, err := mc.modelService.UploadModels(batchModelsRequest)
+		ModelFile: modelFile,
+	})
 	if err != nil {
 		_ = c.Error(errors.NewInternalServerError(err.Error()))
 		return
 	}
 
-	logger.Logger.Infof("CONTROLLER: Models uploaded and metadata saved for %d models", len(savedModels))
+	common_handlers.HandleSuccessResponse(c, http.StatusCreated, dtos.ModelResponse{
+		ModelID: savedModel.Id,
+		Url:     savedModel.Url,
+	})
+}
 
-	modelResponses := make([]dtos.ModelResponse, len(savedModels))
-	for i, model := range savedModels {
-		modelResponses[i] = dtos.ModelResponse{
-			ModelID: model.Id,
-			Url:     model.Url,
-		}
+func parseUUIDParam(c *gin.Context, key string) (uuid.UUID, error) {
+	val := c.Param(key)
+	if val == "" {
+		return uuid.Nil, errors.NewBadRequestError(fmt.Sprintf("%s is required", key))
 	}
+	id, err := uuid.Parse(val)
+	if err != nil {
+		return uuid.Nil, errors.NewBadRequestError(fmt.Sprintf("invalid %s format", key))
+	}
+	return id, nil
+}
 
-	modelsListResponse := dtos.ModelsListResponse{
-		WorldID: worldID,
-		List:    modelResponses,
+func parseUUIDForm(c *gin.Context, key string) (uuid.UUID, error) {
+	val := c.PostForm(key)
+	if val == "" {
+		return uuid.Nil, errors.NewBadRequestError(fmt.Sprintf("%s is required", key))
 	}
-	common_handlers.HandleSuccessResponse(c, http.StatusCreated, modelsListResponse)
+	id, err := uuid.Parse(val)
+	if err != nil {
+		return uuid.Nil, errors.NewBadRequestError(fmt.Sprintf("invalid %s format", key))
+	}
+	return id, nil
 }

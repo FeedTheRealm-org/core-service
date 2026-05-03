@@ -1,22 +1,30 @@
 info:
-  name: Link existing cosmetic by ID
+  name: Get cosmetics by category
   type: http
-  seq: 7
+  seq: 1
   tags:
     - assets-service
 
 http:
-  method: PUT
-  url: "{{baseUrl}}/assets/cosmetics/categories/:id/sprites/:sprite_id"
+  method: GET
+  url: "{{baseUrl}}/assets/cosmetics/categories/:id?limit=24&offset=0&world_id=00000000-0000-0000-0000-000000000000&player_id=00000000-0000-0000-0000-000000000000"
   params:
+    - name: limit
+      value: "24"
+      type: query
+    - name: offset
+      value: "0"
+      type: query
+    - name: world_id
+      value: 00000000-0000-0000-0000-000000000000
+      type: query
+    - name: player_id
+      value: 00000000-0000-0000-0000-000000000000
+      type: query
     - name: id
-      value: ""
+      value: 635b53d3-7a10-44e3-8d4e-c47cfd7fdb15
       type: path
       description: Category UUID
-    - name: sprite_id
-      value: ""
-      type: path
-      description: Existing Sprite UUID
   auth: inherit
 
 settings:
@@ -26,40 +34,32 @@ settings:
   maxRedirects: 5
 
 examples:
-  - name: 201 Response
-    description: Created
+  - name: 200 Response
+    description: OK
     request:
-      url: "{{baseUrl}}/assets/cosmetics/categories/:id/sprites/:sprite_id"
-      method: PUT
+      url: "{{baseUrl}}/assets/cosmetics/categories/:id"
+      method: GET
       params:
         - name: id
           value: ""
           type: path
           description: Category UUID
-        - name: sprite_id
-          value: ""
-          type: path
-          description: Existing Sprite UUID
     response:
-      status: 201
-      statusText: Created
+      status: 200
+      statusText: OK
       body:
         type: text
         data: ""
   - name: 400 Response
     description: Bad Request
     request:
-      url: "{{baseUrl}}/assets/cosmetics/categories/:id/sprites/:sprite_id"
-      method: PUT
+      url: "{{baseUrl}}/assets/cosmetics/categories/:id"
+      method: GET
       params:
         - name: id
           value: ""
           type: path
           description: Category UUID
-        - name: sprite_id
-          value: ""
-          type: path
-          description: Existing Sprite UUID
     response:
       status: 400
       statusText: Bad Request
@@ -69,17 +69,13 @@ examples:
   - name: 401 Response
     description: Unauthorized
     request:
-      url: "{{baseUrl}}/assets/cosmetics/categories/:id/sprites/:sprite_id"
-      method: PUT
+      url: "{{baseUrl}}/assets/cosmetics/categories/:id"
+      method: GET
       params:
         - name: id
           value: ""
           type: path
           description: Category UUID
-        - name: sprite_id
-          value: ""
-          type: path
-          description: Existing Sprite UUID
     response:
       status: 401
       statusText: Unauthorized

@@ -1,0 +1,98 @@
+info:
+  name: Upload 3D Model
+  type: http
+  seq: 16
+  tags:
+    - assets-service
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/assets/models/world/:world_id"
+  params:
+    - name: world_id
+      value: 00000000-0000-0000-0000-000000000000
+      type: path
+      description: World UUID
+  body:
+    type: multipart-form
+    data:
+      - name: model_id
+        type: text
+        value: 666a2e98-24c8-47b4-b50a-b6b77a916f04
+      - name: model_file
+        type: file
+        value:
+          - /home/sev/Downloads/rubiks_cube.glb
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 201 Response
+    description: Created
+    request:
+      url: "{{baseUrl}}/assets/models/world/:world_id"
+      method: PUT
+      params:
+        - name: world_id
+          value: ""
+          type: path
+          description: World UUID
+    response:
+      status: 201
+      statusText: Created
+      body:
+        type: text
+        data: ""
+  - name: 400 Response
+    description: Bad Request
+    request:
+      url: "{{baseUrl}}/assets/models/world/:world_id"
+      method: PUT
+      params:
+        - name: world_id
+          value: ""
+          type: path
+          description: World UUID
+    response:
+      status: 400
+      statusText: Bad Request
+      body:
+        type: text
+        data: ""
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/assets/models/world/:world_id"
+      method: PUT
+      params:
+        - name: world_id
+          value: ""
+          type: path
+          description: World UUID
+    response:
+      status: 401
+      statusText: Unauthorized
+      body:
+        type: text
+        data: ""
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/assets/models/world/:world_id"
+      method: PUT
+      params:
+        - name: world_id
+          value: ""
+          type: path
+          description: World UUID
+    response:
+      status: 500
+      statusText: Internal Server Error
+      body:
+        type: text
+        data: ""

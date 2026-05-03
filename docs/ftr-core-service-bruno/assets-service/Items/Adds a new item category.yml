@@ -1,13 +1,13 @@
 info:
-  name: Adds a new cosmetic category
+  name: Adds a new item category
   type: http
-  seq: 4
+  seq: 1
   tags:
     - assets-service
 
 http:
   method: POST
-  url: "{{baseUrl}}/assets/cosmetics/categories"
+  url: "{{baseUrl}}/assets/items/categories"
   auth: inherit
 
 settings:
@@ -20,7 +20,7 @@ examples:
   - name: 201 Response
     description: Created
     request:
-      url: "{{baseUrl}}/assets/cosmetics/categories"
+      url: "{{baseUrl}}/assets/items/categories"
       method: POST
     response:
       status: 201
@@ -31,7 +31,7 @@ examples:
   - name: 400 Response
     description: Bad Request
     request:
-      url: "{{baseUrl}}/assets/cosmetics/categories"
+      url: "{{baseUrl}}/assets/items/categories"
       method: POST
     response:
       status: 400
@@ -42,7 +42,7 @@ examples:
   - name: 401 Response
     description: Unauthorized
     request:
-      url: "{{baseUrl}}/assets/cosmetics/categories"
+      url: "{{baseUrl}}/assets/items/categories"
       method: POST
     response:
       status: 401
@@ -53,7 +53,7 @@ examples:
   - name: 409 Response
     description: Conflict
     request:
-      url: "{{baseUrl}}/assets/cosmetics/categories"
+      url: "{{baseUrl}}/assets/items/categories"
       method: POST
     response:
       status: 409

@@ -1,29 +1,22 @@
 info:
-  name: Upload items and sprites
+  name: Get items by world and category
   type: http
-  seq: 11
+  seq: 1
   tags:
     - assets-service
 
 http:
-  method: PUT
-  url: "{{baseUrl}}/assets/items/world/:world_id"
+  method: GET
+  url: "{{baseUrl}}/assets/items/world/:world_id/categories/:category_id"
   params:
     - name: world_id
-      value: 60f45758-9acd-4ae8-86c6-c08db4ecede2
+      value: ""
       type: path
       description: World UUID
-  body:
-    type: multipart-form
-    data:
-      - name: ids[0]
-        type: text
-        value: fd318259-6e77-466c-b7aa-4b3e0342c31b
-      - name: sprites[0]
-        type: file
-        value:
-          - C:\Users\Terminator 2\Pictures\Screenshots\Captura de pantalla (5).png
-        contentType: image/png
+    - name: category_id
+      value: ""
+      type: path
+      description: Category UUID
   auth: inherit
 
 settings:
@@ -33,11 +26,11 @@ settings:
   maxRedirects: 5
 
 examples:
-  - name: 201 Response
-    description: Created
+  - name: 200 Response
+    description: OK
     request:
       url: "{{baseUrl}}/assets/items/world/:world_id/categories/:category_id"
-      method: PUT
+      method: GET
       params:
         - name: world_id
           value: ""
@@ -48,8 +41,8 @@ examples:
           type: path
           description: Category UUID
     response:
-      status: 201
-      statusText: Created
+      status: 200
+      statusText: OK
       body:
         type: text
         data: ""
@@ -57,7 +50,7 @@ examples:
     description: Bad Request
     request:
       url: "{{baseUrl}}/assets/items/world/:world_id/categories/:category_id"
-      method: PUT
+      method: GET
       params:
         - name: world_id
           value: ""
@@ -77,7 +70,7 @@ examples:
     description: Unauthorized
     request:
       url: "{{baseUrl}}/assets/items/world/:world_id/categories/:category_id"
-      method: PUT
+      method: GET
       params:
         - name: world_id
           value: ""

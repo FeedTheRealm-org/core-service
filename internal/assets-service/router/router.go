@@ -59,7 +59,7 @@ func SetupEndpointsForModelsService(conf *config.Config, db *config.DB, g *gin.R
 
 	modelsGroup := g.Group("/models")
 	modelsGroup.GET("/world/:world_id", modelsController.GetModelsList)
-	modelsGroup.PUT("/world/:world_id", modelsController.UploadModels)
+	modelsGroup.PUT("/world/:world_id", modelsController.UploadModel)
 }
 
 func getNewBucketRepository(name string, conf *config.Config) (bucket.BucketRepository, error) {

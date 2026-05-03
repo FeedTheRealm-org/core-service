@@ -1,14 +1,13 @@
 info:
   name: Get cosmetics by world
   type: http
-  seq: 6
+  seq: 2
   tags:
     - assets-service
 
 http:
   method: GET
   url: "{{baseUrl}}/assets/cosmetics/worlds/:world_id?limit=24&offset=0"
-  auth: inherit
   params:
     - name: limit
       value: "24"
@@ -17,8 +16,9 @@ http:
       value: "0"
       type: query
     - name: world_id
-      value: "4b9712cf-a734-436f-b6fa-9a4f6645db9c"
+      value: 4b9712cf-a734-436f-b6fa-9a4f6645db9c
       type: path
+  auth: inherit
 
 settings:
   encodeUrl: true
