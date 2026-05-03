@@ -99,6 +99,7 @@ func (c *zonesController) PublishZone(ctx *gin.Context) {
 		ZoneID:   zone.ID,
 		ZoneData: string(zone.ZoneData),
 		IsActive: zone.IsActive,
+		IsOnline: zone.IsOnline,
 	})
 }
 
@@ -139,6 +140,7 @@ func (c *zonesController) GetWorldZones(ctx *gin.Context) {
 		zoneMetadata = append(zoneMetadata, dtos.WorldZoneMetadata{
 			ZoneID:   zone.ID,
 			IsActive: zone.IsActive,
+			IsOnline: zone.IsOnline,
 		})
 	}
 
@@ -192,6 +194,7 @@ func (c *zonesController) GetWorldZoneData(ctx *gin.Context) {
 		ZoneID:   zone.ID,
 		ZoneData: zone.ZoneData.String(),
 		IsActive: zone.IsActive,
+		IsOnline: zone.IsOnline,
 	})
 }
 
