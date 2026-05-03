@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/oidc_validation"
 	server_registry_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/server_registry"
 	world_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/world"
 	zones_controller "github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/zones"
@@ -13,26 +14,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
-	worldGroup := r.Group("/world")
-
+func SetupEndpointsForWorldService(worldGroup *gin.RouterGroup, db *config.DB, conf *config.Config, nomadService server_registry_service.ServerRegistryService) {
 	worldRepo := world_repo.NewWorldRepository(conf, db)
-
-	var nomadService server_registry_service.ServerRegistryService
-	if conf.Server.Environment == config.Production {
-		var err error
-		nomadService, err = server_registry_service.NewServerRegistryService(conf) // Real nomad service
-		if err != nil {
-			return err
-		}
-	} else {
-		nomadService = server_registry_service.NewStubServerRegistryService() // Stub
-	}
 	worldService := world_service.NewWorldService(conf, worldRepo, nomadService)
-	zonesService := zones_service.NewZonesService(conf, worldRepo, nomadService)
 	worldController := world_controller.NewWorldController(conf, worldService)
-	zonesController := zones_controller.NewZonesController(conf, zonesService)
-	serverRegistryController := server_registry_controller.NewServerRegistryController(conf, nomadService)
 
 	worldGroup.POST("", worldController.PublishWorld)
 	worldGroup.GET("", worldController.GetWorldsList)
@@ -40,20 +25,63 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 	worldGroup.PUT("/:id", worldController.UpdateWorld)
 	worldGroup.DELETE("/:id", worldController.DeleteWorld)
 
+	worldGroup.PUT("/:id/createable-data", worldController.UpdateCreateableData)
+
+	worldGroup.DELETE("/reset-database", middleware.AdminCheckMiddleware(), worldController.ResetDatabase)
+}
+
+func SetupEndpointsForZonesService(worldGroup *gin.RouterGroup, db *config.DB, conf *config.Config, nomadService server_registry_service.ServerRegistryService) {
+	worldRepo := world_repo.NewWorldRepository(conf, db)
+	zonesService := zones_service.NewZonesService(conf, worldRepo, nomadService)
+	zonesController := zones_controller.NewZonesController(conf, zonesService)
+
 	worldGroup.PUT("/:id/zones/:zone_id", zonesController.PublishZone)
 	worldGroup.GET("/:id/zones", zonesController.GetWorldZones)
 	worldGroup.GET("/:id/zones/:zone_id", zonesController.GetWorldZoneData)
 	worldGroup.GET("/:id/zones/:zone_id/activate", zonesController.ActivateZone)
 	worldGroup.GET("/:id/zones/:zone_id/deactivate", zonesController.DeactivateZone)
+}
 
-	worldGroup.PUT("/:id/createable-data", worldController.UpdateCreateableData)
+func SetupEndpointsForServiceRegistry(orchestratorGroup *gin.RouterGroup, db *config.DB, conf *config.Config, nomadService server_registry_service.ServerRegistryService) error {
+	ghv, err := oidc_validation.NewGitHubOIDCVerifier(conf)
+	if err != nil {
+		return err
+	}
 
-	orchestratorGroup := worldGroup.Group("/orchestrator")
+	worldRepo := world_repo.NewWorldRepository(conf, db)
+	worldService := world_service.NewWorldService(conf, worldRepo, nomadService)
+	serverRegistryController := server_registry_controller.NewServerRegistryController(conf, worldService, nomadService)
+
 	orchestratorGroup.GET("/:id/zones/:zone_id/start-job", middleware.AdminCheckMiddleware(), serverRegistryController.StartNewJob)
 	orchestratorGroup.GET("/:id/zones/:zone_id/stop-job", middleware.AdminCheckMiddleware(), serverRegistryController.StopJob)
 	orchestratorGroup.GET("/:id/zones/:zone_id/address", serverRegistryController.GetServerAddress)
+	orchestratorGroup.POST("/webhook/servers/update", middleware.GithubOIDCCheck(ghv), serverRegistryController.UpdateServer)
 
-	worldGroup.DELETE("/reset-database", middleware.AdminCheckMiddleware(), worldController.ResetDatabase)
+	return nil
+}
+
+func CreateNomadService(conf *config.Config) (server_registry_service.ServerRegistryService, error) {
+	if conf.Server.Environment == config.Production {
+		return server_registry_service.NewServerRegistryService(conf)
+	} else {
+		return server_registry_service.NewStubServerRegistryService(), nil
+	}
+}
+
+func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
+	worldGroup := r.Group("/world")
+	orchestratorGroup := worldGroup.Group("/orchestrator")
+
+	nomadService, err := CreateNomadService(conf)
+	if err != nil {
+		return err
+	}
+
+	SetupEndpointsForWorldService(worldGroup, db, conf, nomadService)
+	SetupEndpointsForZonesService(worldGroup, db, conf, nomadService)
+	if err := SetupEndpointsForServiceRegistry(orchestratorGroup, db, conf, nomadService); err != nil {
+		return err
+	}
 
 	return nil
 }

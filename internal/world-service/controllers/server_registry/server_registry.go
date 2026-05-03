@@ -1,14 +1,17 @@
 package server_registry
 
 import (
+	"io"
 	"net/http"
 	"strconv"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/server_registry"
+	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/world"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -16,13 +19,15 @@ import (
 // ServerRegistryController handles ftr-server reports and WorldId,ZoneId -> IP:port mapping
 type serverRegistryController struct {
 	conf                  *config.Config
+	worldService          world.WorldService
 	nomadJobSenderService server_registry.ServerRegistryService
 }
 
-func NewServerRegistryController(conf *config.Config, nomadJobService server_registry.ServerRegistryService) ServerRegistryController {
+func NewServerRegistryController(conf *config.Config, worldService world.WorldService, nomadJobSenderService server_registry.ServerRegistryService) ServerRegistryController {
 	return &serverRegistryController{
 		conf:                  conf,
-		nomadJobSenderService: nomadJobService,
+		worldService:          worldService,
+		nomadJobSenderService: nomadJobSenderService,
 	}
 }
 
@@ -140,4 +145,49 @@ func (c *serverRegistryController) GetServerAddress(ctx *gin.Context) {
 		IP:   addr,
 		Port: port,
 	})
+}
+
+// UpdateServer godoc
+// @Summary      Update running servers
+// @Description  Webhook to update running world servers
+// @Tags         world-service
+// @Produce      json
+// @Success      200  {string}  string "OK"
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      404  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /world/orchestrator/webhook/servers/update [post]
+func (c *serverRegistryController) UpdateServer(ctx *gin.Context) {
+	logger.Logger.Info("Received server update webhook call")
+
+	// To be deleted
+	rawBody, _ := io.ReadAll(ctx.Request.Body)
+	logger.Logger.Infow("request log",
+		"method", ctx.Request.Method,
+		"path", ctx.Request.URL.Path,
+		"query", ctx.Request.URL.RawQuery,
+		"status", ctx.Writer.Status(),
+		"request_body", string(rawBody),
+	)
+
+	if common_handlers.IsGithubOIDCTokenValid(ctx) != nil {
+		_ = ctx.Error(errors.NewUnauthorizedError("Invalid GitHub OIDC token"))
+		return
+	}
+
+	activeZones, err := c.worldService.GetActiveWorldZones()
+	if err != nil {
+		_ = ctx.Error(errors.NewNotFoundError(err.Error()))
+		return
+	}
+
+	for _, zone := range activeZones {
+		err := c.nomadJobSenderService.StartNewJob(zone.WorldID, zone.ID, false)
+		if err != nil {
+			_ = ctx.Error(errors.NewInternalServerError(err.Error()))
+			return
+		}
+	}
+
+	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
 }

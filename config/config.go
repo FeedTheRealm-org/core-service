@@ -73,11 +73,17 @@ type StripeConfig struct {
 	Zones                            []StripeItem
 }
 
+type GithubConfig struct {
+	GithubAudienceWebhook string
+	GithubRepoURLWebhook  string
+}
+
 type Config struct {
 	Server                *ServerConfig
 	DB                    *DatabaseConfig
 	Assets                *AssetsConfig
 	Stripe                *StripeConfig
+	Github                *GithubConfig
 	SessionTokenSecretKey string
 	SessionTokenDuration  time.Duration
 	BrevoAPIKey           string
@@ -160,11 +166,17 @@ func CreateConfig() *Config {
 		Zones:                            zones,
 	}
 
+	githubConf := &GithubConfig{
+		GithubAudienceWebhook: getEnvOrDefaultString("GITHUB_AUDIENCE_WEBHOOK", "ftr-update-server"),
+		GithubRepoURLWebhook:  getEnvOrDefaultString("GITHUB_REPO_URL_WEBHOOK", "FeedTheRealm-org/game"),
+	}
+
 	return &Config{
 		Server:                serverConf,
 		DB:                    dbc,
 		Assets:                assetsConf,
 		Stripe:                stripeConf,
+		Github:                githubConf,
 		SessionTokenSecretKey: os.Getenv("SESSION_TOKEN_SECRET_KEY"),
 		SessionTokenDuration:  getEnvOrDefaultDuration("SESSION_TOKEN_DURATION", time.Hour*24),
 		BrevoAPIKey:           os.Getenv("BREVO_API_KEY"),

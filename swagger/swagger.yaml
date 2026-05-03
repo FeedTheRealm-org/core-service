@@ -2552,6 +2552,31 @@ paths:
       summary: Shutdown job execution
       tags:
       - world-service
+  /world/orchestrator/webhook/servers/update:
+    post:
+      description: Webhook to update running world servers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Update running servers
+      tags:
+      - world-service
   /world/reset-database:
     delete:
       description: Purge utility used carefully during development to wipe all tables.

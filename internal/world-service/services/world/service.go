@@ -16,6 +16,7 @@ type WorldService interface {
 	// UpdateWorld updates the data and description for an existing world, only if owned by userId.
 	UpdateWorld(worldID uuid.UUID, userId uuid.UUID, data []byte, description string) (*models.WorldData, error)
 
+	// UpdateCreateableData updates the createable data for an existing world, only if owned by userId.
 	UpdateCreateableData(worldID uuid.UUID, userId uuid.UUID, createableData []byte) (*models.WorldData, error)
 
 	// DeleteWorld handles the deletion of a world, only if owned by userId.
@@ -27,5 +28,9 @@ type WorldService interface {
 	// GetWorldZones retrieves zones for a specific world.
 	GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, error)
 
+	// GetActiveWorldZones retrieves all active zones across all worlds.
+	GetActiveWorldZones() ([]*models.WorldZone, error)
+
+	// ClearDatabase is a utility function to clear the database, intended for testing purposes.
 	ClearDatabase() error
 }
