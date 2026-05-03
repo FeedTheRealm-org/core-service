@@ -98,7 +98,7 @@ func (s *accountService) seedAdminAccount(conf *config.Config) {
 		return
 	}
 
-	if _, _, err := s.LoginAccount(adminEmail, adminPassword); err == nil {
+	if _, _, err := s.LoginAccount(adminEmail, adminPassword, true); err == nil {
 		logger.Logger.Infof("Admin account already exists with email: %s", adminEmail)
 		return
 	}
@@ -214,7 +214,7 @@ func (s *accountService) CreateAccount(email string, password string, isAdmin bo
 	return user, verificationCode, nil
 }
 
-func (s *accountService) LoginAccount(email string, password string) (*models.User, string, error) {
+func (s *accountService) LoginAccount(email string, password string, isAdminReq bool) (*models.User, string, error) {
 	email = strings.ToLower(email)
 	user, err := s.repo.GetAccountByEmail(email)
 	if err != nil {
@@ -226,7 +226,7 @@ func (s *accountService) LoginAccount(email string, password string) (*models.Us
 		return nil, "", &AccountNotFoundError{}
 	}
 
-	if !user.Verified {
+	if !user.Verified && !isAdminReq {
 		return nil, "", &AccountNotVerifiedError{}
 	}
 
