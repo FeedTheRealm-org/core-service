@@ -29,6 +29,10 @@ job "{{ .JobName }}" {
         image = "{{ .ImageName }}"
         ports = ["game", "health"]
         args  = ["--world-id={{ .WorldID }}", "--zone-id={{ .ZoneID }}", "--is-test-world={{ .IsTestWorld }}"]
+
+        labels = {
+            "com.datadoghq.ad.logs" = "[{\"source\": \"csharp\", \"service\": \"world_{{ .WorldID }}_{{ .ZoneID }}\"}]"
+        }
       }
 
       env {
