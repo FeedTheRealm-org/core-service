@@ -73,7 +73,7 @@ func (bs *gemBalancesService) CreateGemBalance(userId uuid.UUID) error {
 }
 
 func (bs *gemBalancesService) UpdateGemBalance(userId uuid.UUID, gems int64) error {
-	err := bs.gemBalancesRepo.UpdateGemBalance(userId, gems)
+	err := bs.gemBalancesRepo.UpsertGemBalance(userId, gems)
 	if err != nil {
 		logger.Logger.Error("Failed to update balance for user " + userId.String() + ": " + err.Error())
 		return err

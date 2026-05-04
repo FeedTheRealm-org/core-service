@@ -104,6 +104,9 @@ func (br *gemBalancesRepository) ApplyStripeCheckoutCreditIfUnprocessed(userId u
 	return applied, nil
 }
 
-func (br *gemBalancesRepository) UpdateGemBalance(userId uuid.UUID, newGems int64) error {
-	return br.db.Conn.Model(&models.GemBalance{}).Where("user_id = ?", userId).Update("gems", newGems).Error
+func (br *gemBalancesRepository) UpsertGemBalance(userId uuid.UUID, newGems int64) error {
+	return br.db.Conn.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"gems"}),
+	}).Create(&models.GemBalance{UserId: userId, Gems: newGems}).Error
 }
