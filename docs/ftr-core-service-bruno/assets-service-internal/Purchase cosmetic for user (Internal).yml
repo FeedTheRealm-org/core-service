@@ -1,0 +1,74 @@
+info:
+  name: Purchase cosmetic for user (Internal)
+  type: http
+  seq: 2
+  tags:
+    - assets-service-internal
+
+http:
+  method: POST
+  url: "{{baseUrl}}/assets/internal/users/:user_id/cosmetics"
+  params:
+    - name: user_id
+      value: ""
+      type: path
+      description: User UUID
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 201 Response
+    description: Created
+    request:
+      url: "{{baseUrl}}/assets/internal/users/:user_id/cosmetics"
+      method: POST
+      params:
+        - name: user_id
+          value: ""
+          type: path
+          description: User UUID
+    response:
+      status: 201
+      statusText: Created
+      body:
+        type: text
+        data: ""
+  - name: 400 Response
+    description: Bad Request
+    request:
+      url: "{{baseUrl}}/assets/internal/users/:user_id/cosmetics"
+      method: POST
+      params:
+        - name: user_id
+          value: ""
+          type: path
+          description: User UUID
+    response:
+      status: 400
+      statusText: Bad Request
+      body:
+        type: text
+        data: ""
+  - name: 409 Response
+    description: Conflict
+    request:
+      url: "{{baseUrl}}/assets/internal/users/:user_id/cosmetics"
+      method: POST
+      params:
+        - name: user_id
+          value: ""
+          type: path
+          description: User UUID
+    response:
+      status: 409
+      statusText: Conflict
+      body:
+        type: text
+        data: ""
+
+docs: Records a cosmetic purchase for a specific user. Intended for internal service communication.
