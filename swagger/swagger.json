@@ -3995,6 +3995,9 @@
                 "is_active": {
                     "type": "boolean"
                 },
+                "is_online": {
+                    "type": "boolean"
+                },
                 "zone_id": {
                     "type": "integer"
                 }
@@ -4004,6 +4007,9 @@
             "type": "object",
             "properties": {
                 "is_active": {
+                    "type": "boolean"
+                },
+                "is_online": {
                     "type": "boolean"
                 },
                 "world_id": {
