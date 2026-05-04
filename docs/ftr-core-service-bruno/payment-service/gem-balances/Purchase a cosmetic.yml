@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/payments/gems/balances/purchase/:cosmetic_id"
+  url: "{{baseUrl}}/payments/purchase/:cosmetic_id"
   auth: inherit
   params:
     - name: cosmetic_id

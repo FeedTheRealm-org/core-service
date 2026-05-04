@@ -10,9 +10,15 @@ http:
   url: "{{baseUrl}}/payments/gems/balances/:id"
   params:
     - name: id
-      value: ""
+      value: 16698ebf-6eae-431b-b23a-26bbe3523b5a
       type: path
       description: User ID
+  body:
+    type: json
+    data: |-
+      {
+        "gems": 100
+      }
   auth: inherit
 
 settings:

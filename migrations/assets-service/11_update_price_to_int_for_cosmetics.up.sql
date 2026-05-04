@@ -1,0 +1,7 @@
+BEGIN;
+
+ALTER TABLE cosmetics
+  ALTER COLUMN price TYPE INT
+  USING ROUND(price)::INT;
+
+COMMIT;

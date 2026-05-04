@@ -1,0 +1,43 @@
+info:
+  name: Get price metrics and dates
+  type: http
+  seq: 5
+  tags:
+    - payment-service-subscriptions
+
+http:
+  method: GET
+  url: "{{baseUrl}}/subscriptions/pricing"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: OK
+    request:
+      url: "{{baseUrl}}/subscriptions/pricing"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      body:
+        type: text
+        data: ""
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/subscriptions/pricing"
+      method: GET
+    response:
+      status: 500
+      statusText: Internal Server Error
+      body:
+        type: text
+        data: ""
+
+docs: Return the price per slot alongside the next system-wide billing date.

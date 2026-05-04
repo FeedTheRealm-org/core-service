@@ -9,7 +9,7 @@ import (
 type Cosmetic struct {
 	Id         uuid.UUID        `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Url        string           `gorm:"not null"`
-	Price      float64          `gorm:"not null;default:0"`
+	Price      int64            `gorm:"not null;default:0"`
 	CategoryID uuid.UUID        `gorm:"type:uuid;not null;index"`
 	WorldID    uuid.UUID        `gorm:"type:uuid;not null;index"`
 	Category   CosmeticCategory `gorm:"foreignKey:CategoryID;references:Id"`

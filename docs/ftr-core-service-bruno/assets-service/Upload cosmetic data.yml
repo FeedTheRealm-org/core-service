@@ -7,11 +7,11 @@ info:
 
 http:
   method: PUT
-  url: "{{baseUrl}}/assets/cosmetics/categories/:id"
+  url: "{{baseUrl}}/assets/cosmetics/categories/:category_id"
   params:
-    - name: ""
-      value: ""
-      type: query
+    - name: "category_id"
+      value: "635b53d3-7a10-44e3-8d4e-c47cfd7fdb15"
+      type: path
   body:
     type: multipart-form
     data:
@@ -38,7 +38,7 @@ examples:
   - name: 201 Response
     description: Created
     request:
-      url: "{{baseUrl}}/assets/cosmetics/categories/:id"
+      url: "{{baseUrl}}/assets/cosmetics/categories/:category_id"
       method: PUT
     response:
       status: 201
@@ -49,7 +49,7 @@ examples:
   - name: 400 Response
     description: Bad Request
     request:
-      url: "{{baseUrl}}/assets/cosmetics/categories/:id"
+      url: "{{baseUrl}}/assets/cosmetics/categories/:category_id"
       method: PUT
     response:
       status: 400
@@ -60,7 +60,7 @@ examples:
   - name: 401 Response
     description: Unauthorized
     request:
-      url: "{{baseUrl}}/assets/cosmetics/categories/:id"
+      url: "{{baseUrl}}/assets/cosmetics/categories/:category_id"
       method: PUT
     response:
       status: 401

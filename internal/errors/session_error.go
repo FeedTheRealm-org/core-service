@@ -30,3 +30,10 @@ type NotAdminSessionError struct {
 func (n *NotAdminSessionError) Error() string {
 	return "session does not have admin privileges"
 }
+
+type InvalidGithubOIDCTokenError struct {
+}
+
+func (i *InvalidGithubOIDCTokenError) Error() string {
+	return "invalid GitHub OIDC token"
+}

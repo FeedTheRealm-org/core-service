@@ -1242,6 +1242,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/payments/balances/creators": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the current creator balance of the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service"
+                ],
+                "summary": "Get creator balance",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreatorBalanceResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/payments/checkout": {
             "post": {
                 "security": [
@@ -2533,6 +2570,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/world/orchestrator/webhook/servers/update": {
+            "post": {
+                "description": "Webhook to update running world servers",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Update running servers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/world/orchestrator/{id}/zones/{zone_id}/address": {
             "get": {
                 "security": [
@@ -3453,6 +3528,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.CreatorBalanceResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "number"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -3522,7 +3608,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "cosmetic_price": {
-                    "type": "number"
+                    "type": "integer"
+                },
+                "created_by": {
+                    "type": "string"
                 }
             }
         },

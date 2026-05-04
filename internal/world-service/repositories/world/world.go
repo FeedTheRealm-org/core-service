@@ -198,3 +198,11 @@ func (r *worldRepository) GetTotalZonesCountByUserId(userId uuid.UUID) (int64, e
 		Count(&count).Error
 	return count, err
 }
+
+func (r *worldRepository) GetActiveWorldZones() ([]*models.WorldZone, error) {
+	var activeZones []*models.WorldZone
+	if err := r.db.Conn.Where("is_active = ?", true).Find(&activeZones).Error; err != nil {
+		return nil, err
+	}
+	return activeZones, nil
+}
