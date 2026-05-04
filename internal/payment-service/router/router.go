@@ -47,7 +47,7 @@ func SetupBalancesServiceRouter(conf *config.Config, db *config.DB, paymentGroup
 	balancesGroup.PUT("/:id", middleware.AdminCheckMiddleware(), gemBalancesController.UpdateGemBalance)
 
 	/* Purchase Endpoints */
-	paymentGroup.POST("/purchase/:cosmetic_id", gemBalancesController.PurchaseCosmetic)
+	balancesGroup.POST("/purchase/:cosmetic_id", gemBalancesController.PurchaseCosmetic)
 
 	/* Webhook Endpoint for Gems */
 	paymentGroup.POST("/checkout", gemBalancesController.CreateCheckoutSession)
