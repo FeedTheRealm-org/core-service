@@ -71,7 +71,7 @@ func (s *gemPacksService) GetGemPackById(packId uuid.UUID) (*models.GemPack, err
 	return pack, nil
 }
 
-func (s *gemPacksService) CreateGemPack(name string, gems int, price decimal.Decimal) (*models.GemPack, error) {
+func (s *gemPacksService) CreateGemPack(name string, gems int64, price decimal.Decimal) (*models.GemPack, error) {
 	newPackage := &models.GemPack{
 		Name:  name,
 		Gems:  gems,
@@ -85,7 +85,7 @@ func (s *gemPacksService) CreateGemPack(name string, gems int, price decimal.Dec
 	return createdPackage, nil
 }
 
-func (s *gemPacksService) UpdateGemPack(packId uuid.UUID, name string, gems int, price decimal.Decimal) (*models.GemPack, error) {
+func (s *gemPacksService) UpdateGemPack(packId uuid.UUID, name string, gems int64, price decimal.Decimal) (*models.GemPack, error) {
 	pack, err := s.repo.GetGemPackById(packId)
 	if err != nil {
 		return nil, err

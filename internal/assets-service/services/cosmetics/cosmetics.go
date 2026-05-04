@@ -58,7 +58,7 @@ func (ss *cosmeticsService) AddCategory(category string) (*models.CosmeticCatego
 	return ss.cosmeticsRepository.AddCategory(category)
 }
 
-func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, worldId uuid.UUID, price float64, cosmeticData multipart.File, ext string, userId uuid.UUID) (*models.Cosmetic, error) {
+func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, worldId uuid.UUID, price int64, cosmeticData multipart.File, ext string, userId uuid.UUID) (*models.Cosmetic, error) {
 	if price <= 0 {
 		return nil, assets_errors.NewInvalidPrice("price must be greater than 0")
 	}
@@ -88,7 +88,7 @@ func (ss *cosmeticsService) UploadCosmeticData(categoryId uuid.UUID, worldId uui
 	return cosmetic, nil
 }
 
-func (ss *cosmeticsService) UploadCosmeticByID(categoryId uuid.UUID, worldId uuid.UUID, price float64, spriteId uuid.UUID, userId uuid.UUID, cosmeticFile multipart.File, ext string) (*models.Cosmetic, error) {
+func (ss *cosmeticsService) UploadCosmeticByID(categoryId uuid.UUID, worldId uuid.UUID, price int64, spriteId uuid.UUID, userId uuid.UUID, cosmeticFile multipart.File, ext string) (*models.Cosmetic, error) {
 	if price <= 0 {
 		return nil, assets_errors.NewInvalidPrice("price must be greater than 0")
 	}

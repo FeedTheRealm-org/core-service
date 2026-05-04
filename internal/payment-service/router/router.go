@@ -3,12 +3,15 @@ package router
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
+	creator_balances_controller "github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/creator-balances"
 	gem_balances_controller "github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/gem-balances"
 	gem_packs_controller "github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/gem-packs"
 	zones_subscriptions_controller "github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/zones-subscriptions"
+	creator_balances_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/creator-balances"
 	gem_balances_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-balances"
 	gem_packs_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-packs"
 	zones_subscriptions_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/zones-subscriptions"
+	creator_balances_service "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/creator-balances"
 	gem_balances_service "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/gem-balances"
 	gem_packs_service "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/gem-packs"
 	zones_subscriptions_service "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/zones-subscriptions"
@@ -31,8 +34,11 @@ func SetupGemPacksServiceRouter(conf *config.Config, db *config.DB, g *gin.Route
 
 func SetupBalancesServiceRouter(conf *config.Config, db *config.DB, paymentGroup *gin.RouterGroup, gemsGroup *gin.RouterGroup) {
 	gemBalancesRepo := gem_balances_repo.NewGemBalancesRepository(conf, db)
+	creatorBalanceRepo := creator_balances_repo.NewCreatorBalancesRepository(conf, db)
 	packsRepo := gem_packs_repo.NewGemPacksRepository(conf, db)
-	gemBalancesService := gem_balances_service.NewGemBalancesService(conf, gemBalancesRepo, packsRepo)
+
+	gemBalancesService := gem_balances_service.NewGemBalancesService(conf, gemBalancesRepo, packsRepo, creatorBalanceRepo)
+
 	gemBalancesController := gem_balances_controller.NewGemBalancesController(conf, gemBalancesService)
 
 	/* Balances Endpoints */
@@ -41,7 +47,7 @@ func SetupBalancesServiceRouter(conf *config.Config, db *config.DB, paymentGroup
 	balancesGroup.PUT("/:id", middleware.AdminCheckMiddleware(), gemBalancesController.UpdateGemBalance)
 
 	/* Purchase Endpoints */
-	paymentGroup.POST("/purchase/:cosmetic_id", gemBalancesController.PurchaseCosmetic)
+	balancesGroup.POST("/purchase/:cosmetic_id", gemBalancesController.PurchaseCosmetic)
 
 	/* Webhook Endpoint for Gems */
 	paymentGroup.POST("/checkout", gemBalancesController.CreateCheckoutSession)
@@ -69,6 +75,15 @@ func SetupSubscriptionsServiceRouter(conf *config.Config, db *config.DB, subscri
 	internalGroup.PUT("/users/:user_id/used-slots", zonesSubscriptionsController.InternalUpdateUsedSlots)
 }
 
+func SetupCreatorBalancesRouter(conf *config.Config, db *config.DB, paymentGroup *gin.RouterGroup) {
+	creatorBalancesRepo := creator_balances_repo.NewCreatorBalancesRepository(conf, db)
+	creatorBalancesService := creator_balances_service.NewCreatorBalancesService(creatorBalancesRepo)
+	creatorBalancesController := creator_balances_controller.NewCreatorBalancesController(creatorBalancesService)
+
+	/* Creator Balances Endpoints */
+	paymentGroup.GET("/balances/creators", creatorBalancesController.GetBalance)
+}
+
 func SetupPaymentServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	paymentGroup := r.Group("/payments")
 	subscriptionGroup := r.Group("/subscriptions")
@@ -77,6 +92,7 @@ func SetupPaymentServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB
 	SetupGemPacksServiceRouter(conf, db, gemsGroup)
 	SetupBalancesServiceRouter(conf, db, paymentGroup, gemsGroup)
 	SetupSubscriptionsServiceRouter(conf, db, subscriptionGroup)
+	SetupCreatorBalancesRouter(conf, db, paymentGroup)
 
 	return nil
 }

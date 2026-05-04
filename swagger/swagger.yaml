@@ -129,6 +129,13 @@ definitions:
     - name
     - price
     type: object
+  dtos.CreatorBalanceResponse:
+    properties:
+      balance:
+        type: number
+      user_id:
+        type: string
+    type: object
   dtos.ErrorResponse:
     properties:
       detail:
@@ -174,7 +181,9 @@ definitions:
       cosmetic_id:
         type: string
       cosmetic_price:
-        type: number
+        type: integer
+      created_by:
+        type: string
     type: object
   dtos.InternalPurchaseCosmeticForUserRequest:
     properties:
@@ -1272,6 +1281,29 @@ paths:
       summary: Verify an account
       tags:
       - authentication-service
+  /payments/balances/creators:
+    get:
+      description: Get the current creator balance of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.CreatorBalanceResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get creator balance
+      tags:
+      - payment-service
   /payments/checkout:
     post:
       consumes:

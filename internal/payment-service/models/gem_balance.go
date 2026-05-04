@@ -8,7 +8,7 @@ import (
 
 type GemBalance struct {
 	UserId    uuid.UUID `json:"user_id" gorm:"type:uuid;primaryKey"`
-	Gems      int       `json:"gems" gorm:"not null;default:0"`
+	Gems      int64     `json:"gems" gorm:"not null;default:0"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

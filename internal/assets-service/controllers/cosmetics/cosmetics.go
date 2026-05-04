@@ -337,7 +337,7 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 		return
 	}
 
-	price, err := strconv.ParseFloat(c.PostForm("price"), 64)
+	price, err := strconv.ParseInt(c.PostForm("price"), 10, 64)
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid price: " + err.Error()))
 		return
@@ -450,7 +450,7 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 		}
 	}
 
-	price, err := strconv.ParseFloat(c.PostForm("price"), 64)
+	price, err := strconv.ParseInt(c.PostForm("price"), 10, 64)
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid price: " + err.Error()))
 		return
@@ -637,6 +637,7 @@ func (cc *cosmeticsController) GetCosmeticByIdInternal(c *gin.Context) {
 	res := &dtos.InternalCosmeticResponse{
 		CosmeticId:    cosmetic.Id,
 		CosmeticPrice: cosmetic.Price,
+		CreatedBy:     cosmetic.CreatedBy,
 	}
 
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)

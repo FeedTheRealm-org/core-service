@@ -152,7 +152,7 @@ func (cr *cosmeticsRepository) GetCosmeticsListByWorld(worldId uuid.UUID, offset
 	return cosmetics, totalCount, nil
 }
 
-func (cr *cosmeticsRepository) CreateCosmetic(categoryId uuid.UUID, worldId uuid.UUID, price float64, cosmetic *models.Cosmetic, userId uuid.UUID) error {
+func (cr *cosmeticsRepository) CreateCosmetic(categoryId uuid.UUID, worldId uuid.UUID, price int64, cosmetic *models.Cosmetic, userId uuid.UUID) error {
 	var category models.CosmeticCategory
 	if err := cr.db.Conn.First(&category, "id = ?", categoryId).Error; err != nil {
 		if errors.IsRecordNotFound(err) {
@@ -173,7 +173,7 @@ func (cr *cosmeticsRepository) CreateCosmetic(categoryId uuid.UUID, worldId uuid
 	return nil
 }
 
-func (cr *cosmeticsRepository) UpdateCosmetic(cosmeticId uuid.UUID, price float64, url string) error {
+func (cr *cosmeticsRepository) UpdateCosmetic(cosmeticId uuid.UUID, price int64, url string) error {
 	updates := map[string]interface{}{"price": price}
 	if url != "" {
 		updates["url"] = url
