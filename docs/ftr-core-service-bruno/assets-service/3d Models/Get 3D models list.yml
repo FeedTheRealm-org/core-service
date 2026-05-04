@@ -10,7 +10,7 @@ http:
   url: "{{baseUrl}}/assets/models/world/:world_id"
   params:
     - name: world_id
-      value: e8cfaf9b-9ae9-4a08-9e36-225d79c30e13
+      value: 00000000-0000-0000-0000-000000000000
       type: path
   auth: inherit
 

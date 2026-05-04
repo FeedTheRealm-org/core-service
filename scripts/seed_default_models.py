@@ -12,7 +12,7 @@ from pathlib import Path
 import requests
 
 DEFAULT_WORLD_ID = "00000000-0000-0000-0000-000000000000"
-DEFAULT_MODELS_DIR = "DefaultModels"
+DEFAULT_MODELS_DIR = "Assets/DefaultModels"
 
 
 def usage() -> None:
