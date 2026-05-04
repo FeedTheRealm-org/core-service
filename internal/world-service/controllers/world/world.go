@@ -166,6 +166,7 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 		zoneMetadata = append(zoneMetadata, dtos.WorldZoneMetadata{
 			ZoneID:   zone.ID,
 			IsActive: zone.IsActive,
+			IsOnline: zone.IsOnline,
 		})
 	}
 
@@ -250,6 +251,7 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 			zoneMetadata = append(zoneMetadata, dtos.WorldZoneMetadata{
 				ZoneID:   zone.ID,
 				IsActive: zone.IsActive,
+				IsOnline: zone.IsOnline,
 			})
 		}
 
