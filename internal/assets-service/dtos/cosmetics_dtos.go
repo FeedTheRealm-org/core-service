@@ -18,7 +18,8 @@ type CosmeticResponse struct {
 
 type InternalCosmeticResponse struct {
 	CosmeticId    uuid.UUID `json:"cosmetic_id"`
-	CosmeticPrice float64   `json:"cosmetic_price"`
+	CosmeticPrice int64     `json:"cosmetic_price"`
+	CreatedBy     uuid.UUID `json:"created_by"`
 }
 
 // CosmeticCategoryListResponse returns a list of sprite categories.

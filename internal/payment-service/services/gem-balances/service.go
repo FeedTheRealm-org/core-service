@@ -16,7 +16,7 @@ type GemBalancesService interface {
 	CreateGemBalance(userId uuid.UUID) error
 
 	// UpdateBalance updates the balance for a specific user.
-	UpdateGemBalance(userId uuid.UUID, gems int) error
+	UpdateGemBalance(userId uuid.UUID, gems int64) error
 
 	// PurchaseCosmetic processes the purchase of a cosmetic item using gems.
 	PurchaseCosmetic(userId uuid.UUID, cosmeticId uuid.UUID) error

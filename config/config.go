@@ -21,14 +21,16 @@ const (
 )
 
 type ServerConfig struct {
-	Hostname        string
-	Port            int
-	ShutdownTimeout time.Duration
-	Environment     EnvironmentType
-	AdminEmail      string
-	AdminPassword   string
-	PublicIP        string
-	SubscriptionOn  bool
+	Hostname              string
+	Port                  int
+	ShutdownTimeout       time.Duration
+	Environment           EnvironmentType
+	AdminEmail            string
+	AdminPassword         string
+	PublicIP              string
+	SubscriptionOn        bool
+	CreatorRevenuePercent float64
+	DollarsGemsRatio      float64
 }
 
 type DatabaseConfig struct {
@@ -47,7 +49,7 @@ type AssetsConfig struct {
 type StripeItem struct {
 	ID     string  `yaml:"id"`
 	Name   string  `yaml:"name"`
-	Amount int     `yaml:"amount,omitempty"`
+	Amount int64   `yaml:"amount,omitempty"`
 	Price  float64 `yaml:"price"`
 }
 
@@ -68,7 +70,7 @@ type StripeConfig struct {
 	StripeZonePrice                  float64
 	StripeBillingAnchorDay           int
 	StripeBillingTimezone            string
-	StripeRealPrice                  bool
+	StripeRealPrices                 bool
 	GemPacks                         []StripeItem
 	Zones                            []StripeItem
 }
@@ -133,18 +135,20 @@ func CreateConfig() *Config {
 	}
 
 	serverConf := &ServerConfig{
-		Hostname:        getEnvOrDefaultString("SERVER_HOSTNAME", "localhost"),
-		Port:            getEnvOrDefaultInt("SERVER_PORT", 8000),
-		ShutdownTimeout: getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
-		Environment:     getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
-		AdminEmail:      getEnvOrDefaultString("SERVER_ADMIN_EMAIL", ""),
-		AdminPassword:   getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
-		PublicIP:        os.Getenv("PUBLIC_IP"),
-		SubscriptionOn:  getEnvOrDefaultBool("SUBSCRIPTION_ON", true),
+		Hostname:              getEnvOrDefaultString("SERVER_HOSTNAME", "localhost"),
+		Port:                  getEnvOrDefaultInt("SERVER_PORT", 8000),
+		ShutdownTimeout:       getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
+		Environment:           getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
+		AdminEmail:            getEnvOrDefaultString("SERVER_ADMIN_EMAIL", ""),
+		AdminPassword:         getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
+		PublicIP:              os.Getenv("PUBLIC_IP"),
+		SubscriptionOn:        getEnvOrDefaultBool("SUBSCRIPTION_ON", true),
+		CreatorRevenuePercent: getEnvOrDefaultFloat("CREATOR_REVENUE_PERCENT", 0.1),
+		DollarsGemsRatio:      getEnvOrDefaultFloat("DOLLARS_GEMS_RATIO", 0.25),
 	}
 
-	stripeRealPrice := getEnvOrDefaultBool("STRIPE_REAL_PRICES", true)
-	gemPacks, zones := parseStripePrices(stripeRealPrice)
+	stripeRealPrices := getEnvOrDefaultBool("STRIPE_REAL_PRICES", true)
+	gemPacks, zones := parseStripePrices(stripeRealPrices)
 
 	zonePrice := ZONES_DEFAULT_PRICE
 	switch len(zones) {
@@ -161,7 +165,7 @@ func CreateConfig() *Config {
 		StripeZonePrice:                  zonePrice,
 		StripeBillingAnchorDay:           getEnvOrDefaultInt("STRIPE_BILLING_ANCHOR_DAY", 5),
 		StripeBillingTimezone:            getEnvOrDefaultString("STRIPE_BILLING_TIMEZONE", "America/Argentina/Buenos_Aires"),
-		StripeRealPrice:                  stripeRealPrice,
+		StripeRealPrices:                 stripeRealPrices,
 		GemPacks:                         gemPacks,
 		Zones:                            zones,
 	}
@@ -220,6 +224,14 @@ func getEnvOrDefaultDuration(key string, defaultValue time.Duration) time.Durati
 
 func getEnvOrDefaultBool(key string, defaultValue bool) bool {
 	value, err := strconv.ParseBool(os.Getenv(key))
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
+func getEnvOrDefaultFloat(key string, defaultValue float64) float64 {
+	value, err := strconv.ParseFloat(os.Getenv(key), 64)
 	if err != nil {
 		return defaultValue
 	}
