@@ -60,9 +60,10 @@ func SetupEndpointsForServiceRegistry(orchestratorGroup *gin.RouterGroup, db *co
 	return nil
 }
 
-func CreateNomadService(conf *config.Config) (server_registry_service.ServerRegistryService, error) {
+func CreateNomadService(conf *config.Config, db *config.DB) (server_registry_service.ServerRegistryService, error) {
 	if conf.Server.Environment == config.Production {
-		return server_registry_service.NewServerRegistryService(conf)
+		worldRepo := world_repo.NewWorldRepository(conf, db)
+		return server_registry_service.NewServerRegistryService(conf, worldRepo)
 	} else {
 		return server_registry_service.NewStubServerRegistryService(), nil
 	}
@@ -72,7 +73,7 @@ func SetupWorldServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) 
 	worldGroup := r.Group("/world")
 	orchestratorGroup := worldGroup.Group("/orchestrator")
 
-	nomadService, err := CreateNomadService(conf)
+	nomadService, err := CreateNomadService(conf, db)
 	if err != nil {
 		return err
 	}
