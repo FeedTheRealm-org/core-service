@@ -26,11 +26,11 @@ def step_impl(context):
 
     # We need multipart/form-data for models
     files = {
-        "models[0].model_file": ("test.glb", b"dummy content", "model/gltf-binary")
+        "model_file": ("test.glb", b"dummy content", "model/gltf-binary")
     }
     data = {
-        "models[0].model_id": model_id,
-        "models[0].url": "http://example.com/test.glb",
+        "model_id": model_id,
+        "url": "http://example.com/test.glb",
     }
 
     context.response = requests.put(
@@ -63,11 +63,11 @@ def step_search_world_models(context):
         model_id = str(uuid.uuid4())
         context.last_model_id = model_id
         files = {
-            "models[0].model_file": ("test.glb", b"dummy content", "model/gltf-binary")
+            "model_file": ("test.glb", b"dummy content", "model/gltf-binary")
         }
         data = {
-            "models[0].model_id": model_id,
-            "models[0].url": "http://example.com/test.glb",
+            "model_id": model_id,
+            "url": "http://example.com/test.glb",
         }
         requests.put(
             f"{BASE_URL}/assets/models/world/{world_id}",
