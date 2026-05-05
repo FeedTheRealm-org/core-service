@@ -1,4 +1,4 @@
-package sprites
+package models
 
 import (
 	"fmt"

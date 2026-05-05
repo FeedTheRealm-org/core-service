@@ -24,7 +24,16 @@ func CheckWorldOwnership(c *gin.Context, port int, worldId uuid.UUID, userId uui
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.NewBadRequestError("invalid world_id or world not found")
+		switch {
+		case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
+			return errors.NewUnauthorizedError("unauthorized to access world")
+		case resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusNotFound:
+			return errors.NewBadRequestError("invalid world_id or world not found")
+		case resp.StatusCode >= http.StatusInternalServerError:
+			return errors.NewInternalServerError("failed to check world ownership")
+		default:
+			return errors.NewInternalServerError("unexpected response from world service")
+		}
 	}
 
 	var envelope struct {

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"mime/multipart"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
@@ -14,6 +16,14 @@ import (
 	"github.com/google/uuid"
 )
 
+var safeFilename = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
+
+func sanitizeFilename(name string) string {
+	name = strings.TrimSpace(name)
+	name = safeFilename.ReplaceAllString(name, "_")
+	return name
+}
+
 type modelsService struct {
 	conf *config.Config
 
@@ -21,7 +31,6 @@ type modelsService struct {
 	bucketRepo       bucket.BucketRepository
 }
 
-// NewModelsService creates a new instance of ModelsService.
 func NewModelsService(conf *config.Config, modelsRepository repo.ModelsRepository, bucketRepo bucket.BucketRepository) ModelsService {
 	return &modelsService{
 		conf:             conf,
@@ -35,9 +44,11 @@ func (ms *modelsService) UploadModel(modelRequest dtos.ModelRequest) (*models.Mo
 		return nil, fmt.Errorf("model_id is required")
 	}
 
-	if filepath.Ext(modelRequest.ModelFile.Filename) != ".glb" {
+	filename := sanitizeFilename(modelRequest.ModelFile.Filename)
+	if filepath.Ext(filename) != ".glb" {
 		return nil, fmt.Errorf("model file must be a .glb file")
 	}
+	modelRequest.ModelFile.Filename = filename
 
 	url, err := ms.uploadToBucket(modelRequest.WorldID, modelRequest.ModelFile, modelRequest.Id)
 	if err != nil {
@@ -54,7 +65,7 @@ func (ms *modelsService) UploadModel(modelRequest dtos.ModelRequest) (*models.Mo
 
 	publishedModel, err := ms.modelsRepository.UploadModel(model)
 	if err != nil {
-		filePath := fmt.Sprintf("worlds/%s/models/%s/%s", modelRequest.WorldID, model.Id, modelRequest.ModelFile.Filename)
+		filePath := fmt.Sprintf("worlds/%s/models/%s/%s", modelRequest.WorldID, model.Id, filename)
 		_ = ms.bucketRepo.DeleteFile(filePath)
 		return nil, fmt.Errorf("failed publishing model: %w", err)
 	}
@@ -76,7 +87,7 @@ func (ms *modelsService) GetModelsByWorld(worldId uuid.UUID) ([]models.Model, er
 func (ms *modelsService) uploadToBucket(worldId uuid.UUID, modelFile *multipart.FileHeader, modelId uuid.UUID) (string, error) {
 	file, err := modelFile.Open()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to open model file: %w", err)
 	}
 	defer file.Close()
 
