@@ -111,15 +111,15 @@ func (mc *modelsController) UploadModel(c *gin.Context) {
 		}
 	}
 
-	modelID, err := parseUUIDForm(c, "model_id")
-	if err != nil {
-		_ = c.Error(err)
-		return
-	}
-
 	modelFile, err := c.FormFile("model_file")
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("model_file is required"))
+		return
+	}
+
+	modelID, err := parseUUIDForm(c, "model_id")
+	if err != nil {
+		_ = c.Error(err)
 		return
 	}
 

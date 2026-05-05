@@ -43,12 +43,12 @@ def step_impl(context):
 
 @then("the models should be published correctly")
 def step_impl(context):
-    assert context.response.status_code == 201, (
-        f"Expected 201, got {context.response.status_code}: {context.response.text}"
-    )
+    assert (
+        context.response.status_code == 201
+    ), f"Expected 201, got {context.response.status_code}: {context.response.text}"
     data = context.response.json()
-    models_list = data.get("data", {}).get("models", [])
-    assert len(models_list) > 0, f"Expected models list to not be empty, got {data}"
+    model_id = data.get("data", {}).get("model_id")
+    assert model_id is not None, f"Expected model_id in response, got {data}"
 
 
 @when("I search for the world models by the world ID")
