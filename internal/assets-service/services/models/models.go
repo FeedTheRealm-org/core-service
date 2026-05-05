@@ -89,7 +89,11 @@ func (ms *modelsService) uploadToBucket(worldId uuid.UUID, modelFile *multipart.
 	if err != nil {
 		return "", fmt.Errorf("failed to open model file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			logger.Logger.Errorf("error closing file: %v", err)
+		}
+	}()
 
 	filePath := fmt.Sprintf("worlds/%s/models/%s/%s", worldId, modelId, modelFile.Filename)
 	if err := ms.bucketRepo.UploadFile(filePath, modelFile.Header.Get("Content-Type"), file); err != nil {
