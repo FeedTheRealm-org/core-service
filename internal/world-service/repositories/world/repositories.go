@@ -25,6 +25,9 @@ type WorldRepository interface {
 	// SetWorldZoneActiveState updates the active state for a specific zone.
 	SetWorldZoneActiveState(worldID uuid.UUID, zoneID int, isActive bool) error
 
+	// SetWorldZoneOnlineState updates the online state for a specific zone.
+	SetWorldZoneOnlineState(worldID uuid.UUID, zoneID int, isOnline bool) error
+
 	// GetWorldZoneActiveState retrieves only active state for a specific zone.
 	GetWorldZoneActiveState(worldID uuid.UUID, zoneID int) (bool, error)
 

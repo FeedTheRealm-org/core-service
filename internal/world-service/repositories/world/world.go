@@ -126,6 +126,20 @@ func (r *worldRepository) SetWorldZoneActiveState(worldID uuid.UUID, zoneID int,
 	return nil
 }
 
+func (r *worldRepository) SetWorldZoneOnlineState(worldID uuid.UUID, zoneID int, isOnline bool) error {
+	result := r.db.Conn.Model(&models.WorldZone{}).
+		Where("world_id = ? AND id = ?", worldID, zoneID).
+		Update("is_online", isOnline)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}
+
 func (r *worldRepository) GetWorldZoneActiveState(worldID uuid.UUID, zoneID int) (bool, error) {
 	var worldZone models.WorldZone
 	if err := r.db.Conn.Select("is_active").Where("world_id = ? AND id = ?", worldID, zoneID).First(&worldZone).Error; err != nil {
