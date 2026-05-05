@@ -87,6 +87,7 @@ func (mc *materialsController) GetMaterialsList(c *gin.Context) {
 	for idx, material := range materialsList {
 		res[idx] = dtos.MaterialResponse{
 			ID:        material.ID,
+			Name:      material.Name,
 			URL:       material.URL,
 			WorldID:   material.WorldID,
 			CreatedAt: material.CreatedAt.String(),
@@ -135,6 +136,7 @@ func (mc *materialsController) GetMaterialByID(c *gin.Context) {
 
 	res := &dtos.MaterialResponse{
 		ID:        material.ID,
+		Name:      material.Name,
 		URL:       material.URL,
 		WorldID:   material.WorldID,
 		CreatedAt: material.CreatedAt.String(),
@@ -195,13 +197,20 @@ func (mc *materialsController) UploadMaterials(c *gin.Context) {
 			return
 		}
 
+		nameKey := fmt.Sprintf("names[%d]", i)
+		name := c.PostForm(nameKey)
+		if name == "" {
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("missing name for ids[%d]", i)))
+			return
+		}
+
 		file, err := c.FormFile(fmt.Sprintf("materials[%d]", i))
 		if err != nil {
 			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("Missing material file for ids[%d]", i)))
 			return
 		}
 
-		material, err := mc.service.UploadMaterial(worldId, id, file, userId)
+		material, err := mc.service.UploadMaterial(worldId, id, name, file, userId)
 		if err != nil {
 			_ = c.Error(err)
 			return
@@ -209,6 +218,7 @@ func (mc *materialsController) UploadMaterials(c *gin.Context) {
 
 		responseMaterials = append(responseMaterials, dtos.MaterialResponse{
 			ID:        material.ID,
+			Name:      material.Name,
 			URL:       material.URL,
 			WorldID:   material.WorldID,
 			CreatedAt: material.CreatedAt.String(),

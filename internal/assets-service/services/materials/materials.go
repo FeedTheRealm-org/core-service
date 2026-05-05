@@ -29,7 +29,7 @@ func NewMaterialsService(conf *config.Config, repository materials.MaterialsRepo
 	}
 }
 
-func (ms *materialsService) UploadMaterial(worldID uuid.UUID, id uuid.UUID, fileHeader *multipart.FileHeader, userId uuid.UUID) (*models.Material, error) {
+func (ms *materialsService) UploadMaterial(worldID uuid.UUID, id uuid.UUID, name string, fileHeader *multipart.FileHeader, userId uuid.UUID) (*models.Material, error) {
 	file, err := fileHeader.Open()
 	if err != nil {
 		return nil, err
@@ -58,6 +58,7 @@ func (ms *materialsService) UploadMaterial(worldID uuid.UUID, id uuid.UUID, file
 
 	material := &models.Material{
 		ID:        id,
+		Name:      name,
 		URL:       fmt.Sprintf("/%s", filePath),
 		WorldID:   worldID,
 		CreatedBy: userId,

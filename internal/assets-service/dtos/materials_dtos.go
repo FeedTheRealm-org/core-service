@@ -14,6 +14,7 @@ type PutMaterialRequest struct {
 
 type MaterialResponse struct {
 	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
 	WorldID   uuid.UUID `json:"world_id"`
 	URL       string    `json:"url"`
 	CreatedAt string    `json:"created_at"`
