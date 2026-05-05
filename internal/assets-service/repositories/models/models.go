@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/FeedTheRealm-org/core-service/config"
-	assetModels "github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
+	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 )
@@ -20,7 +20,7 @@ func NewModelsRepository(conf *config.Config, db *config.DB) ModelsRepository {
 	}
 }
 
-func (mr *modelsRepository) UploadModel(model assetModels.Model) (*assetModels.Model, error) {
+func (mr *modelsRepository) UploadModel(model models.Model) (*models.Model, error) {
 	logger.Logger.Infof("REPO: Uploading model %s to the database", model.Id)
 
 	result := mr.db.Conn.Save(&model)
@@ -33,8 +33,8 @@ func (mr *modelsRepository) UploadModel(model assetModels.Model) (*assetModels.M
 	return &model, nil
 }
 
-func (mr *modelsRepository) GetModelsByWorld(worldId uuid.UUID) ([]assetModels.Model, error) {
-	var modelsList []assetModels.Model
+func (mr *modelsRepository) GetModelsByWorld(worldId uuid.UUID) ([]models.Model, error) {
+	var modelsList []models.Model
 	if err := mr.db.Conn.Where("world_id = ?", worldId).Find(&modelsList).Error; err != nil {
 		return nil, err
 	}
