@@ -7,6 +7,6 @@ import (
 
 // ModelsRepository defines the interface for models-related database operations.
 type ModelsRepository interface {
-	UploadModels(models []models.Model) ([]models.Model, error)
+	UploadModel(model models.Model) (*models.Model, error)
 	GetModelsByWorld(worldId uuid.UUID) ([]models.Model, error)
 }

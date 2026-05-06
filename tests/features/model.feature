@@ -23,4 +23,4 @@ Feature: World Models Management
   Scenario: AC-4 Cannot publish without models
     Given I published a world with the name "fantasy.land"
     When I attempt to publish models without models
-    Then I get the error "no models uploaded"
+    Then I get the error "model_file is required"
