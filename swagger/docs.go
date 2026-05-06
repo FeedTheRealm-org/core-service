@@ -787,72 +787,13 @@ const docTemplate = `{
             }
         },
         "/assets/models/world/{world_id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Retrieve the metadata models available in a given world id.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets-service"
-                ],
-                "summary": "Get 3D models list",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "World UUID",
-                        "name": "world_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ModelsListResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "put": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Submit multiple custom models bounded to a specific world.",
+                "description": "Submit a single custom model bounded to a specific world.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -862,7 +803,7 @@ const docTemplate = `{
                 "tags": [
                     "assets-service"
                 ],
-                "summary": "Upload batch 3D models",
+                "summary": "Upload a 3D model",
                 "parameters": [
                     {
                         "type": "string",
@@ -872,9 +813,16 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "Model UUID",
+                        "name": "model_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
                         "type": "file",
-                        "description": "Multipart upload array for model bindings",
-                        "name": "models",
+                        "description": "Model GLB file",
+                        "name": "model_file",
                         "in": "formData",
                         "required": true
                     }
@@ -883,7 +831,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ModelsListResponse"
+                            "$ref": "#/definitions/dtos.ModelResponse"
                         }
                     },
                     "400": {
@@ -3738,6 +3686,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "refresh_token": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 }
@@ -3750,23 +3701,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.ModelsListResponse": {
-            "type": "object",
-            "required": [
-                "world_id"
-            ],
-            "properties": {
-                "models": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.ModelResponse"
-                    }
-                },
-                "world_id": {
                     "type": "string"
                 }
             }
