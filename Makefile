@@ -7,6 +7,7 @@ PROD_SERVER := https://core.feedtherealm.world
 SEED_COSMETICS_SCRIPT := ./scripts/seed_initial_cosmetics.py
 SEED_BOTS_SCRIPT := ./scripts/seed_bot_accounts.py
 SEED_DEFAULT_MODELS_SCRIPT := ./scripts/seed_default_models.py
+SEED_DEFAULT_MATERIALS_SCRIPT := ./scripts/seed_default_materials.py
 
 help: # Show this help message
 	@awk -F'#' '/^[^[:space:]].*:/ && !/^\.PHONY/ { \
@@ -84,6 +85,7 @@ endif
 	$(SEED_COSMETICS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH) && \
 	$(SEED_BOTS_SCRIPT) $(LOCAL_SERVER) && \
 	$(SEED_DEFAULT_MODELS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH)
+	$(SEED_DEFAULT_MATERIALS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH)
 	$(MAKE) down
 .PHONY: seed
 
@@ -97,6 +99,7 @@ endif
 	$(SEED_COSMETICS_SCRIPT) $(PROD_SERVER) $(ASSETS_BASE_PATH)
 	$(SEED_BOTS_SCRIPT) $(PROD_SERVER)
 	$(SEED_DEFAULT_MODELS_SCRIPT) $(PROD_SERVER) $(ASSETS_BASE_PATH)
+	$(SEED_DEFAULT_MATERIALS_SCRIPT) $(PROD_SERVER) $(ASSETS_BASE_PATH)
 .PHONY: seed-prod
 
 swagger: # Generate Swagger documentation
