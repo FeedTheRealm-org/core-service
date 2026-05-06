@@ -10,4 +10,5 @@ type WorldZone struct {
 	WorldID  uuid.UUID      `gorm:"type:uuid;not null;primaryKey"`
 	ZoneData datatypes.JSON `gorm:"type:jsonb;not null"`
 	IsActive bool           `gorm:"not null;default:false"`
+	IsOnline bool           `gorm:"not null;default:false"`
 }

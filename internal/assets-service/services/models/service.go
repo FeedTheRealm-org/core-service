@@ -7,6 +7,6 @@ import (
 )
 
 type ModelsService interface {
-	UploadModels(modelsRequest dtos.BatchModelsRequest) ([]models.Model, error)
+	UploadModel(modelRequest dtos.ModelRequest) (*models.Model, error)
 	GetModelsByWorld(worldId uuid.UUID) ([]models.Model, error)
 }

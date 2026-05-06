@@ -4250,6 +4250,9 @@ const docTemplate = `{
                 "is_active": {
                     "type": "boolean"
                 },
+                "is_online": {
+                    "type": "boolean"
+                },
                 "zone_id": {
                     "type": "integer"
                 }
@@ -4259,6 +4262,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "is_active": {
+                    "type": "boolean"
+                },
+                "is_online": {
                     "type": "boolean"
                 },
                 "world_id": {

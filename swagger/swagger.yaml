@@ -448,12 +448,16 @@ definitions:
     properties:
       is_active:
         type: boolean
+      is_online:
+        type: boolean
       zone_id:
         type: integer
     type: object
   dtos.WorldZoneResponse:
     properties:
       is_active:
+        type: boolean
+      is_online:
         type: boolean
       world_id:
         type: string

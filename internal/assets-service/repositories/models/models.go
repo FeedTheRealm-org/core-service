@@ -20,21 +20,17 @@ func NewModelsRepository(conf *config.Config, db *config.DB) ModelsRepository {
 	}
 }
 
-func (mr *modelsRepository) UploadModels(modelsList []assetModels.Model) ([]assetModels.Model, error) {
+func (mr *modelsRepository) UploadModel(model assetModels.Model) (*assetModels.Model, error) {
+	logger.Logger.Infof("REPO: Uploading model %s to the database", model.Id)
 
-	logger.Logger.Infof("REPO: Uploading %d models to the database", len(modelsList))
-
-	for _, model := range modelsList {
-		result := mr.db.Conn.Save(&model)
-		if result.Error != nil {
-			logger.Logger.Errorf("REPO: Failed to upload model %s: %v", model.Id, result.Error)
-			return nil, result.Error
-		}
-		logger.Logger.Infof("REPO: Model uploaded (rows affected: %d): %s", result.RowsAffected, model.ToString())
+	result := mr.db.Conn.Save(&model)
+	if result.Error != nil {
+		logger.Logger.Errorf("REPO: Failed to upload model %s: %v", model.Id, result.Error)
+		return nil, result.Error
 	}
 
-	logger.Logger.Infof("REPO: Published %d models to the db", len(modelsList))
-	return modelsList, nil
+	logger.Logger.Infof("REPO: Model uploaded (rows affected: %d): %s", result.RowsAffected, model.ToString())
+	return &model, nil
 }
 
 func (mr *modelsRepository) GetModelsByWorld(worldId uuid.UUID) ([]assetModels.Model, error) {

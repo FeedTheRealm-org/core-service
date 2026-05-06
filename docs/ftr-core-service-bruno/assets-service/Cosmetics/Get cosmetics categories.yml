@@ -1,13 +1,13 @@
 info:
-  name: Get item categories
+  name: Get cosmetics categories
   type: http
-  seq: 9
+  seq: 1
   tags:
     - assets-service
 
 http:
   method: GET
-  url: "{{baseUrl}}/assets/items/categories"
+  url: "{{baseUrl}}/assets/cosmetics/categories"
   auth: inherit
 
 settings:
@@ -20,7 +20,7 @@ examples:
   - name: 200 Response
     description: OK
     request:
-      url: "{{baseUrl}}/assets/items/categories"
+      url: "{{baseUrl}}/assets/cosmetics/categories"
       method: GET
     response:
       status: 200
@@ -31,7 +31,7 @@ examples:
   - name: 401 Response
     description: Unauthorized
     request:
-      url: "{{baseUrl}}/assets/items/categories"
+      url: "{{baseUrl}}/assets/cosmetics/categories"
       method: GET
     response:
       status: 401
