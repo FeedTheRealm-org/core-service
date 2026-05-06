@@ -16,7 +16,7 @@ import (
 // TestJWTAuth_NoAuthHeader tests the JWT authentication middleware
 // when no Authorization header is provided.
 func TestJWTAuth_NoAuthHeader(t *testing.T) {
-	r := setupRouterJWT("testsecret", "")
+	r := setupRouterJWT("testsecret", "testsecret", time.Minute, time.Hour, "")
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	w := httptest.NewRecorder()
@@ -29,9 +29,10 @@ func TestJWTAuth_NoAuthHeader(t *testing.T) {
 // TestJWTAuth_ValidToken tests the JWT authentication middleware
 // when a valid Authorization header is provided.
 func TestJWTAuth_ValidToken(t *testing.T) {
-	secret := "testsecret"
-	token := createTestToken(secret, "12345", time.Now().Add(time.Hour))
-	r := setupRouterJWT(secret, "")
+	accessToken := "testsecret"
+	refreshToken := "testsecret"
+	token := createTestToken(accessToken, "12345", time.Now().Add(time.Hour))
+	r := setupRouterJWT(accessToken, refreshToken, time.Minute, time.Hour, "")
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -45,9 +46,10 @@ func TestJWTAuth_ValidToken(t *testing.T) {
 // TestJWTAuth_ExpiredToken tests the JWT authentication middleware
 // when an expired token is provided in the Authorization header.
 func TestJWTAuth_ExpiredToken(t *testing.T) {
-	secret := "testsecret"
-	token := createTestToken(secret, "expired", time.Now().Add(-time.Hour))
-	r := setupRouterJWT(secret, "")
+	accessToken := "testsecret"
+	refreshToken := "testsecret"
+	token := createTestToken(accessToken, "expired", time.Now().Add(-time.Hour))
+	r := setupRouterJWT(accessToken, refreshToken, time.Minute, time.Hour, "")
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -72,9 +74,9 @@ func createTestToken(secret, userID string, expiration time.Time) string {
 }
 
 // setupRouterJWT initializes a Gin router with the JWT authentication middleware.
-func setupRouterJWT(secret string, fixedToken string) *gin.Engine {
+func setupRouterJWT(accessTokenSecret, refreshTokenSecret string, accessTokenDuration, refreshTokenDuration time.Duration, fixedToken string) *gin.Engine {
 	gin.SetMode(gin.TestMode)
-	jwtManager := session.NewJWTManager(secret, time.Hour)
+	jwtManager := session.NewJWTManager(accessTokenSecret, refreshTokenSecret, accessTokenDuration, refreshTokenDuration)
 	logger.InitLogger(false)
 
 	r := gin.New()
@@ -98,9 +100,10 @@ func setupRouterJWT(secret string, fixedToken string) *gin.Engine {
 // TestJWTAuth_FixedToken verifies that when a fixed server token is configured
 // the middleware treats it as a valid session without attempting JWT parsing.
 func TestJWTAuth_FixedToken(t *testing.T) {
-	secret := "testsecret"
+	accessToken := "testsecret"
+	refreshToken := "testsecret"
 	fixedToken := "fixed-server-token"
-	r := setupRouterJWT(secret, fixedToken)
+	r := setupRouterJWT(accessToken, refreshToken, time.Minute, time.Hour, fixedToken)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.Header.Set("Authorization", "Bearer "+fixedToken)

@@ -180,3 +180,10 @@ func (ar *accountRepository) RefreshVerificationCode(user *models.User, verifica
 
 	return nil
 }
+
+func (ar *accountRepository) UpdateRefreshTokenUpdatedAt(id uuid.UUID, updatedAt time.Time) error {
+	if err := ar.db.Conn.Model(&models.User{}).Where("id = ?", id).Update("refresh_token_updated_at", updatedAt).Error; err != nil {
+		return &DatabaseError{message: err.Error()}
+	}
+	return nil
+}

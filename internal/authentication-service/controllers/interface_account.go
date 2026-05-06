@@ -8,4 +8,5 @@ type AccountController interface {
 	CheckSessionExpiration(c *gin.Context)
 	VerifyAccount(c *gin.Context)
 	RefreshVerification(c *gin.Context)
+	RefreshToken(c *gin.Context)
 }

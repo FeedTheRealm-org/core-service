@@ -51,11 +51,11 @@ func (ac *AdminLoginController) AdminLoginHandler(c *gin.Context) {
 	email := c.PostForm("email")
 	password := c.PostForm("password")
 
-	_, token, err := ac.accountService.LoginAccount(email, password, false)
+	_, accessToken, _, err := ac.accountService.LoginAccount(email, password, false)
 	if err != nil {
 		_ = c.Error(err)
 	}
 
-	c.SetCookie("jwt", token, 3600, "/swagger", "", true, true)
+	c.SetCookie("jwt", accessToken, 3600, "/swagger", "", true, true)
 	c.Redirect(http.StatusFound, "/swagger/index.html")
 }

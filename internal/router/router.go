@@ -14,7 +14,7 @@ import (
 )
 
 func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
-	jwtManager := session.NewJWTManager(conf.SessionTokenSecretKey, conf.SessionTokenDuration)
+	jwtManager := session.NewJWTManager(conf.SessionAccessTokenSecretKey, conf.SessionRefreshTokenSecretKey, conf.SessionAccessTokenDuration, conf.SessionRefreshTokenDuration)
 
 	// Setup global middleware
 	r.Use(middleware.ErrorHandlerMiddleware())
