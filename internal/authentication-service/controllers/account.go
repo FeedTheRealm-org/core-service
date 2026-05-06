@@ -355,6 +355,19 @@ func (ec *accountController) RefreshVerification(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
+// @Summary      Refresh access token
+// @Description  Validates the provided refresh token and issues a new access token and refresh token pair.
+// @Tags         authentication-service
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                        true  "Bearer <refresh_token>"
+// @Param        request        body      dtos.RefreshTokenRequestDTO   true  "Email details"
+// @Success      200            {object}  dtos.RefreshTokenResponseDTO
+// @Failure      400            {object}  dtos.ErrorResponse
+// @Failure      401            {object}  dtos.ErrorResponse
+// @Failure      404            {object}  dtos.ErrorResponse
+// @Failure      500            {object}  dtos.ErrorResponse
+// @Router       /auth/refresh-token [post]
 func (ec *accountController) RefreshToken(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
