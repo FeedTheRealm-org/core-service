@@ -1003,6 +1003,10 @@ paths:
         in: query
         name: world_id
         type: string
+      - description: Material type filter (0 for GroundMaterial, 1 for SkyBoxMaterial)
+        in: query
+        name: material_type
+        type: integer
       - default: 0
         description: Pagination offset
         in: query
@@ -1118,6 +1122,14 @@ paths:
         name: materials
         required: true
         type: file
+      - collectionFormat: csv
+        description: Array of material types
+        in: formData
+        items:
+          type: integer
+        name: material_types
+        required: true
+        type: array
       produces:
       - application/json
       responses:

@@ -813,6 +813,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
+                        "description": "Material type filter (0 for GroundMaterial, 1 for SkyBoxMaterial)",
+                        "name": "material_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
                         "default": 0,
                         "description": "Pagination offset",
                         "name": "offset",
@@ -892,6 +898,17 @@ const docTemplate = `{
                         "type": "file",
                         "description": "Muti-part chunk array of files",
                         "name": "materials",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Array of material types",
+                        "name": "material_types",
                         "in": "formData",
                         "required": true
                     }
