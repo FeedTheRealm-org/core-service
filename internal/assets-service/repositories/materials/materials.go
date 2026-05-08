@@ -26,13 +26,13 @@ func (mr *materialsRepository) UpsertMaterial(material *models.Material) error {
 	if err := mr.db.Conn.
 		Clauses(
 			clause.OnConflict{
-				Columns:   []clause.Column{{Name: "id"}},
+				Columns:   []clause.Column{{Name: "id"}, {Name: "world_id"}},
 				DoUpdates: clause.AssignmentColumns([]string{"url", "updated_at"}),
 			},
 		).Create(material).Error; err != nil {
 		return err
 	}
-	return mr.db.Conn.Where("id = ?", material.ID).First(material).Error
+	return mr.db.Conn.Where("id = ? AND world_id = ?", material.ID, material.WorldID).First(material).Error
 }
 
 func (mr *materialsRepository) GetMaterialByID(id uuid.UUID) (*models.Material, error) {

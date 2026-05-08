@@ -89,6 +89,22 @@ endif
 	$(MAKE) down
 .PHONY: seed
 
+seed-no-bots: # Seed the core-service local resources without bot accounts
+ifndef ASSETS_BASE_PATH
+	$(error ASSETS_BASE_PATH is required. Usage: ASSETS_BASE_PATH=xxx make seed)
+endif
+	mkdir -p local_buckets
+	chmod -R 777 local_buckets
+	docker compose -f $(COMPOSE_DEV) down -v --remove-orphans
+	docker compose -f $(COMPOSE_DEV) --profile prod up --build -d --remove-orphans
+	until curl -s -f http://localhost:8000/health > /dev/null; do sleep 2; done
+	export JWT_TOKEN=$$(curl -X POST $(LOCAL_SERVER)/auth/login -H "Content-Type: application/json" -d '{"email": "admin@admin.admin", "password": "admin123"}'  | jq -r '.data.access_token'); \
+	$(SEED_COSMETICS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH) && \
+	$(SEED_DEFAULT_MODELS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH)
+	$(SEED_DEFAULT_MATERIALS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH)
+	$(MAKE) down
+.PHONY: seed-no-bots
+
 seed-prod: # Seed the core-service production resources
 ifndef ASSETS_BASE_PATH
 	$(error ASSETS_BASE_PATH is required. Usage: export ASSETS_BASE_PATH=xxx, then make seed-prod)

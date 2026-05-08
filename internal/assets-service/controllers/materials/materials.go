@@ -67,7 +67,7 @@ func (mc *materialsController) GetMaterialsList(c *gin.Context) {
 		return
 	}
 
-	limit, err := strconv.Atoi(c.DefaultQuery("limit", "24"))
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "200"))
 	if err != nil || limit <= 0 {
 		_ = c.Error(errors.NewBadRequestError("limit must be a positive integer"))
 		return

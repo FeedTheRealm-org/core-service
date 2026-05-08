@@ -8,8 +8,8 @@ import (
 
 type Material struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	WorldID   uuid.UUID `gorm:"type:uuid;primaryKey;index:idx_materials_world_id" json:"world_id"`
 	Name      string    `gorm:"type:text;not null" json:"name"`
-	WorldID   uuid.UUID `gorm:"type:uuid;not null;index:idx_materials_world_id" json:"world_id"`
 	URL       string    `gorm:"type:text;not null" json:"url"`
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
