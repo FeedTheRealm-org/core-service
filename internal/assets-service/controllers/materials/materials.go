@@ -8,7 +8,6 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/dtos"
 	assets_errors "github.com/FeedTheRealm-org/core-service/internal/assets-service/errors"
-	"github.com/FeedTheRealm-org/core-service/internal/assets-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/services/materials"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
@@ -37,7 +36,6 @@ func NewMaterialsController(conf *config.Config, service materials.MaterialsServ
 // @Accept       json
 // @Produce      json
 // @Param        world_id query string false "World UUID"
-// @Param        material_type query int false "Material type filter (0 for GroundMaterial, 1 for SkyBoxMaterial)"
 // @Param        offset query int false "Pagination offset" default(0)
 // @Param        limit query int false "Pagination limit" default(24)
 // @Success      200  {array}   dtos.MaterialResponse
@@ -63,22 +61,6 @@ func (mc *materialsController) GetMaterialsList(c *gin.Context) {
 		worldId = uuid.Nil
 	}
 
-	var materialType models.MaterialType
-	materialTypeStr := c.Query("material_type")
-	if materialTypeStr != "" {
-		materialTypeInt, err := strconv.Atoi(materialTypeStr)
-		if err != nil {
-			_ = c.Error(errors.NewBadRequestError("invalid material_type: " + err.Error()))
-			return
-		}
-
-		materialType, err = models.ParseMaterialType(materialTypeInt)
-		if err != nil {
-			_ = c.Error(errors.NewBadRequestError("invalid material_type: " + err.Error()))
-			return
-		}
-	}
-
 	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
 	if err != nil || offset < 0 {
 		_ = c.Error(errors.NewBadRequestError("offset must be a non-negative integer"))
@@ -93,29 +75,6 @@ func (mc *materialsController) GetMaterialsList(c *gin.Context) {
 
 	if limit > 200 {
 		limit = 200
-	}
-
-	if materialTypeStr != "" {
-		materialsList, err := mc.service.GetMaterialsListByWorldAndType(worldId, materialType, offset, limit)
-		if err != nil {
-			_ = c.Error(err)
-			return
-		}
-
-		res := make([]dtos.MaterialResponse, len(materialsList))
-		for idx, material := range materialsList {
-			res[idx] = dtos.MaterialResponse{
-				ID:        material.ID,
-				Name:      material.Name,
-				URL:       material.URL,
-				WorldID:   material.WorldID,
-				CreatedAt: material.CreatedAt.String(),
-				UpdatedAt: material.UpdatedAt.String(),
-			}
-		}
-
-		common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
-		return
 	}
 
 	materialsList, err := mc.service.GetMaterialsListByWorld(worldId, offset, limit)
@@ -197,7 +156,6 @@ func (mc *materialsController) GetMaterialByID(c *gin.Context) {
 // @Param        world_id path string true "World UUID"
 // @Param        ids formData []string true "Array of exact material IDs"
 // @Param        materials formData file true "Muti-part chunk array of files"
-// @Param        material_types formData []int true "Array of material types"
 // @Success      201  {array}   dtos.MaterialResponse
 // @Failure      400  {object} dtos.ErrorResponse
 // @Failure      401  {object} dtos.ErrorResponse
@@ -239,24 +197,6 @@ func (mc *materialsController) UploadMaterials(c *gin.Context) {
 			return
 		}
 
-		materialTypeStr := c.PostForm(fmt.Sprintf("material_types[%d]", i))
-		if materialTypeStr == "" {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("missing material_type for ids[%d]", i)))
-			return
-		}
-
-		materialTypeInt, err := strconv.Atoi(materialTypeStr)
-		if err != nil {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid material_type for ids[%d]: %s", i, err.Error())))
-			return
-		}
-
-		materialType, err := models.ParseMaterialType(materialTypeInt)
-		if err != nil {
-			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("invalid material_type for ids[%d]: %s", i, err.Error())))
-			return
-		}
-
 		nameKey := fmt.Sprintf("names[%d]", i)
 		name := c.PostForm(nameKey)
 		if name == "" {
@@ -270,7 +210,7 @@ func (mc *materialsController) UploadMaterials(c *gin.Context) {
 			return
 		}
 
-		material, err := mc.service.UploadMaterial(worldId, id, materialType, name, file, userId)
+		material, err := mc.service.UploadMaterial(worldId, id, name, file, userId)
 		if err != nil {
 			_ = c.Error(err)
 			return

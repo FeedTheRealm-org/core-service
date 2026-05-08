@@ -61,12 +61,11 @@ func (mr *materialsRepository) GetMaterialsListByWorld(worldID uuid.UUID, offset
 	return materials, nil
 }
 
-func (mr *materialsRepository) GetMaterialsListByWorldAndType(worldID uuid.UUID, materialType models.MaterialType, offset int, limit int) ([]*models.Material, error) {
+func (mr *materialsRepository) GetMaterialsListByWorldAndType(worldID uuid.UUID, offset int, limit int) ([]*models.Material, error) {
 	var materials []*models.Material
 
 	if err := mr.db.Conn.
 		Where("world_id = ? OR world_id = ?", worldID, uuid.Nil).
-		Where("material_type = ?", materialType).
 		Order("materials.world_id ASC, materials.id ASC").
 		Offset(offset).
 		Limit(limit).
