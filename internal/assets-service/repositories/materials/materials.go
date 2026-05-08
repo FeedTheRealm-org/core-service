@@ -61,6 +61,22 @@ func (mr *materialsRepository) GetMaterialsListByWorld(worldID uuid.UUID, offset
 	return materials, nil
 }
 
+func (mr *materialsRepository) GetMaterialsListByWorldAndType(worldID uuid.UUID, materialType models.MaterialType, offset int, limit int) ([]*models.Material, error) {
+	var materials []*models.Material
+
+	if err := mr.db.Conn.
+		Where("world_id = ? OR world_id = ?", worldID, uuid.Nil).
+		Where("material_type = ?", materialType).
+		Order("materials.world_id ASC, materials.id ASC").
+		Offset(offset).
+		Limit(limit).
+		Find(&materials).Error; err != nil {
+		return nil, err
+	}
+
+	return materials, nil
+}
+
 func (mr *materialsRepository) DeleteMaterial(material *models.Material) error {
 	if err := mr.db.Conn.Delete(&models.Material{}, material.ID).Error; err != nil {
 		return err

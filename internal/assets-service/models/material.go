@@ -1,9 +1,17 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
+)
+
+type MaterialType int
+
+const (
+	GroundMaterial MaterialType = iota
+	SkyBoxMaterial
 )
 
 type Material struct {
@@ -18,4 +26,15 @@ type Material struct {
 
 func (Material) TableName() string {
 	return "materials"
+}
+
+func ParseMaterialType(i int) (MaterialType, error) {
+	switch i {
+	case 0:
+		return GroundMaterial, nil
+	case 1:
+		return SkyBoxMaterial, nil
+	default:
+		return 0, errors.New("invalid material type: " + string(rune(i)))
+	}
 }

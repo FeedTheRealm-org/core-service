@@ -29,7 +29,7 @@ func NewMaterialsService(conf *config.Config, repository materials.MaterialsRepo
 	}
 }
 
-func (ms *materialsService) UploadMaterial(worldID uuid.UUID, id uuid.UUID, name string, fileHeader *multipart.FileHeader, userId uuid.UUID) (*models.Material, error) {
+func (ms *materialsService) UploadMaterial(worldID uuid.UUID, id uuid.UUID, materialType models.MaterialType, name string, fileHeader *multipart.FileHeader, userId uuid.UUID) (*models.Material, error) {
 	file, err := fileHeader.Open()
 	if err != nil {
 		return nil, err
@@ -79,6 +79,10 @@ func (ms *materialsService) GetMaterialByID(id uuid.UUID) (*models.Material, err
 
 func (ms *materialsService) GetMaterialsListByWorld(worldID uuid.UUID, offset int, limit int) ([]*models.Material, error) {
 	return ms.repository.GetMaterialsListByWorld(worldID, offset, limit)
+}
+
+func (ms *materialsService) GetMaterialsListByWorldAndType(worldID uuid.UUID, materialType models.MaterialType, offset int, limit int) ([]*models.Material, error) {
+	return ms.repository.GetMaterialsListByWorldAndType(worldID, materialType, offset, limit)
 }
 
 func (ms *materialsService) DeleteMaterial(id uuid.UUID) error {

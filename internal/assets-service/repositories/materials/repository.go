@@ -9,6 +9,9 @@ type MaterialsRepository interface {
 	// GetMaterialsListByWorld retrieves a list of materials for a specific world, including default materials.
 	GetMaterialsListByWorld(worldID uuid.UUID, offset int, limit int) ([]*models.Material, error)
 
+	// GetMaterialsListByWorldAndType retrieves a list of materials for a specific world and material type, including default materials.
+	GetMaterialsListByWorldAndType(worldID uuid.UUID, materialType models.MaterialType, offset int, limit int) ([]*models.Material, error)
+
 	// GetMaterialByID retrieves a single material by its ID.
 	GetMaterialByID(materialID uuid.UUID) (*models.Material, error)
 

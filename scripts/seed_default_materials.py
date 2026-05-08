@@ -13,6 +13,7 @@ from pathlib import Path
 import requests
 
 BATCH_SIZE = 10
+GROUND_MATERIAL_TYPE = 0
 DEFAULT_WORLD_ID = "00000000-0000-0000-0000-000000000000"
 TEXTURES_DIR = "Assets/Cartoon_Texture_Pack"
 
@@ -65,6 +66,7 @@ def upload_materials(server_url: str, materials: list, token: str):
         mat_id = str(uuid.uuid4())
 
         data[f"ids[{idx}]"] = mat_id
+        data[f"material_types[{idx}]"] = GROUND_MATERIAL_TYPE
         data[f"names[{idx}]"] = name
 
         f = path.open("rb")
