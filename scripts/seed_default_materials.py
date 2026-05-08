@@ -12,7 +12,8 @@ from pathlib import Path
 
 import requests
 
-BATCH_SIZE = 10
+BATCH_SIZE = 5
+MAX_MATERIALS = 5
 GROUND_MATERIAL_TYPE = 0
 DEFAULT_WORLD_ID = "00000000-0000-0000-0000-000000000000"
 TEXTURES_DIR = "Assets/Cartoon_Texture_Pack"
@@ -40,10 +41,6 @@ def build_headers(token: str) -> dict:
 
 
 def format_material_name(filename: str, name_counters: dict) -> str:
-    """
-    Converts a filename like 'Grass_Dense_Tint_01_Base_Basecolor_A' to 'Grass 1',
-    'Grass 2', etc. — incrementing per unique material type across all batches.
-    """
     base_name = re.sub(r"_Basecolor(_[A-Z])?$", r"\1", filename, flags=re.IGNORECASE)
     base_name = re.sub(r"_?Basecolor$", "", base_name, flags=re.IGNORECASE)
 
@@ -52,6 +49,45 @@ def format_material_name(filename: str, name_counters: dict) -> str:
 
     name_counters[material] = name_counters.get(material, 0) + 1
     return f"{material} {name_counters[material]}"
+
+
+def collect_diverse_materials(textures_dir: Path, max_materials: int) -> list:
+    """
+    Groups Basecolor PNGs by their top-level category folder and round-robins
+    picks one from each group to maximize variety.
+    """
+    groups: dict[str, list[Path]] = {}
+
+    for root, _, files in os.walk(textures_dir):
+        for file in sorted(files):
+            if file.endswith(".png") and ("Basecolor" in file or "basecolor" in file):
+                path = Path(root) / file
+                category = path.relative_to(textures_dir).parts[0].upper()
+                if category.startswith("_"):
+                    continue
+                groups.setdefault(category, []).append(path)
+
+    for category in groups:
+        groups[category].sort()
+
+    result = []
+    group_iters = {cat: iter(files) for cat, files in groups.items()}
+    categories = sorted(group_iters.keys())
+
+    while len(result) < max_materials:
+        advanced = False
+        for cat in categories:
+            if len(result) >= max_materials:
+                break
+            try:
+                result.append(next(group_iters[cat]))
+                advanced = True
+            except StopIteration:
+                continue
+        if not advanced:
+            break
+
+    return result
 
 
 def upload_materials(server_url: str, materials: list, token: str):
@@ -114,20 +150,14 @@ def main() -> int:
 
     token = get_token()
 
-    png_files = []
-    for root, _, sorted_files in os.walk(textures_dir):
-        for file in sorted_files:
-            if file.endswith(".png") and ("Basecolor" in file or "basecolor" in file):
-                png_files.append(Path(root) / file)
-
-    png_files.sort()
+    png_files = collect_diverse_materials(textures_dir, MAX_MATERIALS)
 
     if not png_files:
         print(f"No Basecolor .png files found in: {textures_dir}")
         return 1
 
     print(
-        f"Found {len(png_files)} Basecolor .png files. Uploading to world {DEFAULT_WORLD_ID}...\n"
+        f"Found {len(png_files)} diverse materials (round-robin by category). Uploading to world {DEFAULT_WORLD_ID}...\n"
     )
 
     uploaded_count = 0
