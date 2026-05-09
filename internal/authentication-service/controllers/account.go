@@ -146,7 +146,7 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 		isAdminReq = true
 	}
 
-	user, token, err := ec.accountService.LoginAccount(req.Email, req.Password, isAdminReq)
+	user, accessToken, refreshToken, err := ec.accountService.LoginAccount(req.Email, req.Password, isAdminReq)
 	if err != nil {
 		if _, ok := err.(*services.AccountNotFoundError); ok {
 			logger.Logger.Infof("LoginAccount: account not found for email=%s", req.Email)
@@ -172,11 +172,12 @@ func (ec *accountController) LoginAccount(c *gin.Context) {
 	logger.Logger.Infof("LoginAccount: login successful for email=%s", req.Email)
 
 	res := &dtos.LoginAccountResponseDTO{
-		AccessToken: token,
-		Id:          user.Id.String(),
-		Email:       user.Email,
-		CreatedAt:   user.CreatedAt,
-		UpdatedAt:   user.UpdatedAt,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		Id:           user.Id.String(),
+		Email:        user.Email,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
 	}
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
@@ -207,12 +208,12 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 
 	if token == "" {
 		logger.Logger.Info("CheckSessionExpiration: missing token in Authorization header")
-		_ = c.Error(errors.NewBadRequestError("Token is required"))
+		_ = c.Error(errors.NewUnauthorizedError("Token is required"))
 		return
 	}
 
 	logger.Logger.Info("CheckSessionExpiration: received request to check session token from header")
-	err := ec.accountService.ValidateSessionToken(token)
+	err := ec.accountService.ValidateAccessToken(token)
 	if err != nil {
 		if _, ok := err.(*services.AccountSessionExpired); ok {
 			logger.Logger.Info("CheckSessionExpiration: session token has expired")
@@ -350,6 +351,87 @@ func (ec *accountController) RefreshVerification(c *gin.Context) {
 	logger.Logger.Infof("RefreshVerification: verification code refreshed for email=%s", req.Email)
 	res := &dtos.RefreshVerificationResponseDTO{
 		Email: req.Email,
+	}
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
+}
+
+// @Summary      Refresh access token
+// @Description  Validates the provided refresh token and issues a new access token and refresh token pair.
+// @Tags         authentication-service
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                        true  "Bearer <refresh_token>"
+// @Param        request        body      dtos.RefreshTokenRequestDTO   true  "Email details"
+// @Success      200            {object}  dtos.RefreshTokenResponseDTO
+// @Failure      400            {object}  dtos.ErrorResponse
+// @Failure      401            {object}  dtos.ErrorResponse
+// @Failure      404            {object}  dtos.ErrorResponse
+// @Failure      500            {object}  dtos.ErrorResponse
+// @Router       /auth/refresh-token [post]
+func (ec *accountController) RefreshToken(c *gin.Context) {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		logger.Logger.Info("RefreshToken: missing Authorization header")
+		_ = c.Error(errors.NewBadRequestError("Authorization header required"))
+		return
+	}
+
+	token := authHeader
+	if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+		token = authHeader[7:]
+	}
+
+	if token == "" {
+		logger.Logger.Info("RefreshToken: missing token in Authorization header")
+		_ = c.Error(errors.NewBadRequestError("Token is required"))
+		return
+	}
+
+	req := dtos.RefreshTokenRequestDTO{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Logger.Errorf("RefreshToken: failed to bind JSON: %v", err)
+		_ = c.Error(errors.NewBadRequestError("The request body is not valid JSON."))
+		return
+	}
+
+	logger.Logger.Infof("RefreshToken: received token refresh request for email=%s", req.Email)
+
+	if req.Email == "" {
+		logger.Logger.Info("RefreshToken: missing email")
+		_ = c.Error(errors.NewBadRequestError("You must provide an email address to refresh the token."))
+		return
+	}
+
+	logger.Logger.Info("RefreshToken: received request to check session token from header")
+	err := ec.accountService.ValidateRefreshToken(token, req.Email)
+	if err != nil {
+		if _, ok := err.(*services.AccountSessionExpired); ok {
+			logger.Logger.Info("RefreshToken: session token has expired")
+			_ = c.Error(errors.NewUnauthorizedError("Session has expired"))
+			return
+		}
+		logger.Logger.Errorf("RefreshToken: service error: %v", err)
+		_ = c.Error(errors.NewUnauthorizedError("Invalid session token"))
+		return
+	}
+
+	newAccessToken, newRefreshToken, err := ec.accountService.RefreshToken(req.Email)
+	if err != nil {
+		if _, ok := err.(*services.AccountNotFoundError); ok {
+			logger.Logger.Infof("RefreshToken: account not found for email=%s", req.Email)
+			_ = c.Error(errors.NewNotFoundError("No account exists with the provided email address."))
+			return
+		}
+
+		logger.Logger.Errorf("RefreshToken: service error for email=%s: %v", req.Email, err)
+		_ = c.Error(errors.NewInternalServerError("An unexpected error occurred."))
+		return
+	}
+
+	logger.Logger.Infof("RefreshToken: token refreshed successfully for email=%s", req.Email)
+	res := &dtos.RefreshTokenResponseDTO{
+		AccessToken:  newAccessToken,
+		RefreshToken: newRefreshToken,
 	}
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }

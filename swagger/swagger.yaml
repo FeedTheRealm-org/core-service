@@ -264,6 +264,8 @@ definitions:
         type: string
       id:
         type: string
+      refresh_token:
+        type: string
       updated_at:
         type: string
     type: object
@@ -312,6 +314,18 @@ definitions:
   dtos.PublishZoneRequest:
     properties:
       data: {}
+    type: object
+  dtos.RefreshTokenRequestDTO:
+    properties:
+      email:
+        type: string
+    type: object
+  dtos.RefreshTokenResponseDTO:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
     type: object
   dtos.RefreshVerificationRequestDTO:
     properties:
@@ -1329,6 +1343,50 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: Refresh verification code
+      tags:
+      - authentication-service
+  /auth/refresh-token:
+    post:
+      consumes:
+      - application/json
+      description: Validates the provided refresh token and issues a new access token
+        and refresh token pair.
+      parameters:
+      - description: Bearer <refresh_token>
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Email details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.RefreshTokenRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.RefreshTokenResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Refresh access token
       tags:
       - authentication-service
   /auth/signup:

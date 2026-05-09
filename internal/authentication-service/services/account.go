@@ -13,6 +13,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
+	"github.com/google/uuid"
 )
 
 type accountService struct {
@@ -98,7 +99,7 @@ func (s *accountService) seedAdminAccount(conf *config.Config) {
 		return
 	}
 
-	if _, _, err := s.LoginAccount(adminEmail, adminPassword, true); err == nil {
+	if _, _, _, err := s.LoginAccount(adminEmail, adminPassword, true); err == nil {
 		logger.Logger.Infof("Admin account already exists with email: %s", adminEmail)
 		return
 	}
@@ -214,40 +215,98 @@ func (s *accountService) CreateAccount(email string, password string, isAdmin bo
 	return user, verificationCode, nil
 }
 
-func (s *accountService) LoginAccount(email string, password string, isAdminReq bool) (*models.User, string, error) {
+func (s *accountService) LoginAccount(email string, password string, isAdminReq bool) (*models.User, string, string, error) {
 	email = strings.ToLower(email)
 	user, err := s.repo.GetAccountByEmail(email)
 	if err != nil {
-		return nil, "", &AccountNotFoundError{}
+		return nil, "", "", &AccountNotFoundError{}
 	}
 
 	isPasswordValid := hashing.VerifyPassword(user.Password, password)
 	if !isPasswordValid {
-		return nil, "", &AccountNotFoundError{}
+		return nil, "", "", &AccountNotFoundError{}
 	}
 
 	if !user.Verified && !isAdminReq {
-		return nil, "", &AccountNotVerifiedError{}
+		return nil, "", "", &AccountNotVerifiedError{}
 	}
 
-	token, err := s.jwt.GenerateToken(user.Id.String(), user.IsAdmin)
+	accessToken, err := s.jwt.GenerateAccessToken(user.Id.String(), user.IsAdmin)
 	if err != nil {
-		return nil, "", &AccountFailedToCreateTokenError{}
+		return nil, "", "", &AccountFailedToCreateTokenError{}
 	}
 
-	return user, token, nil
+	refreshToken, err := s.jwt.GenerateRefreshToken(user.Id.String(), user.IsAdmin)
+	if err != nil {
+		return nil, "", "", &AccountFailedToCreateTokenError{}
+	}
+
+	err = s.repo.UpdateRefreshTokenUpdatedAt(user.Id, time.Now())
+	if err != nil {
+		return nil, "", "", &AccountFailedToCreateTokenError{}
+	}
+
+	return user, accessToken, refreshToken, nil
 }
 
-func (s *accountService) ValidateSessionToken(token string) error {
+func (s *accountService) ValidateAccessToken(token string) error {
 	// If a fixed server token is configured and matches the provided token, is a valid session.
 	if s.conf != nil && s.conf.ServerFixedToken != "" && token == s.conf.ServerFixedToken {
 		return nil
 	}
 
-	if _, err := s.jwt.IsValidateToken(token, time.Now()); err != nil {
+	claims, err := s.jwt.IsValidateAccessToken(token, time.Now())
+	if err != nil {
 		if _, ok := err.(*session.JWTExpiredTokenError); ok {
 			return &AccountSessionExpired{}
 		}
+		return &AccountSessionInvalid{}
+	}
+
+	userIDStr, ok := claims["userID"].(string)
+	if !ok || userIDStr == "" {
+		return &AccountSessionInvalid{}
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return &AccountSessionInvalid{}
+	}
+
+	_, err = s.repo.GetAccountById(userID)
+	if err != nil {
+		return &AccountSessionInvalid{}
+	}
+
+	return nil
+}
+
+func (s *accountService) ValidateRefreshToken(token string, email string) error {
+	user, err := s.repo.GetAccountByEmail(email)
+	if err != nil {
+		return &AccountNotFoundError{}
+	}
+
+	claims, err := s.jwt.IsValidateRefreshToken(token, time.Now(), user.RefreshTokenUpdatedAt)
+	if err != nil {
+		if _, ok := err.(*session.JWTExpiredTokenError); ok {
+			return &AccountSessionExpired{}
+		}
+		return &AccountSessionInvalid{}
+	}
+
+	userIDStr, ok := claims["userID"].(string)
+	if !ok || userIDStr == "" {
+		return &AccountSessionInvalid{}
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return &AccountSessionInvalid{}
+	}
+
+	_, err = s.repo.GetAccountById(userID)
+	if err != nil {
 		return &AccountSessionInvalid{}
 	}
 
@@ -303,4 +362,33 @@ func (s *accountService) RefreshVerificationCode(email string) (string, error) {
 	}
 
 	return newCode, nil
+}
+
+func (s *accountService) RefreshToken(email string) (string, string, error) {
+	email = strings.ToLower(email)
+	user, err := s.repo.GetAccountByEmail(email)
+	if err != nil {
+		return "", "", &AccountNotFoundError{}
+	}
+
+	if !user.Verified {
+		return "", "", &AccountNotVerifiedError{}
+	}
+
+	accessToken, err := s.jwt.GenerateAccessToken(user.Id.String(), user.IsAdmin)
+	if err != nil {
+		return "", "", &AccountFailedToCreateTokenError{}
+	}
+
+	refreshToken, err := s.jwt.GenerateRefreshToken(user.Id.String(), user.IsAdmin)
+	if err != nil {
+		return "", "", &AccountFailedToCreateTokenError{}
+	}
+
+	err = s.repo.UpdateRefreshTokenUpdatedAt(user.Id, time.Now())
+	if err != nil {
+		return "", "", &AccountFailedToCreateTokenError{}
+	}
+
+	return accessToken, refreshToken, nil
 }

@@ -128,45 +128,45 @@ func TestAccount_LoginAccount(t *testing.T) {
 	email := "existing@example.com"
 	password := "password123"
 
-	_, token, err := accountService.LoginAccount(email, password, false)
+	_, accessToken, _, err := accountService.LoginAccount(email, password, false)
 	assert.Nil(t, err, "expected no error on login")
-	assert.NotEmpty(t, token, "expected token to be returned")
+	assert.NotEmpty(t, accessToken, "expected access token to be returned")
 }
 
 func TestAccount_LoginAccount_InvalidCredentials(t *testing.T) {
 	email := "existing@example.com"
 	wrongPassword := "wrongpassword123"
 
-	_, token, err := accountService.LoginAccount(email, wrongPassword, false)
+	_, accessToken, _, err := accountService.LoginAccount(email, wrongPassword, false)
 	assert.NotNil(t, err, "expected error on login with invalid credentials")
-	assert.Empty(t, token, "expected no token to be returned")
+	assert.Empty(t, accessToken, "expected no access token to be returned")
 }
 
 func TestAccount_LoginAccount_NonExistentEmail(t *testing.T) {
 	wrongEmail := "nonexistent@example.com"
 	password := "password123"
 
-	_, token, err := accountService.LoginAccount(wrongEmail, password, false)
+	_, accessToken, _, err := accountService.LoginAccount(wrongEmail, password, false)
 	assert.NotNil(t, err, "expected error on login with non-existent email")
-	assert.Empty(t, token, "expected no token to be returned")
+	assert.Empty(t, accessToken, "expected no access token to be returned")
 }
 
 func TestAccount_ValidateSessionToken(t *testing.T) {
 	email := "existing@example.com"
 	password := "password123"
 
-	_, token, err := accountService.LoginAccount(email, password, false)
+	_, accessToken, _, err := accountService.LoginAccount(email, password, false)
 	assert.Nil(t, err, "expected no error on login")
-	assert.NotEmpty(t, token, "expected token to be returned")
+	assert.NotEmpty(t, accessToken, "expected access token to be returned")
 
-	err = accountService.ValidateSessionToken(token)
+	err = accountService.ValidateAccessToken(accessToken)
 	assert.Nil(t, err, "expected no error on validating session token")
 }
 
 func TestAccount_ValidateSessionToken_InvalidToken(t *testing.T) {
 	invalidToken := "invalid.token.string"
 
-	err := accountService.ValidateSessionToken(invalidToken)
+	err := accountService.ValidateAccessToken(invalidToken)
 	assert.NotNil(t, err, "expected error on validating invalid session token")
 }
 
@@ -174,7 +174,7 @@ func TestAccount_ValidateSessionToken_FixedServerToken(t *testing.T) {
 	fixedToken := os.Getenv("SERVER_FIXED_TOKEN")
 	assert.NotEmpty(t, fixedToken, "expected fixed server token to be set in env")
 
-	err := accountService.ValidateSessionToken(fixedToken)
+	err := accountService.ValidateAccessToken(fixedToken)
 	assert.Nil(t, err, "expected no error when validating fixed server token")
 }
 
@@ -182,9 +182,9 @@ func TestAccount_ValidateSessionToken_ExpiredToken(t *testing.T) {
 	email := "existing@example.com"
 	password := "password123"
 
-	_, token, err := accountService.LoginAccount(email, password, false)
+	_, accessToken, _, err := accountService.LoginAccount(email, password, false)
 	assert.Nil(t, err, "expected no error on login")
-	assert.NotEmpty(t, token, "expected token to be returned")
+	assert.NotEmpty(t, accessToken, "expected access token to be returned")
 
 	expiredToken := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.MapClaims{
 		"email":      email,
@@ -197,7 +197,7 @@ func TestAccount_ValidateSessionToken_ExpiredToken(t *testing.T) {
 		t.Fatalf("failed to sign token: %v", err)
 	}
 
-	err = accountService.ValidateSessionToken(expiredTokenString)
+	err = accountService.ValidateAccessToken(expiredTokenString)
 	assert.NotNil(t, err, "expected error on validating expired session token")
 }
 
@@ -220,8 +220,8 @@ func TestAccount_CannotLoginWithoutVerifacation(t *testing.T) {
 	_, _, err := accountService.CreateAccount(email, password, false)
 	assert.Nil(t, err, "expected no error on account creation")
 
-	_, token, err := accountService.LoginAccount(email, password, false)
+	_, accessToken, _, err := accountService.LoginAccount(email, password, false)
 	assert.NotNil(t, err, "expected error on login without verification")
 	assert.Error(t, err, "Account not verified")
-	assert.Empty(t, token, "expected no token to be returned without verification")
+	assert.Empty(t, accessToken, "expected no access token to be returned without verification")
 }

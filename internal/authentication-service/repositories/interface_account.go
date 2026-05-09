@@ -13,4 +13,5 @@ type AccountRepository interface {
 	CreateAccount(user *models.User, verificationCode string) error
 	VerifyAccount(user *models.User, code string, currentTime time.Time) error
 	RefreshVerificationCode(user *models.User, verificationCode string, expiresAt time.Time) error
+	UpdateRefreshTokenUpdatedAt(id uuid.UUID, updatedAt time.Time) error
 }

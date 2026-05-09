@@ -81,24 +81,26 @@ type GithubConfig struct {
 }
 
 type Config struct {
-	Server                *ServerConfig
-	DB                    *DatabaseConfig
-	Assets                *AssetsConfig
-	Stripe                *StripeConfig
-	Github                *GithubConfig
-	SessionTokenSecretKey string
-	SessionTokenDuration  time.Duration
-	BrevoAPIKey           string
-	EmailSenderAddress    string
-	EmailLogoURL          string
-	ServerFixedToken      string
-	NomadAddr             string
-	NomadToken            string
-	NomadCertPath         string
-	NomadTemplatePath     string
-	NomadImageName        string
-	ConsulAddr            string
-	FTRServerImage        string
+	Server                       *ServerConfig
+	DB                           *DatabaseConfig
+	Assets                       *AssetsConfig
+	Stripe                       *StripeConfig
+	Github                       *GithubConfig
+	SessionAccessTokenSecretKey  string
+	SessionRefreshTokenSecretKey string
+	SessionAccessTokenDuration   time.Duration
+	SessionRefreshTokenDuration  time.Duration
+	BrevoAPIKey                  string
+	EmailSenderAddress           string
+	EmailLogoURL                 string
+	ServerFixedToken             string
+	NomadAddr                    string
+	NomadToken                   string
+	NomadCertPath                string
+	NomadTemplatePath            string
+	NomadImageName               string
+	ConsulAddr                   string
+	FTRServerImage               string
 }
 
 func parseStripePrices(isProd bool) (gemPacks []StripeItem, zones []StripeItem) {
@@ -176,23 +178,25 @@ func CreateConfig() *Config {
 	}
 
 	return &Config{
-		Server:                serverConf,
-		DB:                    dbc,
-		Assets:                assetsConf,
-		Stripe:                stripeConf,
-		Github:                githubConf,
-		SessionTokenSecretKey: os.Getenv("SESSION_TOKEN_SECRET_KEY"),
-		SessionTokenDuration:  getEnvOrDefaultDuration("SESSION_TOKEN_DURATION", time.Hour*24),
-		BrevoAPIKey:           os.Getenv("BREVO_API_KEY"),
-		EmailSenderAddress:    os.Getenv("EMAIL_SENDER_ADDRESS"),
-		EmailLogoURL:          getEnvOrDefaultString("EMAIL_LOGO_URL", "https://avatars.githubusercontent.com/u/231922724?s=400&u=5f4eb45fb6dc7cfa42333bfe1dc64a376122e3d0&v=4"),
-		ServerFixedToken:      os.Getenv("SERVER_FIXED_TOKEN"),
-		NomadAddr:             os.Getenv("NOMAD_ADDR"),
-		NomadToken:            os.Getenv("NOMAD_TOKEN"),
-		NomadCertPath:         os.Getenv("NOMAD_CERT_PATH"),
-		NomadTemplatePath:     getEnvOrDefaultString("NOMAD_TEMPLATE_PATH", "/nomad/templates/ftr-server-job.nomad"),
-		ConsulAddr:            os.Getenv("CONSUL_ADDR"),
-		FTRServerImage:        os.Getenv("FTR_SERVER_IMAGE"),
+		Server:                       serverConf,
+		DB:                           dbc,
+		Assets:                       assetsConf,
+		Stripe:                       stripeConf,
+		Github:                       githubConf,
+		SessionAccessTokenSecretKey:  os.Getenv("SESSION_ACCESS_TOKEN_SECRET_KEY"),
+		SessionRefreshTokenSecretKey: os.Getenv("SESSION_REFRESH_TOKEN_SECRET_KEY"),
+		SessionAccessTokenDuration:   getEnvOrDefaultDuration("SESSION_ACCESS_TOKEN_DURATION", time.Hour*24),
+		SessionRefreshTokenDuration:  getEnvOrDefaultDuration("SESSION_REFRESH_TOKEN_DURATION", time.Hour*24*30),
+		BrevoAPIKey:                  os.Getenv("BREVO_API_KEY"),
+		EmailSenderAddress:           os.Getenv("EMAIL_SENDER_ADDRESS"),
+		EmailLogoURL:                 getEnvOrDefaultString("EMAIL_LOGO_URL", "https://avatars.githubusercontent.com/u/231922724?s=400&u=5f4eb45fb6dc7cfa42333bfe1dc64a376122e3d0&v=4"),
+		ServerFixedToken:             os.Getenv("SERVER_FIXED_TOKEN"),
+		NomadAddr:                    os.Getenv("NOMAD_ADDR"),
+		NomadToken:                   os.Getenv("NOMAD_TOKEN"),
+		NomadCertPath:                os.Getenv("NOMAD_CERT_PATH"),
+		NomadTemplatePath:            getEnvOrDefaultString("NOMAD_TEMPLATE_PATH", "/nomad/templates/ftr-server-job.nomad"),
+		ConsulAddr:                   os.Getenv("CONSUL_ADDR"),
+		FTRServerImage:               os.Getenv("FTR_SERVER_IMAGE"),
 	}
 }
 

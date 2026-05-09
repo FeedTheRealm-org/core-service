@@ -7,8 +7,10 @@ import (
 type AccountService interface {
 	GetUserByEmail(email string) (*models.User, error)
 	CreateAccount(email string, password string, isAdmin bool) (*models.User, string, error)
-	LoginAccount(email string, password string, isAdminReq bool) (*models.User, string, error)
-	ValidateSessionToken(token string) error
+	LoginAccount(email string, password string, isAdminReq bool) (*models.User, string, string, error)
+	ValidateAccessToken(token string) error
+	ValidateRefreshToken(token string, email string) error
 	VerifyAccount(email string, code string) (bool, error)
 	RefreshVerificationCode(email string) (string, error)
+	RefreshToken(email string) (string, string, error)
 }

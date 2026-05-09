@@ -37,7 +37,7 @@ func JWTAuthMiddleware(jwtManager *session.JWTManager, fixedToken string) gin.Ha
 			return
 		}
 
-		claims, err := jwtManager.IsValidateToken(tokenString, time.Now())
+		claims, err := jwtManager.IsValidateAccessToken(tokenString, time.Now())
 		if err != nil {
 			if _, ok := err.(*session.JWTExpiredTokenError); ok {
 				c.Set("expiredJWT", true)

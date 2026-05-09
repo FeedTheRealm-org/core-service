@@ -9,24 +9,24 @@ import (
 )
 
 func TestIsValidateToken_Valid(t *testing.T) {
-	manager := NewJWTManager("my-secret-key", time.Minute)
+	manager := NewJWTManager("my-secret-access-key", "my-secret-refresh-key", time.Minute, time.Hour)
 	email := "user@example.com"
-	token, err := manager.GenerateToken(email, false)
+	token, err := manager.GenerateAccessToken(email, false)
 	require.NoError(t, err, "Token generation failed")
 
-	claims, err := manager.IsValidateToken(token, time.Now().Add(time.Minute/2))
+	claims, err := manager.IsValidateAccessToken(token, time.Now().Add(time.Minute/2))
 
 	require.NoError(t, err, "Expected no error for valid token")
 	assert.NotNil(t, claims, "Expected non-nil claims")
 }
 
 func TestIsValidateToken_Expired(t *testing.T) {
-	manager := NewJWTManager("my-secret-key", time.Minute)
+	manager := NewJWTManager("my-secret-access-key", "my-secret-refresh-key", time.Minute, time.Hour)
 	email := "user@example.com"
-	token, err := manager.GenerateToken(email, false)
+	token, err := manager.GenerateAccessToken(email, false)
 	require.NoError(t, err, "Token generation failed")
 
-	_, err = manager.IsValidateToken(token, time.Now().Add(time.Minute*2))
+	_, err = manager.IsValidateAccessToken(token, time.Now().Add(time.Minute*2))
 
 	require.Error(t, err, "Expected error for expired token")
 	_, isExpiredErr := err.(*JWTExpiredTokenError)
@@ -34,13 +34,13 @@ func TestIsValidateToken_Expired(t *testing.T) {
 }
 
 func TestIsValidateToken_InvalidSigningMethod(t *testing.T) {
-	manager := NewJWTManager("my-secret-key", time.Minute)
+	manager := NewJWTManager("my-secret-access-key", "my-secret-refresh-key", time.Minute, time.Hour)
 	email := "user@example.com"
-	token, err := manager.GenerateToken(email, false)
+	token, err := manager.GenerateAccessToken(email, false)
 	require.NoError(t, err, "Token generation failed")
 
 	invalidToken := token[:len(token)-1] + "X"
-	_, err = manager.IsValidateToken(invalidToken, time.Now())
+	_, err = manager.IsValidateAccessToken(invalidToken, time.Now())
 
 	require.Error(t, err, "Expected error for invalid token")
 	_, isInvalidErr := err.(*JWTInvalidTokenError)
@@ -48,10 +48,10 @@ func TestIsValidateToken_InvalidSigningMethod(t *testing.T) {
 }
 
 func TestIsValidateToken_MalformedToken(t *testing.T) {
-	manager := NewJWTManager("my-secret-key", time.Minute)
+	manager := NewJWTManager("my-secret-access-key", "my-secret-refresh-key", time.Minute, time.Hour)
 	invalidToken := "malformed.token.string"
 
-	_, err := manager.IsValidateToken(invalidToken, time.Now())
+	_, err := manager.IsValidateAccessToken(invalidToken, time.Now())
 
 	require.Error(t, err, "Expected error for malformed token")
 	_, isInvalidErr := err.(*JWTInvalidTokenError)
