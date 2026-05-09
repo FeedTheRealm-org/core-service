@@ -862,21 +862,26 @@
                     "assets-service"
                 ],
                 "summary": "Upload materials",
+                "parameters": [
+                    {
                         "type": "string",
+                        "description": "World UUID",
                         "name": "world_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Model UUID",
-                        "name": "model_id",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
                         "collectionFormat": "csv",
                         "description": "Array of exact material IDs",
                         "name": "ids",
                         "in": "formData",
                         "required": true
                     },
+                    {
                         "type": "file",
                         "description": "Muti-part chunk array of files",
                         "name": "materials",

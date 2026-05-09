@@ -890,8 +890,6 @@ const docTemplate = `{
                     },
                     {
                         "type": "file",
-                        "description": "Model GLB file",
-                        "name": "model_file",
                         "description": "Muti-part chunk array of files",
                         "name": "materials",
                         "in": "formData",
@@ -1061,7 +1059,6 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
->>>>>>> origin/dev
                             "$ref": "#/definitions/dtos.ModelResponse"
                         }
                     },
