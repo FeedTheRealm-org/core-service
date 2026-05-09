@@ -74,6 +74,21 @@ func NewItemSpriteNotFound(details string) *ItemSpriteNotFound {
 	}
 }
 
+// MaterialNotFound is returned when a requested material cannot be found.
+type MaterialNotFound struct {
+	details string
+}
+
+func (e *MaterialNotFound) Error() string {
+	return e.details
+}
+
+func NewMaterialNotFound(details string) *MaterialNotFound {
+	return &MaterialNotFound{
+		details: details,
+	}
+}
+
 // WorldNotFound is returned when a requested world cannot be found.
 type WorldNotFound struct {
 	WorldId string
