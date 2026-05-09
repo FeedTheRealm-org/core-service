@@ -13,6 +13,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
+	"github.com/google/uuid"
 )
 
 type accountService struct {
@@ -254,10 +255,26 @@ func (s *accountService) ValidateAccessToken(token string) error {
 		return nil
 	}
 
-	if _, err := s.jwt.IsValidateAccessToken(token, time.Now()); err != nil {
+	claims, err := s.jwt.IsValidateAccessToken(token, time.Now())
+	if err != nil {
 		if _, ok := err.(*session.JWTExpiredTokenError); ok {
 			return &AccountSessionExpired{}
 		}
+		return &AccountSessionInvalid{}
+	}
+
+	userIDStr, ok := claims["userID"].(string)
+	if !ok || userIDStr == "" {
+		return &AccountSessionInvalid{}
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return &AccountSessionInvalid{}
+	}
+
+	_, err = s.repo.GetAccountById(userID)
+	if err != nil {
 		return &AccountSessionInvalid{}
 	}
 
@@ -270,10 +287,26 @@ func (s *accountService) ValidateRefreshToken(token string, email string) error 
 		return &AccountNotFoundError{}
 	}
 
-	if _, err := s.jwt.IsValidateRefreshToken(token, time.Now(), user.RefreshTokenUpdatedAt); err != nil {
+	claims, err := s.jwt.IsValidateRefreshToken(token, time.Now(), user.RefreshTokenUpdatedAt)
+	if err != nil {
 		if _, ok := err.(*session.JWTExpiredTokenError); ok {
 			return &AccountSessionExpired{}
 		}
+		return &AccountSessionInvalid{}
+	}
+
+	userIDStr, ok := claims["userID"].(string)
+	if !ok || userIDStr == "" {
+		return &AccountSessionInvalid{}
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return &AccountSessionInvalid{}
+	}
+
+	_, err = s.repo.GetAccountById(userID)
+	if err != nil {
 		return &AccountSessionInvalid{}
 	}
 
