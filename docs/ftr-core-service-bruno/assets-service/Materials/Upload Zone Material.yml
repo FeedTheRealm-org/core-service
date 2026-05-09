@@ -1,0 +1,37 @@
+info:
+  name: Upload Zone Material
+  type: http
+  seq: 1
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/assets/materials/world/{{world_id}}"
+  params:
+    - name: ""
+      value: ""
+      type: query
+  body:
+    type: multipart-form
+    data:
+      - name: ids[0]
+        type: text
+        value: 00b87e48-0f8b-4d71-ab17-4849eff1317d
+      - name: names[0]
+        type: text
+        value: dummy
+      - name: materials[0]
+        type: file
+        value:
+          - /home/sev/Desktop/Facultad/TPF/world-editor-client/Assets/Cartoon_Texture_Pack/WOOD/WOOD_Planks/Textures/Wood_Planks_B_Normal.png
+  auth: inherit
+
+runtime:
+  variables:
+    - name: world_id
+      value: 626ede3b-15a3-4c46-9933-5c7a5739c13d
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

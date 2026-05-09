@@ -10,11 +10,11 @@ http:
   url: "{{baseUrl}}/world/:id/zones/:zone_id"
   params:
     - name: id
-      value: ""
+      value: 1a88b6d3-7e27-47d3-9690-b9d8299393de
       type: path
       description: World UUID
     - name: zone_id
-      value: ""
+      value: "1"
       type: path
       description: Zone ID
   auth: inherit

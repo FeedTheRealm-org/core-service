@@ -267,23 +267,29 @@ definitions:
       updated_at:
         type: string
     type: object
+  dtos.MaterialResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      material_type:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+      url:
+        type: string
+      world_id:
+        type: string
+    type: object
   dtos.ModelResponse:
     properties:
       model_id:
         type: string
       url:
         type: string
-    type: object
-  dtos.ModelsListResponse:
-    properties:
-      models:
-        items:
-          $ref: '#/definitions/dtos.ModelResponse'
-        type: array
-      world_id:
-        type: string
-    required:
-    - world_id
     type: object
   dtos.PatchCharacterInfoRequest:
     properties:
@@ -987,15 +993,87 @@ paths:
       summary: Upload items and sprites
       tags:
       - assets-service
-  /assets/models/world/{world_id}:
+  /assets/materials:
     get:
       consumes:
       - application/json
-      description: Retrieve the metadata models available in a given world id.
+      description: Retrieves a materials list. If world_id query param is provided,
+        retrieves materials specific to that world along with default materials. Otherwise
+        retrieves only default materials.
       parameters:
       - description: World UUID
-        in: path
+        in: query
         name: world_id
+        type: string
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 24
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.MaterialResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get materials list
+      tags:
+      - assets-service
+  /assets/materials/{id}:
+    delete:
+      description: Delete a specific material by ID (requires ownership)
+      parameters:
+      - description: Material UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/dtos.MaterialResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete material
+      tags:
+      - assets-service
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a single material by its ID.
+      parameters:
+      - description: Material UUID
+        in: path
+        name: id
         required: true
         type: string
       produces:
@@ -1004,7 +1082,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dtos.ModelsListResponse'
+            $ref: '#/definitions/dtos.MaterialResponse'
         "400":
           description: Bad Request
           schema:
@@ -1013,32 +1091,33 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Get 3D models list
+      summary: Get material by ID
       tags:
       - assets-service
+  /assets/materials/world/{world_id}:
     put:
       consumes:
       - multipart/form-data
-      description: Submit multiple custom models bounded to a specific world.
+      description: Upload material IDs alongside material files mapping to a world.
       parameters:
       - description: World UUID
         in: path
         name: world_id
         required: true
         type: string
-      - description: Multipart upload array for model bindings
+      - collectionFormat: csv
+        description: Array of exact material IDs
         in: formData
-        name: models
+        items:
+          type: string
+        name: ids
+        required: true
+        type: array
+      - description: Muti-part chunk array of files
+        in: formData
+        name: materials
         required: true
         type: file
       produces:
@@ -1047,7 +1126,50 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/dtos.ModelsListResponse'
+            items:
+              $ref: '#/definitions/dtos.MaterialResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload materials
+      tags:
+      - assets-service
+  /assets/models/world/{world_id}:
+    put:
+      consumes:
+      - multipart/form-data
+      description: Submit a single custom model bounded to a specific world.
+      parameters:
+      - description: World UUID
+        in: path
+        name: world_id
+        required: true
+        type: string
+      - description: Model UUID
+        in: formData
+        name: model_id
+        required: true
+        type: string
+      - description: Model GLB file
+        in: formData
+        name: model_file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.ModelResponse'
         "400":
           description: Bad Request
           schema:
@@ -1062,7 +1184,7 @@ paths:
             $ref: '#/definitions/dtos.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Upload batch 3D models
+      summary: Upload a 3D model
       tags:
       - assets-service
   /auth:

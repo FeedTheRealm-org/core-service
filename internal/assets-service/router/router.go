@@ -4,13 +4,16 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	cosmetics_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/cosmetics"
 	items_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/items"
+	materials_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/materials"
 	models_controller "github.com/FeedTheRealm-org/core-service/internal/assets-service/controllers/models"
 	"github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/bucket"
 	cosmetics_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/cosmetics"
 	items_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/items"
+	materials_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/materials"
 	models_repo "github.com/FeedTheRealm-org/core-service/internal/assets-service/repositories/models"
 	cosmetics_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/cosmetics"
 	items_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/items"
+	materials_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/materials"
 	models_service "github.com/FeedTheRealm-org/core-service/internal/assets-service/services/models"
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
 	"github.com/gin-gonic/gin"
@@ -62,6 +65,17 @@ func SetupEndpointsForModelsService(conf *config.Config, db *config.DB, g *gin.R
 	modelsGroup.PUT("/world/:world_id", modelsController.UploadModel)
 }
 
+func SetupEndpointsForMaterialsService(conf *config.Config, db *config.DB, g *gin.RouterGroup, worldBucketRepo bucket.BucketRepository) {
+	materialsRepo := materials_repo.NewMaterialsRepository(conf, db)
+	materialsService := materials_service.NewMaterialsService(conf, materialsRepo, worldBucketRepo)
+	materialsController := materials_controller.NewMaterialsController(conf, materialsService)
+
+	materialsGroup := g.Group("/materials")
+	materialsGroup.GET("", materialsController.GetMaterialsList)
+	materialsGroup.PUT("/world/:world_id", materialsController.UploadMaterials)
+	materialsGroup.DELETE(":id", materialsController.DeleteMaterial)
+}
+
 func getNewBucketRepository(name string, conf *config.Config) (bucket.BucketRepository, error) {
 	if conf.Server.Environment == config.Development || conf.Server.Environment == config.Testing {
 		return bucket.NewOnDiskBucketRepository(name, conf)
@@ -88,8 +102,11 @@ func SetupAssetsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB)
 	/* Items endpoints */
 	SetupEndpointsForItemsService(conf, db, g, worldsBucketRepo)
 
-	// /* Models Endpoints */
+	/* Models Endpoints */
 	SetupEndpointsForModelsService(conf, db, g, worldsBucketRepo)
+
+	/* Materials Endpoints */
+	SetupEndpointsForMaterialsService(conf, db, g, worldsBucketRepo)
 
 	return nil
 }

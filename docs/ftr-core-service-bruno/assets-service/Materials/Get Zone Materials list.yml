@@ -1,18 +1,19 @@
 info:
-  name: Retrieve world detail
+  name: Get Zone Materials list
   type: http
-  seq: 4
+  seq: 1
   tags:
-    - world-service
+    - assets-service
 
 http:
   method: GET
-  url: "{{baseUrl}}/world/:id"
-  params:
-    - name: id
-      value: 1a88b6d3-7e27-47d3-9690-b9d8299393de
-      type: path
+  url: "{{baseUrl}}/assets/materials/{{6a8f663f-a5d7-44e7-b602-2dac502970f0}}"
   auth: inherit
+
+runtime:
+  variables:
+    - name: world_id
+      value: 9fb88c9d-a16c-44fd-b3e0-857b03c5748f
 
 settings:
   encodeUrl: true
@@ -24,10 +25,10 @@ examples:
   - name: 200 Response
     description: OK
     request:
-      url: "{{baseUrl}}/world/:id"
+      url: "{{baseUrl}}/assets/models/world/:world_id"
       method: GET
       params:
-        - name: id
+        - name: world_id
           value: ""
           type: path
           description: World UUID
@@ -40,10 +41,10 @@ examples:
   - name: 400 Response
     description: Bad Request
     request:
-      url: "{{baseUrl}}/world/:id"
+      url: "{{baseUrl}}/assets/models/world/:world_id"
       method: GET
       params:
-        - name: id
+        - name: world_id
           value: ""
           type: path
           description: World UUID
@@ -56,10 +57,10 @@ examples:
   - name: 401 Response
     description: Unauthorized
     request:
-      url: "{{baseUrl}}/world/:id"
+      url: "{{baseUrl}}/assets/models/world/:world_id"
       method: GET
       params:
-        - name: id
+        - name: world_id
           value: ""
           type: path
           description: World UUID
@@ -72,16 +73,32 @@ examples:
   - name: 404 Response
     description: Not Found
     request:
-      url: "{{baseUrl}}/world/:id"
+      url: "{{baseUrl}}/assets/models/world/:world_id"
       method: GET
       params:
-        - name: id
+        - name: world_id
           value: ""
           type: path
           description: World UUID
     response:
       status: 404
       statusText: Not Found
+      body:
+        type: text
+        data: ""
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/assets/models/world/:world_id"
+      method: GET
+      params:
+        - name: world_id
+          value: ""
+          type: path
+          description: World UUID
+    response:
+      status: 500
+      statusText: Internal Server Error
       body:
         type: text
         data: ""
