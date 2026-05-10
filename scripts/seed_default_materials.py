@@ -7,22 +7,18 @@ import getpass
 import os
 import sys
 import uuid
-import re
 from pathlib import Path
 
 import requests
 
-BATCH_SIZE = 5
-MAX_MATERIALS = 5
-GROUND_MATERIAL_TYPE = 0
 DEFAULT_WORLD_ID = "00000000-0000-0000-0000-000000000000"
-TEXTURES_DIR = "Assets/Cartoon_Texture_Pack"
+DEFAULT_MATERIALS_DIR = "Assets/DefaultMaterials"
+GROUND_MATERIAL_TYPE = 0
 
 
 def usage() -> None:
-    print(f"Usage: {sys.argv[0]} <SERVER_URL> <BASE_PATH>")
-    print("  Looks for .png files ending in Basecolor.png, Basecolor_A.png, etc.")
-    print(f"  in <BASE_PATH>/{TEXTURES_DIR}/")
+    print("Usage: seed_default_materials.py <SERVER_URL> <BASE_PATH>")
+    print(f"  Looks for .png/.jpg/.jpeg files in <BASE_PATH>/{DEFAULT_MATERIALS_DIR}/")
     print("  Reads token from JWT_TOKEN env var; if empty/unset, asks via stdin.")
 
 
@@ -40,95 +36,35 @@ def build_headers(token: str) -> dict:
     return headers
 
 
-def format_material_name(filename: str, name_counters: dict) -> str:
-    base_name = re.sub(r"_Basecolor(_[A-Z])?$", r"\1", filename, flags=re.IGNORECASE)
-    base_name = re.sub(r"_?Basecolor$", "", base_name, flags=re.IGNORECASE)
-
-    parts = base_name.split("_")
-    material = parts[0].capitalize() if parts else "Unknown"
-
-    name_counters[material] = name_counters.get(material, 0) + 1
-    return f"{material} {name_counters[material]}"
-
-
-def collect_diverse_materials(textures_dir: Path, max_materials: int) -> list:
-    """
-    Groups Basecolor PNGs by their top-level category folder and round-robins
-    picks one from each group to maximize variety.
-    """
-    groups: dict[str, list[Path]] = {}
-
-    for root, _, files in os.walk(textures_dir):
-        for file in sorted(files):
-            if file.endswith(".png") and ("Basecolor" in file or "basecolor" in file):
-                path = Path(root) / file
-                category = path.relative_to(textures_dir).parts[0].upper()
-                if category.startswith("_"):
-                    continue
-                groups.setdefault(category, []).append(path)
-
-    for category in groups:
-        groups[category].sort()
-
-    result = []
-    group_iters = {cat: iter(files) for cat, files in groups.items()}
-    categories = sorted(group_iters.keys())
-
-    while len(result) < max_materials:
-        advanced = False
-        for cat in categories:
-            if len(result) >= max_materials:
-                break
-            try:
-                result.append(next(group_iters[cat]))
-                advanced = True
-            except StopIteration:
-                continue
-        if not advanced:
-            break
-
-    return result
-
-
-def upload_materials(server_url: str, materials: list, token: str):
+def upload_material(server_url: str, material_path: Path, token: str):
     url = f"{server_url}/assets/materials/world/{DEFAULT_WORLD_ID}"
+    material_id = str(uuid.uuid4())
+    material_name = material_path.stem.replace("_", " ")
 
-    files_to_send = []
-    data = {}
+    ext = material_path.suffix.lower()
+    mime = "image/jpeg" if ext in (".jpg", ".jpeg") else "image/png"
 
-    print(f"Batch uploading {len(materials)} materials...")
-
-    for idx, (path, name) in enumerate(materials):
-        mat_id = str(uuid.uuid4())
-
-        data[f"ids[{idx}]"] = mat_id
-        data[f"material_types[{idx}]"] = GROUND_MATERIAL_TYPE
-        data[f"names[{idx}]"] = name
-
-        f = path.open("rb")
-        files_to_send.append((f"materials[{idx}]", (path.name, f, "image/png")))
-        print(f"  Preparing: {name} as {mat_id} ({path.name})")
-
-    try:
-        response = requests.put(
-            url,
-            files=files_to_send,
-            data=data,
-            headers=build_headers(token),
-            timeout=120,
-        )
-
-        for _, (_, f, _) in files_to_send:
-            f.close()
-
-    except requests.RequestException as exc:
-        for _, (_, f, _) in files_to_send:
-            f.close()
-        return False, str(exc), []
+    with material_path.open("rb") as f:
+        files = {"materials[0]": (material_path.name, f, mime)}
+        data = {
+            "ids[0]": material_id,
+            "names[0]": material_name,
+            "material_types[0]": GROUND_MATERIAL_TYPE,
+        }
+        try:
+            response = requests.put(
+                url,
+                files=files,
+                data=data,
+                headers=build_headers(token),
+                timeout=60,
+            )
+        except requests.RequestException as exc:
+            return False, str(exc), material_id
 
     if response.status_code in (200, 201):
-        return True, "", [data[f"ids[{i}]"] for i in range(len(materials))]
-    return False, f"HTTP {response.status_code} - {response.text}", []
+        return True, "", material_id
+    return False, f"HTTP {response.status_code} - {response.text}", material_id
 
 
 def main() -> int:
@@ -143,52 +79,43 @@ def main() -> int:
         print(f"Error: base path not found: {base_path}")
         return 1
 
-    textures_dir = base_path / TEXTURES_DIR
-    if not textures_dir.exists() or not textures_dir.is_dir():
-        print(f"Error: '{TEXTURES_DIR}' directory not found in: {base_path}")
+    materials_dir = base_path / DEFAULT_MATERIALS_DIR
+    if not materials_dir.exists() or not materials_dir.is_dir():
+        print(f"Error: '{DEFAULT_MATERIALS_DIR}' directory not found in: {base_path}")
         return 1
 
     token = get_token()
 
-    png_files = collect_diverse_materials(textures_dir, MAX_MATERIALS)
+    extensions = {".png", ".jpg", ".jpeg"}
+    material_files = sorted(
+        f for f in materials_dir.iterdir() if f.suffix.lower() in extensions
+    )
 
-    if not png_files:
-        print(f"No Basecolor .png files found in: {textures_dir}")
+    if not material_files:
+        print(f"No image files found in: {materials_dir}")
         return 1
 
     print(
-        f"Found {len(png_files)} diverse materials (round-robin by category). Uploading to world {DEFAULT_WORLD_ID}...\n"
+        f"Found {len(material_files)} materials in '{materials_dir}'. Uploading to world {DEFAULT_WORLD_ID}...\n"
     )
 
-    uploaded_count = 0
-    failed_count = 0
+    uploaded = 0
+    failed = 0
 
-    name_counters: dict[str, int] = {}
-    materials = []
-    for path in png_files:
-        name = format_material_name(path.stem, name_counters)
-        materials.append((path, name))
-
-    for i in range(0, len(materials), BATCH_SIZE):
-        batch = materials[i : i + BATCH_SIZE]
-        print(
-            f"\n--- Batch {i // BATCH_SIZE + 1} of {(len(materials) - 1) // BATCH_SIZE + 1} ---"
-        )
-
-        success, reason, _ = upload_materials(server_url, batch, token)
-
+    for material_path in material_files:
+        success, reason, material_id = upload_material(server_url, material_path, token)
         if success:
-            uploaded_count += len(batch)
-            print("  ✓ Batch successful")
+            uploaded += 1
+            print(f"  ✓ Uploaded: {material_path.name} (id: {material_id})")
         else:
-            failed_count += len(batch)
-            print(f"  ✗ Batch failed: {reason}")
+            failed += 1
+            print(f"  ✗ Failed:   {material_path.name} ({reason})")
 
-    print("\nDone.")
-    print(f"Uploaded: {uploaded_count}")
-    print(f"Failed:   {failed_count}")
+    print(f"\nDone.")
+    print(f"Uploaded: {uploaded}")
+    print(f"Failed:   {failed}")
 
-    return 0 if failed_count == 0 else 1
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":

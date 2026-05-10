@@ -8,9 +8,12 @@ info:
 http:
   method: GET
   url: "{{baseUrl}}/world/:id/zones/:zone_id"
+  headers:
+    - name: Authorization
+      value: Bearer c250895686f728863efdf3a973442fd2cadd4cc8af4fc398a64c89264765ff31b7a7f0527040095bbc4feb48d2a8c3587e8bb0db9e91c1f5a284c26688029332
   params:
     - name: id
-      value: 1a88b6d3-7e27-47d3-9690-b9d8299393de
+      value: 2d377090-7505-4217-8b39-aab77d38c42b
       type: path
       description: World UUID
     - name: zone_id

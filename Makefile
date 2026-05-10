@@ -9,6 +9,11 @@ SEED_BOTS_SCRIPT := ./scripts/seed_bot_accounts.py
 SEED_DEFAULT_MODELS_SCRIPT := ./scripts/seed_default_models.py
 SEED_DEFAULT_MATERIALS_SCRIPT := ./scripts/seed_default_materials.py
 
+SEED_MODELS ?= true
+SEED_COSMETICS ?= true
+SEED_MATERIALS ?= true
+SEED_BOTS ?= true
+
 help: # Show this help message
 	@awk -F'#' '/^[^[:space:]].*:/ && !/^\.PHONY/ { \
 		target = $$1; \
@@ -72,50 +77,38 @@ clean: # Remove all containers and images
 	sudo rm -rf local_buckets/
 .PHONY: clean
 
-seed: # Seed the core-service local resources
+seed:
+# Usage: make seed ASSETS_BASE_PATH=xxx [SEED_MODELS=false] [SEED_COSMETICS=false] [SEED_MATERIALS=false] [SEED_BOTS=false]
 ifndef ASSETS_BASE_PATH
-	$(error ASSETS_BASE_PATH is required. Usage: ASSETS_BASE_PATH=xxx make seed)
+	$(error ASSETS_BASE_PATH is required. Usage: ASSETS_BASE_PATH=xxx make seed [SEED_MODELS=false] [SEED_COSMETICS=false] [SEED_MATERIALS=false] [SEED_BOTS=false])
 endif
 	mkdir -p local_buckets
 	chmod -R 777 local_buckets
 	docker compose -f $(COMPOSE_DEV) down -v --remove-orphans
 	docker compose -f $(COMPOSE_DEV) --profile prod up --build -d --remove-orphans
 	until curl -s -f http://localhost:8000/health > /dev/null; do sleep 2; done
-	export JWT_TOKEN=$$(curl -X POST $(LOCAL_SERVER)/auth/login -H "Content-Type: application/json" -d '{"email": "admin@admin.admin", "password": "admin123"}'  | jq -r '.data.access_token'); \
-	$(SEED_COSMETICS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH) && \
-	$(SEED_BOTS_SCRIPT) $(LOCAL_SERVER) && \
-	$(SEED_DEFAULT_MODELS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH) && \
-	$(SEED_DEFAULT_MATERIALS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH)
+	export JWT_TOKEN=$$(curl -X POST $(LOCAL_SERVER)/auth/login -H "Content-Type: application/json" -d '{"email": "admin@admin.admin", "password": "admin123"}' | jq -r '.data.access_token'); \
+	$(if $(filter true,$(SEED_COSMETICS)), $(SEED_COSMETICS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH) &&) \
+	$(if $(filter true,$(SEED_BOTS)), $(SEED_BOTS_SCRIPT) $(LOCAL_SERVER) &&) \
+	$(if $(filter true,$(SEED_MODELS)), $(SEED_DEFAULT_MODELS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH) &&) \
+	$(if $(filter true,$(SEED_MATERIALS)), $(SEED_DEFAULT_MATERIALS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH) &&) \
+	true
 	$(MAKE) down
 .PHONY: seed
 
-seed-no-bots: # Seed the core-service local resources without bot accounts
-ifndef ASSETS_BASE_PATH
-	$(error ASSETS_BASE_PATH is required. Usage: ASSETS_BASE_PATH=xxx make seed)
-endif
-	mkdir -p local_buckets
-	chmod -R 777 local_buckets
-	docker compose -f $(COMPOSE_DEV) down -v --remove-orphans
-	docker compose -f $(COMPOSE_DEV) --profile prod up --build -d --remove-orphans
-	until curl -s -f http://localhost:8000/health > /dev/null; do sleep 2; done
-	export JWT_TOKEN=$$(curl -X POST $(LOCAL_SERVER)/auth/login -H "Content-Type: application/json" -d '{"email": "admin@admin.admin", "password": "admin123"}'  | jq -r '.data.access_token'); \
-	$(SEED_COSMETICS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH) && \
-	$(SEED_DEFAULT_MODELS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH) && \
-	$(SEED_DEFAULT_MATERIALS_SCRIPT) $(LOCAL_SERVER) $(ASSETS_BASE_PATH)
-	$(MAKE) down
-.PHONY: seed-no-bots
 
 seed-prod: # Seed the core-service production resources
+# Usage: make seed-prod ASSETS_BASE_PATH=xxx JWT_TOKEN=xxx [SEED_MODELS=false] [SEED_COSMETICS=false] [SEED_MATERIALS=false] [SEED_BOTS=false]
 ifndef ASSETS_BASE_PATH
-	$(error ASSETS_BASE_PATH is required. Usage: export ASSETS_BASE_PATH=xxx, then make seed-prod)
+	$(error ASSETS_BASE_PATH is required. Usage: export ASSETS_BASE_PATH=xxx [SEED_MODELS=false] [SEED_COSMETICS=false] [SEED_MATERIALS=false] [SEED_BOTS=false], then make seed-prod)
 endif
 ifndef JWT_TOKEN
 	$(error $(JWT_HELP))
 endif
-	$(SEED_COSMETICS_SCRIPT) $(PROD_SERVER) $(ASSETS_BASE_PATH)
-	$(SEED_BOTS_SCRIPT) $(PROD_SERVER)
-	$(SEED_DEFAULT_MODELS_SCRIPT) $(PROD_SERVER) $(ASSETS_BASE_PATH)
-	$(SEED_DEFAULT_MATERIALS_SCRIPT) $(PROD_SERVER) $(ASSETS_BASE_PATH)
+	$(if $(filter true,$(SEED_COSMETICS)), $(SEED_COSMETICS_SCRIPT) $(PROD_SERVER) $(ASSETS_BASE_PATH))
+	$(if $(filter true,$(SEED_BOTS)), $(SEED_BOTS_SCRIPT) $(PROD_SERVER))
+	$(if $(filter true,$(SEED_MODELS)), $(SEED_DEFAULT_MODELS_SCRIPT) $(PROD_SERVER) $(ASSETS_BASE_PATH))
+	$(if $(filter true,$(SEED_MATERIALS)), $(SEED_DEFAULT_MATERIALS_SCRIPT) $(PROD_SERVER) $(ASSETS_BASE_PATH))
 .PHONY: seed-prod
 
 swagger: # Generate Swagger documentation
