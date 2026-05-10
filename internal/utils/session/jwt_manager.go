@@ -8,8 +8,10 @@ import (
 )
 
 type JWTManager struct {
-	secretKey     string
-	tokenDuration time.Duration
+	secretAccessToken    string
+	secretRefreshToken   string
+	accessTokenDuration  time.Duration
+	refreshTokenDuration time.Duration
 }
 
 type JWTFailedToGenerateError struct{}
@@ -33,22 +35,24 @@ func (e *JWTExpiredTokenError) Error() string {
 	return "token expired"
 }
 
-func NewJWTManager(secretKey string, tokenDuration time.Duration) *JWTManager {
+func NewJWTManager(secretAccessToken string, secretRefreshToken string, accessTokenDuration time.Duration, refreshTokenDuration time.Duration) *JWTManager {
 	return &JWTManager{
-		secretKey:     secretKey,
-		tokenDuration: tokenDuration,
+		secretAccessToken:    secretAccessToken,
+		secretRefreshToken:   secretRefreshToken,
+		accessTokenDuration:  accessTokenDuration,
+		refreshTokenDuration: refreshTokenDuration,
 	}
 }
 
-func (m *JWTManager) GenerateToken(id string, isAdmin bool) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.MapClaims{
+func (m *JWTManager) GenerateAccessToken(id string, isAdmin bool) (string, error) {
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.MapClaims{
 		"userID":  id,
-		"exp":     time.Now().Add(m.tokenDuration).Unix(),
+		"exp":     time.Now().Add(m.accessTokenDuration).Unix(),
 		"iss":     time.Now().Unix(),
 		"isAdmin": isAdmin,
 	})
 
-	tokenString, err := token.SignedString([]byte(m.secretKey))
+	tokenString, err := accessToken.SignedString([]byte(m.secretAccessToken))
 	if err != nil {
 		return "", &JWTFailedToGenerateError{}
 	}
@@ -56,12 +60,28 @@ func (m *JWTManager) GenerateToken(id string, isAdmin bool) (string, error) {
 	return tokenString, nil
 }
 
-func (m *JWTManager) IsValidateToken(tokenString string, now time.Time) (jwt.MapClaims, error) {
+func (m *JWTManager) GenerateRefreshToken(id string, isAdmin bool) (string, error) {
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.MapClaims{
+		"userID":  id,
+		"exp":     time.Now().Add(m.refreshTokenDuration).Unix(),
+		"iss":     time.Now().Unix(),
+		"isAdmin": isAdmin,
+	})
+
+	refreshTokenString, err := refreshToken.SignedString([]byte(m.secretRefreshToken))
+	if err != nil {
+		return "", &JWTFailedToGenerateError{}
+	}
+
+	return refreshTokenString, nil
+}
+
+func isValidToken(tokenString string, now time.Time, signature string, lastUpdate time.Time) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, &JWTInvalidTokenError{}
 		}
-		return []byte(m.secretKey), nil
+		return []byte(signature), nil
 	})
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
@@ -81,6 +101,23 @@ func (m *JWTManager) IsValidateToken(tokenString string, now time.Time) (jwt.Map
 	}
 
 	if int64(expiresAtFloat) < now.Unix() {
+		return nil, &JWTExpiredTokenError{}
+	}
+
+	return claims, nil
+}
+
+func (m *JWTManager) IsValidateAccessToken(tokenString string, now time.Time) (jwt.MapClaims, error) {
+	return isValidToken(tokenString, now, m.secretAccessToken, now)
+}
+
+func (m *JWTManager) IsValidateRefreshToken(tokenString string, now time.Time, lastUpdate time.Time) (jwt.MapClaims, error) {
+	claims, err := isValidToken(tokenString, now, m.secretRefreshToken, lastUpdate)
+	if err != nil {
+		return nil, err
+	}
+
+	if lastUpdate.Unix() > int64(claims["iss"].(float64)) {
 		return nil, &JWTExpiredTokenError{}
 	}
 

@@ -786,14 +786,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/assets/models/world/{world_id}": {
+        "/assets/materials": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve the metadata models available in a given world id.",
+                "description": "Retrieves a materials list. If world_id query param is provided, retrieves materials specific to that world along with default materials. Otherwise retrieves only default materials.",
                 "consumes": [
                     "application/json"
                 ],
@@ -803,21 +803,37 @@ const docTemplate = `{
                 "tags": [
                     "assets-service"
                 ],
-                "summary": "Get 3D models list",
+                "summary": "Get materials list",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "World UUID",
                         "name": "world_id",
-                        "in": "path",
-                        "required": true
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 24,
+                        "description": "Pagination limit",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ModelsListResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.MaterialResponse"
+                            }
                         }
                     },
                     "400": {
@@ -831,28 +847,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ErrorResponse"
-                        }
                     }
                 }
-            },
+            }
+        },
+        "/assets/materials/world/{world_id}": {
             "put": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Submit multiple custom models bounded to a specific world.",
+                "description": "Upload material IDs alongside material files mapping to a world.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -862,7 +868,7 @@ const docTemplate = `{
                 "tags": [
                     "assets-service"
                 ],
-                "summary": "Upload batch 3D models",
+                "summary": "Upload materials",
                 "parameters": [
                     {
                         "type": "string",
@@ -872,9 +878,20 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Array of exact material IDs",
+                        "name": "ids",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
                         "type": "file",
-                        "description": "Multipart upload array for model bindings",
-                        "name": "models",
+                        "description": "Muti-part chunk array of files",
+                        "name": "materials",
                         "in": "formData",
                         "required": true
                     }
@@ -883,7 +900,166 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ModelsListResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.MaterialResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/materials/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a single material by its ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Get material by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Material UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.MaterialResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a specific material by ID (requires ownership)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Delete material",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Material UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.MaterialResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assets/models/world/{world_id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Submit a single custom model bounded to a specific world.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Upload a 3D model",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "world_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Model UUID",
+                        "name": "model_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Model GLB file",
+                        "name": "model_file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ModelResponse"
                         }
                     },
                     "400": {
@@ -1126,6 +1302,71 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/refresh-token": {
+            "post": {
+                "description": "Validates the provided refresh token and issues a new access token and refresh token pair.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Refresh access token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer \u003crefresh_token\u003e",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Email details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RefreshTokenRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.RefreshTokenResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/signup": {
             "post": {
                 "description": "Creates a new user account with the provided email and password.",
@@ -1229,6 +1470,43 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/balances/creators": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the current creator balance of the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service"
+                ],
+                "summary": "Get creator balance",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreatorBalanceResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -3491,6 +3769,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.CreatorBalanceResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "number"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -3560,7 +3849,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "cosmetic_price": {
-                    "type": "number"
+                    "type": "integer"
+                },
+                "created_by": {
+                    "type": "string"
                 }
             }
         },
@@ -3687,7 +3979,36 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "refresh_token": {
+                    "type": "string"
+                },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.MaterialResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "material_type": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "world_id": {
                     "type": "string"
                 }
             }
@@ -3699,23 +4020,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.ModelsListResponse": {
-            "type": "object",
-            "required": [
-                "world_id"
-            ],
-            "properties": {
-                "models": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.ModelResponse"
-                    }
-                },
-                "world_id": {
                     "type": "string"
                 }
             }
@@ -3752,6 +4056,25 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {}
+            }
+        },
+        "dtos.RefreshTokenRequestDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.RefreshTokenResponseDTO": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
             }
         },
         "dtos.RefreshVerificationRequestDTO": {
@@ -3951,6 +4274,9 @@ const docTemplate = `{
                 "is_active": {
                     "type": "boolean"
                 },
+                "is_online": {
+                    "type": "boolean"
+                },
                 "zone_id": {
                     "type": "integer"
                 }
@@ -3960,6 +4286,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "is_active": {
+                    "type": "boolean"
+                },
+                "is_online": {
                     "type": "boolean"
                 },
                 "world_id": {

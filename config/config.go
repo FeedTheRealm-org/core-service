@@ -21,14 +21,16 @@ const (
 )
 
 type ServerConfig struct {
-	Hostname        string
-	Port            int
-	ShutdownTimeout time.Duration
-	Environment     EnvironmentType
-	AdminEmail      string
-	AdminPassword   string
-	PublicIP        string
-	SubscriptionOn  bool
+	Hostname              string
+	Port                  int
+	ShutdownTimeout       time.Duration
+	Environment           EnvironmentType
+	AdminEmail            string
+	AdminPassword         string
+	PublicIP              string
+	SubscriptionOn        bool
+	CreatorRevenuePercent float64
+	DollarsGemsRatio      float64
 }
 
 type DatabaseConfig struct {
@@ -47,7 +49,7 @@ type AssetsConfig struct {
 type StripeItem struct {
 	ID     string  `yaml:"id"`
 	Name   string  `yaml:"name"`
-	Amount int     `yaml:"amount,omitempty"`
+	Amount int64   `yaml:"amount,omitempty"`
 	Price  float64 `yaml:"price"`
 }
 
@@ -68,7 +70,7 @@ type StripeConfig struct {
 	StripeZonePrice                  float64
 	StripeBillingAnchorDay           int
 	StripeBillingTimezone            string
-	StripeRealPrice                  bool
+	StripeRealPrices                 bool
 	GemPacks                         []StripeItem
 	Zones                            []StripeItem
 }
@@ -79,24 +81,26 @@ type GithubConfig struct {
 }
 
 type Config struct {
-	Server                *ServerConfig
-	DB                    *DatabaseConfig
-	Assets                *AssetsConfig
-	Stripe                *StripeConfig
-	Github                *GithubConfig
-	SessionTokenSecretKey string
-	SessionTokenDuration  time.Duration
-	BrevoAPIKey           string
-	EmailSenderAddress    string
-	EmailLogoURL          string
-	ServerFixedToken      string
-	NomadAddr             string
-	NomadToken            string
-	NomadCertPath         string
-	NomadTemplatePath     string
-	NomadImageName        string
-	ConsulAddr            string
-	FTRServerImage        string
+	Server                       *ServerConfig
+	DB                           *DatabaseConfig
+	Assets                       *AssetsConfig
+	Stripe                       *StripeConfig
+	Github                       *GithubConfig
+	SessionAccessTokenSecretKey  string
+	SessionRefreshTokenSecretKey string
+	SessionAccessTokenDuration   time.Duration
+	SessionRefreshTokenDuration  time.Duration
+	BrevoAPIKey                  string
+	EmailSenderAddress           string
+	EmailLogoURL                 string
+	ServerFixedToken             string
+	NomadAddr                    string
+	NomadToken                   string
+	NomadCertPath                string
+	NomadTemplatePath            string
+	NomadImageName               string
+	ConsulAddr                   string
+	FTRServerImage               string
 }
 
 func parseStripePrices(isProd bool) (gemPacks []StripeItem, zones []StripeItem) {
@@ -133,18 +137,20 @@ func CreateConfig() *Config {
 	}
 
 	serverConf := &ServerConfig{
-		Hostname:        getEnvOrDefaultString("SERVER_HOSTNAME", "localhost"),
-		Port:            getEnvOrDefaultInt("SERVER_PORT", 8000),
-		ShutdownTimeout: getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
-		Environment:     getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
-		AdminEmail:      getEnvOrDefaultString("SERVER_ADMIN_EMAIL", ""),
-		AdminPassword:   getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
-		PublicIP:        os.Getenv("PUBLIC_IP"),
-		SubscriptionOn:  getEnvOrDefaultBool("SUBSCRIPTION_ON", true),
+		Hostname:              getEnvOrDefaultString("SERVER_HOSTNAME", "localhost"),
+		Port:                  getEnvOrDefaultInt("SERVER_PORT", 8000),
+		ShutdownTimeout:       getEnvOrDefaultDuration("SERVER_SHUTDOWN_TIMEOUT", time.Second*30),
+		Environment:           getEnvironmentType(os.Getenv("SERVER_ENVIRONMENT")),
+		AdminEmail:            getEnvOrDefaultString("SERVER_ADMIN_EMAIL", ""),
+		AdminPassword:         getEnvOrDefaultString("SERVER_ADMIN_PASSWORD", ""),
+		PublicIP:              os.Getenv("PUBLIC_IP"),
+		SubscriptionOn:        getEnvOrDefaultBool("SUBSCRIPTION_ON", true),
+		CreatorRevenuePercent: getEnvOrDefaultFloat("CREATOR_REVENUE_PERCENT", 0.1),
+		DollarsGemsRatio:      getEnvOrDefaultFloat("DOLLARS_GEMS_RATIO", 0.25),
 	}
 
-	stripeRealPrice := getEnvOrDefaultBool("STRIPE_REAL_PRICES", true)
-	gemPacks, zones := parseStripePrices(stripeRealPrice)
+	stripeRealPrices := getEnvOrDefaultBool("STRIPE_REAL_PRICES", true)
+	gemPacks, zones := parseStripePrices(stripeRealPrices)
 
 	zonePrice := ZONES_DEFAULT_PRICE
 	switch len(zones) {
@@ -161,7 +167,7 @@ func CreateConfig() *Config {
 		StripeZonePrice:                  zonePrice,
 		StripeBillingAnchorDay:           getEnvOrDefaultInt("STRIPE_BILLING_ANCHOR_DAY", 5),
 		StripeBillingTimezone:            getEnvOrDefaultString("STRIPE_BILLING_TIMEZONE", "America/Argentina/Buenos_Aires"),
-		StripeRealPrice:                  stripeRealPrice,
+		StripeRealPrices:                 stripeRealPrices,
 		GemPacks:                         gemPacks,
 		Zones:                            zones,
 	}
@@ -172,23 +178,25 @@ func CreateConfig() *Config {
 	}
 
 	return &Config{
-		Server:                serverConf,
-		DB:                    dbc,
-		Assets:                assetsConf,
-		Stripe:                stripeConf,
-		Github:                githubConf,
-		SessionTokenSecretKey: os.Getenv("SESSION_TOKEN_SECRET_KEY"),
-		SessionTokenDuration:  getEnvOrDefaultDuration("SESSION_TOKEN_DURATION", time.Hour*24),
-		BrevoAPIKey:           os.Getenv("BREVO_API_KEY"),
-		EmailSenderAddress:    os.Getenv("EMAIL_SENDER_ADDRESS"),
-		EmailLogoURL:          getEnvOrDefaultString("EMAIL_LOGO_URL", "https://avatars.githubusercontent.com/u/231922724?s=400&u=5f4eb45fb6dc7cfa42333bfe1dc64a376122e3d0&v=4"),
-		ServerFixedToken:      os.Getenv("SERVER_FIXED_TOKEN"),
-		NomadAddr:             os.Getenv("NOMAD_ADDR"),
-		NomadToken:            os.Getenv("NOMAD_TOKEN"),
-		NomadCertPath:         os.Getenv("NOMAD_CERT_PATH"),
-		NomadTemplatePath:     getEnvOrDefaultString("NOMAD_TEMPLATE_PATH", "/nomad/templates/ftr-server-job.nomad"),
-		ConsulAddr:            os.Getenv("CONSUL_ADDR"),
-		FTRServerImage:        os.Getenv("FTR_SERVER_IMAGE"),
+		Server:                       serverConf,
+		DB:                           dbc,
+		Assets:                       assetsConf,
+		Stripe:                       stripeConf,
+		Github:                       githubConf,
+		SessionAccessTokenSecretKey:  os.Getenv("SESSION_ACCESS_TOKEN_SECRET_KEY"),
+		SessionRefreshTokenSecretKey: os.Getenv("SESSION_REFRESH_TOKEN_SECRET_KEY"),
+		SessionAccessTokenDuration:   getEnvOrDefaultDuration("SESSION_ACCESS_TOKEN_DURATION", time.Hour*24),
+		SessionRefreshTokenDuration:  getEnvOrDefaultDuration("SESSION_REFRESH_TOKEN_DURATION", time.Hour*24*30),
+		BrevoAPIKey:                  os.Getenv("BREVO_API_KEY"),
+		EmailSenderAddress:           os.Getenv("EMAIL_SENDER_ADDRESS"),
+		EmailLogoURL:                 getEnvOrDefaultString("EMAIL_LOGO_URL", "https://avatars.githubusercontent.com/u/231922724?s=400&u=5f4eb45fb6dc7cfa42333bfe1dc64a376122e3d0&v=4"),
+		ServerFixedToken:             os.Getenv("SERVER_FIXED_TOKEN"),
+		NomadAddr:                    os.Getenv("NOMAD_ADDR"),
+		NomadToken:                   os.Getenv("NOMAD_TOKEN"),
+		NomadCertPath:                os.Getenv("NOMAD_CERT_PATH"),
+		NomadTemplatePath:            getEnvOrDefaultString("NOMAD_TEMPLATE_PATH", "/nomad/templates/ftr-server-job.nomad"),
+		ConsulAddr:                   os.Getenv("CONSUL_ADDR"),
+		FTRServerImage:               os.Getenv("FTR_SERVER_IMAGE"),
 	}
 }
 
@@ -220,6 +228,14 @@ func getEnvOrDefaultDuration(key string, defaultValue time.Duration) time.Durati
 
 func getEnvOrDefaultBool(key string, defaultValue bool) bool {
 	value, err := strconv.ParseBool(os.Getenv(key))
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
+func getEnvOrDefaultFloat(key string, defaultValue float64) float64 {
+	value, err := strconv.ParseFloat(os.Getenv(key), 64)
 	if err != nil {
 		return defaultValue
 	}

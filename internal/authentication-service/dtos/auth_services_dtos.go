@@ -18,11 +18,12 @@ type CreateAccountResponseDTO struct {
 }
 
 type LoginAccountResponseDTO struct {
-	AccessToken string    `json:"access_token"`
-	Id          string    `json:"id"`
-	Email       string    `json:"email"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token"`
+	Id           string    `json:"id"`
+	Email        string    `json:"email"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type CheckSessionResponseDTO struct {
@@ -45,4 +46,13 @@ type RefreshVerificationRequestDTO struct {
 
 type RefreshVerificationResponseDTO struct {
 	Email string `json:"email"`
+}
+
+type RefreshTokenRequestDTO struct {
+	Email string `json:"email"`
+}
+
+type RefreshTokenResponseDTO struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }

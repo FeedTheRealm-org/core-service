@@ -10,18 +10,20 @@ import (
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
+	"github.com/FeedTheRealm-org/core-service/internal/world-service/repositories/world"
 	"github.com/google/uuid"
 	consul_api "github.com/hashicorp/consul/api"
 	nomad_api "github.com/hashicorp/nomad/api"
 )
 
 type serverRegistryService struct {
-	conf         *config.Config
-	nomadClient  *nomad_api.Client
-	consulClient *consul_api.Client
+	conf            *config.Config
+	worldRepository world.WorldRepository
+	nomadClient     *nomad_api.Client
+	consulClient    *consul_api.Client
 }
 
-func NewServerRegistryService(conf *config.Config) (ServerRegistryService, error) {
+func NewServerRegistryService(conf *config.Config, worldRepository world.WorldRepository) (ServerRegistryService, error) {
 	nomadConfig := nomad_api.DefaultConfig()
 	nomadConfig.Address = conf.NomadAddr
 	nomadConfig.SecretID = conf.NomadToken
@@ -41,9 +43,10 @@ func NewServerRegistryService(conf *config.Config) (ServerRegistryService, error
 	}
 
 	return &serverRegistryService{
-		conf:         conf,
-		nomadClient:  nomadClient,
-		consulClient: consulClient,
+		conf:            conf,
+		worldRepository: worldRepository,
+		nomadClient:     nomadClient,
+		consulClient:    consulClient,
 	}, nil
 }
 
@@ -124,6 +127,13 @@ func (s *serverRegistryService) GetServerAddress(worldId uuid.UUID, zoneId int) 
 	}
 
 	if len(services) == 0 {
+		zone, err := s.worldRepository.GetWorldZone(worldId, zoneId)
+		if err == nil && zone.IsActive {
+			updateErr := s.worldRepository.SetWorldZoneOnlineState(worldId, zoneId, false)
+			if updateErr != nil {
+				return "", 0, fmt.Errorf("failed to update online state: %w", updateErr)
+			}
+		}
 		return "", 0, fmt.Errorf("no healthy server found for world %s zone %d", worldId, zoneId)
 	}
 
@@ -131,6 +141,16 @@ func (s *serverRegistryService) GetServerAddress(worldId uuid.UUID, zoneId int) 
 	publicIP, ok := svc.Service.Meta["public_ip"]
 	if !ok || publicIP == "" {
 		return "", 0, fmt.Errorf("server found but missing public_ip metadata for world %s zone %d", worldId, zoneId)
+	}
+
+	zone, err := s.worldRepository.GetWorldZone(worldId, zoneId)
+	if err != nil {
+		logger.Logger.Errorf("failed to retrieve world zone from repository: %v", err)
+	} else if zone.IsActive && !zone.IsOnline {
+		updateErr := s.worldRepository.SetWorldZoneOnlineState(worldId, zoneId, true)
+		if updateErr != nil {
+			logger.Logger.Errorf("failed to update online state: %v", updateErr)
+		}
 	}
 
 	return publicIP, svc.Service.Port, nil

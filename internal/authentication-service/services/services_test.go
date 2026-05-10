@@ -18,7 +18,7 @@ func CreateStartAccountService() {
 	conf := config.CreateConfig()
 	logger.InitLogger(false)
 	db, _ := config.NewDB(conf)
-	jwtManager := session.NewJWTManager(conf.SessionTokenSecretKey, conf.SessionTokenDuration)
+	jwtManager := session.NewJWTManager(conf.SessionAccessTokenSecretKey, conf.SessionRefreshTokenSecretKey, conf.SessionAccessTokenDuration, conf.SessionRefreshTokenDuration)
 	repo, err := repositories.NewAccountRepository(conf, db)
 	if err != nil {
 		panic(err)
