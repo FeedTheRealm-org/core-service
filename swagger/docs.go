@@ -2710,6 +2710,12 @@ const docTemplate = `{
                 "summary": "List worlds",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Filter by owner user ID",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Offset for pagination",
                         "name": "offset",

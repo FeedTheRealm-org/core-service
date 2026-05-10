@@ -2244,6 +2244,10 @@ paths:
       - application/json
       description: Generates paginated meta-list of standard player-made worlds.
       parameters:
+      - description: Filter by owner user ID
+        in: query
+        name: user_id
+        type: string
       - description: Offset for pagination
         in: query
         name: offset
