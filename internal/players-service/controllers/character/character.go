@@ -75,6 +75,18 @@ func (c *characterController) PatchCharacterInfo(ctx *gin.Context) {
 	characterInfo := &models.CharacterInfo{
 		CharacterName: req.CharacterName,
 		CharacterBio:  req.CharacterBio,
+		SkinColor:     models.DefaultCharacterColorHsv(),
+		HairColor:     models.DefaultCharacterColorHsv(),
+		EyeColor:      models.DefaultCharacterColorHsv(),
+	}
+	if req.SkinColor != nil {
+		characterInfo.SkinColor = *req.SkinColor
+	}
+	if req.HairColor != nil {
+		characterInfo.HairColor = *req.HairColor
+	}
+	if req.EyeColor != nil {
+		characterInfo.EyeColor = *req.EyeColor
 	}
 	categorySprites := models.MapToCategorySprites(userId, req.CategorySprites)
 	categorySpriteDeletes := models.MapToCategorySpriteDeletes(req.CategorySprites)
@@ -90,6 +102,9 @@ func (c *characterController) PatchCharacterInfo(ctx *gin.Context) {
 	res := &dtos.CharacterInfoResponse{
 		CharacterName:   characterInfo.CharacterName,
 		CharacterBio:    characterInfo.CharacterBio,
+		SkinColor:       characterInfo.SkinColor,
+		HairColor:       characterInfo.HairColor,
+		EyeColor:        characterInfo.EyeColor,
 		CategorySprites: req.CategorySprites, // Same as the request, validation should be done already by assets service
 		CreatedAt:       characterInfo.CreatedAt,
 		UpdatedAt:       characterInfo.UpdatedAt,
@@ -146,6 +161,9 @@ func (c *characterController) GetCharacterInfo(ctx *gin.Context) {
 	res := &dtos.CharacterInfoResponse{
 		CharacterName:   characterInfo.CharacterName,
 		CharacterBio:    characterInfo.CharacterBio,
+		SkinColor:       characterInfo.SkinColor,
+		HairColor:       characterInfo.HairColor,
+		EyeColor:        characterInfo.EyeColor,
 		CategorySprites: models.CategorySpritesToMap(categorySprites),
 		CreatedAt:       characterInfo.CreatedAt,
 		UpdatedAt:       characterInfo.UpdatedAt,
