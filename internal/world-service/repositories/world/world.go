@@ -161,12 +161,16 @@ func (r *worldRepository) DeleteWorldData(worldID uuid.UUID) error {
 }
 
 // GetWorldsList retrieves a paginated list of worlds.
-func (r *worldRepository) GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error) {
+func (r *worldRepository) GetWorldsList(offset int, limit int, filter string, userId uuid.UUID) ([]*models.WorldData, error) {
 	var worlds []*models.WorldData
 	query := r.db.Conn.Offset(offset).Limit(limit)
 
 	if filter != "" {
 		query = query.Where("name ILIKE ?", "%"+filter+"%")
+	}
+
+	if userId != uuid.Nil {
+		query = query.Where("user_id = ?", userId)
 	}
 
 	err := query.Find(&worlds).Error

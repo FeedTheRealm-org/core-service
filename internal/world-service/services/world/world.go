@@ -133,8 +133,8 @@ func (cs *worldService) DeleteWorld(worldID uuid.UUID, userId uuid.UUID) error {
 	return nil
 }
 
-func (cs *worldService) GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error) {
-	return cs.worldRepository.GetWorldsList(offset, limit, filter)
+func (cs *worldService) GetWorldsList(offset int, limit int, filter string, userId uuid.UUID) ([]*models.WorldData, error) {
+	return cs.worldRepository.GetWorldsList(offset, limit, filter, userId)
 }
 
 func (cs *worldService) GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, error) {
