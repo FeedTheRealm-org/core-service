@@ -30,7 +30,7 @@ func NewCharacterController(conf *config.Config, characterService character.Char
 
 // PatchCharacterInfo godoc
 // @Summary      Update character info
-// @Description  Updates the name, bio, and associated sprites map.
+// @Description  Updates the name, bio, associated sprites map and skin/hair/eye color.
 // @Tags         players-service
 // @Security     BearerAuth
 // @Accept       json
