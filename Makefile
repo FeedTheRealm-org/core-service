@@ -96,7 +96,6 @@ endif
 	$(MAKE) down
 .PHONY: seed
 
-
 seed-prod: # Seed the core-service production resources
 # Usage: make seed-prod ASSETS_BASE_PATH=xxx JWT_TOKEN=xxx [SEED_MODELS=false] [SEED_COSMETICS=false] [SEED_MATERIALS=false] [SEED_BOTS=false]
 ifndef ASSETS_BASE_PATH

@@ -434,6 +434,15 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 			return err
 		}
 
+		_, err = subscription.Cancel(subscriptionId, &stripe.SubscriptionCancelParams{
+			InvoiceNow: stripe.Bool(false),
+			Prorate:    stripe.Bool(false),
+		})
+		if err != nil {
+			logger.Logger.Errorf("Failed to cancel Stripe subscription %s after payment failure: %v", subscriptionId, err)
+			return err
+		}
+
 		return nil
 	case "invoice.upcoming":
 		var invoice stripe.Invoice
@@ -460,33 +469,6 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		// TODO: call email service to notify the user
 		logger.Logger.Infof("Payment recovered for user %s — access restored", dbSub.UserID)
 
-		return nil
-	case "invoice.payment_action_required":
-		var invoice stripe.Invoice
-		if err := json.Unmarshal(event.Data.Raw, &invoice); err != nil {
-			return err
-		}
-
-		var subscriptionId = invoice.Parent.SubscriptionDetails.Subscription.ID
-		if subscriptionId == "" {
-			logger.Logger.Warn("invoice.payment_action_required received with no associated subscription, skipping")
-			return nil
-		}
-
-		dbSub, err := zs.repo.GetByStripeSubscriptionID(subscriptionId)
-		if err != nil {
-			logger.Logger.Warn("invoice.payment_action_required received for subscription ID with no DB record: " + subscriptionId)
-			return err
-		}
-
-		actionURL := invoice.HostedInvoiceURL
-
-		logger.Logger.Warnf(
-			"3DS authentication required for user %s, action URL: %s",
-			dbSub.UserID, actionURL,
-		)
-
-		// TODO: call email service to notify the user
 		return nil
 	default:
 		logger.Logger.Warnf("Unhandled Stripe webhook event type: %s", event.Type)
