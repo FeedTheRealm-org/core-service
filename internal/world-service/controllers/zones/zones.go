@@ -309,3 +309,29 @@ func (c *zonesController) DeactivateZone(ctx *gin.Context) {
 
 	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
 }
+
+// StopAllJobsForUser godoc
+// @Summary      Stop all jobs for a user
+// @Description  Internal endpoint to stop all active zones and jobs for a specific user. Triggered internally by the payment service on subscription cancellation.
+// @Tags         world-service, internal
+// @Produce      json
+// @Param        user_id path string true "User UUID"
+// @Success      200  {string}  string "Acknowledge jobs stopped"
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /world/internal/users/{user_id}/stop-jobs [get]
+func (c *zonesController) StopAllJobsForUser(ctx *gin.Context) {
+	userId, err := uuid.Parse(ctx.Param("user_id"))
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid user_id: " + ctx.Param("user_id")))
+		return
+	}
+
+	err = c.zonesService.StopAllZonesForUser(userId)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
+}
