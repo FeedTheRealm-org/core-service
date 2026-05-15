@@ -2105,7 +2105,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Updates the name, bio, and associated sprites map.",
+                "description": "Updates the name, bio, associated sprites map and skin/hair/eye color.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2810,6 +2810,48 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/world/internal/users/{user_id}/stop-jobs": {
+            "get": {
+                "description": "Internal endpoint to stop all active zones and jobs for a specific user. Triggered internally by the payment service on subscription cancellation.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service",
+                    "internal"
+                ],
+                "summary": "Stop all jobs for a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Acknowledge jobs stopped",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -3606,6 +3648,15 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "eye_color": {
+                    "$ref": "#/definitions/models.CharacterColorHsv"
+                },
+                "hair_color": {
+                    "$ref": "#/definitions/models.CharacterColorHsv"
+                },
+                "skin_color": {
+                    "$ref": "#/definitions/models.CharacterColorHsv"
+                },
                 "updated_at": {
                     "type": "string"
                 }
@@ -4044,6 +4095,15 @@ const docTemplate = `{
                 },
                 "character_name": {
                     "type": "string"
+                },
+                "eye_color": {
+                    "$ref": "#/definitions/models.CharacterColorHsv"
+                },
+                "hair_color": {
+                    "$ref": "#/definitions/models.CharacterColorHsv"
+                },
+                "skin_color": {
+                    "$ref": "#/definitions/models.CharacterColorHsv"
                 }
             }
         },
@@ -4339,6 +4399,20 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dtos.WorldMetadata"
                     }
+                }
+            }
+        },
+        "models.CharacterColorHsv": {
+            "type": "object",
+            "properties": {
+                "h": {
+                    "type": "number"
+                },
+                "s": {
+                    "type": "number"
+                },
+                "v": {
+                    "type": "number"
                 }
             }
         }
