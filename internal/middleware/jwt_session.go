@@ -34,6 +34,7 @@ func JWTAuthMiddleware(jwtManager *session.JWTManager, fixedToken string) gin.Ha
 		// read-only endpoints that only check for a valid session to work.
 		if fixedToken != "" && tokenString == fixedToken {
 			c.Set("userID", "00000000-0000-0000-0000-000000000000")
+			c.Set("isServer", true)
 			return
 		}
 

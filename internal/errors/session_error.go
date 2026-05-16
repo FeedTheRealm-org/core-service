@@ -24,6 +24,13 @@ func (i *InvalidSessionError) Error() string {
 	return "session is invalid"
 }
 
+type NotServerSessionError struct {
+}
+
+func (n *NotServerSessionError) Error() string {
+	return "session does not have server privileges"
+}
+
 type NotAdminSessionError struct {
 }
 
