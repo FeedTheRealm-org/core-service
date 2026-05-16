@@ -15,4 +15,7 @@ type ServerRegistryController interface {
 
 	// UpdateServer is a webhook endpoint for reload server when image is updated.
 	UpdateServer(c *gin.Context)
+
+	// UpdateStatus is a webhook endpoint for updating server status.
+	UpdateStatus(c *gin.Context)
 }

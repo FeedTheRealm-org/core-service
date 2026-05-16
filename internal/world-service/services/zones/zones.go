@@ -197,6 +197,10 @@ func (zs *zonesService) updateUsedSlots(userID uuid.UUID, numberOfSlots int, are
 	return nil
 }
 
+func (zs *zonesService) UpdateZoneStatus(worldID uuid.UUID, zoneID int, isOnline bool) error {
+	return zs.worldRepository.SetWorldZoneOnlineState(worldID, zoneID, isOnline)
+}
+
 func (zs *zonesService) StopAllZonesForUser(userID uuid.UUID) error {
 	worldIDs, err := zs.worldRepository.GetWorldIdsByUserId(userID)
 	if err != nil {

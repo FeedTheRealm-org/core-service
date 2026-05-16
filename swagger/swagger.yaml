@@ -382,6 +382,11 @@ definitions:
       price:
         type: number
     type: object
+  dtos.UpdateStatusRequest:
+    properties:
+      is_online:
+        type: boolean
+    type: object
   dtos.UpdateSubscriptionRequest:
     properties:
       slots:
@@ -2787,6 +2792,48 @@ paths:
       security:
       - BearerAuth: []
       summary: Start Nomad allocation Job
+      tags:
+      - world-service
+  /world/orchestrator/{id}/zones/{zone_id}/status:
+    post:
+      consumes:
+      - application/json
+      description: Update the online status of a specific zone in a world.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: World Zone Number
+        in: path
+        name: zone_id
+        required: true
+        type: integer
+      - description: Status Update Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update zone status
       tags:
       - world-service
   /world/orchestrator/{id}/zones/{zone_id}/stop-job:

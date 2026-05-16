@@ -15,3 +15,7 @@ type UpdateCreateableDataRequest struct {
 type PublishZoneRequest struct {
 	Data any `json:"data"`
 }
+
+type UpdateStatusRequest struct {
+	IsOnline bool `json:"is_online"`
+}

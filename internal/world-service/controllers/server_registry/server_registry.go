@@ -12,6 +12,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/server_registry"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/world"
+	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/zones"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -20,13 +21,15 @@ import (
 type serverRegistryController struct {
 	conf                  *config.Config
 	worldService          world.WorldService
+	zoneService           zones.ZonesService
 	nomadJobSenderService server_registry.ServerRegistryService
 }
 
-func NewServerRegistryController(conf *config.Config, worldService world.WorldService, nomadJobSenderService server_registry.ServerRegistryService) ServerRegistryController {
+func NewServerRegistryController(conf *config.Config, worldService world.WorldService, zoneService zones.ZonesService, nomadJobSenderService server_registry.ServerRegistryService) ServerRegistryController {
 	return &serverRegistryController{
 		conf:                  conf,
 		worldService:          worldService,
+		zoneService:           zoneService,
 		nomadJobSenderService: nomadJobSenderService,
 	}
 }
@@ -187,6 +190,51 @@ func (c *serverRegistryController) UpdateServer(ctx *gin.Context) {
 			_ = ctx.Error(errors.NewInternalServerError(err.Error()))
 			return
 		}
+	}
+
+	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
+}
+
+// UpdateStatus godoc
+// @Summary      Update zone status
+// @Description  Update the online status of a specific zone in a world.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "World UUID"
+// @Param        zone_id path int true "World Zone Number"
+// @Param        request body dtos.UpdateStatusRequest true "Status Update Request"
+// @Success      200  {string}  string "OK"
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /world/orchestrator/{id}/zones/{zone_id}/status [post]
+func (c *serverRegistryController) UpdateStatus(ctx *gin.Context) {
+	worldIdStr := ctx.Param("id")
+	zoneIdStr := ctx.Param("zone_id")
+
+	worldId, err := uuid.Parse(worldIdStr)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + worldIdStr))
+		return
+	}
+
+	zoneId, err := strconv.Atoi(zoneIdStr)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid zone ID: " + zoneIdStr))
+		return
+	}
+
+	var req dtos.UpdateStatusRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))
+		return
+	}
+
+	err = c.zoneService.UpdateZoneStatus(worldId, zoneId, req.IsOnline)
+	if err != nil {
+		_ = ctx.Error(errors.NewInternalServerError(err.Error()))
+		return
 	}
 
 	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
