@@ -52,12 +52,14 @@ func SetupEndpointsForServiceRegistry(orchestratorGroup *gin.RouterGroup, db *co
 
 	worldRepo := world_repo.NewWorldRepository(conf, db)
 	worldService := world_service.NewWorldService(conf, worldRepo, nomadService)
-	serverRegistryController := server_registry_controller.NewServerRegistryController(conf, worldService, nomadService)
+	zoneService := zones_service.NewZonesService(conf, worldRepo, nomadService)
+	serverRegistryController := server_registry_controller.NewServerRegistryController(conf, worldService, zoneService, nomadService)
 
 	orchestratorGroup.GET("/:id/zones/:zone_id/start-job", middleware.AdminCheckMiddleware(), serverRegistryController.StartNewJob)
 	orchestratorGroup.GET("/:id/zones/:zone_id/stop-job", middleware.AdminCheckMiddleware(), serverRegistryController.StopJob)
 	orchestratorGroup.GET("/:id/zones/:zone_id/address", serverRegistryController.GetServerAddress)
 	orchestratorGroup.POST("/webhook/servers/update", middleware.GithubOIDCCheck(ghv), serverRegistryController.UpdateServer)
+	orchestratorGroup.PUT("/:id/zones/:zone_id/status", middleware.ServerCheckMiddleware(), serverRegistryController.UpdateStatus)
 
 	return nil
 }
