@@ -40,6 +40,8 @@ func SetupEndpointsForZonesService(worldGroup *gin.RouterGroup, db *config.DB, c
 	worldGroup.GET("/:id/zones/:zone_id", zonesController.GetWorldZoneData)
 	worldGroup.GET("/:id/zones/:zone_id/activate", zonesController.ActivateZone)
 	worldGroup.GET("/:id/zones/:zone_id/deactivate", zonesController.DeactivateZone)
+
+	worldGroup.GET("/internal/users/:user_id/stop-jobs", zonesController.StopAllJobsForUser)
 }
 
 func SetupEndpointsForServiceRegistry(orchestratorGroup *gin.RouterGroup, db *config.DB, conf *config.Config, nomadService server_registry_service.ServerRegistryService) error {

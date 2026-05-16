@@ -24,4 +24,7 @@ type ZonesService interface {
 
 	// GetWorldZone returns one zone for a world.
 	GetWorldZone(worldID uuid.UUID, zoneID int) (*models.WorldZone, error)
+
+	// StopAllZonesForUser stops all active zones for a specific user.
+	StopAllZonesForUser(userID uuid.UUID) error
 }

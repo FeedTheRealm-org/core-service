@@ -19,6 +19,12 @@ definitions:
         type: string
       created_at:
         type: string
+      eye_color:
+        $ref: '#/definitions/models.CharacterColorHsv'
+      hair_color:
+        $ref: '#/definitions/models.CharacterColorHsv'
+      skin_color:
+        $ref: '#/definitions/models.CharacterColorHsv'
       updated_at:
         type: string
     type: object
@@ -303,6 +309,12 @@ definitions:
         type: string
       character_name:
         type: string
+      eye_color:
+        $ref: '#/definitions/models.CharacterColorHsv'
+      hair_color:
+        $ref: '#/definitions/models.CharacterColorHsv'
+      skin_color:
+        $ref: '#/definitions/models.CharacterColorHsv'
     type: object
   dtos.PricingInfoResponse:
     properties:
@@ -494,6 +506,15 @@ definitions:
         items:
           $ref: '#/definitions/dtos.WorldMetadata'
         type: array
+    type: object
+  models.CharacterColorHsv:
+    properties:
+      h:
+        type: number
+      s:
+        type: number
+      v:
+        type: number
     type: object
 info:
   contact: {}
@@ -1863,7 +1884,8 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Updates the name, bio, and associated sprites map.
+      description: Updates the name, bio, associated sprites map and skin/hair/eye
+        color.
       parameters:
       - description: Patch Character DTO
         in: body
@@ -2663,6 +2685,35 @@ paths:
       summary: Deactivate zone
       tags:
       - world-service
+  /world/internal/users/{user_id}/stop-jobs:
+    get:
+      description: Internal endpoint to stop all active zones and jobs for a specific
+        user. Triggered internally by the payment service on subscription cancellation.
+      parameters:
+      - description: User UUID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Acknowledge jobs stopped
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Stop all jobs for a user
+      tags:
+      - world-service
+      - internal
   /world/orchestrator/{id}/zones/{zone_id}/address:
     get:
       description: Returns resolved dynamically routed TCP/UDP IP and Port mappings

@@ -52,6 +52,9 @@ type WorldRepository interface {
 	// GetTotalZonesCountByUserId returns the total number of zones owned by a specific user.
 	GetTotalZonesCountByUserId(userId uuid.UUID) (int64, error)
 
+	// GetWorldIdsByUserId retrieves all world IDs associated with a specific user.
+	GetWorldIdsByUserId(userId uuid.UUID) ([]uuid.UUID, error)
+
 	// ClearDatabase is a utility function to clear the database, intended for testing purposes.
 	ClearDatabase() error
 }

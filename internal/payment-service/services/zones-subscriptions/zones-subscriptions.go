@@ -3,6 +3,7 @@ package zones_subscriptions
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
@@ -42,8 +43,7 @@ func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, slots
 
 	sub, err := zs.repo.GetByUserID(userID)
 	if err == nil && sub != nil && sub.Status == stripe.SubscriptionStatusActive {
-		logger.Logger.Warnf("User %s already has an active subscription", userID)
-		return "", err
+		return "", fmt.Errorf("user %s already has an active subscription", userID)
 	}
 
 	sub, err = zs.ensureCustomer(userID, slots, sub)
@@ -250,6 +250,37 @@ func (zs *zoneSubscriptionService) CancelSubscription(userID uuid.UUID) (*models
 	return sub, nil
 }
 
+func (zs *zoneSubscriptionService) stopAllJobs(sub *models.ZonesSubscriptions) error {
+	logger.Logger.Infof("Stopping all jobs for user %s", sub.UserID)
+
+	if sub.UsedSlots != 0 {
+		logger.Logger.Warnf("User %s has %d used slots during stopAllJobs, resetting to 0", sub.UserID, sub.UsedSlots)
+
+		url := fmt.Sprintf("http://127.0.0.1:%d/world/internal/users/%s/stop-jobs", zs.conf.Server.Port, sub.UserID)
+		resp, err := http.Get(url)
+		if err != nil {
+			logger.Logger.Errorf("Failed to send stop-jobs internal request for user %s: %v", sub.UserID, err)
+			return err
+		}
+		defer func() {
+			_ = resp.Body.Close()
+		}()
+
+		if resp.StatusCode != http.StatusOK {
+			logger.Logger.Errorf("Received non-OK status %d from stop-jobs internal request for user %s", resp.StatusCode, sub.UserID)
+			return fmt.Errorf("failed to stop jobs for user %s, status code: %d", sub.UserID, resp.StatusCode)
+		}
+
+		sub.UsedSlots = 0
+		if _, err := zs.repo.Update(sub); err != nil {
+			logger.Logger.Errorf("Failed to reset used slots for user %s during stopAllJobs: %v", sub.UserID, err)
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature string) error {
 	event, err := webhook.ConstructEvent(payload, signature, zs.conf.Stripe.StripeSubscriptionsWebhookSecret)
 	if err != nil {
@@ -266,7 +297,7 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 
 		userIDStr, ok := stripeSub.Metadata["user_id"]
 		if !ok || userIDStr == "" {
-			return err
+			return fmt.Errorf("missing user_id in subscription metadata: %s", stripeSub.ID)
 		}
 		userID, err := uuid.Parse(userIDStr)
 		if err != nil {
@@ -282,6 +313,7 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		dbSub.Status = stripe.SubscriptionStatusActive
 		dbSub.NextBillingDate = zs.nextBillingDate()
 		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
+
 		amountDue, err := zs.getNextInvoiceAmount(dbSub.UserID)
 		if err != nil {
 			logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s during subscription creation: %v", dbSub.UserID, err)
@@ -303,7 +335,7 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 
 		userIDStr, ok := stripeSub.Metadata["user_id"]
 		if !ok || userIDStr == "" {
-			return err
+			return fmt.Errorf("missing user_id in subscription metadata: %s", stripeSub.ID)
 		}
 		userID, err := uuid.Parse(userIDStr)
 		if err != nil {
@@ -320,18 +352,25 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		dbSub.NextBillingDate = zs.nextBillingDate()
 		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
 
-		amountDue, err := zs.getNextInvoiceAmount(dbSub.UserID)
-		if err != nil {
-			logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s during subscription deletion: %v", dbSub.UserID, err)
-			return err
+		if stripeSub.Status == stripe.SubscriptionStatusActive {
+			amountDue, err := zs.getNextInvoiceAmount(dbSub.UserID)
+			if err != nil {
+				logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s during subscription update: %v", dbSub.UserID, err)
+				return err
+			}
+			dbSub.AmountDue = amountDue
 		}
-		dbSub.AmountDue = amountDue
 
 		if _, err = zs.repo.Update(dbSub); err != nil {
 			return err
 		}
 
-		logger.Logger.Infof("Handled subscription.updated for user %s", userID)
+		if stripeSub.Status == stripe.SubscriptionStatusPastDue {
+			logger.Logger.Warnf("Subscription past_due for user %s — restricting features", userID)
+			// TODO: call email service to notify the user
+		}
+
+		logger.Logger.Infof("Handled subscription.updated for user %s, status: %s", userID, stripeSub.Status)
 		return nil
 	case "customer.subscription.deleted":
 		var stripeSub stripe.Subscription
@@ -346,19 +385,90 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 
 		dbSub.Status = stripeSub.Status
 		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
-
-		amountDue, err := zs.getNextInvoiceAmount(dbSub.UserID)
-		if err != nil {
-			logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s during subscription deletion: %v", dbSub.UserID, err)
-			return err
-		}
-		dbSub.AmountDue = amountDue
+		dbSub.AmountDue = decimal.Zero
 
 		if _, err = zs.repo.Update(dbSub); err != nil {
 			return err
 		}
 
-		logger.Logger.Infof("Handled subscription.deleted for stripe sub %s", stripeSub.ID)
+		logger.Logger.Infof("Handled subscription.deleted for stripe sub %s, user %s", stripeSub.ID, dbSub.UserID)
+		return nil
+	case "invoice.payment_failed":
+		var invoice stripe.Invoice
+		if err := json.Unmarshal(event.Data.Raw, &invoice); err != nil {
+			return err
+		}
+
+		var subscriptionId = invoice.Parent.SubscriptionDetails.Subscription.ID
+		if subscriptionId == "" {
+			logger.Logger.Warn("invoice.payment_failed received with no associated subscription, skipping")
+			return nil
+		}
+
+		dbSub, err := zs.repo.GetByStripeSubscriptionID(subscriptionId)
+		if err != nil {
+			logger.Logger.Warn("invoice.payment_failed received for subscription ID with no DB record: " + subscriptionId)
+			return err
+		}
+
+		declineCode := ""
+		if invoice.Payments != nil {
+			for _, p := range invoice.Payments.Data {
+				if p.Payment != nil &&
+					p.Payment.PaymentIntent != nil &&
+					p.Payment.PaymentIntent.LastPaymentError != nil &&
+					p.Status == "open" {
+					declineCode = string(p.Payment.PaymentIntent.LastPaymentError.DeclineCode)
+				}
+			}
+		}
+
+		logger.Logger.Warnf(
+			"Payment failed for user %s, stripe sub %s, attempt #%d, decline code: %q",
+			dbSub.UserID, subscriptionId, invoice.AttemptCount, declineCode,
+		)
+
+		// TODO: call email service to notify the user
+		if err := zs.stopAllJobs(dbSub); err != nil {
+			logger.Logger.Errorf("Failed to run stopAllJobs: %v", err)
+			return err
+		}
+
+		_, err = subscription.Cancel(subscriptionId, &stripe.SubscriptionCancelParams{
+			InvoiceNow: stripe.Bool(false),
+			Prorate:    stripe.Bool(false),
+		})
+		if err != nil {
+			logger.Logger.Errorf("Failed to cancel Stripe subscription %s after payment failure: %v", subscriptionId, err)
+			return err
+		}
+
+		return nil
+	case "invoice.upcoming":
+		var invoice stripe.Invoice
+		if err := json.Unmarshal(event.Data.Raw, &invoice); err != nil {
+			return err
+		}
+
+		var subscriptionId = invoice.Parent.SubscriptionDetails.Subscription.ID
+		if subscriptionId == "" {
+			logger.Logger.Warn("invoice.upcoming received with no associated subscription, skipping")
+			return nil
+		}
+
+		dbSub, err := zs.repo.GetByStripeSubscriptionID(subscriptionId)
+		if err != nil {
+			logger.Logger.Warn("invoice.upcoming received for subscription ID with no DB record: " + subscriptionId)
+			return err
+		}
+
+		dbSub.Status = stripe.SubscriptionStatusActive
+		if _, err = zs.repo.Update(dbSub); err != nil {
+			return err
+		}
+		// TODO: call email service to notify the user
+		logger.Logger.Infof("Payment recovered for user %s — access restored", dbSub.UserID)
+
 		return nil
 	default:
 		logger.Logger.Warnf("Unhandled Stripe webhook event type: %s", event.Type)

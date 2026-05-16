@@ -196,3 +196,27 @@ func (zs *zonesService) updateUsedSlots(userID uuid.UUID, numberOfSlots int, are
 
 	return nil
 }
+
+func (zs *zonesService) StopAllZonesForUser(userID uuid.UUID) error {
+	worldIDs, err := zs.worldRepository.GetWorldIdsByUserId(userID)
+	if err != nil {
+		return err
+	}
+
+	for _, worldID := range worldIDs {
+		zones, err := zs.worldRepository.GetWorldZones(worldID)
+		if err != nil {
+			return err
+		}
+
+		for _, zone := range zones {
+			if zone.IsActive {
+				if err := zs.DeactivateZone(worldID, zone.ID); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}

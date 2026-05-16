@@ -224,3 +224,9 @@ func (r *worldRepository) GetActiveWorldZones() ([]*models.WorldZone, error) {
 	}
 	return activeZones, nil
 }
+
+func (wr *worldRepository) GetWorldIdsByUserId(userId uuid.UUID) ([]uuid.UUID, error) {
+	var worldIds []uuid.UUID
+	err := wr.db.Conn.Model(&models.WorldData{}).Where("user_id = ?", userId).Pluck("id", &worldIds).Error
+	return worldIds, err
+}

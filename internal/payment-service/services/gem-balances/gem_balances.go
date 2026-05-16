@@ -303,6 +303,14 @@ func (bs *gemBalancesService) HandleWebhook(payload []byte, signature string) er
 		}
 
 		logger.Logger.Info("Processing Stripe checkout session async payment failed event for session ID " + session.ID)
+	case "checkout.session.expired":
+		var session stripe.CheckoutSession
+		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
+			logger.Logger.Error("Failed to parse Stripe webhook event data: " + err.Error())
+			return err
+		}
+
+		logger.Logger.Info("Processing Stripe checkout session expired event for session ID " + session.ID)
 	default:
 		logger.Logger.Warn("Received unhandled Stripe webhook event type: " + event.Type)
 	}
