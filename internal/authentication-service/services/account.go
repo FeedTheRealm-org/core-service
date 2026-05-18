@@ -578,6 +578,7 @@ func (s *accountService) VerifyPasswordResetCode(email string, code string) (str
 	if !hashing.VerifyPassword(reset.OTPHash, code) {
 		if err := s.repo.IncrementPasswordResetAttempts(reset.Id); err != nil {
 			logger.Logger.Errorf("VerifyPasswordResetCode: failed to increment attempts for reset=%s: %v", reset.Id, err)
+			return "", &PasswordResetMaxAttemptsError{}
 		}
 		remaining := passwordResetMaxAttempts - (reset.Attempts + 1)
 		if remaining <= 0 {
