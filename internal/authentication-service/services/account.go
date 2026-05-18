@@ -8,7 +8,6 @@ import (
 	"math/big"
 	mathrand "math/rand"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
@@ -23,57 +22,15 @@ import (
 )
 
 const (
-	passwordResetOTPExpiry        = 10 * time.Minute
-	passwordResetTokenExpiry      = 15 * time.Minute
-	passwordResetMaxAttempts      = 5
-	forgotPasswordRateLimitReqs   = 3
-	forgotPasswordRateLimitWindow = 15 * time.Minute
+	passwordResetOTPExpiry   = 10 * time.Minute
+	passwordResetTokenExpiry = 15 * time.Minute
+	passwordResetMaxAttempts = 5
 )
 
-type rateLimiter struct {
-	mu       sync.Mutex
-	requests map[string][]time.Time
-	maxReqs  int
-	window   time.Duration
-}
-
-func newRateLimiter(maxReqs int, window time.Duration) *rateLimiter {
-	return &rateLimiter{
-		requests: make(map[string][]time.Time),
-		maxReqs:  maxReqs,
-		window:   window,
-	}
-}
-
-func (r *rateLimiter) Allow(key string) bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	now := time.Now()
-	cutoff := now.Add(-r.window)
-
-	existing := r.requests[key]
-	filtered := existing[:0]
-	for _, t := range existing {
-		if t.After(cutoff) {
-			filtered = append(filtered, t)
-		}
-	}
-
-	if len(filtered) >= r.maxReqs {
-		r.requests[key] = filtered
-		return false
-	}
-
-	r.requests[key] = append(filtered, now)
-	return true
-}
-
 type accountService struct {
-	conf              *config.Config
-	repo              repositories.AccountRepository
-	jwt               *session.JWTManager
-	forgotRateLimiter *rateLimiter
+	conf *config.Config
+	repo repositories.AccountRepository
+	jwt  *session.JWTManager
 }
 
 type AccountNotFoundError struct{}
@@ -209,10 +166,9 @@ func (s *accountService) seedAdminAccount(conf *config.Config) {
 
 func NewAccountService(conf *config.Config, repo repositories.AccountRepository, jwtManager *session.JWTManager) AccountService {
 	newAccountService := &accountService{
-		conf:              conf,
-		repo:              repo,
-		jwt:               jwtManager,
-		forgotRateLimiter: newRateLimiter(forgotPasswordRateLimitReqs, forgotPasswordRateLimitWindow),
+		conf: conf,
+		repo: repo,
+		jwt:  jwtManager,
 	}
 
 	newAccountService.seedAdminAccount(conf)
@@ -516,11 +472,6 @@ func generateResetToken() (plaintext string, tokenHash string, err error) {
 // Returns ("", nil) when the email is unknown or rate-limited — caller must treat all cases as success.
 func (s *accountService) ForgotPassword(email string) (string, error) {
 	email = strings.ToLower(email)
-
-	if !s.forgotRateLimiter.Allow(email) {
-		logger.Logger.Warnf("ForgotPassword: rate limit exceeded for email=%s", email)
-		return "", nil
-	}
 
 	user, err := s.repo.GetAccountByEmail(email)
 	if err != nil {
