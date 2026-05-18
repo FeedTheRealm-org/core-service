@@ -148,7 +148,7 @@ services:
       - -e
       - customer.subscription.deleted
       - -e
-      - invoice.payment_succeeded
+      - invoice.paid
       - -e
       - invoice.payment_failed
 

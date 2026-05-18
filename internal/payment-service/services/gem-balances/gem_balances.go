@@ -338,7 +338,6 @@ func (bs *gemBalancesService) HandleWebhook(payload []byte, signature string) er
 		)
 		if err != nil {
 			logger.Logger.Error("Failed to send gem purchase email for user " + userId.String() + ": " + err.Error())
-			return err
 		}
 
 		logger.Logger.Info("Processing Stripe checkout session completed event for session ID " + paymentIntent.ID)

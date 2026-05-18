@@ -420,10 +420,7 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 			return err
 		}
 
-		email, ok := stripeSub.Metadata["email"]
-		if !ok || email == "" {
-			return fmt.Errorf("missing email in subscription metadata: %s", stripeSub.ID)
-		}
+		email, emailOk := stripeSub.Metadata["email"]
 
 		dbSub.Status = stripeSub.Status
 		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
@@ -433,13 +430,17 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 			return err
 		}
 
-		err = zs.emailSender.SendSubscriptionCancelledEmail(email_sender.SubscriptionCancelledData{
-			BaseEmailData: zs.emailSender.CreateBaseEmailData(email),
-			ZoneCount:     dbSub.TotalSlots,
-		})
-		if err != nil {
-			logger.Logger.Error("Failed to send subscription cancelled email for user " + dbSub.UserID.String() + ": " + err.Error())
-			return err
+		if emailOk && email != "" {
+			err = zs.emailSender.SendSubscriptionCancelledEmail(email_sender.SubscriptionCancelledData{
+				BaseEmailData: zs.emailSender.CreateBaseEmailData(email),
+				ZoneCount:     dbSub.TotalSlots,
+			})
+			if err != nil {
+				logger.Logger.Error("Failed to send subscription cancelled email for user " + dbSub.UserID.String() + ": " + err.Error())
+				return err
+			}
+		} else {
+			logger.Logger.Warnf("Missing email in subscription metadata for sub %s, skipping cancellation email", stripeSub.ID)
 		}
 
 		logger.Logger.Infof("Handled subscription.deleted for stripe sub %s, user %s", stripeSub.ID, dbSub.UserID)
@@ -455,20 +456,24 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 			loc = time.UTC
 		}
 
-		err = zs.emailSender.SendPaymentSuccessfulEmail(email_sender.SubscriptionPaymentSuccessfulData{
-			BaseEmailData:   zs.emailSender.CreateBaseEmailData(invoice.CustomerEmail),
-			ZoneCount:       int(invoice.Lines.Data[0].Quantity),
-			Amount:          fmt.Sprintf("$%.2f", float64(invoice.AmountPaid)/100),
-			PaymentDate:     time.Unix(invoice.Created, 0).In(loc).Format(DATE_FORMAT),
-			InvoiceID:       invoice.ID,
-			NextBillingDate: zs.nextBillingDate().In(loc).Format(DATE_FORMAT),
-		})
-		if err != nil {
-			logger.Logger.Error("Failed to send subscription payment successful email for user " + invoice.CustomerEmail + ": " + err.Error())
-			return err
+		if invoice.CustomerEmail != "" {
+			err = zs.emailSender.SendPaymentSuccessfulEmail(email_sender.SubscriptionPaymentSuccessfulData{
+				BaseEmailData:   zs.emailSender.CreateBaseEmailData(invoice.CustomerEmail),
+				ZoneCount:       int(invoice.Lines.Data[0].Quantity),
+				Amount:          fmt.Sprintf("$%.2f", float64(invoice.AmountPaid)/100),
+				PaymentDate:     time.Unix(invoice.Created, 0).In(loc).Format(DATE_FORMAT),
+				InvoiceID:       invoice.ID,
+				NextBillingDate: zs.nextBillingDate().In(loc).Format(DATE_FORMAT),
+			})
+			if err != nil {
+				logger.Logger.Error("Failed to send subscription payment successful email for invoice " + invoice.ID + ": " + err.Error())
+				return err
+			}
+		} else {
+			logger.Logger.Warnf("Missing CustomerEmail in invoice %s, skipping payment successful email", invoice.ID)
 		}
 
-		logger.Logger.Infof("Handled invoice.paid for stripe user %s", invoice.CustomerEmail)
+		logger.Logger.Infof("Handled invoice.paid for invoice %s", invoice.ID)
 		return nil
 	case "invoice.payment_failed":
 		var invoice stripe.Invoice
@@ -524,14 +529,18 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 			}
 		}
 
-		err = zs.emailSender.SendPaymentRejectedEmail(email_sender.SubscriptionPaymentRejectedData{
-			BaseEmailData: zs.emailSender.CreateBaseEmailData(invoice.CustomerEmail),
-			ZoneCount:     int64(dbSub.TotalSlots),
-			Amount:        fmt.Sprintf("$%.2f", float64(invoice.AmountDue)/100),
-		})
-		if err != nil {
-			logger.Logger.Error("Failed to send subscription payment rejected email for user " + dbSub.UserID.String() + ": " + err.Error())
-			return err
+		if invoice.CustomerEmail != "" {
+			err = zs.emailSender.SendPaymentRejectedEmail(email_sender.SubscriptionPaymentRejectedData{
+				BaseEmailData: zs.emailSender.CreateBaseEmailData(invoice.CustomerEmail),
+				ZoneCount:     int64(dbSub.TotalSlots),
+				Amount:        fmt.Sprintf("$%.2f", float64(invoice.AmountDue)/100),
+			})
+			if err != nil {
+				logger.Logger.Error("Failed to send subscription payment rejected email for user " + dbSub.UserID.String() + ": " + err.Error())
+				return err
+			}
+		} else {
+			logger.Logger.Warnf("Missing CustomerEmail in invoice %s, skipping payment rejected email for user %s", invoice.ID, dbSub.UserID.String())
 		}
 
 		return nil

@@ -22,9 +22,6 @@ type EmailSenderService interface {
 	// SendPaymentSuccessfulEmail sends an email to the user confirming their successful subscription payment with the provided data.
 	SendPaymentSuccessfulEmail(data SubscriptionPaymentSuccessfulData) error
 
-	// SendSubscriptionReminderEmail sends a reminder email to the user about their upcoming subscription renewal with the provided data.
-	SendSubscriptionReminderEmail(data SubscriptionReminderData) error
-
 	// SendSubscriptionCancelledEmail sends an email to the user confirming their subscription cancellation with the provided data.
 	SendSubscriptionCancelledEmail(data SubscriptionCancelledData) error
 }

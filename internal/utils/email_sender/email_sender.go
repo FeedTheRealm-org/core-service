@@ -35,7 +35,7 @@ func (s *emailSenderService) CreateBaseEmailData(toEmail string) BaseEmailData {
 	return BaseEmailData{
 		ToEmail:      toEmail,
 		LogoURL:      s.conf.EmailLogoURL,
-		SupportEmail: "support@feedtherealm.com",
+		SupportEmail: s.conf.SupportEmail,
 	}
 }
 
@@ -164,19 +164,6 @@ type SubscriptionPaymentSuccessfulData struct {
 
 func (s *emailSenderService) SendPaymentSuccessfulEmail(data SubscriptionPaymentSuccessfulData) error {
 	return renderAndSend(s.conf, data.ToEmail, "Feed The Realm - Subscription Payment Successful", "subscription_payment_successful", data)
-}
-
-type SubscriptionReminderData struct {
-	BaseEmailData
-	ZoneCount             int64
-	Amount                string
-	ManageSubscriptionURL string
-	PaymentMethodLastFour string
-	NextBillingDate       string
-}
-
-func (s *emailSenderService) SendSubscriptionReminderEmail(data SubscriptionReminderData) error {
-	return renderAndSend(s.conf, data.ToEmail, "Feed The Realm - Subscription Reminder", "subscription_reminder", data)
 }
 
 type SubscriptionCancelledData struct {
