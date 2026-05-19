@@ -66,6 +66,7 @@ func TestJWTAuth_ExpiredToken(t *testing.T) {
 func createTestToken(secret, userID string, expiration time.Time) string {
 	claims := jwt.MapClaims{
 		"userID": userID,
+		"email":  userID + "@example.com",
 		"exp":    expiration.Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
