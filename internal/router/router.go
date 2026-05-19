@@ -19,6 +19,8 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	// Setup global middleware
 	r.Use(middleware.ErrorHandlerMiddleware())
 
+	r.Use(middleware.CORSMiddleware()) // TODO: add cors origin in conf
+
 	r.Use(middleware.JWTAuthMiddleware(jwtManager, conf.ServerFixedToken))
 
 	// Setup service routers
