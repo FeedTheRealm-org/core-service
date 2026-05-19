@@ -142,6 +142,19 @@ func (s *emailSenderService) SendSubscriptionStartedEmail(data SubscriptionStart
 	return renderAndSend(s.conf, data.ToEmail, "Feed The Realm - Subscription Started", "subscription_started", data)
 }
 
+type SubscriptionUpdatedData struct {
+	BaseEmailData
+	OldZoneCount    int64
+	OldAmount       string
+	NewZoneCount    int64
+	NewAmount       string
+	NextBillingDate string
+}
+
+func (s *emailSenderService) SendSubscriptionUpdatedEmail(data SubscriptionUpdatedData) error {
+	return renderAndSend(s.conf, data.ToEmail, "Feed The Realm - Subscription Updated", "subscription_updated", data)
+}
+
 type SubscriptionPaymentRejectedData struct {
 	BaseEmailData
 	ZoneCount int64

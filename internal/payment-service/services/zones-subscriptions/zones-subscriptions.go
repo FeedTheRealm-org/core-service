@@ -387,6 +387,11 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		dbSub.StripeSubscriptionID = stripeSub.ID
 		dbSub.Status = stripeSub.Status
 		dbSub.NextBillingDate = zs.nextBillingDate()
+
+		oldAmountDue := dbSub.AmountDue
+		oldSlotsQuantity := dbSub.TotalSlots
+
+		dbSub.AmountDue = decimal.NewFromFloat(zs.conf.Stripe.StripeZonePrice).Mul(decimal.NewFromInt(int64(stripeSub.Items.Data[0].Quantity)))
 		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
 
 		if stripeSub.Status == stripe.SubscriptionStatusActive {
@@ -396,6 +401,30 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 				return err
 			}
 			dbSub.AmountDue = amountDue
+
+			email, emailOk := stripeSub.Metadata["email"]
+
+			if emailOk && email != "" && dbSub.TotalSlots > 0 {
+				oldAmountDueFloat, _ := oldAmountDue.Float64()
+				NewAmountDueFloat, _ := dbSub.AmountDue.Float64()
+
+				loc, err := time.LoadLocation(zs.conf.Stripe.StripeBillingTimezone)
+				if err != nil {
+					loc = time.UTC
+				}
+
+				err = zs.emailSender.SendSubscriptionUpdatedEmail(email_sender.SubscriptionUpdatedData{
+					BaseEmailData:   zs.emailSender.CreateBaseEmailData(email),
+					OldZoneCount:    int64(oldSlotsQuantity),
+					OldAmount:       fmt.Sprintf("$%.2f", oldAmountDueFloat),
+					NewZoneCount:    int64(dbSub.TotalSlots),
+					NewAmount:       fmt.Sprintf("$%.2f", NewAmountDueFloat),
+					NextBillingDate: zs.nextBillingDate().In(loc).Format(DATE_FORMAT),
+				})
+				if err != nil {
+					logger.Logger.Error("Failed to send subscription updated email for user " + dbSub.UserID.String() + ": " + err.Error())
+				}
+			}
 		}
 
 		if _, err = zs.repo.Update(dbSub); err != nil {

@@ -16,6 +16,9 @@ type EmailSenderService interface {
 	// SendSubscriptionStartedEmail sends an email to the user confirming their subscription start with the provided data.
 	SendSubscriptionStartedEmail(data SubscriptionStartedData) error
 
+	// SendSubscriptionUpdatedEmail sends an email to the user confirming their subscription update with the provided data.
+	SendSubscriptionUpdatedEmail(data SubscriptionUpdatedData) error
+
 	// SendPaymentRejectedEmail sends an email to the user notifying them of a failed subscription payment with the provided data.
 	SendPaymentRejectedEmail(data SubscriptionPaymentRejectedData) error
 
