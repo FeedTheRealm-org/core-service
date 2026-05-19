@@ -54,18 +54,6 @@ func GetUserIDFromSession(ctx *gin.Context) (uuid.UUID, error) {
 	return parsedUserID, nil
 }
 
-// GetEmailFromSession checks if the session is valid and returns the email from the session.
-func GetEmailFromSession(ctx *gin.Context) (string, error) {
-	if err := IsSessionValid(ctx); err != nil {
-		return "", err
-	}
-	email := ctx.GetString("email")
-	if email == "" {
-		return "", &errors.InvalidSessionError{}
-	}
-	return email, nil
-}
-
 // IsGithubOIDCTokenValid checks if the request has a valid GitHub OIDC token
 // based on the context flags set by the GitHub OIDC middleware.
 func IsGithubOIDCTokenValid(ctx *gin.Context) error {

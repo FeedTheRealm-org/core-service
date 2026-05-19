@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -19,7 +18,6 @@ import (
 	creator_balances_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/creator-balances"
 	gem_balances "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-balances"
 	gem_packs "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-packs"
-	"github.com/FeedTheRealm-org/core-service/internal/utils/email_sender"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 )
 
@@ -28,25 +26,15 @@ type gemBalancesService struct {
 	gemBalancesRepo     gem_balances.GemBalancesRepository
 	packsRepo           gem_packs.GemPacksRepository
 	creatorBalancesRepo creator_balances_repo.CreatorBalancesRepository
-	emailSender         email_sender.EmailSenderService
 }
 
-const DATE_FORMAT = "2006-01-02 15:04:05 MST"
-
-func NewGemBalancesService(
-	conf *config.Config,
-	gemBalancesRepo gem_balances.GemBalancesRepository,
-	packsRepo gem_packs.GemPacksRepository,
-	creatorBalancesRepo creator_balances_repo.CreatorBalancesRepository,
-	emailSender email_sender.EmailSenderService,
-) GemBalancesService {
+func NewGemBalancesService(conf *config.Config, gemBalancesRepo gem_balances.GemBalancesRepository, packsRepo gem_packs.GemPacksRepository, creatorBalancesRepo creator_balances_repo.CreatorBalancesRepository) GemBalancesService {
 	stripe.Key = conf.Stripe.StripeApiKey
 	return &gemBalancesService{
 		conf:                conf,
 		gemBalancesRepo:     gemBalancesRepo,
 		packsRepo:           packsRepo,
 		creatorBalancesRepo: creatorBalancesRepo,
-		emailSender:         emailSender,
 	}
 }
 
@@ -213,7 +201,7 @@ func (bs *gemBalancesService) issueCosmeticPurchase(userId uuid.UUID, cosmeticId
 	return nil
 }
 
-func (bs *gemBalancesService) CreateCheckoutSession(userId uuid.UUID, email string, packId uuid.UUID, successUrl string, cancelUrl string) (string, error) {
+func (bs *gemBalancesService) CreateCheckoutSession(userId uuid.UUID, packId uuid.UUID, successUrl string, cancelUrl string) (string, error) {
 	pack, err := bs.packsRepo.GetGemPackById(packId)
 	if err != nil {
 		logger.Logger.Error("Failed to retrieve pack with ID " + packId.String() + ": " + err.Error())
@@ -237,16 +225,12 @@ func (bs *gemBalancesService) CreateCheckoutSession(userId uuid.UUID, email stri
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			stripeParamsSession,
 		},
-		Mode:          stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL:    stripe.String(successUrl),
-		CancelURL:     stripe.String(cancelUrl),
-		CustomerEmail: stripe.String(email),
-		PaymentIntentData: &stripe.CheckoutSessionPaymentIntentDataParams{
-			Metadata: map[string]string{
-				"user_id": userId.String(),
-				"pack_id": packId.String(),
-				"email":   email,
-			},
+		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL: stripe.String(successUrl),
+		CancelURL:  stripe.String(cancelUrl),
+		Metadata: map[string]string{
+			"user_id": userId.String(),
+			"pack_id": packId.String(),
 		},
 	}
 
@@ -261,15 +245,6 @@ func (bs *gemBalancesService) CreateCheckoutSession(userId uuid.UUID, email stri
 	return session.URL, nil
 }
 
-func (bs *gemBalancesService) getTodayDate() string {
-	loc, err := time.LoadLocation(bs.conf.Stripe.StripeBillingTimezone)
-	if err != nil {
-		return time.Now().UTC().Format(DATE_FORMAT)
-	}
-
-	return time.Now().In(loc).Format(DATE_FORMAT)
-}
-
 func (bs *gemBalancesService) HandleWebhook(payload []byte, signature string) error {
 	event, err := webhook.ConstructEvent(payload, signature, bs.conf.Stripe.StripeGemsWebhookSecret)
 	if err != nil {
@@ -278,29 +253,28 @@ func (bs *gemBalancesService) HandleWebhook(payload []byte, signature string) er
 	}
 
 	switch event.Type {
-	case "payment_intent.succeeded":
-		var paymentIntent stripe.PaymentIntent
-		if err := json.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
+	case "checkout.session.completed":
+		var session stripe.CheckoutSession
+		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
 			logger.Logger.Error("Failed to parse Stripe webhook event data: " + err.Error())
 			return err
 		}
 
-		userId, err := uuid.Parse(paymentIntent.Metadata["user_id"])
+		if session.PaymentStatus != stripe.CheckoutSessionPaymentStatusPaid {
+			logger.Logger.Warn("Received Stripe checkout session completed event with non-paid status: " + session.PaymentStatus)
+			return nil
+		}
+
+		userId, err := uuid.Parse(session.Metadata["user_id"])
 		if err != nil {
 			logger.Logger.Error("Failed to parse user ID from Stripe webhook event metadata: " + err.Error())
 			return err
 		}
 
-		packId, err := uuid.Parse(paymentIntent.Metadata["pack_id"])
+		packId, err := uuid.Parse(session.Metadata["pack_id"])
 		if err != nil {
 			logger.Logger.Error("Failed to parse pack ID from Stripe webhook event metadata: " + err.Error())
 			return err
-		}
-
-		email := paymentIntent.Metadata["email"]
-		if email == "" {
-			logger.Logger.Error("Email not found in Stripe webhook event metadata")
-			return fmt.Errorf("email not found in Stripe webhook event metadata")
 		}
 
 		pack, err := bs.packsRepo.GetGemPackById(packId)
@@ -309,7 +283,7 @@ func (bs *gemBalancesService) HandleWebhook(payload []byte, signature string) er
 			return err
 		}
 
-		applied, err := bs.gemBalancesRepo.ApplyStripeCheckoutCreditIfUnprocessed(userId, pack.Gems, event.ID, paymentIntent.ID)
+		applied, err := bs.gemBalancesRepo.ApplyStripeCheckoutCreditIfUnprocessed(userId, pack.Gems, event.ID, session.ID)
 		if err != nil {
 			logger.Logger.Error("Failed to apply idempotent Stripe credit for user " + userId.String() + ": " + err.Error())
 			return err
@@ -320,73 +294,15 @@ func (bs *gemBalancesService) HandleWebhook(payload []byte, signature string) er
 			return nil
 		}
 
-		balance, err := bs.gemBalancesRepo.GetGemBalanceByUserId(userId)
-		if err != nil {
-			logger.Logger.Error("Failed to retrieve updated gem balance for user " + userId.String() + ": " + err.Error())
-			return err
-		}
-
-		err = bs.emailSender.SendGemPurchaseEmail(
-			email_sender.GemPurchaseEmailData{
-				BaseEmailData: bs.emailSender.CreateBaseEmailData(email),
-				GemAmount:     pack.Gems,
-				TotalGems:     balance.Gems,
-				AmountCharged: fmt.Sprintf("$%s", pack.Price.String()),
-				TransactionID: paymentIntent.ID,
-				PurchaseDate:  bs.getTodayDate(),
-			},
-		)
-		if err != nil {
-			logger.Logger.Error("Failed to send gem purchase email for user " + userId.String() + ": " + err.Error())
-		}
-
-		logger.Logger.Info("Processing Stripe checkout session completed event for session ID " + paymentIntent.ID)
-	case "payment_intent.payment_failed":
-		var paymentIntent stripe.PaymentIntent
-		if err := json.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
+		logger.Logger.Info("Processing Stripe checkout session completed event for session ID " + session.ID)
+	case "checkout.session.async_payment_failed":
+		var session stripe.CheckoutSession
+		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
 			logger.Logger.Error("Failed to parse Stripe webhook event data: " + err.Error())
 			return err
 		}
 
-		userId, err := uuid.Parse(paymentIntent.Metadata["user_id"])
-		if err != nil {
-			logger.Logger.Error("Failed to parse user ID from Stripe webhook event metadata: " + err.Error())
-			return err
-		}
-
-		packId, err := uuid.Parse(paymentIntent.Metadata["pack_id"])
-		if err != nil {
-			logger.Logger.Error("Failed to parse pack ID from Stripe webhook event metadata: " + err.Error())
-			return err
-		}
-
-		pack, err := bs.packsRepo.GetGemPackById(packId)
-		if err != nil {
-			logger.Logger.Error("Failed to retrieve pack with ID " + packId.String() + ": " + err.Error())
-			return err
-		}
-
-		email := paymentIntent.Metadata["email"]
-		if email == "" {
-			logger.Logger.Error("Email not found in Stripe webhook event metadata")
-			return fmt.Errorf("email not found in Stripe webhook event metadata")
-		}
-
-		err = bs.emailSender.SendGemPurchaseFailedEmail(
-			email_sender.GemPurchaseFailedEmailData{
-				BaseEmailData: bs.emailSender.CreateBaseEmailData(email),
-				GemAmount:     pack.Gems,
-				AmountCharged: fmt.Sprintf("$%s", pack.Price.String()),
-				TransactionID: paymentIntent.ID,
-				PurchaseDate:  bs.getTodayDate(),
-			},
-		)
-		if err != nil {
-			logger.Logger.Error("Failed to send gem purchase failed email for user " + userId.String() + ": " + err.Error())
-			return err
-		}
-
-		logger.Logger.Info("Processing Stripe checkout session payment failed event for session ID " + paymentIntent.ID)
+		logger.Logger.Info("Processing Stripe checkout session async payment failed event for session ID " + session.ID)
 	case "checkout.session.expired":
 		var session stripe.CheckoutSession
 		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
@@ -396,7 +312,7 @@ func (bs *gemBalancesService) HandleWebhook(payload []byte, signature string) er
 
 		logger.Logger.Info("Processing Stripe checkout session expired event for session ID " + session.ID)
 	default:
-		logger.Logger.Info("Received unhandled Stripe webhook event type: " + event.Type)
+		logger.Logger.Warn("Received unhandled Stripe webhook event type: " + event.Type)
 	}
 
 	return nil

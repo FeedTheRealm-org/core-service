@@ -7,13 +7,12 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
-	"github.com/FeedTheRealm-org/core-service/internal/utils/email_sender"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
 )
 
 var accountService services.AccountService
-var emailSenderService email_sender.EmailSenderService
+var emailSenderService services.EmailSenderService
 
 func CreateStartAccountService() {
 	conf := config.CreateConfig()
@@ -30,7 +29,7 @@ func CreateStartAccountService() {
 
 func CreateStartEmailSenderService() {
 	conf := config.CreateConfig()
-	emailSenderService = email_sender.NewEmailSenderService(conf)
+	emailSenderService = services.NewEmailSenderService(conf)
 }
 
 func clearDatabase(db *config.DB) {

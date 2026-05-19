@@ -93,7 +93,6 @@ type Config struct {
 	BrevoAPIKey                  string
 	EmailSenderAddress           string
 	EmailLogoURL                 string
-	SupportEmail                 string
 	ServerFixedToken             string
 	NomadAddr                    string
 	NomadToken                   string
@@ -191,7 +190,6 @@ func CreateConfig() *Config {
 		BrevoAPIKey:                  os.Getenv("BREVO_API_KEY"),
 		EmailSenderAddress:           os.Getenv("EMAIL_SENDER_ADDRESS"),
 		EmailLogoURL:                 getEnvOrDefaultString("EMAIL_LOGO_URL", "https://avatars.githubusercontent.com/u/231922724?s=400&u=5f4eb45fb6dc7cfa42333bfe1dc64a376122e3d0&v=4"),
-		SupportEmail:                 getEnvOrDefaultString("SUPPORT_EMAIL", "atusgames.official@gmail.com"),
 		ServerFixedToken:             os.Getenv("SERVER_FIXED_TOKEN"),
 		NomadAddr:                    os.Getenv("NOMAD_ADDR"),
 		NomadToken:                   os.Getenv("NOMAD_TOKEN"),

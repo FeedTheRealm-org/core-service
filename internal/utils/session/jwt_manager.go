@@ -44,10 +44,9 @@ func NewJWTManager(secretAccessToken string, secretRefreshToken string, accessTo
 	}
 }
 
-func (m *JWTManager) GenerateAccessToken(id string, email string, isAdmin bool) (string, error) {
+func (m *JWTManager) GenerateAccessToken(id string, isAdmin bool) (string, error) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.MapClaims{
 		"userID":  id,
-		"email":   email,
 		"exp":     time.Now().Add(m.accessTokenDuration).Unix(),
 		"iss":     time.Now().Unix(),
 		"isAdmin": isAdmin,
@@ -61,10 +60,9 @@ func (m *JWTManager) GenerateAccessToken(id string, email string, isAdmin bool) 
 	return tokenString, nil
 }
 
-func (m *JWTManager) GenerateRefreshToken(id string, email string, isAdmin bool) (string, error) {
+func (m *JWTManager) GenerateRefreshToken(id string, isAdmin bool) (string, error) {
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.MapClaims{
 		"userID":  id,
-		"email":   email,
 		"exp":     time.Now().Add(m.refreshTokenDuration).Unix(),
 		"iss":     time.Now().Unix(),
 		"isAdmin": isAdmin,

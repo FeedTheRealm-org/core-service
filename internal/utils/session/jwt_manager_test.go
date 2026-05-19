@@ -11,7 +11,7 @@ import (
 func TestIsValidateToken_Valid(t *testing.T) {
 	manager := NewJWTManager("my-secret-access-key", "my-secret-refresh-key", time.Minute, time.Hour)
 	email := "user@example.com"
-	token, err := manager.GenerateAccessToken(email, email, false)
+	token, err := manager.GenerateAccessToken(email, false)
 	require.NoError(t, err, "Token generation failed")
 
 	claims, err := manager.IsValidateAccessToken(token, time.Now().Add(time.Minute/2))
@@ -23,7 +23,7 @@ func TestIsValidateToken_Valid(t *testing.T) {
 func TestIsValidateToken_Expired(t *testing.T) {
 	manager := NewJWTManager("my-secret-access-key", "my-secret-refresh-key", time.Minute, time.Hour)
 	email := "user@example.com"
-	token, err := manager.GenerateAccessToken(email, email, false)
+	token, err := manager.GenerateAccessToken(email, false)
 	require.NoError(t, err, "Token generation failed")
 
 	_, err = manager.IsValidateAccessToken(token, time.Now().Add(time.Minute*2))
@@ -36,7 +36,7 @@ func TestIsValidateToken_Expired(t *testing.T) {
 func TestIsValidateToken_InvalidSigningMethod(t *testing.T) {
 	manager := NewJWTManager("my-secret-access-key", "my-secret-refresh-key", time.Minute, time.Hour)
 	email := "user@example.com"
-	token, err := manager.GenerateAccessToken(email, email, false)
+	token, err := manager.GenerateAccessToken(email, false)
 	require.NoError(t, err, "Token generation failed")
 
 	invalidToken := token[:len(token)-1] + "X"

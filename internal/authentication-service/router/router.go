@@ -5,7 +5,6 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/controllers"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
-	"github.com/FeedTheRealm-org/core-service/internal/utils/email_sender"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
 	"github.com/gin-gonic/gin"
@@ -19,7 +18,7 @@ func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config, db *co
 	}
 
 	accountService := services.NewAccountService(conf, accountRepo, jwtManager)
-	emailService := email_sender.NewEmailSenderService(conf)
+	emailService := services.NewEmailSenderService(conf)
 	accountController := controllers.NewAccountController(conf, accountService, emailService)
 
 	adminController := controllers.NewAdminLoginController(accountService)

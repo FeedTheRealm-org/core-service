@@ -8,7 +8,6 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
-	"github.com/FeedTheRealm-org/core-service/internal/utils/email_sender"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -16,10 +15,10 @@ import (
 type accountController struct {
 	conf           *config.Config
 	accountService services.AccountService
-	emailService   email_sender.EmailSenderService
+	emailService   services.EmailSenderService
 }
 
-func NewAccountController(conf *config.Config, accountService services.AccountService, emailService email_sender.EmailSenderService) AccountController {
+func NewAccountController(conf *config.Config, accountService services.AccountService, emailService services.EmailSenderService) AccountController {
 	return &accountController{
 		conf:           conf,
 		accountService: accountService,
@@ -93,10 +92,7 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 
 	if ec.conf.Server.Environment != config.Testing {
 		logger.Logger.Infof("CreateAccount: account created for email=%s", result.Email)
-		err = ec.emailService.SendVerificationEmail(email_sender.VerificationEmailData{
-			BaseEmailData: ec.emailService.CreateBaseEmailData(result.Email),
-			VerifyCode:    verificationCode,
-		})
+		err = ec.emailService.SendVerificationEmail(result.Email, verificationCode)
 		if err != nil {
 			logger.Logger.Errorf("CreateAccount: failed to send verification email to email=%s: %v", result.Email, err)
 		}
@@ -348,10 +344,7 @@ func (ec *accountController) RefreshVerification(c *gin.Context) {
 		return
 	}
 
-	if err := ec.emailService.SendVerificationEmail(email_sender.VerificationEmailData{
-		BaseEmailData: ec.emailService.CreateBaseEmailData(req.Email),
-		VerifyCode:    newCode,
-	}); err != nil {
+	if err := ec.emailService.SendVerificationEmail(req.Email, newCode); err != nil {
 		logger.Logger.Errorf("RefreshVerification: failed to send verification email to email=%s: %v", req.Email, err)
 	}
 

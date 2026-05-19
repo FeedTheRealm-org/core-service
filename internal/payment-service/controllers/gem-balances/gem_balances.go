@@ -220,19 +220,13 @@ func (bc *gemBalancesController) CreateCheckoutSession(c *gin.Context) {
 		return
 	}
 
-	email, err := common_handlers.GetEmailFromSession(c)
-	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
 	req := dtos.CheckoutRequest{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))
 		return
 	}
 
-	checkoutUrl, err := bc.gemBalanceService.CreateCheckoutSession(userId, email, req.GemPackId, req.SuccessUrl, req.CancelUrl)
+	checkoutUrl, err := bc.gemBalanceService.CreateCheckoutSession(userId, req.GemPackId, req.SuccessUrl, req.CancelUrl)
 	if err != nil {
 		_ = c.Error(err)
 		return

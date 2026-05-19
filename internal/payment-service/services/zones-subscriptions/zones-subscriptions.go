@@ -1,9 +1,7 @@
 package zones_subscriptions
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,7 +9,6 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/payment-service/models"
 	zones_subscriptions "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/zones-subscriptions"
-	"github.com/FeedTheRealm-org/core-service/internal/utils/email_sender"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -19,7 +16,7 @@ import (
 	stripe "github.com/stripe/stripe-go/v85"
 	"github.com/stripe/stripe-go/v85/checkout/session"
 	"github.com/stripe/stripe-go/v85/customer"
-	stripe_invoice "github.com/stripe/stripe-go/v85/invoice"
+	"github.com/stripe/stripe-go/v85/invoice"
 	"github.com/stripe/stripe-go/v85/subscription"
 	"github.com/stripe/stripe-go/v85/subscriptionitem"
 	"github.com/stripe/stripe-go/v85/webhook"
@@ -32,19 +29,16 @@ func (e *CannotExceedTotalSlotsError) Error() string {
 }
 
 type zoneSubscriptionService struct {
-	conf        *config.Config
-	repo        zones_subscriptions.ZonesSubscriptionsRepository
-	emailSender email_sender.EmailSenderService
+	conf *config.Config
+	repo zones_subscriptions.ZonesSubscriptionsRepository
 }
 
-const DATE_FORMAT = "2006-01-02 15:04:05 MST"
-
-func NewSubscriptionService(conf *config.Config, repo zones_subscriptions.ZonesSubscriptionsRepository, emailSender email_sender.EmailSenderService) SubscriptionService {
+func NewSubscriptionService(conf *config.Config, repo zones_subscriptions.ZonesSubscriptionsRepository) SubscriptionService {
 	stripe.Key = conf.Stripe.StripeApiKey
-	return &zoneSubscriptionService{conf: conf, repo: repo, emailSender: emailSender}
+	return &zoneSubscriptionService{conf: conf, repo: repo}
 }
 
-func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, email string, slots int, successURL string, cancelURL string) (string, error) {
+func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, slots int, successURL string, cancelURL string) (string, error) {
 	logger.Logger.Infof("Creating checkout session for user %s (%d slots)", userID, slots)
 
 	sub, err := zs.repo.GetByUserID(userID)
@@ -52,7 +46,7 @@ func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, email
 		return "", fmt.Errorf("user %s already has an active subscription", userID)
 	}
 
-	sub, err = zs.ensureCustomer(userID, email, slots, sub)
+	sub, err = zs.ensureCustomer(userID, slots, sub)
 	if err != nil {
 		return "", err
 	}
@@ -84,7 +78,6 @@ func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, email
 			ProrationBehavior:  stripe.String("create_prorations"),
 			Metadata: map[string]string{
 				"user_id": userID.String(),
-				"email":   email,
 			},
 		},
 		ClientReferenceID:   stripe.String(userID.String()),
@@ -311,11 +304,6 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 			return err
 		}
 
-		email, ok := stripeSub.Metadata["email"]
-		if !ok || email == "" {
-			return fmt.Errorf("missing email in subscription metadata: %s", stripeSub.ID)
-		}
-
 		dbSub, err := zs.repo.GetByUserID(userID)
 		if err != nil {
 			return err
@@ -334,31 +322,6 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		dbSub.AmountDue = amountDue
 
 		if _, err = zs.repo.Update(dbSub); err != nil {
-			return err
-		}
-
-		loc, err := time.LoadLocation(zs.conf.Stripe.StripeBillingTimezone)
-		if err != nil {
-			loc = time.UTC
-		}
-
-		portalURL, err := zs.createBillingPortalURL(dbSub.StripeCustomerID)
-		if err != nil {
-			logger.Logger.Errorf("Failed to create billing portal session: %v", err)
-			portalURL = ""
-		}
-
-		float, _ := amountDue.Float64()
-
-		err = zs.emailSender.SendSubscriptionStartedEmail(email_sender.SubscriptionStartedData{
-			BaseEmailData:         zs.emailSender.CreateBaseEmailData(email),
-			ZoneCount:             int64(dbSub.TotalSlots),
-			Amount:                fmt.Sprintf("$%.2f", float),
-			FirstBillingDate:      zs.nextBillingDate().In(loc).Format(DATE_FORMAT),
-			ManageSubscriptionURL: portalURL,
-		})
-		if err != nil {
-			logger.Logger.Error("Failed to send subscription started email for user " + dbSub.UserID.String() + ": " + err.Error())
 			return err
 		}
 
@@ -402,6 +365,11 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 			return err
 		}
 
+		if stripeSub.Status == stripe.SubscriptionStatusPastDue {
+			logger.Logger.Warnf("Subscription past_due for user %s — restricting features", userID)
+			// TODO: call email service to notify the user
+		}
+
 		logger.Logger.Infof("Handled subscription.updated for user %s, status: %s", userID, stripeSub.Status)
 		return nil
 	case "customer.subscription.deleted":
@@ -415,13 +383,6 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 			return err
 		}
 
-		if err := zs.stopAllJobs(dbSub); err != nil {
-			logger.Logger.Errorf("Failed to run stopAllJobs: %v", err)
-			return err
-		}
-
-		email, emailOk := stripeSub.Metadata["email"]
-
 		dbSub.Status = stripeSub.Status
 		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
 		dbSub.AmountDue = decimal.Zero
@@ -430,50 +391,7 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 			return err
 		}
 
-		if emailOk && email != "" {
-			err = zs.emailSender.SendSubscriptionCancelledEmail(email_sender.SubscriptionCancelledData{
-				BaseEmailData: zs.emailSender.CreateBaseEmailData(email),
-				ZoneCount:     dbSub.TotalSlots,
-			})
-			if err != nil {
-				logger.Logger.Error("Failed to send subscription cancelled email for user " + dbSub.UserID.String() + ": " + err.Error())
-				return err
-			}
-		} else {
-			logger.Logger.Warnf("Missing email in subscription metadata for sub %s, skipping cancellation email", stripeSub.ID)
-		}
-
 		logger.Logger.Infof("Handled subscription.deleted for stripe sub %s, user %s", stripeSub.ID, dbSub.UserID)
-		return nil
-	case "invoice.paid":
-		var invoice stripe.Invoice
-		if err := json.Unmarshal(event.Data.Raw, &invoice); err != nil {
-			return err
-		}
-
-		loc, err := time.LoadLocation(zs.conf.Stripe.StripeBillingTimezone)
-		if err != nil {
-			loc = time.UTC
-		}
-
-		if invoice.CustomerEmail != "" {
-			err = zs.emailSender.SendPaymentSuccessfulEmail(email_sender.SubscriptionPaymentSuccessfulData{
-				BaseEmailData:   zs.emailSender.CreateBaseEmailData(invoice.CustomerEmail),
-				ZoneCount:       int(invoice.Lines.Data[0].Quantity),
-				Amount:          fmt.Sprintf("$%.2f", float64(invoice.AmountPaid)/100),
-				PaymentDate:     time.Unix(invoice.Created, 0).In(loc).Format(DATE_FORMAT),
-				InvoiceID:       invoice.ID,
-				NextBillingDate: zs.nextBillingDate().In(loc).Format(DATE_FORMAT),
-			})
-			if err != nil {
-				logger.Logger.Error("Failed to send subscription payment successful email for invoice " + invoice.ID + ": " + err.Error())
-				return err
-			}
-		} else {
-			logger.Logger.Warnf("Missing CustomerEmail in invoice %s, skipping payment successful email", invoice.ID)
-		}
-
-		logger.Logger.Infof("Handled invoice.paid for invoice %s", invoice.ID)
 		return nil
 	case "invoice.payment_failed":
 		var invoice stripe.Invoice
@@ -505,11 +423,12 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 			}
 		}
 
-		logger.Logger.Infof(
+		logger.Logger.Warnf(
 			"Payment failed for user %s, stripe sub %s, attempt #%d, decline code: %q",
 			dbSub.UserID, subscriptionId, invoice.AttemptCount, declineCode,
 		)
 
+		// TODO: call email service to notify the user
 		if err := zs.stopAllJobs(dbSub); err != nil {
 			logger.Logger.Errorf("Failed to run stopAllJobs: %v", err)
 			return err
@@ -520,32 +439,39 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 			Prorate:    stripe.Bool(false),
 		})
 		if err != nil {
-			var stripeErr *stripe.Error
-			if errors.As(err, &stripeErr) && stripeErr.HTTPStatusCode == 404 {
-				logger.Logger.Infof("Stripe subscription %s not found, skipping cancel: %v", subscriptionId, err)
-			} else {
-				logger.Logger.Errorf("Failed to cancel Stripe subscription %s after payment failure: %v", subscriptionId, err)
-				return err
-			}
-		}
-
-		if invoice.CustomerEmail != "" {
-			err = zs.emailSender.SendPaymentRejectedEmail(email_sender.SubscriptionPaymentRejectedData{
-				BaseEmailData: zs.emailSender.CreateBaseEmailData(invoice.CustomerEmail),
-				ZoneCount:     int64(dbSub.TotalSlots),
-				Amount:        fmt.Sprintf("$%.2f", float64(invoice.AmountDue)/100),
-			})
-			if err != nil {
-				logger.Logger.Error("Failed to send subscription payment rejected email for user " + dbSub.UserID.String() + ": " + err.Error())
-				return err
-			}
-		} else {
-			logger.Logger.Warnf("Missing CustomerEmail in invoice %s, skipping payment rejected email for user %s", invoice.ID, dbSub.UserID.String())
+			logger.Logger.Errorf("Failed to cancel Stripe subscription %s after payment failure: %v", subscriptionId, err)
+			return err
 		}
 
 		return nil
+	case "invoice.upcoming":
+		var invoice stripe.Invoice
+		if err := json.Unmarshal(event.Data.Raw, &invoice); err != nil {
+			return err
+		}
+
+		var subscriptionId = invoice.Parent.SubscriptionDetails.Subscription.ID
+		if subscriptionId == "" {
+			logger.Logger.Warn("invoice.upcoming received with no associated subscription, skipping")
+			return nil
+		}
+
+		dbSub, err := zs.repo.GetByStripeSubscriptionID(subscriptionId)
+		if err != nil {
+			logger.Logger.Warn("invoice.upcoming received for subscription ID with no DB record: " + subscriptionId)
+			return err
+		}
+
+		dbSub.Status = stripe.SubscriptionStatusActive
+		if _, err = zs.repo.Update(dbSub); err != nil {
+			return err
+		}
+		// TODO: call email service to notify the user
+		logger.Logger.Infof("Payment recovered for user %s — access restored", dbSub.UserID)
+
+		return nil
 	default:
-		logger.Logger.Infof("Unhandled Stripe webhook event type: %s", event.Type)
+		logger.Logger.Warnf("Unhandled Stripe webhook event type: %s", event.Type)
 		return nil
 	}
 }
@@ -560,7 +486,7 @@ func (zs *zoneSubscriptionService) getNextInvoiceAmount(userID uuid.UUID) (decim
 		return decimal.NewFromFloat(zs.conf.Stripe.StripeZonePrice).Mul(decimal.NewFromInt(int64(sub.TotalSlots))), nil
 	}
 
-	inv, err := stripe_invoice.CreatePreview(&stripe.InvoiceCreatePreviewParams{
+	inv, err := invoice.CreatePreview(&stripe.InvoiceCreatePreviewParams{
 		Subscription: stripe.String(sub.StripeSubscriptionID),
 	})
 	if err != nil {
@@ -572,7 +498,6 @@ func (zs *zoneSubscriptionService) getNextInvoiceAmount(userID uuid.UUID) (decim
 
 func (zs *zoneSubscriptionService) ensureCustomer(
 	userID uuid.UUID,
-	email string,
 	slots int,
 	existingSub *models.ZonesSubscriptions,
 ) (sub *models.ZonesSubscriptions, err error) {
@@ -581,7 +506,6 @@ func (zs *zoneSubscriptionService) ensureCustomer(
 	}
 
 	c, err := customer.New(&stripe.CustomerParams{
-		Email: stripe.String(email),
 		Metadata: map[string]string{
 			"user_id": userID.String(),
 		},
@@ -636,18 +560,6 @@ func (zs *zoneSubscriptionService) nextBillingDate() time.Time {
 	}
 
 	return candidate.UTC()
-}
-
-func (zs *zoneSubscriptionService) createBillingPortalURL(stripeCustomerID string) (string, error) {
-	sc := stripe.NewClient(zs.conf.Stripe.StripeApiKey, nil)
-	params := &stripe.BillingPortalSessionCreateParams{
-		Customer: stripe.String(stripeCustomerID),
-	}
-	result, err := sc.V1BillingPortalSessions.Create(context.TODO(), params)
-	if err != nil {
-		return "", err
-	}
-	return result.URL, nil
 }
 
 func (zs *zoneSubscriptionService) GetPricingInfo() (float64, time.Time) {
