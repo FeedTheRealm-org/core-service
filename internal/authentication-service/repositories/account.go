@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"strings"
 	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
@@ -183,6 +184,36 @@ func (ar *accountRepository) RefreshVerificationCode(user *models.User, verifica
 
 func (ar *accountRepository) UpdateRefreshTokenUpdatedAt(id uuid.UUID, updatedAt time.Time) error {
 	if err := ar.db.Conn.Model(&models.User{}).Where("id = ?", id).Update("refresh_token_updated_at", updatedAt).Error; err != nil {
+		return &DatabaseError{message: err.Error()}
+	}
+	return nil
+}
+
+func (ar *accountRepository) ListAccounts(query string, verified *bool, offset int, limit int) ([]models.User, int64, error) {
+	var users []models.User
+	dbQuery := ar.db.Conn.Model(&models.User{})
+
+	if query != "" {
+		dbQuery = dbQuery.Where("LOWER(email) LIKE ?", "%"+strings.ToLower(query)+"%")
+	}
+	if verified != nil {
+		dbQuery = dbQuery.Where("verified = ?", *verified)
+	}
+
+	var total int64
+	if err := dbQuery.Count(&total).Error; err != nil {
+		return nil, 0, &DatabaseError{message: err.Error()}
+	}
+
+	if err := dbQuery.Order("created_at desc").Offset(offset).Limit(limit).Find(&users).Error; err != nil {
+		return nil, 0, &DatabaseError{message: err.Error()}
+	}
+
+	return users, total, nil
+}
+
+func (ar *accountRepository) UpdateAdminStatus(id uuid.UUID, isAdmin bool) error {
+	if err := ar.db.Conn.Model(&models.User{}).Where("id = ?", id).Update("is_admin", isAdmin).Error; err != nil {
 		return &DatabaseError{message: err.Error()}
 	}
 	return nil

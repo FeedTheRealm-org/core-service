@@ -56,3 +56,21 @@ type RefreshTokenResponseDTO struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
+
+type UserSummaryResponseDTO struct {
+	ID        string    `json:"id"`
+	Email     string    `json:"email"`
+	Verified  bool      `json:"verified"`
+	IsAdmin   bool      `json:"is_admin"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type UsersListResponseDTO struct {
+	Users      []UserSummaryResponseDTO `json:"users"`
+	TotalCount int64                    `json:"total_count"`
+}
+
+type UpdateAdminStatusRequestDTO struct {
+	IsAdmin bool `json:"is_admin"`
+}

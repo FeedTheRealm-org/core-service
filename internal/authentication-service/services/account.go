@@ -249,6 +249,18 @@ func (s *accountService) LoginAccount(email string, password string, isAdminReq 
 	return user, accessToken, refreshToken, nil
 }
 
+func (s *accountService) ListAccounts(query string, verified *bool, offset int, limit int) ([]models.User, int64, error) {
+	return s.repo.ListAccounts(query, verified, offset, limit)
+}
+
+func (s *accountService) UpdateAdminStatus(id string, isAdmin bool) error {
+	userId, err := uuid.Parse(id)
+	if err != nil {
+		return &AccountInvalidFormat{Msg: "invalid user id"}
+	}
+	return s.repo.UpdateAdminStatus(userId, isAdmin)
+}
+
 func (s *accountService) ValidateAccessToken(token string) error {
 	// If a fixed server token is configured and matches the provided token, is a valid session.
 	if s.conf != nil && s.conf.ServerFixedToken != "" && token == s.conf.ServerFixedToken {

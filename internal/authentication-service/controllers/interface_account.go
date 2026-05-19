@@ -9,4 +9,6 @@ type AccountController interface {
 	VerifyAccount(c *gin.Context)
 	RefreshVerification(c *gin.Context)
 	RefreshToken(c *gin.Context)
+	ListUsers(c *gin.Context)
+	UpdateAdminStatus(c *gin.Context)
 }
