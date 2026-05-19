@@ -41,13 +41,13 @@ func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, wo
 	case worldId == nil && playerId != nil:
 		query = query.
 			Joins("LEFT JOIN purchases ON purchases.cosmetic_id = cosmetics.id AND purchases.player_id = ?", *playerId).
-			Where("cosmetics.world_id = ? OR purchases.cosmetic_id IS NOT NULL", uuid.Nil)
+			Where("purchases.cosmetic_id IS NOT NULL")
 	case worldId != nil && playerId != nil:
 		query = query.
 			Joins("LEFT JOIN purchases ON purchases.cosmetic_id = cosmetics.id AND purchases.player_id = ?", *playerId).
 			Where(
-				"cosmetics.world_id = ? OR cosmetics.world_id = ? OR purchases.cosmetic_id IS NOT NULL",
-				uuid.Nil, *worldId,
+				"cosmetics.world_id = ? OR purchases.cosmetic_id IS NOT NULL",
+				*worldId,
 			)
 	}
 
