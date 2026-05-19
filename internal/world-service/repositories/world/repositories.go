@@ -46,8 +46,8 @@ type WorldRepository interface {
 	// GetActiveWorldZones retrieves all active zones across all worlds.
 	GetActiveWorldZones() ([]*models.WorldZone, error)
 
-	// UpdateWorldZonePlayerCount updates active player counts for a zone.
-	UpdateWorldZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int) error
+	// UpdateWorldZonePlayerCount updates active player counts and average player time for a zone.
+	UpdateWorldZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int, averagePlayerTime int) error
 
 	// GetWorldZonePlayerCounts retrieves zones with player counts for a world.
 	GetWorldZonePlayerCounts(worldID uuid.UUID) ([]*models.WorldZone, error)

@@ -225,11 +225,12 @@ func (r *worldRepository) GetActiveWorldZones() ([]*models.WorldZone, error) {
 	return activeZones, nil
 }
 
-func (r *worldRepository) UpdateWorldZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int) error {
+func (r *worldRepository) UpdateWorldZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int, averagePlayerTime int) error {
 	result := r.db.Conn.Model(&models.WorldZone{}).
 		Where("world_id = ? AND id = ?", worldID, zoneID).
 		Updates(map[string]interface{}{
 			"active_players":          activePlayers,
+			"average_player_time":     averagePlayerTime,
 			"player_count_updated_at": time.Now().UTC(),
 		})
 	if result.Error != nil {

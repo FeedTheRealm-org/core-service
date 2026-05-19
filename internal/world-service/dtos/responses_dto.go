@@ -59,13 +59,15 @@ type WorldZoneResponse struct {
 }
 
 type ZonePlayerCountResponse struct {
-	ZoneID        int       `json:"zone_id"`
-	ActivePlayers int       `json:"active_players"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ZoneID            int       `json:"zone_id"`
+	ActivePlayers     int       `json:"active_players"`
+	AveragePlayerTime int       `json:"average_player_time"`
+	UpdatedAt         time.Time `json:"updated_at"`
 }
 
 type WorldPlayerCountsResponse struct {
-	WorldID      string                    `json:"world_id"`
-	TotalPlayers int                       `json:"total_players"`
-	Zones        []ZonePlayerCountResponse `json:"zones"`
+	WorldID           string                    `json:"world_id"`
+	TotalPlayers      int                       `json:"total_players"`
+	AveragePlayerTime int                       `json:"average_player_time"`
+	Zones             []ZonePlayerCountResponse `json:"zones"`
 }

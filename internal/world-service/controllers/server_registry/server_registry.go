@@ -243,7 +243,7 @@ func (c *serverRegistryController) UpdateStatus(ctx *gin.Context) {
 
 // UpdatePlayerCount godoc
 // @Summary      Update zone player count
-// @Description  Servers report active players every 2 minutes.
+// @Description  Servers report active players and average player time every 2 minutes.
 // @Tags         world-service
 // @Security     BearerAuth
 // @Accept       json
@@ -284,11 +284,13 @@ func (c *serverRegistryController) UpdatePlayerCount(ctx *gin.Context) {
 	}
 
 	activePlayers := req.ActivePlayers
+	averagePlayerTime := req.AveragePlayerTime
 	if !zone.IsOnline || !zone.IsActive {
 		activePlayers = 0
+		averagePlayerTime = 0
 	}
 
-	if err := c.zoneService.UpdateZonePlayerCount(worldId, zoneId, activePlayers); err != nil {
+	if err := c.zoneService.UpdateZonePlayerCount(worldId, zoneId, activePlayers, averagePlayerTime); err != nil {
 		_ = ctx.Error(errors.NewInternalServerError(err.Error()))
 		return
 	}
@@ -344,9 +346,10 @@ func (c *serverRegistryController) buildWorldPlayerCounts(worldId uuid.UUID) dto
 	zones, err := c.zoneService.GetWorldZonePlayerCounts(worldId)
 	if err != nil {
 		return dtos.WorldPlayerCountsResponse{
-			WorldID:      worldId.String(),
-			TotalPlayers: 0,
-			Zones:        []dtos.ZonePlayerCountResponse{},
+			WorldID:           worldId.String(),
+			TotalPlayers:      0,
+			AveragePlayerTime: 0,
+			Zones:             []dtos.ZonePlayerCountResponse{},
 		}
 	}
 
@@ -358,9 +361,10 @@ func (c *serverRegistryController) buildWorldPlayerCounts(worldId uuid.UUID) dto
 	}
 
 	return dtos.WorldPlayerCountsResponse{
-		WorldID:      worldId.String(),
-		TotalPlayers: 0,
-		Zones:        []dtos.ZonePlayerCountResponse{},
+		WorldID:           worldId.String(),
+		TotalPlayers:      0,
+		AveragePlayerTime: 0,
+		Zones:             []dtos.ZonePlayerCountResponse{},
 	}
 }
 
@@ -371,23 +375,39 @@ func groupZonesByWorld(zones []*models.WorldZone) []dtos.WorldPlayerCountsRespon
 		entry, ok := worldMap[worldId]
 		if !ok {
 			entry = &dtos.WorldPlayerCountsResponse{
-				WorldID:      worldId,
-				TotalPlayers: 0,
-				Zones:        []dtos.ZonePlayerCountResponse{},
+				WorldID:           worldId,
+				TotalPlayers:      0,
+				AveragePlayerTime: 0,
+				Zones:             []dtos.ZonePlayerCountResponse{},
 			}
 			worldMap[worldId] = entry
 		}
 		entry.TotalPlayers += zone.ActivePlayers
 		entry.Zones = append(entry.Zones, dtos.ZonePlayerCountResponse{
-			ZoneID:        zone.ID,
-			ActivePlayers: zone.ActivePlayers,
-			UpdatedAt:     zone.PlayerCountUpdatedAt,
+			ZoneID:            zone.ID,
+			ActivePlayers:     zone.ActivePlayers,
+			AveragePlayerTime: zone.AveragePlayerTime,
+			UpdatedAt:         zone.PlayerCountUpdatedAt,
 		})
 	}
 
 	responses := make([]dtos.WorldPlayerCountsResponse, 0, len(worldMap))
 	for _, response := range worldMap {
+		response.AveragePlayerTime = averageZoneTime(response.Zones)
 		responses = append(responses, *response)
 	}
 	return responses
+}
+
+func averageZoneTime(zones []dtos.ZonePlayerCountResponse) int {
+	if len(zones) == 0 {
+		return 0
+	}
+
+	total := 0
+	for _, zone := range zones {
+		total += zone.AveragePlayerTime
+	}
+
+	return int(float64(total)/float64(len(zones)) + 0.5)
 }

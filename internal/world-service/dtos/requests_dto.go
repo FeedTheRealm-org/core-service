@@ -21,5 +21,6 @@ type UpdateStatusRequest struct {
 }
 
 type UpdatePlayerCountRequest struct {
-	ActivePlayers int `json:"active_players"`
+	ActivePlayers     int `json:"active_players"`
+	AveragePlayerTime int `json:"average_player_time"`
 }

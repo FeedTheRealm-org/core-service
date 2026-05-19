@@ -201,8 +201,8 @@ func (zs *zonesService) UpdateZoneStatus(worldID uuid.UUID, zoneID int, isOnline
 	return zs.worldRepository.SetWorldZoneOnlineState(worldID, zoneID, isOnline)
 }
 
-func (zs *zonesService) UpdateZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int) error {
-	return zs.worldRepository.UpdateWorldZonePlayerCount(worldID, zoneID, activePlayers)
+func (zs *zonesService) UpdateZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int, averagePlayerTime int) error {
+	return zs.worldRepository.UpdateWorldZonePlayerCount(worldID, zoneID, activePlayers, averagePlayerTime)
 }
 
 func (zs *zonesService) GetWorldZonePlayerCounts(worldID uuid.UUID) ([]*models.WorldZone, error) {

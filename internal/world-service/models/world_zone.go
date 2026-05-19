@@ -14,5 +14,6 @@ type WorldZone struct {
 	IsActive             bool           `gorm:"not null;default:false"`
 	IsOnline             bool           `gorm:"not null;default:false"`
 	ActivePlayers        int            `gorm:"not null;default:0"`
+	AveragePlayerTime    int            `gorm:"not null;default:0"`
 	PlayerCountUpdatedAt time.Time      `gorm:"autoUpdateTime"`
 }
