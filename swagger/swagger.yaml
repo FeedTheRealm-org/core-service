@@ -362,6 +362,11 @@ definitions:
       used_slots:
         type: integer
     type: object
+  dtos.UpdateAdminStatusRequestDTO:
+    properties:
+      is_admin:
+        type: boolean
+    type: object
   dtos.UpdateCreateableDataRequest:
     properties:
       createable_data: {}
@@ -382,6 +387,11 @@ definitions:
       price:
         type: number
     type: object
+  dtos.UpdatePlayerCountRequest:
+    properties:
+      active_players:
+        type: integer
+    type: object
   dtos.UpdateStatusRequest:
     properties:
       is_online:
@@ -393,6 +403,30 @@ definitions:
         type: integer
     required:
     - slots
+    type: object
+  dtos.UserSummaryResponseDTO:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_admin:
+        type: boolean
+      updated_at:
+        type: string
+      verified:
+        type: boolean
+    type: object
+  dtos.UsersListResponseDTO:
+    properties:
+      total_count:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/dtos.UserSummaryResponseDTO'
+        type: array
     type: object
   dtos.VerifyAccountRequestDTO:
     properties:
@@ -434,6 +468,17 @@ definitions:
       zones:
         items:
           $ref: '#/definitions/dtos.WorldZoneMetadata'
+        type: array
+    type: object
+  dtos.WorldPlayerCountsResponse:
+    properties:
+      total_players:
+        type: integer
+      world_id:
+        type: string
+      zones:
+        items:
+          $ref: '#/definitions/dtos.ZonePlayerCountResponse'
         type: array
     type: object
   dtos.WorldRequest:
@@ -511,6 +556,15 @@ definitions:
         items:
           $ref: '#/definitions/dtos.WorldMetadata'
         type: array
+    type: object
+  dtos.ZonePlayerCountResponse:
+    properties:
+      active_players:
+        type: integer
+      updated_at:
+        type: string
+      zone_id:
+        type: integer
     type: object
   models.CharacterColorHsv:
     properties:
@@ -1453,6 +1507,89 @@ paths:
       summary: Create a new account
       tags:
       - authentication-service
+  /auth/users:
+    get:
+      description: Returns a paginated list of users. Admin only.
+      parameters:
+      - description: Filter by email
+        in: query
+        name: query
+        type: string
+      - description: Filter by verification
+        in: query
+        name: verified
+        type: boolean
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 50
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.UsersListResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - authentication-service
+  /auth/users/{id}/admin:
+    put:
+      consumes:
+      - application/json
+      description: Updates the admin flag for a user. Admin only.
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Admin status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateAdminStatusRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update admin status
+      tags:
+      - authentication-service
   /auth/verify:
     post:
       consumes:
@@ -1512,6 +1649,31 @@ paths:
       security:
       - BearerAuth: []
       summary: Get creator balance
+      tags:
+      - payment-service
+  /payments/balances/creators/all:
+    get:
+      description: Returns all creator balances. Admin only.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.CreatorBalanceResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List creator balances
       tags:
       - payment-service
   /payments/checkout:
@@ -2719,6 +2881,35 @@ paths:
       tags:
       - world-service
       - internal
+  /world/orchestrator/{id}/players:
+    get:
+      description: Returns player counts per zone for a world.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WorldPlayerCountsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get world player counts
+      tags:
+      - world-service
   /world/orchestrator/{id}/zones/{zone_id}/address:
     get:
       description: Returns resolved dynamically routed TCP/UDP IP and Port mappings
@@ -2752,6 +2943,48 @@ paths:
       security:
       - BearerAuth: []
       summary: Fetch running container address
+      tags:
+      - world-service
+  /world/orchestrator/{id}/zones/{zone_id}/players:
+    post:
+      consumes:
+      - application/json
+      description: Servers report active players every 2 minutes.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: World Zone Number
+        in: path
+        name: zone_id
+        required: true
+        type: integer
+      - description: Player count payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdatePlayerCountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.WorldPlayerCountsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update zone player count
       tags:
       - world-service
   /world/orchestrator/{id}/zones/{zone_id}/start-job:
@@ -2868,6 +3101,27 @@ paths:
       security:
       - BearerAuth: []
       summary: Shutdown job execution
+      tags:
+      - world-service
+  /world/orchestrator/players:
+    get:
+      description: Returns player counts for all worlds.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.WorldPlayerCountsResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all world player counts
       tags:
       - world-service
   /world/orchestrator/webhook/servers/update:
