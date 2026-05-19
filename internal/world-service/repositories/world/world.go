@@ -225,6 +225,38 @@ func (r *worldRepository) GetActiveWorldZones() ([]*models.WorldZone, error) {
 	return activeZones, nil
 }
 
+func (r *worldRepository) UpdateWorldZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int) error {
+	result := r.db.Conn.Model(&models.WorldZone{}).
+		Where("world_id = ? AND id = ?", worldID, zoneID).
+		Updates(map[string]interface{}{
+			"active_players":          activePlayers,
+			"player_count_updated_at": time.Now().UTC(),
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+func (r *worldRepository) GetWorldZonePlayerCounts(worldID uuid.UUID) ([]*models.WorldZone, error) {
+	var zones []*models.WorldZone
+	if err := r.db.Conn.Where("world_id = ?", worldID).Order("id ASC").Find(&zones).Error; err != nil {
+		return nil, err
+	}
+	return zones, nil
+}
+
+func (r *worldRepository) GetAllWorldZonePlayerCounts() ([]*models.WorldZone, error) {
+	var zones []*models.WorldZone
+	if err := r.db.Conn.Order("world_id asc, id asc").Find(&zones).Error; err != nil {
+		return nil, err
+	}
+	return zones, nil
+}
+
 func (wr *worldRepository) GetWorldIdsByUserId(userId uuid.UUID) ([]uuid.UUID, error) {
 	var worldIds []uuid.UUID
 	err := wr.db.Conn.Model(&models.WorldData{}).Where("user_id = ?", userId).Pluck("id", &worldIds).Error

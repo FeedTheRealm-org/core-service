@@ -19,3 +19,7 @@ type PublishZoneRequest struct {
 type UpdateStatusRequest struct {
 	IsOnline bool `json:"is_online"`
 }
+
+type UpdatePlayerCountRequest struct {
+	ActivePlayers int `json:"active_players"`
+}

@@ -10,6 +10,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/dtos"
+	"github.com/FeedTheRealm-org/core-service/internal/world-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/server_registry"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/world"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/services/zones"
@@ -238,4 +239,155 @@ func (c *serverRegistryController) UpdateStatus(ctx *gin.Context) {
 	}
 
 	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
+}
+
+// UpdatePlayerCount godoc
+// @Summary      Update zone player count
+// @Description  Servers report active players every 2 minutes.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "World UUID"
+// @Param        zone_id path int true "World Zone Number"
+// @Param        request body dtos.UpdatePlayerCountRequest true "Player count payload"
+// @Success      200  {object}  dtos.WorldPlayerCountsResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /world/orchestrator/{id}/zones/{zone_id}/players [post]
+func (c *serverRegistryController) UpdatePlayerCount(ctx *gin.Context) {
+	worldIdStr := ctx.Param("id")
+	zoneIdStr := ctx.Param("zone_id")
+
+	worldId, err := uuid.Parse(worldIdStr)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + worldIdStr))
+		return
+	}
+
+	zoneId, err := strconv.Atoi(zoneIdStr)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid zone ID: " + zoneIdStr))
+		return
+	}
+
+	var req dtos.UpdatePlayerCountRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))
+		return
+	}
+
+	zone, err := c.zoneService.GetWorldZone(worldId, zoneId)
+	if err != nil {
+		_ = ctx.Error(errors.NewNotFoundError("zone not found"))
+		return
+	}
+
+	activePlayers := req.ActivePlayers
+	if !zone.IsOnline || !zone.IsActive {
+		activePlayers = 0
+	}
+
+	if err := c.zoneService.UpdateZonePlayerCount(worldId, zoneId, activePlayers); err != nil {
+		_ = ctx.Error(errors.NewInternalServerError(err.Error()))
+		return
+	}
+
+	response := c.buildWorldPlayerCounts(worldId)
+	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, response)
+}
+
+// GetWorldPlayerCounts godoc
+// @Summary      Get world player counts
+// @Description  Returns player counts per zone for a world.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path string true "World UUID"
+// @Success      200  {object}  dtos.WorldPlayerCountsResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /world/orchestrator/{id}/players [get]
+func (c *serverRegistryController) GetWorldPlayerCounts(ctx *gin.Context) {
+	worldIdStr := ctx.Param("id")
+	worldId, err := uuid.Parse(worldIdStr)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + worldIdStr))
+		return
+	}
+
+	response := c.buildWorldPlayerCounts(worldId)
+	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, response)
+}
+
+// GetAllWorldPlayerCounts godoc
+// @Summary      Get all world player counts
+// @Description  Returns player counts for all worlds.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {array}  dtos.WorldPlayerCountsResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /world/orchestrator/players [get]
+func (c *serverRegistryController) GetAllWorldPlayerCounts(ctx *gin.Context) {
+	zones, err := c.zoneService.GetAllWorldZonePlayerCounts()
+	if err != nil {
+		_ = ctx.Error(errors.NewInternalServerError(err.Error()))
+		return
+	}
+
+	responses := groupZonesByWorld(zones)
+	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, responses)
+}
+
+func (c *serverRegistryController) buildWorldPlayerCounts(worldId uuid.UUID) dtos.WorldPlayerCountsResponse {
+	zones, err := c.zoneService.GetWorldZonePlayerCounts(worldId)
+	if err != nil {
+		return dtos.WorldPlayerCountsResponse{
+			WorldID:      worldId.String(),
+			TotalPlayers: 0,
+			Zones:        []dtos.ZonePlayerCountResponse{},
+		}
+	}
+
+	responses := groupZonesByWorld(zones)
+	for _, res := range responses {
+		if res.WorldID == worldId.String() {
+			return res
+		}
+	}
+
+	return dtos.WorldPlayerCountsResponse{
+		WorldID:      worldId.String(),
+		TotalPlayers: 0,
+		Zones:        []dtos.ZonePlayerCountResponse{},
+	}
+}
+
+func groupZonesByWorld(zones []*models.WorldZone) []dtos.WorldPlayerCountsResponse {
+	worldMap := make(map[string]*dtos.WorldPlayerCountsResponse)
+	for _, zone := range zones {
+		worldId := zone.WorldID.String()
+		entry, ok := worldMap[worldId]
+		if !ok {
+			entry = &dtos.WorldPlayerCountsResponse{
+				WorldID:      worldId,
+				TotalPlayers: 0,
+				Zones:        []dtos.ZonePlayerCountResponse{},
+			}
+			worldMap[worldId] = entry
+		}
+		entry.TotalPlayers += zone.ActivePlayers
+		entry.Zones = append(entry.Zones, dtos.ZonePlayerCountResponse{
+			ZoneID:        zone.ID,
+			ActivePlayers: zone.ActivePlayers,
+			UpdatedAt:     zone.PlayerCountUpdatedAt,
+		})
+	}
+
+	responses := make([]dtos.WorldPlayerCountsResponse, 0, len(worldMap))
+	for _, response := range worldMap {
+		responses = append(responses, *response)
+	}
+	return responses
 }

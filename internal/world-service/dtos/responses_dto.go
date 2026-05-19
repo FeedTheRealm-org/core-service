@@ -57,3 +57,15 @@ type WorldZoneResponse struct {
 	IsActive bool   `json:"is_active"`
 	IsOnline bool   `json:"is_online"`
 }
+
+type ZonePlayerCountResponse struct {
+	ZoneID        int       `json:"zone_id"`
+	ActivePlayers int       `json:"active_players"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+type WorldPlayerCountsResponse struct {
+	WorldID      string                    `json:"world_id"`
+	TotalPlayers int                       `json:"total_players"`
+	Zones        []ZonePlayerCountResponse `json:"zones"`
+}
