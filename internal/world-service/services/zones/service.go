@@ -32,10 +32,10 @@ type ZonesService interface {
 	UpdateZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int, averagePlayerTime int) error
 
 	// GetWorldZonePlayerCounts returns zones with player counts for a world.
-	GetWorldZonePlayerCounts(worldID uuid.UUID) ([]*models.WorldZone, error)
+	GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, error)
 
 	// GetAllWorldZonePlayerCounts returns zones with player counts for all worlds.
-	GetAllWorldZonePlayerCounts() ([]*models.WorldZone, error)
+	GetAllWorldZonePlayerCounts() (int, int, error)
 
 	// StopAllZonesForUser stops all active zones for a specific user.
 	StopAllZonesForUser(userID uuid.UUID) error

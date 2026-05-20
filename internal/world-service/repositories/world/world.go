@@ -228,7 +228,7 @@ func (r *worldRepository) GetActiveWorldZones() ([]*models.WorldZone, error) {
 func (r *worldRepository) UpdateWorldZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int, averagePlayerTime int) error {
 	result := r.db.Conn.Model(&models.WorldZone{}).
 		Where("world_id = ? AND id = ?", worldID, zoneID).
-		Updates(map[string]interface{}{
+		Updates(map[string]any{
 			"active_players":          activePlayers,
 			"average_player_time":     averagePlayerTime,
 			"player_count_updated_at": time.Now().UTC(),
@@ -242,20 +242,40 @@ func (r *worldRepository) UpdateWorldZonePlayerCount(worldID uuid.UUID, zoneID i
 	return nil
 }
 
-func (r *worldRepository) GetWorldZonePlayerCounts(worldID uuid.UUID) ([]*models.WorldZone, error) {
-	var zones []*models.WorldZone
-	if err := r.db.Conn.Where("world_id = ?", worldID).Order("id ASC").Find(&zones).Error; err != nil {
-		return nil, err
+func (r *worldRepository) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, error) {
+	var result struct {
+		TotalActivePlayers int
+		AvgPlayerTime      float64
 	}
-	return zones, nil
+
+	err := r.db.Conn.Model(&models.WorldZone{}).
+		Select("COALESCE(SUM(active_players), 0) as total_active_players, COALESCE(AVG(average_player_time), 0) as avg_player_time").
+		Where("world_id = ? AND is_online = ?", worldID, true).
+		Scan(&result).Error
+
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return result.TotalActivePlayers, int(result.AvgPlayerTime), nil
 }
 
-func (r *worldRepository) GetAllWorldZonePlayerCounts() ([]*models.WorldZone, error) {
-	var zones []*models.WorldZone
-	if err := r.db.Conn.Order("world_id asc, id asc").Find(&zones).Error; err != nil {
-		return nil, err
+func (r *worldRepository) GetAllWorldZonePlayerCounts() (int, int, error) {
+	var result struct {
+		TotalActivePlayers int
+		AvgPlayerTime      float64
 	}
-	return zones, nil
+
+	err := r.db.Conn.Model(&models.WorldZone{}).
+		Select("COALESCE(SUM(active_players), 0) as total_active_players, COALESCE(AVG(average_player_time), 0) as avg_player_time").
+		Where("is_online = ?", true).
+		Scan(&result).Error
+
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return result.TotalActivePlayers, int(result.AvgPlayerTime), nil
 }
 
 func (wr *worldRepository) GetWorldIdsByUserId(userId uuid.UUID) ([]uuid.UUID, error) {
