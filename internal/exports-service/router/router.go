@@ -6,6 +6,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/exports-service/repositories/bucket"
 	exports_repo "github.com/FeedTheRealm-org/core-service/internal/exports-service/repositories/exports"
 	exports_service "github.com/FeedTheRealm-org/core-service/internal/exports-service/services/exports"
+	"github.com/FeedTheRealm-org/core-service/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,8 +29,8 @@ func SetupExportsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB
 	exportsService := exports_service.NewExportsService(conf, exportsRepo, worldsBucketRepo)
 	exportsController := exports_controller.NewExportsController(conf, exportsService)
 
-	g.PUT("/zip", exportsController.UploadZip)
-	g.GET("/zip", exportsController.GetZipPath)
+	g.PUT("/zip", middleware.AdminCheckMiddleware(), exportsController.UploadZip)
+	g.GET("/zip", middleware.AdminCheckMiddleware(), exportsController.GetZipPath)
 
 	return nil
 }

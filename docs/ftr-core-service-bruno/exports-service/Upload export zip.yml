@@ -8,6 +8,22 @@ info:
 http:
   method: PUT
   url: "{{baseUrl}}/exports/zip"
+  body:
+    type: multipart-form
+    data:
+      - name: app
+        type: text
+        value: ftr_game
+      - name: os
+        type: text
+        value: linux
+      - name: version
+        type: text
+        value: v0.6.0
+      - name: file
+        type: file
+        value:
+          - /home/maxo/Desktop/feed_the_realm/game/Build/Client/client.zip
   auth: inherit
 
 settings:

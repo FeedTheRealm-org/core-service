@@ -7,18 +7,18 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/exports/zip"
+  url: "{{baseUrl}}/exports/zip?app=ftr_game&version=v0.6.0&os=linux"
   params:
     - name: app
-      value: ""
+      value: ftr_game
       type: query
       description: App name
     - name: version
-      value: ""
+      value: v0.6.0
       type: query
       description: Version (vX.Y.Z)
     - name: os
-      value: ""
+      value: linux
       type: query
       description: OS name
   auth: inherit
