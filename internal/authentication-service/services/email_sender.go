@@ -18,6 +18,8 @@ const brevoSendEmailURL = "https://api.brevo.com/v3/smtp/email"
 const filepathTemplates = "templates"
 const templateVerificationEmail = "verification_email.html"
 const templateName = "verification_email"
+const templatePasswordResetEmail = "password_reset_email.html"
+const templateNamePasswordReset = "password_reset_email"
 
 // EmailTemplateData holds the data for email templates
 type EmailTemplateData struct {
@@ -100,13 +102,8 @@ func createRequestForSendEmail(payload *bytes.Buffer, apiKey string) (*http.Requ
 	return req, nil
 }
 
-func (s *emailSenderService) SendVerificationEmail(toEmail string, verifyCode string) error {
-	data, err := createPayloadForSendEmail(s.conf.EmailSenderAddress, toEmail, verifyCode, s.conf.EmailLogoURL)
-	if err != nil {
-		return err
-	}
-
-	req, err := createRequestForSendEmail(data, s.conf.BrevoAPIKey)
+func (s *emailSenderService) sendEmail(payload *bytes.Buffer, logTag string) error {
+	req, err := createRequestForSendEmail(payload, s.conf.BrevoAPIKey)
 	if err != nil {
 		return err
 	}
@@ -119,13 +116,64 @@ func (s *emailSenderService) SendVerificationEmail(toEmail string, verifyCode st
 
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
-			logger.Logger.Warnf("SendVerificationEmail: failed to close response body: %v", cerr)
+			logger.Logger.Warnf("%s: failed to close response body: %v", logTag, cerr)
 		}
 	}()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to send verification email, status code: %d", resp.StatusCode)
+		return fmt.Errorf("failed to send email (%s), status code: %d", logTag, resp.StatusCode)
 	}
 
 	return nil
+}
+
+func (s *emailSenderService) SendVerificationEmail(toEmail string, verifyCode string) error {
+	data, err := createPayloadForSendEmail(s.conf.EmailSenderAddress, toEmail, verifyCode, s.conf.EmailLogoURL)
+	if err != nil {
+		return err
+	}
+	return s.sendEmail(data, "SendVerificationEmail")
+}
+
+func (s *emailSenderService) SendPasswordResetEmail(toEmail string, otpCode string) error {
+	templatePath := filepath.Join(filepathTemplates, templatePasswordResetEmail)
+	templateContent, err := os.ReadFile(templatePath)
+	if err != nil {
+		return err
+	}
+
+	tmpl, err := template.New(templateNamePasswordReset).Parse(string(templateContent))
+	if err != nil {
+		return err
+	}
+
+	data := EmailTemplateData{
+		VerifyCode: otpCode,
+		ToEmail:    toEmail,
+		LogoURL:    s.conf.EmailLogoURL,
+	}
+
+	var htmlBuffer bytes.Buffer
+	if err := tmpl.Execute(&htmlBuffer, data); err != nil {
+		return err
+	}
+
+	emailData := map[string]interface{}{
+		"sender": map[string]string{
+			"name":  "Feed The Realm",
+			"email": s.conf.EmailSenderAddress,
+		},
+		"to": []map[string]string{
+			{"email": toEmail},
+		},
+		"subject":     "Feed The Realm - Password Reset Code",
+		"htmlContent": htmlBuffer.String(),
+	}
+
+	jsonData, err := json.Marshal(emailData)
+	if err != nil {
+		return err
+	}
+
+	return s.sendEmail(bytes.NewBuffer(jsonData), "SendPasswordResetEmail")
 }
