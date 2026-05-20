@@ -69,7 +69,18 @@ func (es *exportsService) ListZipVersions(appName, osName string) ([]*models.Exp
 }
 
 func (es *exportsService) DeleteZipVersion(appName, version, osName string) error {
-	return es.repository.DeleteExportVersion(appName, version, osName)
+	if err := es.repository.DeleteExportVersion(appName, version, osName); err != nil {
+		logger.Logger.Errorf("Error deleting export version: %v", err)
+		return err
+	}
+
+	filePath := buildExportFilePath(appName, version, osName)
+	if err := es.bucketRepo.DeleteFile(filePath); err != nil {
+		logger.Logger.Errorf("Error deleting export zip from bucket: %v", err)
+		return err
+	}
+
+	return nil
 }
 
 func (es *exportsService) SetLatestZipVersion(appName, version, osName string) (*models.ExportZip, error) {
