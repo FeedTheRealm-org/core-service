@@ -22,7 +22,7 @@ type GemBalancesService interface {
 	PurchaseCosmetic(userId uuid.UUID, cosmeticId uuid.UUID) error
 
 	// CreateCheckoutSession creates a new checkout session for a user.
-	CreateCheckoutSession(userId uuid.UUID, packageId uuid.UUID, successUrl string, cancelUrl string) (string, error)
+	CreateCheckoutSession(userId uuid.UUID, email string, packageId uuid.UUID, successUrl string, cancelUrl string) (string, error)
 
 	// HandleWebhook processes incoming webhook events from the payment provider.
 	HandleWebhook(payload []byte, signature string) error

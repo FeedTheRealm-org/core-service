@@ -55,6 +55,13 @@ func JWTAuthMiddleware(jwtManager *session.JWTManager, fixedToken string) gin.Ha
 			c.Set("invalidJWT", true)
 		}
 
+		if email, ok := claims["email"].(string); ok {
+			c.Set("email", email)
+		} else {
+			logger.Logger.Warnln("Missing email in JWT claims")
+			c.Set("invalidJWT", true)
+		}
+
 		if isAdmin, ok := claims["isAdmin"].(bool); ok && isAdmin {
 			c.Set("isAdmin", true)
 		} else {

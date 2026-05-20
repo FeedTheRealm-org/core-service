@@ -278,12 +278,12 @@ func (s *accountService) LoginAccount(email string, password string, isAdminReq 
 		return nil, "", "", &AccountNotVerifiedError{}
 	}
 
-	accessToken, err := s.jwt.GenerateAccessToken(user.Id.String(), user.IsAdmin)
+	accessToken, err := s.jwt.GenerateAccessToken(user.Id.String(), user.Email, user.IsAdmin)
 	if err != nil {
 		return nil, "", "", &AccountFailedToCreateTokenError{}
 	}
 
-	refreshToken, err := s.jwt.GenerateRefreshToken(user.Id.String(), user.IsAdmin)
+	refreshToken, err := s.jwt.GenerateRefreshToken(user.Id.String(), user.Email, user.IsAdmin)
 	if err != nil {
 		return nil, "", "", &AccountFailedToCreateTokenError{}
 	}
@@ -422,12 +422,12 @@ func (s *accountService) RefreshToken(email string) (string, string, error) {
 		return "", "", &AccountNotVerifiedError{}
 	}
 
-	accessToken, err := s.jwt.GenerateAccessToken(user.Id.String(), user.IsAdmin)
+	accessToken, err := s.jwt.GenerateAccessToken(user.Id.String(), user.Email, user.IsAdmin)
 	if err != nil {
 		return "", "", &AccountFailedToCreateTokenError{}
 	}
 
-	refreshToken, err := s.jwt.GenerateRefreshToken(user.Id.String(), user.IsAdmin)
+	refreshToken, err := s.jwt.GenerateRefreshToken(user.Id.String(), user.Email, user.IsAdmin)
 	if err != nil {
 		return "", "", &AccountFailedToCreateTokenError{}
 	}
