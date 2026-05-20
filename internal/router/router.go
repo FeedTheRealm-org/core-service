@@ -5,6 +5,7 @@ import (
 	assetsRouter "github.com/FeedTheRealm-org/core-service/internal/assets-service/router"
 	authRouter "github.com/FeedTheRealm-org/core-service/internal/authentication-service/router"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
+	exportsRouter "github.com/FeedTheRealm-org/core-service/internal/exports-service/router"
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
 	paymentsRouter "github.com/FeedTheRealm-org/core-service/internal/payment-service/router"
 	playersRouter "github.com/FeedTheRealm-org/core-service/internal/players-service/router"
@@ -46,6 +47,10 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 	}
 
 	if err := assetsRouter.SetupAssetsServiceRouter(r, conf, db); err != nil {
+		return err
+	}
+
+	if err := exportsRouter.SetupExportsServiceRouter(r, conf, db); err != nil {
 		return err
 	}
 
