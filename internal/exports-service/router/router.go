@@ -31,6 +31,9 @@ func SetupExportsServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB
 
 	g.PUT("/zip", middleware.AdminCheckMiddleware(), exportsController.UploadZip)
 	g.GET("/zip", middleware.AdminCheckMiddleware(), exportsController.GetZipPath)
+	g.GET("/zip/versions", middleware.AdminCheckMiddleware(), exportsController.ListZipVersions)
+	g.DELETE("/zip", middleware.AdminCheckMiddleware(), exportsController.DeleteZipVersion)
+	g.PATCH("/zip/latest", middleware.AdminCheckMiddleware(), exportsController.SetLatestZipVersion)
 
 	return nil
 }

@@ -1,5 +1,7 @@
 package dtos
 
+import "time"
+
 type AppName string
 
 const (
@@ -41,12 +43,21 @@ func (o OSName) Valid() bool {
 }
 
 type ExportZipResponse struct {
-	AppName string `json:"app_name"`
-	Version string `json:"version"`
-	OS      string `json:"os"`
-	Path    string `json:"path"`
+	AppName   string    `json:"app_name"`
+	Version   string    `json:"version"`
+	OS        string    `json:"os"`
+	Path      string    `json:"path"`
+	IsLatest  bool      `json:"is_latest"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type ExportZipPathResponse struct {
 	Path string `json:"path"`
+}
+
+type ExportZipSetLatestRequest struct {
+	AppName string `json:"app_name"`
+	Version string `json:"version"`
+	OS      string `json:"os"`
 }

@@ -35,10 +35,11 @@ func (es *exportsService) UploadZip(appName, version, osName string, zipFile mul
 	}
 
 	exportZip := &models.ExportZip{
-		AppName: appName,
-		Version: version,
-		OS:      osName,
-		Path:    fmt.Sprintf("/%s", filePath),
+		AppName:  appName,
+		Version:  version,
+		OS:       osName,
+		Path:     fmt.Sprintf("/%s", filePath),
+		IsLatest: false,
 	}
 
 	if err := es.repository.CreateExportVersion(exportZip); err != nil {
@@ -50,11 +51,29 @@ func (es *exportsService) UploadZip(appName, version, osName string, zipFile mul
 }
 
 func (es *exportsService) GetZipPath(appName, version, osName string) (string, error) {
-	exportZip, err := es.repository.GetExportVersion(appName, version, osName)
+	var exportZip *models.ExportZip
+	var err error
+	if version == "" {
+		exportZip, err = es.repository.GetLatestExportVersion(appName, osName)
+	} else {
+		exportZip, err = es.repository.GetExportVersion(appName, version, osName)
+	}
 	if err != nil {
 		return "", err
 	}
 	return exportZip.Path, nil
+}
+
+func (es *exportsService) ListZipVersions(appName, osName string) ([]*models.ExportZip, error) {
+	return es.repository.ListExportVersions(appName, osName)
+}
+
+func (es *exportsService) DeleteZipVersion(appName, version, osName string) error {
+	return es.repository.DeleteExportVersion(appName, version, osName)
+}
+
+func (es *exportsService) SetLatestZipVersion(appName, version, osName string) (*models.ExportZip, error) {
+	return es.repository.SetLatestExportVersion(appName, version, osName)
 }
 
 func buildExportFilePath(appName, version, osName string) string {

@@ -6,4 +6,7 @@ import "github.com/gin-gonic/gin"
 type ExportsController interface {
 	UploadZip(c *gin.Context)
 	GetZipPath(c *gin.Context)
+	ListZipVersions(c *gin.Context)
+	DeleteZipVersion(c *gin.Context)
+	SetLatestZipVersion(c *gin.Context)
 }
