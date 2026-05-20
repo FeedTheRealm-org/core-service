@@ -155,6 +155,22 @@ definitions:
       type:
         type: string
     type: object
+  dtos.ExportZipPathResponse:
+    properties:
+      path:
+        type: string
+    type: object
+  dtos.ExportZipResponse:
+    properties:
+      app_name:
+        type: string
+      os:
+        type: string
+      path:
+        type: string
+      version:
+        type: string
+    type: object
   dtos.GemBalanceResponse:
     properties:
       gems:
@@ -316,6 +332,13 @@ definitions:
       skin_color:
         $ref: '#/definitions/models.CharacterColorHsv'
     type: object
+  dtos.PlayerCountsResponse:
+    properties:
+      active_players:
+        type: integer
+      average_player_time:
+        type: integer
+    type: object
   dtos.PricingInfoResponse:
     properties:
       next_billing_date:
@@ -390,6 +413,8 @@ definitions:
   dtos.UpdatePlayerCountRequest:
     properties:
       active_players:
+        type: integer
+      average_player_time:
         type: integer
     type: object
   dtos.UpdateStatusRequest:
@@ -470,17 +495,6 @@ definitions:
           $ref: '#/definitions/dtos.WorldZoneMetadata'
         type: array
     type: object
-  dtos.WorldPlayerCountsResponse:
-    properties:
-      total_players:
-        type: integer
-      world_id:
-        type: string
-      zones:
-        items:
-          $ref: '#/definitions/dtos.ZonePlayerCountResponse'
-        type: array
-    type: object
   dtos.WorldRequest:
     properties:
       createable_data: {}
@@ -524,6 +538,10 @@ definitions:
     type: object
   dtos.WorldZoneResponse:
     properties:
+      active_players:
+        type: integer
+      average_player_time:
+        type: integer
       is_active:
         type: boolean
       is_online:
@@ -556,15 +574,6 @@ definitions:
         items:
           $ref: '#/definitions/dtos.WorldMetadata'
         type: array
-    type: object
-  dtos.ZonePlayerCountResponse:
-    properties:
-      active_players:
-        type: integer
-      updated_at:
-        type: string
-      zone_id:
-        type: integer
     type: object
   models.CharacterColorHsv:
     properties:
@@ -1628,6 +1637,100 @@ paths:
       summary: Verify an account
       tags:
       - authentication-service
+  /exports/zip:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the path for a given app, version, and OS.
+      parameters:
+      - description: App name
+        in: query
+        name: app
+        required: true
+        type: string
+      - description: Version (vX.Y.Z)
+        in: query
+        name: version
+        required: true
+        type: string
+      - description: OS name
+        in: query
+        name: os
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ExportZipPathResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get export zip path
+      tags:
+      - exports-service
+    put:
+      consumes:
+      - multipart/form-data
+      description: Uploads a zip file for a given app, version, and OS.
+      parameters:
+      - description: App name
+        in: formData
+        name: app
+        required: true
+        type: string
+      - description: Version (vX.Y.Z)
+        in: formData
+        name: version
+        required: true
+        type: string
+      - description: OS name
+        in: formData
+        name: os
+        required: true
+        type: string
+      - description: Zip file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.ExportZipResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload export zip
+      tags:
+      - exports-service
   /payments/balances/creators:
     get:
       description: Get the current creator balance of the authenticated user
@@ -2896,7 +2999,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dtos.WorldPlayerCountsResponse'
+            $ref: '#/definitions/dtos.PlayerCountsResponse'
         "400":
           description: Bad Request
           schema:
@@ -2949,7 +3052,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Servers report active players every 2 minutes.
+      description: Servers report active players and average player time every 2 minutes.
       parameters:
       - description: World UUID
         in: path
@@ -2973,7 +3076,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dtos.WorldPlayerCountsResponse'
+            type: string
         "400":
           description: Bad Request
           schema:
@@ -3113,7 +3216,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/dtos.WorldPlayerCountsResponse'
+              $ref: '#/definitions/dtos.PlayerCountsResponse'
             type: array
         "500":
           description: Internal Server Error

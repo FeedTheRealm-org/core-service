@@ -1612,6 +1612,149 @@ const docTemplate = `{
                 }
             }
         },
+        "/exports/zip": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves the path for a given app, version, and OS.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exports-service"
+                ],
+                "summary": "Get export zip path",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "App name",
+                        "name": "app",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Version (vX.Y.Z)",
+                        "name": "version",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "OS name",
+                        "name": "os",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ExportZipPathResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Uploads a zip file for a given app, version, and OS.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exports-service"
+                ],
+                "summary": "Upload export zip",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "App name",
+                        "name": "app",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Version (vX.Y.Z)",
+                        "name": "version",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "OS name",
+                        "name": "os",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Zip file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ExportZipResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/payments/balances/creators": {
             "get": {
                 "security": [
@@ -3049,7 +3192,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dtos.WorldPlayerCountsResponse"
+                                "$ref": "#/definitions/dtos.PlayerCountsResponse"
                             }
                         }
                     },
@@ -3128,7 +3271,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dtos.WorldPlayerCountsResponse"
+                            "$ref": "#/definitions/dtos.PlayerCountsResponse"
                         }
                     },
                     "400": {
@@ -3206,7 +3349,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Servers report active players every 2 minutes.",
+                "description": "Servers report active players and average player time every 2 minutes.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3246,7 +3389,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dtos.WorldPlayerCountsResponse"
+                            "type": "string"
                         }
                     },
                     "400": {
@@ -4236,6 +4379,31 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.ExportZipPathResponse": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ExportZipResponse": {
+            "type": "object",
+            "properties": {
+                "app_name": {
+                    "type": "string"
+                },
+                "os": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.GemBalanceResponse": {
             "type": "object",
             "properties": {
@@ -4486,6 +4654,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.PlayerCountsResponse": {
+            "type": "object",
+            "properties": {
+                "active_players": {
+                    "type": "integer"
+                },
+                "average_player_time": {
+                    "type": "integer"
+                }
+            }
+        },
         "dtos.PricingInfoResponse": {
             "type": "object",
             "properties": {
@@ -4601,6 +4780,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "active_players": {
+                    "type": "integer"
+                },
+                "average_player_time": {
                     "type": "integer"
                 }
             }
@@ -4726,23 +4908,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dtos.WorldPlayerCountsResponse": {
-            "type": "object",
-            "properties": {
-                "total_players": {
-                    "type": "integer"
-                },
-                "world_id": {
-                    "type": "string"
-                },
-                "zones": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dtos.ZonePlayerCountResponse"
-                    }
-                }
-            }
-        },
         "dtos.WorldRequest": {
             "type": "object",
             "properties": {
@@ -4808,6 +4973,12 @@ const docTemplate = `{
         "dtos.WorldZoneResponse": {
             "type": "object",
             "properties": {
+                "active_players": {
+                    "type": "integer"
+                },
+                "average_player_time": {
+                    "type": "integer"
+                },
                 "is_active": {
                     "type": "boolean"
                 },
@@ -4856,20 +5027,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dtos.WorldMetadata"
                     }
-                }
-            }
-        },
-        "dtos.ZonePlayerCountResponse": {
-            "type": "object",
-            "properties": {
-                "active_players": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "zone_id": {
-                    "type": "integer"
                 }
             }
         },

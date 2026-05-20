@@ -1,0 +1,65 @@
+info:
+  name: Upload export zip
+  type: http
+  seq: 2
+  tags:
+    - exports-service
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/exports/zip"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 201 Response
+    description: Created
+    request:
+      url: "{{baseUrl}}/exports/zip"
+      method: PUT
+    response:
+      status: 201
+      statusText: Created
+      body:
+        type: text
+        data: ""
+  - name: 400 Response
+    description: Bad Request
+    request:
+      url: "{{baseUrl}}/exports/zip"
+      method: PUT
+    response:
+      status: 400
+      statusText: Bad Request
+      body:
+        type: text
+        data: ""
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/exports/zip"
+      method: PUT
+    response:
+      status: 401
+      statusText: Unauthorized
+      body:
+        type: text
+        data: ""
+  - name: 409 Response
+    description: Conflict
+    request:
+      url: "{{baseUrl}}/exports/zip"
+      method: PUT
+    response:
+      status: 409
+      statusText: Conflict
+      body:
+        type: text
+        data: ""
+
+docs: Uploads a zip file for a given app, version, and OS.
