@@ -4,6 +4,9 @@ type EmailSenderService interface {
 	// CreateBaseEmailData creates a BaseEmailData struct with common email fields populated.
 	CreateBaseEmailData(toEmail string) BaseEmailData
 
+	// SendPasswordResetEmail sends a password reset email to the user with the provided data.
+	SendPasswordResetEmail(data PasswordResetEmailData) error
+
 	// SendVerificationEmail sends a verification email to the user with the provided data.
 	SendVerificationEmail(data VerificationEmailData) error
 

@@ -31,6 +31,13 @@ func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config, db *co
 	g.POST("/refresh-token", accountController.RefreshToken)
 	g.GET("/check-session", accountController.CheckSessionExpiration)
 
+	password := g.Group("/password")
+	{
+		password.POST("/forgot", accountController.ForgotPassword)
+		password.POST("/verify-code", accountController.VerifyPasswordCode)
+		password.POST("/reset", accountController.ResetPassword)
+	}
+
 	g.GET("", adminController.AdminLoginPageHandler)
 	g.POST("", adminController.AdminLoginHandler)
 

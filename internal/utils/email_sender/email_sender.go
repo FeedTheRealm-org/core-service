@@ -105,6 +105,15 @@ func (s *emailSenderService) SendVerificationEmail(data VerificationEmailData) e
 	return renderAndSend(s.conf, data.ToEmail, "Feed The Realm - Verification Code", "verification_email", data)
 }
 
+type PasswordResetEmailData struct {
+	BaseEmailData
+	ResetCode string
+}
+
+func (s *emailSenderService) SendPasswordResetEmail(data PasswordResetEmailData) error {
+	return renderAndSend(s.conf, data.ToEmail, "Feed The Realm - Password Reset Code", "password_reset_email", data)
+}
+
 type GemPurchaseEmailData struct {
 	BaseEmailData
 	GemAmount     int64
