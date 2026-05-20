@@ -13,4 +13,9 @@ type AccountService interface {
 	VerifyAccount(email string, code string) (bool, error)
 	RefreshVerificationCode(email string) (string, error)
 	RefreshToken(email string) (string, string, error)
+
+	// Password reset
+	ForgotPassword(email string) (otpCode string, err error)
+	VerifyPasswordResetCode(email string, code string) (resetToken string, err error)
+	ResetPassword(resetToken string, newPassword string) error
 }
