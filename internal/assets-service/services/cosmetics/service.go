@@ -14,6 +14,9 @@ type CosmeticsService interface {
 	// GetCosmeticsListByCategory retrieves a list of cosmetics for a given category.
 	GetCosmeticsListByCategory(category uuid.UUID, worldId *uuid.UUID, playerId *uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error)
 
+	// GetEconomySummary retrieves aggregate counts and average price for cosmetics.
+	GetEconomySummary() (*models.CosmeticsEconomySummary, error)
+
 	// GetCosmeticById handles the retrieval of a cosmetic by its ID.
 	GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error)
 

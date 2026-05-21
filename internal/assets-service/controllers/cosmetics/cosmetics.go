@@ -67,6 +67,36 @@ func (cc *cosmeticsController) GetCategoriesList(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
+// GetEconomySummary godoc
+// @Summary      Get cosmetics economy summary
+// @Description  Retrieves aggregate counts and average price for cosmetics without loading all rows.
+// @Tags         assets-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  dtos.CosmeticsEconomySummaryResponse
+// @Failure      401  {object}  dtos.ErrorResponse
+// @Router       /assets/cosmetics/economy-summary [get]
+func (cc *cosmeticsController) GetEconomySummary(c *gin.Context) {
+	_, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	summary, err := cc.cosmeticsService.GetEconomySummary()
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, &dtos.CosmeticsEconomySummaryResponse{
+		DefaultCosmetics:     summary.DefaultCosmetics,
+		UserCreatedCosmetics: summary.UserCreatedCosmetics,
+		AveragePrice:         summary.AveragePrice,
+	})
+}
+
 // GetCosmeticsListByCategory godoc
 // @Summary      Get cosmetics by category
 // @Description  Retrieves a list of cosmetics that belong to a specific category ID.

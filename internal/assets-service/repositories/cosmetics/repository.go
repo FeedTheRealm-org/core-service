@@ -11,6 +11,8 @@ type CosmeticsRepository interface {
 
 	GetCosmeticsListByCategory(category uuid.UUID, worldId *uuid.UUID, playerId *uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error)
 
+	GetEconomySummary() (*models.CosmeticsEconomySummary, error)
+
 	GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error)
 
 	AddCategory(category string) (*models.CosmeticCategory, error)
