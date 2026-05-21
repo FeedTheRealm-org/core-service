@@ -126,12 +126,6 @@ func (ec *exportsController) UploadZip(c *gin.Context) {
 // @Failure      404  {object}  dtos.ErrorResponse
 // @Router       /exports/zip [get]
 func (ec *exportsController) GetZipPath(c *gin.Context) {
-	_, err := common_handlers.GetUserIDFromSession(c)
-	if err != nil {
-		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
-		return
-	}
-
 	appNameStr := firstNonEmpty(c.Query("app"), c.Query("app_name"))
 	version := firstNonEmpty(c.Query("version"), c.Query("versiion"))
 	osNameStr := c.Query("os")
