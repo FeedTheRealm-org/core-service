@@ -39,6 +39,11 @@ type DatabaseConfig struct {
 	SSLCertPath       string
 	ConnectionRetries int
 	ShouldMigrate     bool
+
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime time.Duration
+	ConnMaxIdleTime time.Duration
 }
 
 type AssetsConfig struct {
@@ -131,6 +136,11 @@ func CreateConfig() *Config {
 		SSLCertPath:       os.Getenv("DATABASE_SSL_CERT_PATH"),
 		ConnectionRetries: getEnvOrDefaultInt("DB_CONNECTION_RETRIES", 10),
 		ShouldMigrate:     getEnvOrDefaultString("DB_SHOULD_MIGRATE", "false") == "true",
+
+		MaxOpenConns:    getEnvOrDefaultInt("DB_MAX_OPEN_CONNS", 10),
+		MaxIdleConns:    getEnvOrDefaultInt("DB_MAX_IDLE_CONNS", 5),
+		ConnMaxLifetime: getEnvOrDefaultDuration("DB_CONN_MAX_LIFETIME", time.Minute*30),
+		ConnMaxIdleTime: getEnvOrDefaultDuration("DB_CONN_MAX_IDLE_TIME", time.Minute*5),
 	}
 
 	assetsConf := &AssetsConfig{

@@ -60,8 +60,25 @@ func NewDB(conf *Config) (*DB, error) {
 		}
 	}
 
+	sqlDB, err := conn.DB()
+	if err != nil {
+		return nil, err
+	}
+	sqlDB.SetMaxOpenConns(conf.DB.MaxOpenConns)
+	sqlDB.SetMaxIdleConns(conf.DB.MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(conf.DB.ConnMaxLifetime)
+	sqlDB.SetConnMaxIdleTime(conf.DB.ConnMaxIdleTime)
+
 	logger.Logger.Infoln("Connected to the database & migrations applied")
 	return db, nil
+}
+
+func (db *DB) Close() error {
+	sqlDB, err := db.Conn.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
 }
 
 func (db *DB) runMigrations() error {
@@ -79,6 +96,11 @@ func (db *DB) runMigrations() error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			logger.Logger.Errorf("Error closing database connection: %v", err)
+		}
+	}()
 
 	for _, entry := range entries {
 		if !entry.IsDir() {

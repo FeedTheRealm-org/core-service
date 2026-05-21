@@ -33,7 +33,6 @@ func main() {
 		<-signalChannel
 		close(signalChannel)
 		s.Shutdown()
-		os.Exit(0)
 	}()
 
 	err = s.Start()
