@@ -426,7 +426,7 @@ func (ec *accountController) ForgotPassword(c *gin.Context) {
 	if otpCode != "" && ec.conf.Server.Environment != config.Testing {
 		if err := ec.emailService.SendPasswordResetEmail(email_sender.PasswordResetEmailData{
 			BaseEmailData: ec.emailService.CreateBaseEmailData(req.Email),
-			ResetCode:     otpCode,
+			VerifyCode:    otpCode,
 		}); err != nil {
 			logger.Logger.Errorf("ForgotPassword: failed to send password reset email to email=%s: %v", req.Email, err)
 		}

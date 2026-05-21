@@ -107,7 +107,7 @@ func (s *emailSenderService) SendVerificationEmail(data VerificationEmailData) e
 
 type PasswordResetEmailData struct {
 	BaseEmailData
-	ResetCode string
+	VerifyCode string
 }
 
 func (s *emailSenderService) SendPasswordResetEmail(data PasswordResetEmailData) error {
