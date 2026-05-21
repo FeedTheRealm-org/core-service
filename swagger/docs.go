@@ -316,6 +316,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/assets/cosmetics/economy-summary": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves aggregate counts and average price for cosmetics without loading all rows.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets-service"
+                ],
+                "summary": "Get cosmetics economy summary",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CosmeticsEconomySummaryResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/assets/cosmetics/worlds/{world_id}": {
             "get": {
                 "security": [
@@ -1250,6 +1284,156 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/password/forgot": {
+            "post": {
+                "description": "Initiates a password reset flow by sending an OTP to the user's email. Always returns success to prevent account enumeration.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Forgot password",
+                "parameters": [
+                    {
+                        "description": "Email address",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ForgotPasswordRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ForgotPasswordResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/password/reset": {
+            "post": {
+                "description": "Validates the reset token and updates the user's password, revoking all active sessions.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Reset password",
+                "parameters": [
+                    {
+                        "description": "Reset token and new password",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ResetPasswordRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ResetPasswordResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/password/verify-code": {
+            "post": {
+                "description": "Validates the OTP sent to the user's email and returns a short-lived reset token on success.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Verify password reset code",
+                "parameters": [
+                    {
+                        "description": "Email and OTP code",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.VerifyPasswordCodeRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.VerifyPasswordCodeResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/refresh": {
             "post": {
                 "description": "Generates and sends a new verification code to the user's email.",
@@ -1360,6 +1544,46 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/session": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Validates that the current session is active and has admin privileges.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Check admin session",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SessionStatusResponseDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -1753,6 +1977,184 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes a specific export version.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exports-service"
+                ],
+                "summary": "Delete export zip version",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "App name",
+                        "name": "app",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Version",
+                        "name": "version",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "OS name",
+                        "name": "os",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/exports/zip/latest": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Marks one export version as the latest for its app and OS.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exports-service"
+                ],
+                "summary": "Set export zip version as latest",
+                "parameters": [
+                    {
+                        "description": "Latest version payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ExportZipSetLatestRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ExportZipResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/exports/zip/versions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves all export versions, optionally filtered by app and OS.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exports-service"
+                ],
+                "summary": "List export zip versions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "App name",
+                        "name": "app",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "OS name",
+                        "name": "os",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.ExportZipResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/payments/balances/creators": {
@@ -2040,6 +2442,43 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/gems/metrics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns aggregated gem metrics. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service"
+                ],
+                "summary": "Get gem metrics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.GemMetricsResponse"
                         }
                     },
                     "401": {
@@ -4293,6 +4732,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.CosmeticsEconomySummaryResponse": {
+            "type": "object",
+            "properties": {
+                "average_price": {
+                    "type": "number"
+                },
+                "default_cosmetics": {
+                    "type": "integer"
+                },
+                "user_created_cosmetics": {
+                    "type": "integer"
+                }
+            }
+        },
         "dtos.CosmeticsListResponse": {
             "type": "object",
             "properties": {
@@ -4393,14 +4846,53 @@ const docTemplate = `{
                 "app_name": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
+                "is_latest": {
+                    "type": "boolean"
+                },
                 "os": {
                     "type": "string"
                 },
                 "path": {
                     "type": "string"
                 },
+                "updated_at": {
+                    "type": "string"
+                },
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.ExportZipSetLatestRequest": {
+            "type": "object",
+            "properties": {
+                "app_name": {
+                    "type": "string"
+                },
+                "os": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ForgotPasswordRequestDTO": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ForgotPasswordResponseDTO": {
+            "type": "object",
+            "properties": {
+                "success": {
+                    "type": "boolean"
                 }
             }
         },
@@ -4412,6 +4904,23 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.GemMetricsResponse": {
+            "type": "object",
+            "properties": {
+                "gems_bought": {
+                    "type": "integer"
+                },
+                "gems_flow": {
+                    "type": "number"
+                },
+                "gems_revenue": {
+                    "type": "number"
+                },
+                "gems_spent": {
+                    "type": "integer"
                 }
             }
         },
@@ -4717,6 +5226,36 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.ResetPasswordRequestDTO": {
+            "type": "object",
+            "properties": {
+                "new_password": {
+                    "type": "string"
+                },
+                "reset_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ResetPasswordResponseDTO": {
+            "type": "object",
+            "properties": {
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dtos.SessionStatusResponseDTO": {
+            "type": "object",
+            "properties": {
+                "is_admin": {
+                    "type": "boolean"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.SubscriptionStatusResponse": {
             "type": "object",
             "properties": {
@@ -4862,6 +5401,25 @@ const docTemplate = `{
                 },
                 "verified": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dtos.VerifyPasswordCodeRequestDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.VerifyPasswordCodeResponseDTO": {
+            "type": "object",
+            "properties": {
+                "reset_token": {
+                    "type": "string"
                 }
             }
         },
