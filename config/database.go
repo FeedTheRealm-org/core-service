@@ -96,11 +96,6 @@ func (db *DB) runMigrations() error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err := sqlDB.Close(); err != nil {
-			logger.Logger.Errorf("Error closing database connection: %v", err)
-		}
-	}()
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
