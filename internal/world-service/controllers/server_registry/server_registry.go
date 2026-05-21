@@ -102,7 +102,7 @@ func (c *serverRegistryController) StopJob(ctx *gin.Context) {
 
 	err = c.nomadJobSenderService.StopJob(worldId, zoneId)
 	if err != nil {
-		_ = ctx.Error(errors.NewNotFoundError(err.Error()))
+		_ = ctx.Error(errors.NewNotFoundError("Could not stop job."))
 		return
 	}
 
@@ -139,7 +139,7 @@ func (c *serverRegistryController) GetServerAddress(ctx *gin.Context) {
 
 	addr, port, err := c.nomadJobSenderService.GetServerAddress(worldId, zoneId)
 	if err != nil {
-		_ = ctx.Error(errors.NewNotFoundError(err.Error()))
+		_ = ctx.Error(errors.NewNotFoundError("Failed to get server address."))
 		return
 	}
 
@@ -169,14 +169,14 @@ func (c *serverRegistryController) UpdateServer(ctx *gin.Context) {
 
 	activeZones, err := c.worldService.GetActiveWorldZones()
 	if err != nil {
-		_ = ctx.Error(errors.NewNotFoundError(err.Error()))
+		_ = ctx.Error(errors.NewNotFoundError("Failed to get active world zones."))
 		return
 	}
 
 	for _, zone := range activeZones {
 		err := c.nomadJobSenderService.StartNewJob(zone.WorldID, zone.ID, false)
 		if err != nil {
-			_ = ctx.Error(errors.NewInternalServerError(err.Error()))
+			_ = ctx.Error(errors.NewInternalServerError("Failed to start new job."))
 			return
 		}
 	}
@@ -222,7 +222,7 @@ func (c *serverRegistryController) UpdateStatus(ctx *gin.Context) {
 
 	err = c.zoneService.UpdateZoneStatus(worldId, zoneId, req.IsOnline)
 	if err != nil {
-		_ = ctx.Error(errors.NewInternalServerError(err.Error()))
+		_ = ctx.Error(errors.NewInternalServerError("Failed to update zone status."))
 		return
 	}
 
@@ -266,7 +266,7 @@ func (c *serverRegistryController) UpdatePlayerCount(ctx *gin.Context) {
 	}
 
 	if err := c.zoneService.UpdateZonePlayerCount(worldId, zoneId, req.ActivePlayers, req.AveragePlayerTime); err != nil {
-		_ = ctx.Error(errors.NewInternalServerError(err.Error()))
+		_ = ctx.Error(errors.NewInternalServerError("Failed to update zone player count."))
 		return
 	}
 
@@ -294,7 +294,7 @@ func (c *serverRegistryController) GetWorldPlayerCounts(ctx *gin.Context) {
 
 	activePlayers, averagePlayerTime, err := c.zoneService.GetWorldZonePlayerCounts(worldId)
 	if err != nil {
-		_ = ctx.Error(errors.NewInternalServerError(err.Error()))
+		_ = ctx.Error(errors.NewInternalServerError("Failed to get world player count."))
 		return
 	}
 
@@ -318,7 +318,7 @@ func (c *serverRegistryController) GetWorldPlayerCounts(ctx *gin.Context) {
 func (c *serverRegistryController) GetAllWorldPlayerCounts(ctx *gin.Context) {
 	activePlayers, averagePlayerTime, err := c.zoneService.GetAllWorldZonePlayerCounts()
 	if err != nil {
-		_ = ctx.Error(errors.NewInternalServerError(err.Error()))
+		_ = ctx.Error(errors.NewInternalServerError("Failed to get all world player counts."))
 		return
 	}
 

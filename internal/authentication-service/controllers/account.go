@@ -677,7 +677,7 @@ func (ec *accountController) ListUsers(c *gin.Context) {
 
 	users, total, err := ec.accountService.ListAccounts(query, verified, offset, limit)
 	if err != nil {
-		_ = c.Error(errors.NewInternalServerError(err.Error()))
+		_ = c.Error(errors.NewInternalServerError("Failed to list accounts."))
 		return
 	}
 
@@ -725,7 +725,7 @@ func (ec *accountController) UpdateAdminStatus(c *gin.Context) {
 	}
 
 	if err := ec.accountService.UpdateAdminStatus(c.Param("id"), req.IsAdmin); err != nil {
-		_ = c.Error(errors.NewInternalServerError(err.Error()))
+		_ = c.Error(errors.NewInternalServerError("Failed to update admin status."))
 		return
 	}
 
