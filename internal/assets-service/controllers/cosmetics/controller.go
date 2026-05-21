@@ -7,6 +7,9 @@ type CosmeticsController interface {
 	// GetCategoriesList retrieves a list of cosmetic categories.
 	GetCategoriesList(c *gin.Context)
 
+	// GetEconomySummary retrieves aggregate counts and average price for cosmetics.
+	GetEconomySummary(c *gin.Context)
+
 	// GetCosmeticsListByCategory retrieves a list of cosmetics for a given category.
 	GetCosmeticsListByCategory(c *gin.Context)
 

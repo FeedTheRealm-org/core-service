@@ -34,6 +34,7 @@ func JWTAuthMiddleware(jwtManager *session.JWTManager, fixedToken string) gin.Ha
 		// read-only endpoints that only check for a valid session to work.
 		if fixedToken != "" && tokenString == fixedToken {
 			c.Set("userID", "00000000-0000-0000-0000-000000000000")
+			c.Set("isServer", true)
 			return
 		}
 
@@ -51,6 +52,13 @@ func JWTAuthMiddleware(jwtManager *session.JWTManager, fixedToken string) gin.Ha
 			c.Set("userID", userID)
 		} else {
 			logger.Logger.Warnln("Missing userID in JWT claims")
+			c.Set("invalidJWT", true)
+		}
+
+		if email, ok := claims["email"].(string); ok {
+			c.Set("email", email)
+		} else {
+			logger.Logger.Warnln("Missing email in JWT claims")
 			c.Set("invalidJWT", true)
 		}
 

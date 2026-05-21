@@ -192,6 +192,7 @@ func (c *worldController) GetWorld(ctx *gin.Context) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
+// @Param        user_id query string false "Filter by owner user ID"
 // @Param        offset query int false "Offset for pagination"
 // @Param        limit query int false "Max hits per page"
 // @Param        filter query string false "Search filters"
@@ -207,9 +208,22 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 		return
 	}
 
+	userIdStr := ctx.Query("user_id")
 	offsetStr := ctx.Query("offset")
 	limitStr := ctx.Query("limit")
 	filter := ctx.Query("filter")
+
+	var userId uuid.UUID
+	if userIdStr != "" {
+		parseUserId, err := uuid.Parse(userIdStr)
+		if err != nil {
+			_ = ctx.Error(errors.NewBadRequestError("invalid user_id: " + userIdStr))
+			return
+		}
+		userId = parseUserId
+	} else {
+		userId = uuid.Nil
+	}
 
 	if offsetStr == "" || limitStr == "" {
 		_ = ctx.Error(errors.NewBadRequestError("offset and limit are required"))
@@ -227,7 +241,7 @@ func (c *worldController) GetWorldsList(ctx *gin.Context) {
 		return
 	}
 
-	worldsList, err := c.worldService.GetWorldsList(offset, limit, filter)
+	worldsList, err := c.worldService.GetWorldsList(offset, limit, filter, userId)
 	if err != nil {
 		if _, ok := err.(*world_errors.WorldInfoNotFound); ok {
 			_ = ctx.Error(errors.NewNotFoundError("world info not found"))

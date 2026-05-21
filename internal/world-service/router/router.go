@@ -40,6 +40,8 @@ func SetupEndpointsForZonesService(worldGroup *gin.RouterGroup, db *config.DB, c
 	worldGroup.GET("/:id/zones/:zone_id", zonesController.GetWorldZoneData)
 	worldGroup.GET("/:id/zones/:zone_id/activate", zonesController.ActivateZone)
 	worldGroup.GET("/:id/zones/:zone_id/deactivate", zonesController.DeactivateZone)
+
+	worldGroup.GET("/internal/users/:user_id/stop-jobs", zonesController.StopAllJobsForUser)
 }
 
 func SetupEndpointsForServiceRegistry(orchestratorGroup *gin.RouterGroup, db *config.DB, conf *config.Config, nomadService server_registry_service.ServerRegistryService) error {
@@ -50,12 +52,17 @@ func SetupEndpointsForServiceRegistry(orchestratorGroup *gin.RouterGroup, db *co
 
 	worldRepo := world_repo.NewWorldRepository(conf, db)
 	worldService := world_service.NewWorldService(conf, worldRepo, nomadService)
-	serverRegistryController := server_registry_controller.NewServerRegistryController(conf, worldService, nomadService)
+	zoneService := zones_service.NewZonesService(conf, worldRepo, nomadService)
+	serverRegistryController := server_registry_controller.NewServerRegistryController(conf, worldService, zoneService, nomadService)
 
 	orchestratorGroup.GET("/:id/zones/:zone_id/start-job", middleware.AdminCheckMiddleware(), serverRegistryController.StartNewJob)
 	orchestratorGroup.GET("/:id/zones/:zone_id/stop-job", middleware.AdminCheckMiddleware(), serverRegistryController.StopJob)
 	orchestratorGroup.GET("/:id/zones/:zone_id/address", serverRegistryController.GetServerAddress)
+	orchestratorGroup.POST("/:id/zones/:zone_id/players", middleware.ServerCheckMiddleware(), serverRegistryController.UpdatePlayerCount)
+	orchestratorGroup.GET("/:id/players", middleware.AdminCheckMiddleware(), serverRegistryController.GetWorldPlayerCounts)
+	orchestratorGroup.GET("/players", middleware.AdminCheckMiddleware(), serverRegistryController.GetAllWorldPlayerCounts)
 	orchestratorGroup.POST("/webhook/servers/update", middleware.GithubOIDCCheck(ghv), serverRegistryController.UpdateServer)
+	orchestratorGroup.PUT("/:id/zones/:zone_id/status", middleware.ServerCheckMiddleware(), serverRegistryController.UpdateStatus)
 
 	return nil
 }

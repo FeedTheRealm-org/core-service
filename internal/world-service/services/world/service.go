@@ -23,7 +23,7 @@ type WorldService interface {
 	DeleteWorld(worldID uuid.UUID, userId uuid.UUID) error
 
 	// GetWorldsList retrieves a paginated list of worlds.
-	GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error)
+	GetWorldsList(offset int, limit int, filter string, userId uuid.UUID) ([]*models.WorldData, error)
 
 	// GetWorldZones retrieves zones for a specific world.
 	GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, error)

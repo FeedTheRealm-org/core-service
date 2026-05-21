@@ -18,4 +18,7 @@ type ZonesController interface {
 
 	// DeactivateZone stops server orchestration for an active zone.
 	DeactivateZone(c *gin.Context)
+
+	// StopAllZonesForUser stops all active zones for a specific user.
+	StopAllJobsForUser(c *gin.Context)
 }

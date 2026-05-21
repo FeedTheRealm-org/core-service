@@ -43,13 +43,19 @@ func (zc *subscriptionController) CreateCheckoutSession(c *gin.Context) {
 		return
 	}
 
+	email, err := common_handlers.GetEmailFromSession(c)
+	if err != nil {
+		_ = c.Error(custom_errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
 	var req dtos.CheckoutSessionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		_ = c.Error(custom_errors.NewBadRequestError("invalid request body: " + err.Error()))
 		return
 	}
 
-	url, err := zc.zonesSubscriptionsService.CreateCheckoutSession(userID, req.Slots, req.SuccessUrl, req.CancelUrl)
+	url, err := zc.zonesSubscriptionsService.CreateCheckoutSession(userID, email, req.Slots, req.SuccessUrl, req.CancelUrl)
 	if err != nil {
 		logger.Logger.Error("Failed to create checkout session for user " + userID.String() + ": " + err.Error())
 		_ = c.Error(custom_errors.NewInternalServerError("Failed to create checkout session for user: " + err.Error()))

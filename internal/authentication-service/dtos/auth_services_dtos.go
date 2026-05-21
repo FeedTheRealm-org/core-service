@@ -30,6 +30,11 @@ type CheckSessionResponseDTO struct {
 	Message string `json:"message"`
 }
 
+type SessionStatusResponseDTO struct {
+	UserID  string `json:"user_id"`
+	IsAdmin bool   `json:"is_admin"`
+}
+
 type VerifyAccountRequestDTO struct {
 	Email string `json:"email"`
 	Code  string `json:"code"`
@@ -55,4 +60,48 @@ type RefreshTokenRequestDTO struct {
 type RefreshTokenResponseDTO struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+}
+
+type UserSummaryResponseDTO struct {
+	ID        string    `json:"id"`
+	Email     string    `json:"email"`
+	Verified  bool      `json:"verified"`
+	IsAdmin   bool      `json:"is_admin"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type UsersListResponseDTO struct {
+	Users      []UserSummaryResponseDTO `json:"users"`
+	TotalCount int64                    `json:"total_count"`
+}
+
+type UpdateAdminStatusRequestDTO struct {
+	IsAdmin bool `json:"is_admin"`
+}
+
+type ForgotPasswordRequestDTO struct {
+	Email string `json:"email"`
+}
+
+type ForgotPasswordResponseDTO struct {
+	Success bool `json:"success"`
+}
+
+type VerifyPasswordCodeRequestDTO struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
+type VerifyPasswordCodeResponseDTO struct {
+	ResetToken string `json:"reset_token"`
+}
+
+type ResetPasswordRequestDTO struct {
+	ResetToken  string `json:"reset_token"`
+	NewPassword string `json:"new_password"`
+}
+
+type ResetPasswordResponseDTO struct {
+	Success bool `json:"success"`
 }

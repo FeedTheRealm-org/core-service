@@ -15,6 +15,7 @@ import (
 	gem_balances_service "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/gem-balances"
 	gem_packs_service "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/gem-packs"
 	zones_subscriptions_service "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/zones-subscriptions"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/email_sender"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,13 +38,16 @@ func SetupBalancesServiceRouter(conf *config.Config, db *config.DB, paymentGroup
 	creatorBalanceRepo := creator_balances_repo.NewCreatorBalancesRepository(conf, db)
 	packsRepo := gem_packs_repo.NewGemPacksRepository(conf, db)
 
-	gemBalancesService := gem_balances_service.NewGemBalancesService(conf, gemBalancesRepo, packsRepo, creatorBalanceRepo)
+	emailSender := email_sender.NewEmailSenderService(conf)
+
+	gemBalancesService := gem_balances_service.NewGemBalancesService(conf, gemBalancesRepo, packsRepo, creatorBalanceRepo, emailSender)
 
 	gemBalancesController := gem_balances_controller.NewGemBalancesController(conf, gemBalancesService)
 
 	/* Balances Endpoints */
 	balancesGroup := gemsGroup.Group("/balances")
 	balancesGroup.GET("", gemBalancesController.GetGemBalanceByUserId)
+	balancesGroup.GET("/all", middleware.AdminCheckMiddleware(), gemBalancesController.GetAllGemBalances)
 	balancesGroup.PUT("/:id", middleware.AdminCheckMiddleware(), gemBalancesController.UpdateGemBalance)
 
 	/* Purchase Endpoints */
@@ -56,7 +60,8 @@ func SetupBalancesServiceRouter(conf *config.Config, db *config.DB, paymentGroup
 
 func SetupSubscriptionsServiceRouter(conf *config.Config, db *config.DB, subscriptionGroup *gin.RouterGroup) {
 	zonesSubscriptionsRepo := zones_subscriptions_repo.NewSubscriptionRepository(conf, db)
-	zonesSubscriptionsService := zones_subscriptions_service.NewSubscriptionService(conf, zonesSubscriptionsRepo)
+	emailSender := email_sender.NewEmailSenderService(conf)
+	zonesSubscriptionsService := zones_subscriptions_service.NewSubscriptionService(conf, zonesSubscriptionsRepo, emailSender)
 	zonesSubscriptionsController := zones_subscriptions_controller.NewZonesSubscriptionsController(conf, zonesSubscriptionsService)
 
 	// External / user-facing subscription routes
@@ -82,6 +87,7 @@ func SetupCreatorBalancesRouter(conf *config.Config, db *config.DB, paymentGroup
 
 	/* Creator Balances Endpoints */
 	paymentGroup.GET("/balances/creators", creatorBalancesController.GetBalance)
+	paymentGroup.GET("/balances/creators/all", middleware.AdminCheckMiddleware(), creatorBalancesController.GetAllBalances)
 }
 
 func SetupPaymentServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {

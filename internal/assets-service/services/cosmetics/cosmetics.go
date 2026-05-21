@@ -42,6 +42,10 @@ func (ss *cosmeticsService) GetCosmeticsListByCategory(category uuid.UUID, world
 	return ss.cosmeticsRepository.GetCosmeticsListByCategory(category, worldId, playerId, offset, limit)
 }
 
+func (ss *cosmeticsService) GetEconomySummary() (*models.CosmeticsEconomySummary, error) {
+	return ss.cosmeticsRepository.GetEconomySummary()
+}
+
 func (ss *cosmeticsService) GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error) {
 	cosmetic, err := ss.cosmeticsRepository.GetCosmeticById(cosmeticId)
 	if err != nil {

@@ -161,12 +161,16 @@ func (r *worldRepository) DeleteWorldData(worldID uuid.UUID) error {
 }
 
 // GetWorldsList retrieves a paginated list of worlds.
-func (r *worldRepository) GetWorldsList(offset int, limit int, filter string) ([]*models.WorldData, error) {
+func (r *worldRepository) GetWorldsList(offset int, limit int, filter string, userId uuid.UUID) ([]*models.WorldData, error) {
 	var worlds []*models.WorldData
 	query := r.db.Conn.Offset(offset).Limit(limit)
 
 	if filter != "" {
 		query = query.Where("name ILIKE ?", "%"+filter+"%")
+	}
+
+	if userId != uuid.Nil {
+		query = query.Where("user_id = ?", userId)
 	}
 
 	err := query.Find(&worlds).Error
@@ -219,4 +223,63 @@ func (r *worldRepository) GetActiveWorldZones() ([]*models.WorldZone, error) {
 		return nil, err
 	}
 	return activeZones, nil
+}
+
+func (r *worldRepository) UpdateWorldZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int, averagePlayerTime int) error {
+	result := r.db.Conn.Model(&models.WorldZone{}).
+		Where("world_id = ? AND id = ?", worldID, zoneID).
+		Updates(map[string]any{
+			"active_players":          activePlayers,
+			"average_player_time":     averagePlayerTime,
+			"player_count_updated_at": time.Now().UTC(),
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+func (r *worldRepository) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, error) {
+	var result struct {
+		TotalActivePlayers int
+		AvgPlayerTime      float64
+	}
+
+	err := r.db.Conn.Model(&models.WorldZone{}).
+		Select("COALESCE(SUM(active_players), 0) as total_active_players, COALESCE(AVG(average_player_time), 0) as avg_player_time").
+		Where("world_id = ? AND is_online = ?", worldID, true).
+		Scan(&result).Error
+
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return result.TotalActivePlayers, int(result.AvgPlayerTime), nil
+}
+
+func (r *worldRepository) GetAllWorldZonePlayerCounts() (int, int, error) {
+	var result struct {
+		TotalActivePlayers int
+		AvgPlayerTime      float64
+	}
+
+	err := r.db.Conn.Model(&models.WorldZone{}).
+		Select("COALESCE(SUM(active_players), 0) as total_active_players, COALESCE(AVG(average_player_time), 0) as avg_player_time").
+		Where("is_online = ?", true).
+		Scan(&result).Error
+
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return result.TotalActivePlayers, int(result.AvgPlayerTime), nil
+}
+
+func (wr *worldRepository) GetWorldIdsByUserId(userId uuid.UUID) ([]uuid.UUID, error) {
+	var worldIds []uuid.UUID
+	err := wr.db.Conn.Model(&models.WorldData{}).Where("user_id = ?", userId).Pluck("id", &worldIds).Error
+	return worldIds, err
 }

@@ -2,12 +2,14 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	dtos "github.com/FeedTheRealm-org/core-service/internal/authentication-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/email_sender"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -15,10 +17,10 @@ import (
 type accountController struct {
 	conf           *config.Config
 	accountService services.AccountService
-	emailService   services.EmailSenderService
+	emailService   email_sender.EmailSenderService
 }
 
-func NewAccountController(conf *config.Config, accountService services.AccountService, emailService services.EmailSenderService) AccountController {
+func NewAccountController(conf *config.Config, accountService services.AccountService, emailService email_sender.EmailSenderService) AccountController {
 	return &accountController{
 		conf:           conf,
 		accountService: accountService,
@@ -92,7 +94,10 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 
 	if ec.conf.Server.Environment != config.Testing {
 		logger.Logger.Infof("CreateAccount: account created for email=%s", result.Email)
-		err = ec.emailService.SendVerificationEmail(result.Email, verificationCode)
+		err = ec.emailService.SendVerificationEmail(email_sender.VerificationEmailData{
+			BaseEmailData: ec.emailService.CreateBaseEmailData(result.Email),
+			VerifyCode:    verificationCode,
+		})
 		if err != nil {
 			logger.Logger.Errorf("CreateAccount: failed to send verification email to email=%s: %v", result.Email, err)
 		}
@@ -233,6 +238,34 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
+// @Summary      Check admin session
+// @Description  Validates that the current session is active and has admin privileges.
+// @Tags         authentication-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  dtos.SessionStatusResponseDTO
+// @Failure      401  {object}  dtos.ErrorResponse
+// @Failure      403  {object}  dtos.ErrorResponse
+// @Router       /auth/session [get]
+func (ec *accountController) CheckAdminSession(c *gin.Context) {
+	userID, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError("Invalid session token"))
+		return
+	}
+
+	if err := common_handlers.IsAdminSession(c); err != nil {
+		_ = c.Error(errors.NewForbiddenError("Admin privileges are required"))
+		return
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, &dtos.SessionStatusResponseDTO{
+		UserID:  userID.String(),
+		IsAdmin: true,
+	})
+}
+
 // @Summary      Verify an account
 // @Description  Verifies a user's email address with a provided verification code.
 // @Tags         authentication-service
@@ -344,7 +377,10 @@ func (ec *accountController) RefreshVerification(c *gin.Context) {
 		return
 	}
 
-	if err := ec.emailService.SendVerificationEmail(req.Email, newCode); err != nil {
+	if err := ec.emailService.SendVerificationEmail(email_sender.VerificationEmailData{
+		BaseEmailData: ec.emailService.CreateBaseEmailData(req.Email),
+		VerifyCode:    newCode,
+	}); err != nil {
 		logger.Logger.Errorf("RefreshVerification: failed to send verification email to email=%s: %v", req.Email, err)
 	}
 
@@ -353,6 +389,164 @@ func (ec *accountController) RefreshVerification(c *gin.Context) {
 		Email: req.Email,
 	}
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
+}
+
+// @Summary      Forgot password
+// @Description  Initiates a password reset flow by sending an OTP to the user's email. Always returns success to prevent account enumeration.
+// @Tags         authentication-service
+// @Accept       json
+// @Produce      json
+// @Param        request body dtos.ForgotPasswordRequestDTO true "Email address"
+// @Success      200  {object}  dtos.ForgotPasswordResponseDTO
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /auth/password/forgot [post]
+func (ec *accountController) ForgotPassword(c *gin.Context) {
+	req := dtos.ForgotPasswordRequestDTO{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Logger.Errorf("ForgotPassword: failed to bind JSON: %v", err)
+		_ = c.Error(errors.NewBadRequestError("The request body is not valid JSON."))
+		return
+	}
+
+	if req.Email == "" {
+		logger.Logger.Info("ForgotPassword: missing email")
+		_ = c.Error(errors.NewBadRequestError("You must provide an email address."))
+		return
+	}
+
+	otpCode, err := ec.accountService.ForgotPassword(req.Email)
+	if err != nil {
+		logger.Logger.Errorf("ForgotPassword: service error for email=%s: %v", req.Email, err)
+		// Return success anyway — never reveal internal errors to prevent enumeration.
+		common_handlers.HandleSuccessResponse(c, http.StatusOK, &dtos.ForgotPasswordResponseDTO{Success: true})
+		return
+	}
+
+	if otpCode != "" && ec.conf.Server.Environment != config.Testing {
+		if err := ec.emailService.SendPasswordResetEmail(email_sender.PasswordResetEmailData{
+			BaseEmailData: ec.emailService.CreateBaseEmailData(req.Email),
+			ResetCode:     otpCode,
+		}); err != nil {
+			logger.Logger.Errorf("ForgotPassword: failed to send password reset email to email=%s: %v", req.Email, err)
+		}
+	}
+
+	logger.Logger.Infof("ForgotPassword: password reset flow initiated for email=%s", req.Email)
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, &dtos.ForgotPasswordResponseDTO{Success: true})
+}
+
+// @Summary      Verify password reset code
+// @Description  Validates the OTP sent to the user's email and returns a short-lived reset token on success.
+// @Tags         authentication-service
+// @Accept       json
+// @Produce      json
+// @Param        request body dtos.VerifyPasswordCodeRequestDTO true "Email and OTP code"
+// @Success      200  {object}  dtos.VerifyPasswordCodeResponseDTO
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /auth/password/verify-code [post]
+func (ec *accountController) VerifyPasswordCode(c *gin.Context) {
+	req := dtos.VerifyPasswordCodeRequestDTO{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Logger.Errorf("VerifyPasswordCode: failed to bind JSON: %v", err)
+		_ = c.Error(errors.NewBadRequestError("The request body is not valid JSON."))
+		return
+	}
+
+	if req.Email == "" {
+		logger.Logger.Info("VerifyPasswordCode: missing email")
+		_ = c.Error(errors.NewBadRequestError("You must provide an email address."))
+		return
+	}
+
+	if req.Code == "" {
+		logger.Logger.Info("VerifyPasswordCode: missing code")
+		_ = c.Error(errors.NewBadRequestError("You must provide a verification code."))
+		return
+	}
+
+	logger.Logger.Infof("VerifyPasswordCode: received request for email=%s", req.Email)
+
+	resetToken, err := ec.accountService.VerifyPasswordResetCode(req.Email, req.Code)
+	if err != nil {
+		switch err.(type) {
+		case *services.PasswordResetNotFoundError:
+			logger.Logger.Infof("VerifyPasswordCode: no active reset found for email=%s", req.Email)
+		case *services.PasswordResetExpiredError:
+			logger.Logger.Infof("VerifyPasswordCode: OTP expired for email=%s", req.Email)
+		case *services.PasswordResetMaxAttemptsError:
+			logger.Logger.Warnf("VerifyPasswordCode: max attempts reached for email=%s", req.Email)
+		case *services.InvalidPasswordResetCodeError:
+			logger.Logger.Infof("VerifyPasswordCode: invalid code for email=%s", req.Email)
+		default:
+			logger.Logger.Errorf("VerifyPasswordCode: service error for email=%s: %v", req.Email, err)
+			_ = c.Error(errors.NewInternalServerError("An unexpected error occurred."))
+			return
+		}
+		_ = c.Error(errors.NewUnauthorizedError("The verification code is incorrect or has expired."))
+		return
+	}
+
+	logger.Logger.Infof("VerifyPasswordCode: OTP verified, reset token issued for email=%s", req.Email)
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, &dtos.VerifyPasswordCodeResponseDTO{ResetToken: resetToken})
+}
+
+// @Summary      Reset password
+// @Description  Validates the reset token and updates the user's password, revoking all active sessions.
+// @Tags         authentication-service
+// @Accept       json
+// @Produce      json
+// @Param        request body dtos.ResetPasswordRequestDTO true "Reset token and new password"
+// @Success      200  {object}  dtos.ResetPasswordResponseDTO
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /auth/password/reset [post]
+func (ec *accountController) ResetPassword(c *gin.Context) {
+	req := dtos.ResetPasswordRequestDTO{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Logger.Errorf("ResetPassword: failed to bind JSON: %v", err)
+		_ = c.Error(errors.NewBadRequestError("The request body is not valid JSON."))
+		return
+	}
+
+	if req.ResetToken == "" {
+		logger.Logger.Info("ResetPassword: missing reset token")
+		_ = c.Error(errors.NewBadRequestError("You must provide a reset token."))
+		return
+	}
+
+	if req.NewPassword == "" {
+		logger.Logger.Info("ResetPassword: missing new password")
+		_ = c.Error(errors.NewBadRequestError("You must provide a new password."))
+		return
+	}
+
+	logger.Logger.Info("ResetPassword: received password reset request")
+
+	err := ec.accountService.ResetPassword(req.ResetToken, req.NewPassword)
+	if err != nil {
+		switch e := err.(type) {
+		case *services.PasswordResetNotFoundError:
+			logger.Logger.Infof("ResetPassword: reset token not found")
+			_ = c.Error(errors.NewUnauthorizedError("The reset token is invalid or has already been used."))
+		case *services.PasswordResetTokenExpiredError:
+			logger.Logger.Infof("ResetPassword: reset token expired")
+			_ = c.Error(errors.NewUnauthorizedError("The reset token has expired. Please start over."))
+		case *services.AccountInvalidFormat:
+			logger.Logger.Infof("ResetPassword: invalid password format: %s", e.Msg)
+			_ = c.Error(errors.NewBadRequestError(e.Msg))
+		default:
+			logger.Logger.Errorf("ResetPassword: service error: %v", err)
+			_ = c.Error(errors.NewInternalServerError("An unexpected error occurred."))
+		}
+		return
+	}
+
+	logger.Logger.Info("ResetPassword: password reset successful")
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, &dtos.ResetPasswordResponseDTO{Success: true})
 }
 
 // @Summary      Refresh access token
@@ -434,4 +628,106 @@ func (ec *accountController) RefreshToken(c *gin.Context) {
 		RefreshToken: newRefreshToken,
 	}
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
+}
+
+// @Summary      List users
+// @Description  Returns a paginated list of users. Admin only.
+// @Tags         authentication-service
+// @Security     BearerAuth
+// @Produce      json
+// @Param        query    query     string  false  "Filter by email"
+// @Param        verified query     bool    false  "Filter by verification"
+// @Param        offset   query     int     false  "Offset" default(0)
+// @Param        limit    query     int     false  "Limit" default(50)
+// @Success      200      {object}  dtos.UsersListResponseDTO
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
+// @Router       /auth/users [get]
+func (ec *accountController) ListUsers(c *gin.Context) {
+	if err := common_handlers.IsAdminSession(c); err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	query := c.Query("query")
+	verifiedParam := c.Query("verified")
+	offsetStr := c.DefaultQuery("offset", "0")
+	limitStr := c.DefaultQuery("limit", "50")
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		_ = c.Error(errors.NewBadRequestError("invalid offset"))
+		return
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 || limit > 200 {
+		_ = c.Error(errors.NewBadRequestError("invalid limit"))
+		return
+	}
+
+	var verified *bool
+	if verifiedParam != "" {
+		parsed, err := strconv.ParseBool(verifiedParam)
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError("invalid verified filter"))
+			return
+		}
+		verified = &parsed
+	}
+
+	users, total, err := ec.accountService.ListAccounts(query, verified, offset, limit)
+	if err != nil {
+		_ = c.Error(errors.NewInternalServerError(err.Error()))
+		return
+	}
+
+	response := dtos.UsersListResponseDTO{
+		Users:      make([]dtos.UserSummaryResponseDTO, len(users)),
+		TotalCount: total,
+	}
+	for i, user := range users {
+		response.Users[i] = dtos.UserSummaryResponseDTO{
+			ID:        user.Id.String(),
+			Email:     user.Email,
+			Verified:  user.Verified,
+			IsAdmin:   user.IsAdmin,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+		}
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, response)
+}
+
+// @Summary      Update admin status
+// @Description  Updates the admin flag for a user. Admin only.
+// @Tags         authentication-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id      path      string                          true  "User UUID"
+// @Param        request body      dtos.UpdateAdminStatusRequestDTO true  "Admin status"
+// @Success      204      {string}  string "No Content"
+// @Failure      400      {object}  dtos.ErrorResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
+// @Router       /auth/users/{id}/admin [put]
+func (ec *accountController) UpdateAdminStatus(c *gin.Context) {
+	if err := common_handlers.IsAdminSession(c); err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	req := dtos.UpdateAdminStatusRequestDTO{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid request body"))
+		return
+	}
+
+	if err := ec.accountService.UpdateAdminStatus(c.Param("id"), req.IsAdmin); err != nil {
+		_ = c.Error(errors.NewInternalServerError(err.Error()))
+		return
+	}
+
+	common_handlers.HandleBodilessResponse(c, http.StatusNoContent)
 }

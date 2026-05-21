@@ -1425,6 +1425,135 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of users. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "List users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by email",
+                        "name": "query",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by verification",
+                        "name": "verified",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UsersListResponseDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/users/{id}/admin": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates the admin flag for a user. Admin only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication-service"
+                ],
+                "summary": "Update admin status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Admin status",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdateAdminStatusRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/verify": {
             "post": {
                 "description": "Verifies a user's email address with a provided verification code.",
@@ -1483,6 +1612,149 @@ const docTemplate = `{
                 }
             }
         },
+        "/exports/zip": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves the path for a given app, version, and OS.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exports-service"
+                ],
+                "summary": "Get export zip path",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "App name",
+                        "name": "app",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Version (vX.Y.Z)",
+                        "name": "version",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "OS name",
+                        "name": "os",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ExportZipPathResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Uploads a zip file for a given app, version, and OS.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exports-service"
+                ],
+                "summary": "Upload export zip",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "App name",
+                        "name": "app",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Version (vX.Y.Z)",
+                        "name": "version",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "OS name",
+                        "name": "os",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Zip file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ExportZipResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/payments/balances/creators": {
             "get": {
                 "security": [
@@ -1503,6 +1775,46 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dtos.CreatorBalanceResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/balances/creators/all": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all creator balances. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment-service"
+                ],
+                "summary": "List creator balances",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.CreatorBalanceResponse"
+                            }
                         }
                     },
                     "401": {
@@ -2105,7 +2417,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Updates the name, bio, and associated sprites map.",
+                "description": "Updates the name, bio, associated sprites map and skin/hair/eye color.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2710,6 +3022,12 @@ const docTemplate = `{
                 "summary": "List worlds",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Filter by owner user ID",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Offset for pagination",
                         "name": "offset",
@@ -2811,6 +3129,82 @@ const docTemplate = `{
                 }
             }
         },
+        "/world/internal/users/{user_id}/stop-jobs": {
+            "get": {
+                "description": "Internal endpoint to stop all active zones and jobs for a specific user. Triggered internally by the payment service on subscription cancellation.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service",
+                    "internal"
+                ],
+                "summary": "Stop all jobs for a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Acknowledge jobs stopped",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/world/orchestrator/players": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns player counts for all worlds.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Get all world player counts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.PlayerCountsResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/world/orchestrator/webhook/servers/update": {
             "post": {
                 "description": "Webhook to update running world servers",
@@ -2836,6 +3230,52 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/world/orchestrator/{id}/players": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns player counts per zone for a world.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Get world player counts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.PlayerCountsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dtos.ErrorResponse"
                         }
@@ -2902,6 +3342,71 @@ const docTemplate = `{
                 }
             }
         },
+        "/world/orchestrator/{id}/zones/{zone_id}/players": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Servers report active players and average player time every 2 minutes.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Update zone player count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "World Zone Number",
+                        "name": "zone_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Player count payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdatePlayerCountRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/world/orchestrator/{id}/zones/{zone_id}/start-job": {
             "get": {
                 "security": [
@@ -2942,6 +3447,71 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "Acknowledge Boot",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/world/orchestrator/{id}/zones/{zone_id}/status": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update the online status of a specific zone in a world.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "world-service"
+                ],
+                "summary": "Update zone status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "World UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "World Zone Number",
+                        "name": "zone_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Status Update Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.UpdateStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "string"
                         }
@@ -3600,6 +4170,15 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "eye_color": {
+                    "$ref": "#/definitions/models.CharacterColorHsv"
+                },
+                "hair_color": {
+                    "$ref": "#/definitions/models.CharacterColorHsv"
+                },
+                "skin_color": {
+                    "$ref": "#/definitions/models.CharacterColorHsv"
+                },
                 "updated_at": {
                     "type": "string"
                 }
@@ -3796,6 +4375,31 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ExportZipPathResponse": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.ExportZipResponse": {
+            "type": "object",
+            "properties": {
+                "app_name": {
+                    "type": "string"
+                },
+                "os": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "version": {
                     "type": "string"
                 }
             }
@@ -4038,6 +4642,26 @@ const docTemplate = `{
                 },
                 "character_name": {
                     "type": "string"
+                },
+                "eye_color": {
+                    "$ref": "#/definitions/models.CharacterColorHsv"
+                },
+                "hair_color": {
+                    "$ref": "#/definitions/models.CharacterColorHsv"
+                },
+                "skin_color": {
+                    "$ref": "#/definitions/models.CharacterColorHsv"
+                }
+            }
+        },
+        "dtos.PlayerCountsResponse": {
+            "type": "object",
+            "properties": {
+                "active_players": {
+                    "type": "integer"
+                },
+                "average_player_time": {
+                    "type": "integer"
                 }
             }
         },
@@ -4113,6 +4737,14 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.UpdateAdminStatusRequestDTO": {
+            "type": "object",
+            "properties": {
+                "is_admin": {
+                    "type": "boolean"
+                }
+            }
+        },
         "dtos.UpdateCreateableDataRequest": {
             "type": "object",
             "properties": {
@@ -4144,6 +4776,25 @@ const docTemplate = `{
                 }
             }
         },
+        "dtos.UpdatePlayerCountRequest": {
+            "type": "object",
+            "properties": {
+                "active_players": {
+                    "type": "integer"
+                },
+                "average_player_time": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.UpdateStatusRequest": {
+            "type": "object",
+            "properties": {
+                "is_online": {
+                    "type": "boolean"
+                }
+            }
+        },
         "dtos.UpdateSubscriptionRequest": {
             "type": "object",
             "required": [
@@ -4152,6 +4803,43 @@ const docTemplate = `{
             "properties": {
                 "slots": {
                     "type": "integer"
+                }
+            }
+        },
+        "dtos.UserSummaryResponseDTO": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_admin": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "verified": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dtos.UsersListResponseDTO": {
+            "type": "object",
+            "properties": {
+                "total_count": {
+                    "type": "integer"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dtos.UserSummaryResponseDTO"
+                    }
                 }
             }
         },
@@ -4285,6 +4973,12 @@ const docTemplate = `{
         "dtos.WorldZoneResponse": {
             "type": "object",
             "properties": {
+                "active_players": {
+                    "type": "integer"
+                },
+                "average_player_time": {
+                    "type": "integer"
+                },
                 "is_active": {
                     "type": "boolean"
                 },
@@ -4333,6 +5027,20 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dtos.WorldMetadata"
                     }
+                }
+            }
+        },
+        "models.CharacterColorHsv": {
+            "type": "object",
+            "properties": {
+                "h": {
+                    "type": "number"
+                },
+                "s": {
+                    "type": "number"
+                },
+                "v": {
+                    "type": "number"
                 }
             }
         }

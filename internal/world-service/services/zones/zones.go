@@ -196,3 +196,43 @@ func (zs *zonesService) updateUsedSlots(userID uuid.UUID, numberOfSlots int, are
 
 	return nil
 }
+
+func (zs *zonesService) UpdateZoneStatus(worldID uuid.UUID, zoneID int, isOnline bool) error {
+	return zs.worldRepository.SetWorldZoneOnlineState(worldID, zoneID, isOnline)
+}
+
+func (zs *zonesService) UpdateZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int, averagePlayerTime int) error {
+	return zs.worldRepository.UpdateWorldZonePlayerCount(worldID, zoneID, activePlayers, averagePlayerTime)
+}
+
+func (zs *zonesService) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, error) {
+	return zs.worldRepository.GetWorldZonePlayerCounts(worldID)
+}
+
+func (zs *zonesService) GetAllWorldZonePlayerCounts() (int, int, error) {
+	return zs.worldRepository.GetAllWorldZonePlayerCounts()
+}
+
+func (zs *zonesService) StopAllZonesForUser(userID uuid.UUID) error {
+	worldIDs, err := zs.worldRepository.GetWorldIdsByUserId(userID)
+	if err != nil {
+		return err
+	}
+
+	for _, worldID := range worldIDs {
+		zones, err := zs.worldRepository.GetWorldZones(worldID)
+		if err != nil {
+			return err
+		}
+
+		for _, zone := range zones {
+			if zone.IsActive {
+				if err := zs.DeactivateZone(worldID, zone.ID); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}

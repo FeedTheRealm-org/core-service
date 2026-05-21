@@ -1,17 +1,65 @@
 package models
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
 
+type CharacterColorHsv struct {
+	H float32 `json:"h"`
+	S float32 `json:"s"`
+	V float32 `json:"v"`
+}
+
+func DefaultCharacterColorHsv() CharacterColorHsv {
+	return CharacterColorHsv{H: 0, S: 0, V: 100}
+}
+
+func (c CharacterColorHsv) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+func (c *CharacterColorHsv) Scan(value any) error {
+	if value == nil {
+		*c = DefaultCharacterColorHsv()
+		return nil
+	}
+
+	var bytes []byte
+	switch typed := value.(type) {
+	case []byte:
+		bytes = typed
+	case string:
+		bytes = []byte(typed)
+	default:
+		return fmt.Errorf("unsupported color value type %T", value)
+	}
+
+	if len(bytes) == 0 {
+		*c = DefaultCharacterColorHsv()
+		return nil
+	}
+
+	if err := json.Unmarshal(bytes, c); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type CharacterInfo struct {
-	UserId        uuid.UUID `gorm:"type:uuid;primaryKey"`
-	CharacterName string    `gorm:"unique;not null"`
-	CharacterBio  string    `gorm:"not null"`
-	CreatedAt     time.Time `gorm:"autoCreateTime"`
-	UpdatedAt     time.Time `gorm:"autoUpdateTime"`
+	UserId        uuid.UUID         `gorm:"type:uuid;primaryKey"`
+	CharacterName string            `gorm:"unique;not null"`
+	CharacterBio  string            `gorm:"not null"`
+	SkinColor     CharacterColorHsv `gorm:"type:jsonb;not null" json:"skin_color"`
+	HairColor     CharacterColorHsv `gorm:"type:jsonb;not null" json:"hair_color"`
+	EyeColor      CharacterColorHsv `gorm:"type:jsonb;not null" json:"eye_color"`
+	CreatedAt     time.Time         `gorm:"autoCreateTime"`
+	UpdatedAt     time.Time         `gorm:"autoUpdateTime"`
 }
 
 type CategorySprite struct {

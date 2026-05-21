@@ -1,0 +1,90 @@
+info:
+  name: Update admin status
+  type: http
+  seq: 9
+  tags:
+    - authentication-service
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/auth/users/:id/admin"
+  params:
+    - name: id
+      value: ""
+      type: path
+      description: User UUID
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 204 Response
+    description: No Content
+    request:
+      url: "{{baseUrl}}/auth/users/:id/admin"
+      method: PUT
+      params:
+        - name: id
+          value: ""
+          type: path
+          description: User UUID
+    response:
+      status: 204
+      statusText: No Content
+      body:
+        type: text
+        data: ""
+  - name: 400 Response
+    description: Bad Request
+    request:
+      url: "{{baseUrl}}/auth/users/:id/admin"
+      method: PUT
+      params:
+        - name: id
+          value: ""
+          type: path
+          description: User UUID
+    response:
+      status: 400
+      statusText: Bad Request
+      body:
+        type: text
+        data: ""
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/auth/users/:id/admin"
+      method: PUT
+      params:
+        - name: id
+          value: ""
+          type: path
+          description: User UUID
+    response:
+      status: 401
+      statusText: Unauthorized
+      body:
+        type: text
+        data: ""
+  - name: 500 Response
+    description: Internal Server Error
+    request:
+      url: "{{baseUrl}}/auth/users/:id/admin"
+      method: PUT
+      params:
+        - name: id
+          value: ""
+          type: path
+          description: User UUID
+    response:
+      status: 500
+      statusText: Internal Server Error
+      body:
+        type: text
+        data: ""
+
+docs: Updates the admin flag for a user. Admin only.

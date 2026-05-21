@@ -15,4 +15,16 @@ type ServerRegistryController interface {
 
 	// UpdateServer is a webhook endpoint for reload server when image is updated.
 	UpdateServer(c *gin.Context)
+
+	// UpdateStatus is a webhook endpoint for updating server status.
+	UpdateStatus(c *gin.Context)
+
+	// UpdatePlayerCount is a webhook endpoint for player count updates.
+	UpdatePlayerCount(c *gin.Context)
+
+	// GetWorldPlayerCounts returns the current player counts for a world.
+	GetWorldPlayerCounts(c *gin.Context)
+
+	// GetAllWorldPlayerCounts returns the player counts for all worlds.
+	GetAllWorldPlayerCounts(c *gin.Context)
 }

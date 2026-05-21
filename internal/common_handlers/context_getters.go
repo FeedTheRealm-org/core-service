@@ -33,6 +33,14 @@ func IsAdminSession(ctx *gin.Context) error {
 	return nil
 }
 
+// IsServerSession checks if the session has server privileges.
+func IsServerSession(ctx *gin.Context) error {
+	if err := IsSessionValid(ctx); err != nil && !ctx.GetBool("isServer") {
+		return &errors.NotServerSessionError{}
+	}
+	return nil
+}
+
 // GetUserIDFromSession checks if the session is valid and returns the userID from the session.
 func GetUserIDFromSession(ctx *gin.Context) (uuid.UUID, error) {
 	if err := IsSessionValid(ctx); err != nil {
@@ -44,6 +52,18 @@ func GetUserIDFromSession(ctx *gin.Context) (uuid.UUID, error) {
 		return uuid.Nil, &errors.InvalidSessionError{}
 	}
 	return parsedUserID, nil
+}
+
+// GetEmailFromSession checks if the session is valid and returns the email from the session.
+func GetEmailFromSession(ctx *gin.Context) (string, error) {
+	if err := IsSessionValid(ctx); err != nil {
+		return "", err
+	}
+	email := ctx.GetString("email")
+	if email == "" {
+		return "", &errors.InvalidSessionError{}
+	}
+	return email, nil
 }
 
 // IsGithubOIDCTokenValid checks if the request has a valid GitHub OIDC token
