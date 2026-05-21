@@ -33,6 +33,12 @@ type CosmeticsListResponse struct {
 	TotalCount    int64              `json:"total_count"`
 }
 
+type CosmeticsEconomySummaryResponse struct {
+	DefaultCosmetics     int64   `json:"default_cosmetics"`
+	UserCreatedCosmetics int64   `json:"user_created_cosmetics"`
+	AveragePrice         float64 `json:"average_price"`
+}
+
 type InternalPurchaseCosmeticForUserRequest struct {
 	CosmeticId uuid.UUID `json:"cosmetic_id" binding:"required"`
 }

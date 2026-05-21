@@ -30,6 +30,11 @@ type CheckSessionResponseDTO struct {
 	Message string `json:"message"`
 }
 
+type SessionStatusResponseDTO struct {
+	UserID  string `json:"user_id"`
+	IsAdmin bool   `json:"is_admin"`
+}
+
 type VerifyAccountRequestDTO struct {
 	Email string `json:"email"`
 	Code  string `json:"code"`

@@ -6,6 +6,7 @@ type AccountController interface {
 	CreateAccount(c *gin.Context)
 	LoginAccount(c *gin.Context)
 	CheckSessionExpiration(c *gin.Context)
+	CheckAdminSession(c *gin.Context)
 	VerifyAccount(c *gin.Context)
 	RefreshVerification(c *gin.Context)
 	RefreshToken(c *gin.Context)

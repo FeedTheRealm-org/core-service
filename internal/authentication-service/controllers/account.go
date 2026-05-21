@@ -238,6 +238,34 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
+// @Summary      Check admin session
+// @Description  Validates that the current session is active and has admin privileges.
+// @Tags         authentication-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  dtos.SessionStatusResponseDTO
+// @Failure      401  {object}  dtos.ErrorResponse
+// @Failure      403  {object}  dtos.ErrorResponse
+// @Router       /auth/session [get]
+func (ec *accountController) CheckAdminSession(c *gin.Context) {
+	userID, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError("Invalid session token"))
+		return
+	}
+
+	if err := common_handlers.IsAdminSession(c); err != nil {
+		_ = c.Error(errors.NewForbiddenError("Admin privileges are required"))
+		return
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, &dtos.SessionStatusResponseDTO{
+		UserID:  userID.String(),
+		IsAdmin: true,
+	})
+}
+
 // @Summary      Verify an account
 // @Description  Verifies a user's email address with a provided verification code.
 // @Tags         authentication-service
