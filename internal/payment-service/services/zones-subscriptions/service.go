@@ -13,7 +13,7 @@ type SubscriptionService interface {
 	GetByUserID(userID uuid.UUID) (*models.ZonesSubscriptions, error)
 	GetPricingInfo() (float64, time.Time)
 	CheckAvalibility(userID uuid.UUID) (bool, int, error)
-	CreateCheckoutSession(userID uuid.UUID, slots int, successUrl string, cancelUrl string) (string, error)
+	CreateCheckoutSession(userID uuid.UUID, email string, slots int, successUrl string, cancelUrl string) (string, error)
 	CancelSubscription(userID uuid.UUID) (*models.ZonesSubscriptions, error)
 	HandleWebhook(payload []byte, signature string) error
 }

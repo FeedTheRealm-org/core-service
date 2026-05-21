@@ -218,3 +218,87 @@ func (ar *accountRepository) UpdateAdminStatus(id uuid.UUID, isAdmin bool) error
 	}
 	return nil
 }
+
+func (ar *accountRepository) CreatePasswordReset(userID uuid.UUID, otpHash string, expiresAt time.Time) (*models.PasswordReset, error) {
+	reset := &models.PasswordReset{
+		UserId:       userID,
+		OTPHash:      otpHash,
+		OTPExpiresAt: expiresAt,
+		Attempts:     0,
+		OTPVerified:  false,
+		Used:         false,
+	}
+	if err := ar.db.Conn.Create(reset).Error; err != nil {
+		return nil, &DatabaseError{message: err.Error()}
+	}
+	return reset, nil
+}
+
+func (ar *accountRepository) GetActivePasswordResetByUserID(userID uuid.UUID) (*models.PasswordReset, error) {
+	var reset models.PasswordReset
+	err := ar.db.Conn.
+		Where("user_id = ? AND used = false", userID).
+		Order("created_at DESC").
+		First(&reset).Error
+	if err != nil {
+		if errors.IsRecordNotFound(err) {
+			return nil, &AccountNotFoundError{}
+		}
+		return nil, &DatabaseError{message: err.Error()}
+	}
+	return &reset, nil
+}
+
+func (ar *accountRepository) IncrementPasswordResetAttempts(resetID uuid.UUID) error {
+	if err := ar.db.Conn.Model(&models.PasswordReset{}).
+		Where("id = ?", resetID).
+		UpdateColumn("attempts", gorm.Expr("attempts + 1")).Error; err != nil {
+		return &DatabaseError{message: err.Error()}
+	}
+	return nil
+}
+
+func (ar *accountRepository) MarkPasswordResetOTPVerified(resetID uuid.UUID, resetTokenHash string, resetTokenExpiresAt time.Time) error {
+	if err := ar.db.Conn.Model(&models.PasswordReset{}).
+		Where("id = ?", resetID).
+		Updates(map[string]interface{}{
+			"otp_verified":           true,
+			"reset_token_hash":       resetTokenHash,
+			"reset_token_expires_at": resetTokenExpiresAt,
+		}).Error; err != nil {
+		return &DatabaseError{message: err.Error()}
+	}
+	return nil
+}
+
+func (ar *accountRepository) GetPasswordResetByTokenHash(tokenHash string) (*models.PasswordReset, error) {
+	var reset models.PasswordReset
+	err := ar.db.Conn.
+		Where("reset_token_hash = ? AND used = false AND otp_verified = true", tokenHash).
+		First(&reset).Error
+	if err != nil {
+		if errors.IsRecordNotFound(err) {
+			return nil, &AccountNotFoundError{}
+		}
+		return nil, &DatabaseError{message: err.Error()}
+	}
+	return &reset, nil
+}
+
+func (ar *accountRepository) InvalidateAllPasswordResets(userID uuid.UUID) error {
+	if err := ar.db.Conn.Model(&models.PasswordReset{}).
+		Where("user_id = ? AND used = false", userID).
+		Update("used", true).Error; err != nil {
+		return &DatabaseError{message: err.Error()}
+	}
+	return nil
+}
+
+func (ar *accountRepository) UpdatePassword(userID uuid.UUID, hashedPassword string) error {
+	if err := ar.db.Conn.Model(&models.User{}).
+		Where("id = ?", userID).
+		Update("password", hashedPassword).Error; err != nil {
+		return &DatabaseError{message: err.Error()}
+	}
+	return nil
+}

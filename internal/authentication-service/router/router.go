@@ -5,6 +5,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/controllers"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/email_sender"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
 	"github.com/gin-gonic/gin"
@@ -18,7 +19,7 @@ func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config, db *co
 	}
 
 	accountService := services.NewAccountService(conf, accountRepo, jwtManager)
-	emailService := services.NewEmailSenderService(conf)
+	emailService := email_sender.NewEmailSenderService(conf)
 	accountController := controllers.NewAccountController(conf, accountService, emailService)
 
 	adminController := controllers.NewAdminLoginController(accountService)
@@ -31,6 +32,13 @@ func SetupAuthenticationServiceRouter(r *gin.Engine, conf *config.Config, db *co
 	g.GET("/check-session", accountController.CheckSessionExpiration)
 	g.GET("/users", accountController.ListUsers)
 	g.PUT("/users/:id/admin", accountController.UpdateAdminStatus)
+
+	password := g.Group("/password")
+	{
+		password.POST("/forgot", accountController.ForgotPassword)
+		password.POST("/verify-code", accountController.VerifyPasswordCode)
+		password.POST("/reset", accountController.ResetPassword)
+	}
 
 	g.GET("", adminController.AdminLoginPageHandler)
 	g.POST("", adminController.AdminLoginHandler)

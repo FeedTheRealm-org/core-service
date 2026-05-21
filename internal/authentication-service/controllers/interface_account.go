@@ -11,4 +11,7 @@ type AccountController interface {
 	RefreshToken(c *gin.Context)
 	ListUsers(c *gin.Context)
 	UpdateAdminStatus(c *gin.Context)
+	ForgotPassword(c *gin.Context)
+	VerifyPasswordCode(c *gin.Context)
+	ResetPassword(c *gin.Context)
 }
