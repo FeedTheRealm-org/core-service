@@ -50,3 +50,37 @@ func (c *creatorBalancesController) GetBalance(ctx *gin.Context) {
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, res)
 }
+
+// GetAllBalances godoc
+// @Summary      List creator balances
+// @Description  Returns all creator balances. Admin only.
+// @Tags         payment-service
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {array}  dtos.CreatorBalanceResponse
+// @Failure      401  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /payments/balances/creators/all [get]
+func (c *creatorBalancesController) GetAllBalances(ctx *gin.Context) {
+	if err := common_handlers.IsAdminSession(ctx); err != nil {
+		_ = ctx.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	balances, err := c.service.GetAllBalances()
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	response := make([]dtos.CreatorBalanceResponse, 0, len(balances))
+	for _, balance := range balances {
+		balanceParsed, _ := balance.Balance.Float64()
+		response = append(response, dtos.CreatorBalanceResponse{
+			UserID:  balance.UserID,
+			Balance: balanceParsed,
+		})
+	}
+
+	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, response)
+}

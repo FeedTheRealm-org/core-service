@@ -1,0 +1,7 @@
+info:
+  name: exports-service
+  type: folder
+  seq: 1
+
+request:
+  auth: inherit

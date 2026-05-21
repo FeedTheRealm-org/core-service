@@ -47,6 +47,7 @@ func SetupBalancesServiceRouter(conf *config.Config, db *config.DB, paymentGroup
 	/* Balances Endpoints */
 	balancesGroup := gemsGroup.Group("/balances")
 	balancesGroup.GET("", gemBalancesController.GetGemBalanceByUserId)
+	balancesGroup.GET("/all", middleware.AdminCheckMiddleware(), gemBalancesController.GetAllGemBalances)
 	balancesGroup.PUT("/:id", middleware.AdminCheckMiddleware(), gemBalancesController.UpdateGemBalance)
 
 	/* Purchase Endpoints */
@@ -86,6 +87,7 @@ func SetupCreatorBalancesRouter(conf *config.Config, db *config.DB, paymentGroup
 
 	/* Creator Balances Endpoints */
 	paymentGroup.GET("/balances/creators", creatorBalancesController.GetBalance)
+	paymentGroup.GET("/balances/creators/all", middleware.AdminCheckMiddleware(), creatorBalancesController.GetAllBalances)
 }
 
 func SetupPaymentServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {

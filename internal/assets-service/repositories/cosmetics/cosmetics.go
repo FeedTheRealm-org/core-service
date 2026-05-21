@@ -41,13 +41,13 @@ func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, wo
 	case worldId == nil && playerId != nil:
 		query = query.
 			Joins("LEFT JOIN purchases ON purchases.cosmetic_id = cosmetics.id AND purchases.player_id = ?", *playerId).
-			Where("cosmetics.world_id = ? OR purchases.cosmetic_id IS NOT NULL", uuid.Nil)
+			Where("purchases.cosmetic_id IS NOT NULL")
 	case worldId != nil && playerId != nil:
 		query = query.
 			Joins("LEFT JOIN purchases ON purchases.cosmetic_id = cosmetics.id AND purchases.player_id = ?", *playerId).
 			Where(
-				"cosmetics.world_id = ? OR cosmetics.world_id = ? OR purchases.cosmetic_id IS NOT NULL",
-				uuid.Nil, *worldId,
+				"cosmetics.world_id = ? OR purchases.cosmetic_id IS NOT NULL",
+				*worldId,
 			)
 	}
 
@@ -70,6 +70,25 @@ func (cr *cosmeticsRepository) GetCosmeticsListByCategory(category uuid.UUID, wo
 	}
 
 	return cosmetics, totalCount, nil
+}
+
+func (cr *cosmeticsRepository) GetEconomySummary() (*models.CosmeticsEconomySummary, error) {
+	var summary models.CosmeticsEconomySummary
+	if err := cr.db.Conn.
+		Model(&models.Cosmetic{}).
+		Select(
+			`COALESCE(SUM(CASE WHEN world_id = ? THEN 1 ELSE 0 END), 0) AS default_cosmetics,
+			 COALESCE(SUM(CASE WHEN world_id IS NOT NULL AND world_id <> ? THEN 1 ELSE 0 END), 0) AS user_created_cosmetics,
+			 COALESCE(AVG(CASE WHEN world_id IS NOT NULL AND world_id <> ? THEN price END), 0) AS average_price`,
+			uuid.Nil,
+			uuid.Nil,
+			uuid.Nil,
+		).
+		Scan(&summary).Error; err != nil {
+		return nil, err
+	}
+
+	return &summary, nil
 }
 
 func (cr *cosmeticsRepository) GetCosmeticById(cosmeticId uuid.UUID) (*models.Cosmetic, error) {

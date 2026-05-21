@@ -1,6 +1,7 @@
 package creator_balances
 
 import (
+	"github.com/FeedTheRealm-org/core-service/internal/payment-service/models"
 	creator_balances "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/creator-balances"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -16,4 +17,8 @@ func NewCreatorBalancesService(repo creator_balances.CreatorBalancesRepository) 
 
 func (s *creatorBalancesService) GetBalance(userId uuid.UUID) (decimal.Decimal, error) {
 	return s.repo.GetBalance(userId)
+}
+
+func (s *creatorBalancesService) GetAllBalances() ([]models.CreatorBalance, error) {
+	return s.repo.GetAllBalances()
 }

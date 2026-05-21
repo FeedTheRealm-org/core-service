@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -90,6 +91,7 @@ type Config struct {
 	SessionRefreshTokenSecretKey string
 	SessionAccessTokenDuration   time.Duration
 	SessionRefreshTokenDuration  time.Duration
+	CORSAllowedOrigins           []string
 	BrevoAPIKey                  string
 	EmailSenderAddress           string
 	EmailLogoURL                 string
@@ -178,6 +180,8 @@ func CreateConfig() *Config {
 		GithubRepoURLWebhook:  getEnvOrDefaultString("GITHUB_REPO_URL_WEBHOOK", "FeedTheRealm-org/game"),
 	}
 
+	commaSeparatedAllowedOrigins := getEnvOrDefaultString("CORS_ALLOWED_ORIGINS", "*")
+
 	return &Config{
 		Server:                       serverConf,
 		DB:                           dbc,
@@ -188,6 +192,7 @@ func CreateConfig() *Config {
 		SessionRefreshTokenSecretKey: os.Getenv("SESSION_REFRESH_TOKEN_SECRET_KEY"),
 		SessionAccessTokenDuration:   getEnvOrDefaultDuration("SESSION_ACCESS_TOKEN_DURATION", time.Hour*24),
 		SessionRefreshTokenDuration:  getEnvOrDefaultDuration("SESSION_REFRESH_TOKEN_DURATION", time.Hour*24*30),
+		CORSAllowedOrigins:           strings.Split(commaSeparatedAllowedOrigins, ","),
 		BrevoAPIKey:                  os.Getenv("BREVO_API_KEY"),
 		EmailSenderAddress:           os.Getenv("EMAIL_SENDER_ADDRESS"),
 		EmailLogoURL:                 getEnvOrDefaultString("EMAIL_LOGO_URL", "https://avatars.githubusercontent.com/u/231922724?s=400&u=5f4eb45fb6dc7cfa42333bfe1dc64a376122e3d0&v=4"),

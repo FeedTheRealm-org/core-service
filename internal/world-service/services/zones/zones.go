@@ -201,6 +201,18 @@ func (zs *zonesService) UpdateZoneStatus(worldID uuid.UUID, zoneID int, isOnline
 	return zs.worldRepository.SetWorldZoneOnlineState(worldID, zoneID, isOnline)
 }
 
+func (zs *zonesService) UpdateZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int, averagePlayerTime int) error {
+	return zs.worldRepository.UpdateWorldZonePlayerCount(worldID, zoneID, activePlayers, averagePlayerTime)
+}
+
+func (zs *zonesService) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, error) {
+	return zs.worldRepository.GetWorldZonePlayerCounts(worldID)
+}
+
+func (zs *zonesService) GetAllWorldZonePlayerCounts() (int, int, error) {
+	return zs.worldRepository.GetAllWorldZonePlayerCounts()
+}
+
 func (zs *zonesService) StopAllZonesForUser(userID uuid.UUID) error {
 	worldIDs, err := zs.worldRepository.GetWorldIdsByUserId(userID)
 	if err != nil {
