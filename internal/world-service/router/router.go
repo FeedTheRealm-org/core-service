@@ -59,8 +59,8 @@ func SetupEndpointsForServiceRegistry(orchestratorGroup *gin.RouterGroup, db *co
 	orchestratorGroup.GET("/:id/zones/:zone_id/stop-job", middleware.AdminCheckMiddleware(), serverRegistryController.StopJob)
 	orchestratorGroup.GET("/:id/zones/:zone_id/address", serverRegistryController.GetServerAddress)
 	orchestratorGroup.POST("/:id/zones/:zone_id/players", middleware.ServerCheckMiddleware(), serverRegistryController.UpdatePlayerCount)
-	orchestratorGroup.GET("/:id/players", middleware.AdminCheckMiddleware(), serverRegistryController.GetWorldPlayerCounts)
-	orchestratorGroup.GET("/players", middleware.AdminCheckMiddleware(), serverRegistryController.GetAllWorldPlayerCounts)
+	orchestratorGroup.GET("/:id/players", serverRegistryController.GetWorldPlayerCounts)
+	orchestratorGroup.GET("/players", serverRegistryController.GetAllWorldPlayerCounts)
 	orchestratorGroup.POST("/webhook/servers/update", middleware.GithubOIDCCheck(ghv), serverRegistryController.UpdateServer)
 	orchestratorGroup.PUT("/:id/zones/:zone_id/status", middleware.ServerCheckMiddleware(), serverRegistryController.UpdateStatus)
 
