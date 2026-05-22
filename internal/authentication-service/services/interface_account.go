@@ -15,8 +15,6 @@ type AccountService interface {
 	RefreshToken(email string) (string, string, error)
 	ListAccounts(query string, verified *bool, offset int, limit int) ([]models.User, int64, error)
 	UpdateAdminStatus(id string, isAdmin bool) error
-
-	// Password reset
 	ForgotPassword(email string) (otpCode string, err error)
 	VerifyPasswordResetCode(email string, code string) (resetToken string, err error)
 	ResetPassword(resetToken string, newPassword string) error
