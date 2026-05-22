@@ -91,11 +91,6 @@ func (mc *modelsController) UploadModel(c *gin.Context) {
 		return
 	}
 
-	if err := common_handlers.PrepareMultipartRequest(c); err != nil {
-		_ = c.Error(err)
-		return
-	}
-
 	worldID, err := parseUUIDParam(c, "world_id")
 	if err != nil {
 		_ = c.Error(err)

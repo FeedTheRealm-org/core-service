@@ -140,11 +140,6 @@ func (ic *itemController) UploadItems(c *gin.Context) {
 		return
 	}
 
-	if err := common_handlers.PrepareMultipartRequest(c); err != nil {
-		_ = c.Error(err)
-		return
-	}
-
 	worldId, err := uuid.Parse(c.Param("world_id"))
 	if err != nil {
 		_ = c.Error(internalErrors.NewBadRequestError("invalid world_id format"))

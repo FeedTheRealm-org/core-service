@@ -54,11 +54,6 @@ func (ec *exportsController) UploadZip(c *gin.Context) {
 		return
 	}
 
-	if err := common_handlers.PrepareMultipartRequest(c); err != nil {
-		_ = c.Error(err)
-		return
-	}
-
 	appNameStr := firstNonEmpty(c.PostForm("app"), c.PostForm("app_name"))
 	version := firstNonEmpty(c.PostForm("version"), c.PostForm("versiion"))
 	osNameStr := c.PostForm("os")
