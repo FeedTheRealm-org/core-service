@@ -47,9 +47,10 @@ type DatabaseConfig struct {
 }
 
 type AssetsConfig struct {
-	MaxUploadSizeBytes  int64
-	CosmeticsBucketName string
-	WorldsBucketName    string
+	MaxUploadSizeBytes   int64
+	MultipartMemoryBytes int64
+	CosmeticsBucketName  string
+	WorldsBucketName     string
 }
 
 type StripeItem struct {
@@ -144,9 +145,10 @@ func CreateConfig() *Config {
 	}
 
 	assetsConf := &AssetsConfig{
-		MaxUploadSizeBytes:  int64(getEnvOrDefaultInt("ASSETS_MAX_UPLOAD_SIZE_BYTES", 20*1024*1024)),
-		CosmeticsBucketName: getEnvOrDefaultString("ASSETS_COSMETICS_BUCKET_NAME", "cosmetics"),
-		WorldsBucketName:    getEnvOrDefaultString("ASSETS_WORLDS_BUCKET_NAME", "worlds"),
+		MaxUploadSizeBytes:   int64(getEnvOrDefaultInt("ASSETS_MAX_UPLOAD_SIZE_BYTES", 20*1024*1024)),
+		MultipartMemoryBytes: int64(getEnvOrDefaultInt("ASSETS_MULTIPART_MEMORY_BYTES", 8*1024*1024)),
+		CosmeticsBucketName:  getEnvOrDefaultString("ASSETS_COSMETICS_BUCKET_NAME", "cosmetics"),
+		WorldsBucketName:     getEnvOrDefaultString("ASSETS_WORLDS_BUCKET_NAME", "worlds"),
 	}
 
 	serverConf := &ServerConfig{

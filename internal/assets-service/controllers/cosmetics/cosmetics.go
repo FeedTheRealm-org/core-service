@@ -355,6 +355,11 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 		return
 	}
 
+	if err := common_handlers.PrepareMultipartRequest(c); err != nil {
+		_ = c.Error(err)
+		return
+	}
+
 	categoryId, err := uuid.Parse(c.Param("category_id"))
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("invalid category_id: " + err.Error()))
@@ -451,6 +456,11 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 	userId, err := common_handlers.GetUserIDFromSession(c)
 	if err != nil {
 		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	if err := common_handlers.PrepareMultipartRequest(c); err != nil {
+		_ = c.Error(err)
 		return
 	}
 

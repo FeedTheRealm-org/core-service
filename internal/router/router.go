@@ -19,6 +19,7 @@ func SetupRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
 
 	// Setup global middleware
 	r.Use(middleware.ErrorHandlerMiddleware())
+	r.Use(middleware.MultipartCleanupMiddleware())
 
 	r.Use(middleware.CORSMiddleware(conf))
 

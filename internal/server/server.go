@@ -45,6 +45,11 @@ func (s *Server) Start() error {
 	}
 
 	r := gin.Default()
+	multipartMemoryBytes := int64(8 << 20)
+	if s.conf.Assets != nil && s.conf.Assets.MultipartMemoryBytes > 0 {
+		multipartMemoryBytes = s.conf.Assets.MultipartMemoryBytes
+	}
+	r.MaxMultipartMemory = multipartMemoryBytes
 	if err := router.SetupRouter(r, s.conf, s.db); err != nil {
 		return err
 	}
