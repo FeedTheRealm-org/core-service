@@ -18,6 +18,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/payment-service/models"
 	creator_balances_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/creator-balances"
 	gem_balances "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-balances"
+	gem_metrics "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-metrics"
 	gem_packs "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-packs"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/email_sender"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
@@ -26,6 +27,7 @@ import (
 type gemBalancesService struct {
 	conf                *config.Config
 	gemBalancesRepo     gem_balances.GemBalancesRepository
+	gemMetricsRepo      gem_metrics.GemMetricsRepository
 	packsRepo           gem_packs.GemPacksRepository
 	creatorBalancesRepo creator_balances_repo.CreatorBalancesRepository
 	emailSender         email_sender.EmailSenderService
@@ -36,6 +38,7 @@ const DATE_FORMAT = "2006-01-02 15:04:05 MST"
 func NewGemBalancesService(
 	conf *config.Config,
 	gemBalancesRepo gem_balances.GemBalancesRepository,
+	gemMetricsRepo gem_metrics.GemMetricsRepository,
 	packsRepo gem_packs.GemPacksRepository,
 	creatorBalancesRepo creator_balances_repo.CreatorBalancesRepository,
 	emailSender email_sender.EmailSenderService,
@@ -44,6 +47,7 @@ func NewGemBalancesService(
 	return &gemBalancesService{
 		conf:                conf,
 		gemBalancesRepo:     gemBalancesRepo,
+		gemMetricsRepo:      gemMetricsRepo,
 		packsRepo:           packsRepo,
 		creatorBalancesRepo: creatorBalancesRepo,
 		emailSender:         emailSender,
@@ -124,6 +128,11 @@ func (bs *gemBalancesService) PurchaseCosmetic(userId uuid.UUID, cosmeticId uuid
 				logger.Logger.Error("Failed to add earnings to creator balance: " + err.Error())
 				return fmt.Errorf("failed to credit creator %s for cosmetic purchase %s by user %s: %w", creatorId, cosmeticId, userId, err)
 			}
+		}
+
+		err = bs.gemMetricsRepo.AddGemsSpent(price)
+		if err != nil {
+			logger.Logger.Error("Failed to update gem metrics for user " + userId.String() + ": " + err.Error())
 		}
 	}
 
@@ -318,6 +327,12 @@ func (bs *gemBalancesService) HandleWebhook(payload []byte, signature string) er
 		if !applied {
 			logger.Logger.Info("Ignoring duplicate Stripe checkout session completed event: " + event.ID)
 			return nil
+		}
+
+		price, _ := pack.Price.Float64()
+		err = bs.gemMetricsRepo.AddGemsBoughtAndRevenue(pack.Gems, price)
+		if err != nil {
+			logger.Logger.Error("Failed to update gem metrics for user " + userId.String() + ": " + err.Error())
 		}
 
 		balance, err := bs.gemBalancesRepo.GetGemBalanceByUserId(userId)
