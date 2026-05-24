@@ -1,7 +1,6 @@
 package server_registry
 
 import (
-	"io"
 	"net/http"
 	"strconv"
 
@@ -103,7 +102,7 @@ func (c *serverRegistryController) StopJob(ctx *gin.Context) {
 
 	err = c.nomadJobSenderService.StopJob(worldId, zoneId)
 	if err != nil {
-		_ = ctx.Error(errors.NewNotFoundError(err.Error()))
+		_ = ctx.Error(errors.NewNotFoundError("Could not stop job."))
 		return
 	}
 
@@ -140,7 +139,7 @@ func (c *serverRegistryController) GetServerAddress(ctx *gin.Context) {
 
 	addr, port, err := c.nomadJobSenderService.GetServerAddress(worldId, zoneId)
 	if err != nil {
-		_ = ctx.Error(errors.NewNotFoundError(err.Error()))
+		_ = ctx.Error(errors.NewNotFoundError("Failed to get server address."))
 		return
 	}
 
@@ -163,16 +162,6 @@ func (c *serverRegistryController) GetServerAddress(ctx *gin.Context) {
 func (c *serverRegistryController) UpdateServer(ctx *gin.Context) {
 	logger.Logger.Info("Received server update webhook call")
 
-	// To be deleted
-	rawBody, _ := io.ReadAll(ctx.Request.Body)
-	logger.Logger.Infow("request log",
-		"method", ctx.Request.Method,
-		"path", ctx.Request.URL.Path,
-		"query", ctx.Request.URL.RawQuery,
-		"status", ctx.Writer.Status(),
-		"request_body", string(rawBody),
-	)
-
 	if common_handlers.IsGithubOIDCTokenValid(ctx) != nil {
 		_ = ctx.Error(errors.NewUnauthorizedError("Invalid GitHub OIDC token"))
 		return
@@ -180,14 +169,14 @@ func (c *serverRegistryController) UpdateServer(ctx *gin.Context) {
 
 	activeZones, err := c.worldService.GetActiveWorldZones()
 	if err != nil {
-		_ = ctx.Error(errors.NewNotFoundError(err.Error()))
+		_ = ctx.Error(errors.NewNotFoundError("Failed to get active world zones."))
 		return
 	}
 
 	for _, zone := range activeZones {
 		err := c.nomadJobSenderService.StartNewJob(zone.WorldID, zone.ID, false)
 		if err != nil {
-			_ = ctx.Error(errors.NewInternalServerError(err.Error()))
+			_ = ctx.Error(errors.NewInternalServerError("Failed to start new job."))
 			return
 		}
 	}
@@ -233,9 +222,110 @@ func (c *serverRegistryController) UpdateStatus(ctx *gin.Context) {
 
 	err = c.zoneService.UpdateZoneStatus(worldId, zoneId, req.IsOnline)
 	if err != nil {
-		_ = ctx.Error(errors.NewInternalServerError(err.Error()))
+		_ = ctx.Error(errors.NewInternalServerError("Failed to update zone status."))
 		return
 	}
 
 	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
+}
+
+// UpdatePlayerCount godoc
+// @Summary      Update zone player count
+// @Description  Servers report active players and average player time every 2 minutes.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "World UUID"
+// @Param        zone_id path int true "World Zone Number"
+// @Param        request body dtos.UpdatePlayerCountRequest true "Player count payload"
+// @Success      200  {string}  string "OK"
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /world/orchestrator/{id}/zones/{zone_id}/players [post]
+func (c *serverRegistryController) UpdatePlayerCount(ctx *gin.Context) {
+	worldIdStr := ctx.Param("id")
+	zoneIdStr := ctx.Param("zone_id")
+
+	worldId, err := uuid.Parse(worldIdStr)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + worldIdStr))
+		return
+	}
+
+	zoneId, err := strconv.Atoi(zoneIdStr)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid zone ID: " + zoneIdStr))
+		return
+	}
+
+	var req dtos.UpdatePlayerCountRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid request body: " + err.Error()))
+		return
+	}
+
+	if err := c.zoneService.UpdateZonePlayerCount(worldId, zoneId, req.ActivePlayers, req.AveragePlayerTime); err != nil {
+		_ = ctx.Error(errors.NewInternalServerError("Failed to update zone player count."))
+		return
+	}
+
+	common_handlers.HandleBodilessResponse(ctx, http.StatusOK)
+}
+
+// GetWorldPlayerCounts godoc
+// @Summary      Get world player counts
+// @Description  Returns player counts per zone for a world.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path string true "World UUID"
+// @Success      200  {object}  dtos.PlayerCountsResponse
+// @Failure      400  {object} dtos.ErrorResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /world/orchestrator/{id}/players [get]
+func (c *serverRegistryController) GetWorldPlayerCounts(ctx *gin.Context) {
+	worldIdStr := ctx.Param("id")
+	worldId, err := uuid.Parse(worldIdStr)
+	if err != nil {
+		_ = ctx.Error(errors.NewBadRequestError("invalid world ID: " + worldIdStr))
+		return
+	}
+
+	activePlayers, averagePlayerTime, err := c.zoneService.GetWorldZonePlayerCounts(worldId)
+	if err != nil {
+		_ = ctx.Error(errors.NewInternalServerError("Failed to get world player count."))
+		return
+	}
+
+	response := &dtos.PlayerCountsResponse{
+		ActivePlayers:     activePlayers,
+		AveragePlayerTime: averagePlayerTime,
+	}
+
+	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, response)
+}
+
+// GetAllWorldPlayerCounts godoc
+// @Summary      Get all world player counts
+// @Description  Returns player counts for all worlds.
+// @Tags         world-service
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {array}  dtos.PlayerCountsResponse
+// @Failure      500  {object} dtos.ErrorResponse
+// @Router       /world/orchestrator/players [get]
+func (c *serverRegistryController) GetAllWorldPlayerCounts(ctx *gin.Context) {
+	activePlayers, averagePlayerTime, err := c.zoneService.GetAllWorldZonePlayerCounts()
+	if err != nil {
+		_ = ctx.Error(errors.NewInternalServerError("Failed to get all world player counts."))
+		return
+	}
+
+	responses := &dtos.PlayerCountsResponse{
+		ActivePlayers:     activePlayers,
+		AveragePlayerTime: averagePlayerTime,
+	}
+
+	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, responses)
 }

@@ -41,7 +41,7 @@ func (mc *modelsController) GetModelsList(c *gin.Context) {
 
 	modelsList, err := mc.modelService.GetModelsByWorld(worldID)
 	if err != nil {
-		_ = c.Error(errors.NewInternalServerError(err.Error()))
+		_ = c.Error(errors.NewInternalServerError("Failed to get models by world."))
 		return
 	}
 
@@ -49,7 +49,7 @@ func (mc *modelsController) GetModelsList(c *gin.Context) {
 	if worldID != uuid.Nil {
 		defaultModels, err := mc.modelService.GetModelsByWorld(uuid.Nil)
 		if err != nil {
-			_ = c.Error(errors.NewInternalServerError(err.Error()))
+			_ = c.Error(errors.NewInternalServerError("Failed to get default models."))
 			return
 		}
 		modelsList = append(modelsList, defaultModels...)
@@ -130,7 +130,7 @@ func (mc *modelsController) UploadModel(c *gin.Context) {
 		ModelFile: modelFile,
 	})
 	if err != nil {
-		_ = c.Error(errors.NewInternalServerError(err.Error()))
+		_ = c.Error(errors.NewInternalServerError("Failed to upload model."))
 		return
 	}
 

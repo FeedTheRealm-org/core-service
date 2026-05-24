@@ -99,6 +99,15 @@ definitions:
       cosmetic_url:
         type: string
     type: object
+  dtos.CosmeticsEconomySummaryResponse:
+    properties:
+      average_price:
+        type: number
+      default_cosmetics:
+        type: integer
+      user_created_cosmetics:
+        type: integer
+    type: object
   dtos.CosmeticsListResponse:
     properties:
       cosmetics_list:
@@ -155,12 +164,64 @@ definitions:
       type:
         type: string
     type: object
+  dtos.ExportZipPathResponse:
+    properties:
+      path:
+        type: string
+    type: object
+  dtos.ExportZipResponse:
+    properties:
+      app_name:
+        type: string
+      created_at:
+        type: string
+      is_latest:
+        type: boolean
+      os:
+        type: string
+      path:
+        type: string
+      updated_at:
+        type: string
+      version:
+        type: string
+    type: object
+  dtos.ExportZipSetLatestRequest:
+    properties:
+      app_name:
+        type: string
+      os:
+        type: string
+      version:
+        type: string
+    type: object
+  dtos.ForgotPasswordRequestDTO:
+    properties:
+      email:
+        type: string
+    type: object
+  dtos.ForgotPasswordResponseDTO:
+    properties:
+      success:
+        type: boolean
+    type: object
   dtos.GemBalanceResponse:
     properties:
       gems:
         type: integer
       user_id:
         type: string
+    type: object
+  dtos.GemMetricsResponse:
+    properties:
+      gems_bought:
+        type: integer
+      gems_flow:
+        type: number
+      gems_revenue:
+        type: number
+      gems_spent:
+        type: integer
     type: object
   dtos.GemPackDeletedResponse:
     properties:
@@ -316,6 +377,13 @@ definitions:
       skin_color:
         $ref: '#/definitions/models.CharacterColorHsv'
     type: object
+  dtos.PlayerCountsResponse:
+    properties:
+      active_players:
+        type: integer
+      average_player_time:
+        type: integer
+    type: object
   dtos.PricingInfoResponse:
     properties:
       next_billing_date:
@@ -349,6 +417,25 @@ definitions:
       email:
         type: string
     type: object
+  dtos.ResetPasswordRequestDTO:
+    properties:
+      new_password:
+        type: string
+      reset_token:
+        type: string
+    type: object
+  dtos.ResetPasswordResponseDTO:
+    properties:
+      success:
+        type: boolean
+    type: object
+  dtos.SessionStatusResponseDTO:
+    properties:
+      is_admin:
+        type: boolean
+      user_id:
+        type: string
+    type: object
   dtos.SubscriptionStatusResponse:
     properties:
       amount_due:
@@ -361,6 +448,11 @@ definitions:
         type: string
       used_slots:
         type: integer
+    type: object
+  dtos.UpdateAdminStatusRequestDTO:
+    properties:
+      is_admin:
+        type: boolean
     type: object
   dtos.UpdateCreateableDataRequest:
     properties:
@@ -382,6 +474,13 @@ definitions:
       price:
         type: number
     type: object
+  dtos.UpdatePlayerCountRequest:
+    properties:
+      active_players:
+        type: integer
+      average_player_time:
+        type: integer
+    type: object
   dtos.UpdateStatusRequest:
     properties:
       is_online:
@@ -393,6 +492,30 @@ definitions:
         type: integer
     required:
     - slots
+    type: object
+  dtos.UserSummaryResponseDTO:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_admin:
+        type: boolean
+      updated_at:
+        type: string
+      verified:
+        type: boolean
+    type: object
+  dtos.UsersListResponseDTO:
+    properties:
+      total_count:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/dtos.UserSummaryResponseDTO'
+        type: array
     type: object
   dtos.VerifyAccountRequestDTO:
     properties:
@@ -407,6 +530,18 @@ definitions:
         type: string
       verified:
         type: boolean
+    type: object
+  dtos.VerifyPasswordCodeRequestDTO:
+    properties:
+      code:
+        type: string
+      email:
+        type: string
+    type: object
+  dtos.VerifyPasswordCodeResponseDTO:
+    properties:
+      reset_token:
+        type: string
     type: object
   dtos.WebhookResponse:
     type: object
@@ -479,6 +614,10 @@ definitions:
     type: object
   dtos.WorldZoneResponse:
     properties:
+      active_players:
+        type: integer
+      average_player_time:
+        type: integer
       is_active:
         type: boolean
       is_online:
@@ -787,6 +926,28 @@ paths:
       security:
       - BearerAuth: []
       summary: Link existing cosmetic by ID
+      tags:
+      - assets-service
+  /assets/cosmetics/economy-summary:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves aggregate counts and average price for cosmetics without
+        loading all rows.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.CosmeticsEconomySummaryResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get cosmetics economy summary
       tags:
       - assets-service
   /assets/cosmetics/worlds/{world_id}:
@@ -1337,6 +1498,107 @@ paths:
       summary: Login account
       tags:
       - authentication-service
+  /auth/password/forgot:
+    post:
+      consumes:
+      - application/json
+      description: Initiates a password reset flow by sending an OTP to the user's
+        email. Always returns success to prevent account enumeration.
+      parameters:
+      - description: Email address
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ForgotPasswordRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ForgotPasswordResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Forgot password
+      tags:
+      - authentication-service
+  /auth/password/reset:
+    post:
+      consumes:
+      - application/json
+      description: Validates the reset token and updates the user's password, revoking
+        all active sessions.
+      parameters:
+      - description: Reset token and new password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ResetPasswordRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ResetPasswordResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Reset password
+      tags:
+      - authentication-service
+  /auth/password/verify-code:
+    post:
+      consumes:
+      - application/json
+      description: Validates the OTP sent to the user's email and returns a short-lived
+        reset token on success.
+      parameters:
+      - description: Email and OTP code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.VerifyPasswordCodeRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.VerifyPasswordCodeResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      summary: Verify password reset code
+      tags:
+      - authentication-service
   /auth/refresh:
     post:
       consumes:
@@ -1415,6 +1677,31 @@ paths:
       summary: Refresh access token
       tags:
       - authentication-service
+  /auth/session:
+    get:
+      consumes:
+      - application/json
+      description: Validates that the current session is active and has admin privileges.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SessionStatusResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Check admin session
+      tags:
+      - authentication-service
   /auth/signup:
     post:
       consumes:
@@ -1451,6 +1738,89 @@ paths:
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
       summary: Create a new account
+      tags:
+      - authentication-service
+  /auth/users:
+    get:
+      description: Returns a paginated list of users. Admin only.
+      parameters:
+      - description: Filter by email
+        in: query
+        name: query
+        type: string
+      - description: Filter by verification
+        in: query
+        name: verified
+        type: boolean
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 50
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.UsersListResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - authentication-service
+  /auth/users/{id}/admin:
+    put:
+      consumes:
+      - application/json
+      description: Updates the admin flag for a user. Admin only.
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Admin status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateAdminStatusRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update admin status
       tags:
       - authentication-service
   /auth/verify:
@@ -1491,6 +1861,214 @@ paths:
       summary: Verify an account
       tags:
       - authentication-service
+  /exports/zip:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a specific export version.
+      parameters:
+      - description: App name
+        in: query
+        name: app
+        required: true
+        type: string
+      - description: Version
+        in: query
+        name: version
+        required: true
+        type: string
+      - description: OS name
+        in: query
+        name: os
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete export zip version
+      tags:
+      - exports-service
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the path for a given app, version, and OS.
+      parameters:
+      - description: App name
+        in: query
+        name: app
+        required: true
+        type: string
+      - description: Version (vX.Y.Z)
+        in: query
+        name: version
+        required: true
+        type: string
+      - description: OS name
+        in: query
+        name: os
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ExportZipPathResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get export zip path
+      tags:
+      - exports-service
+    put:
+      consumes:
+      - multipart/form-data
+      description: Uploads a zip file for a given app, version, and OS.
+      parameters:
+      - description: App name
+        in: formData
+        name: app
+        required: true
+        type: string
+      - description: Version (vX.Y.Z)
+        in: formData
+        name: version
+        required: true
+        type: string
+      - description: OS name
+        in: formData
+        name: os
+        required: true
+        type: string
+      - description: Zip file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.ExportZipResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload export zip
+      tags:
+      - exports-service
+  /exports/zip/latest:
+    patch:
+      consumes:
+      - application/json
+      description: Marks one export version as the latest for its app and OS.
+      parameters:
+      - description: Latest version payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ExportZipSetLatestRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.ExportZipResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Set export zip version as latest
+      tags:
+      - exports-service
+  /exports/zip/versions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all export versions, optionally filtered by app and OS.
+      parameters:
+      - description: App name
+        in: query
+        name: app
+        type: string
+      - description: OS name
+        in: query
+        name: os
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.ExportZipResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List export zip versions
+      tags:
+      - exports-service
   /payments/balances/creators:
     get:
       description: Get the current creator balance of the authenticated user
@@ -1512,6 +2090,31 @@ paths:
       security:
       - BearerAuth: []
       summary: Get creator balance
+      tags:
+      - payment-service
+  /payments/balances/creators/all:
+    get:
+      description: Returns all creator balances. Admin only.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.CreatorBalanceResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List creator balances
       tags:
       - payment-service
   /payments/checkout:
@@ -1656,6 +2259,29 @@ paths:
       security:
       - BearerAuth: []
       summary: Purchase a cosmetic
+      tags:
+      - payment-service
+  /payments/gems/metrics:
+    get:
+      description: Returns aggregated gem metrics. Admin only.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.GemMetricsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get gem metrics
       tags:
       - payment-service
   /payments/gems/packs:
@@ -2719,6 +3345,35 @@ paths:
       tags:
       - world-service
       - internal
+  /world/orchestrator/{id}/players:
+    get:
+      description: Returns player counts per zone for a world.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.PlayerCountsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get world player counts
+      tags:
+      - world-service
   /world/orchestrator/{id}/zones/{zone_id}/address:
     get:
       description: Returns resolved dynamically routed TCP/UDP IP and Port mappings
@@ -2752,6 +3407,48 @@ paths:
       security:
       - BearerAuth: []
       summary: Fetch running container address
+      tags:
+      - world-service
+  /world/orchestrator/{id}/zones/{zone_id}/players:
+    post:
+      consumes:
+      - application/json
+      description: Servers report active players and average player time every 2 minutes.
+      parameters:
+      - description: World UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: World Zone Number
+        in: path
+        name: zone_id
+        required: true
+        type: integer
+      - description: Player count payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdatePlayerCountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update zone player count
       tags:
       - world-service
   /world/orchestrator/{id}/zones/{zone_id}/start-job:
@@ -2868,6 +3565,27 @@ paths:
       security:
       - BearerAuth: []
       summary: Shutdown job execution
+      tags:
+      - world-service
+  /world/orchestrator/players:
+    get:
+      description: Returns player counts for all worlds.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.PlayerCountsResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all world player counts
       tags:
       - world-service
   /world/orchestrator/webhook/servers/update:

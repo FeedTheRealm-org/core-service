@@ -28,6 +28,15 @@ type ZonesService interface {
 	// UpdateZoneStatus updates the status of a zone.
 	UpdateZoneStatus(worldID uuid.UUID, zoneID int, isOnline bool) error
 
+	// UpdateZonePlayerCount updates active player count and average player time for a zone.
+	UpdateZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int, averagePlayerTime int) error
+
+	// GetWorldZonePlayerCounts returns zones with player counts for a world.
+	GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, error)
+
+	// GetAllWorldZonePlayerCounts returns zones with player counts for all worlds.
+	GetAllWorldZonePlayerCounts() (int, int, error)
+
 	// StopAllZonesForUser stops all active zones for a specific user.
 	StopAllZonesForUser(userID uuid.UUID) error
 }

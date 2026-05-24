@@ -278,12 +278,12 @@ func (s *accountService) LoginAccount(email string, password string, isAdminReq 
 		return nil, "", "", &AccountNotVerifiedError{}
 	}
 
-	accessToken, err := s.jwt.GenerateAccessToken(user.Id.String(), user.IsAdmin)
+	accessToken, err := s.jwt.GenerateAccessToken(user.Id.String(), user.Email, user.IsAdmin)
 	if err != nil {
 		return nil, "", "", &AccountFailedToCreateTokenError{}
 	}
 
-	refreshToken, err := s.jwt.GenerateRefreshToken(user.Id.String(), user.IsAdmin)
+	refreshToken, err := s.jwt.GenerateRefreshToken(user.Id.String(), user.Email, user.IsAdmin)
 	if err != nil {
 		return nil, "", "", &AccountFailedToCreateTokenError{}
 	}
@@ -294,6 +294,18 @@ func (s *accountService) LoginAccount(email string, password string, isAdminReq 
 	}
 
 	return user, accessToken, refreshToken, nil
+}
+
+func (s *accountService) ListAccounts(query string, verified *bool, offset int, limit int) ([]models.User, int64, error) {
+	return s.repo.ListAccounts(query, verified, offset, limit)
+}
+
+func (s *accountService) UpdateAdminStatus(id string, isAdmin bool) error {
+	userId, err := uuid.Parse(id)
+	if err != nil {
+		return &AccountInvalidFormat{Msg: "invalid user id"}
+	}
+	return s.repo.UpdateAdminStatus(userId, isAdmin)
 }
 
 func (s *accountService) ValidateAccessToken(token string) error {
@@ -422,12 +434,12 @@ func (s *accountService) RefreshToken(email string) (string, string, error) {
 		return "", "", &AccountNotVerifiedError{}
 	}
 
-	accessToken, err := s.jwt.GenerateAccessToken(user.Id.String(), user.IsAdmin)
+	accessToken, err := s.jwt.GenerateAccessToken(user.Id.String(), user.Email, user.IsAdmin)
 	if err != nil {
 		return "", "", &AccountFailedToCreateTokenError{}
 	}
 
-	refreshToken, err := s.jwt.GenerateRefreshToken(user.Id.String(), user.IsAdmin)
+	refreshToken, err := s.jwt.GenerateRefreshToken(user.Id.String(), user.Email, user.IsAdmin)
 	if err != nil {
 		return "", "", &AccountFailedToCreateTokenError{}
 	}

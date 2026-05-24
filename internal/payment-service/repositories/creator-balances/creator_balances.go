@@ -43,3 +43,11 @@ func (r *creatorBalancesRepository) GetBalance(userId uuid.UUID) (decimal.Decima
 	}
 	return cb.Balance, nil
 }
+
+func (r *creatorBalancesRepository) GetAllBalances() ([]models.CreatorBalance, error) {
+	var balances []models.CreatorBalance
+	if err := r.db.Conn.Find(&balances).Error; err != nil {
+		return nil, err
+	}
+	return balances, nil
+}

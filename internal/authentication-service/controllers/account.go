@@ -2,12 +2,14 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	dtos "github.com/FeedTheRealm-org/core-service/internal/authentication-service/dtos"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/services"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
 	"github.com/FeedTheRealm-org/core-service/internal/errors"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/email_sender"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -15,10 +17,10 @@ import (
 type accountController struct {
 	conf           *config.Config
 	accountService services.AccountService
-	emailService   services.EmailSenderService
+	emailService   email_sender.EmailSenderService
 }
 
-func NewAccountController(conf *config.Config, accountService services.AccountService, emailService services.EmailSenderService) AccountController {
+func NewAccountController(conf *config.Config, accountService services.AccountService, emailService email_sender.EmailSenderService) AccountController {
 	return &accountController{
 		conf:           conf,
 		accountService: accountService,
@@ -92,7 +94,10 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 
 	if ec.conf.Server.Environment != config.Testing {
 		logger.Logger.Infof("CreateAccount: account created for email=%s", result.Email)
-		err = ec.emailService.SendVerificationEmail(result.Email, verificationCode)
+		err = ec.emailService.SendVerificationEmail(email_sender.VerificationEmailData{
+			BaseEmailData: ec.emailService.CreateBaseEmailData(result.Email),
+			VerifyCode:    verificationCode,
+		})
 		if err != nil {
 			logger.Logger.Errorf("CreateAccount: failed to send verification email to email=%s: %v", result.Email, err)
 		}
@@ -233,6 +238,34 @@ func (ec *accountController) CheckSessionExpiration(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
 }
 
+// @Summary      Check admin session
+// @Description  Validates that the current session is active and has admin privileges.
+// @Tags         authentication-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  dtos.SessionStatusResponseDTO
+// @Failure      401  {object}  dtos.ErrorResponse
+// @Failure      403  {object}  dtos.ErrorResponse
+// @Router       /auth/session [get]
+func (ec *accountController) CheckAdminSession(c *gin.Context) {
+	userID, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		_ = c.Error(errors.NewUnauthorizedError("Invalid session token"))
+		return
+	}
+
+	if err := common_handlers.IsAdminSession(c); err != nil {
+		_ = c.Error(errors.NewForbiddenError("Admin privileges are required"))
+		return
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, &dtos.SessionStatusResponseDTO{
+		UserID:  userID.String(),
+		IsAdmin: true,
+	})
+}
+
 // @Summary      Verify an account
 // @Description  Verifies a user's email address with a provided verification code.
 // @Tags         authentication-service
@@ -344,7 +377,10 @@ func (ec *accountController) RefreshVerification(c *gin.Context) {
 		return
 	}
 
-	if err := ec.emailService.SendVerificationEmail(req.Email, newCode); err != nil {
+	if err := ec.emailService.SendVerificationEmail(email_sender.VerificationEmailData{
+		BaseEmailData: ec.emailService.CreateBaseEmailData(req.Email),
+		VerifyCode:    newCode,
+	}); err != nil {
 		logger.Logger.Errorf("RefreshVerification: failed to send verification email to email=%s: %v", req.Email, err)
 	}
 
@@ -388,7 +424,10 @@ func (ec *accountController) ForgotPassword(c *gin.Context) {
 	}
 
 	if otpCode != "" && ec.conf.Server.Environment != config.Testing {
-		if err := ec.emailService.SendPasswordResetEmail(req.Email, otpCode); err != nil {
+		if err := ec.emailService.SendPasswordResetEmail(email_sender.PasswordResetEmailData{
+			BaseEmailData: ec.emailService.CreateBaseEmailData(req.Email),
+			VerifyCode:    otpCode,
+		}); err != nil {
 			logger.Logger.Errorf("ForgotPassword: failed to send password reset email to email=%s: %v", req.Email, err)
 		}
 	}
@@ -589,4 +628,106 @@ func (ec *accountController) RefreshToken(c *gin.Context) {
 		RefreshToken: newRefreshToken,
 	}
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
+}
+
+// @Summary      List users
+// @Description  Returns a paginated list of users. Admin only.
+// @Tags         authentication-service
+// @Security     BearerAuth
+// @Produce      json
+// @Param        query    query     string  false  "Filter by email"
+// @Param        verified query     bool    false  "Filter by verification"
+// @Param        offset   query     int     false  "Offset" default(0)
+// @Param        limit    query     int     false  "Limit" default(50)
+// @Success      200      {object}  dtos.UsersListResponseDTO
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
+// @Router       /auth/users [get]
+func (ec *accountController) ListUsers(c *gin.Context) {
+	if err := common_handlers.IsAdminSession(c); err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	query := c.Query("query")
+	verifiedParam := c.Query("verified")
+	offsetStr := c.DefaultQuery("offset", "0")
+	limitStr := c.DefaultQuery("limit", "50")
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		_ = c.Error(errors.NewBadRequestError("invalid offset"))
+		return
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 || limit > 200 {
+		_ = c.Error(errors.NewBadRequestError("invalid limit"))
+		return
+	}
+
+	var verified *bool
+	if verifiedParam != "" {
+		parsed, err := strconv.ParseBool(verifiedParam)
+		if err != nil {
+			_ = c.Error(errors.NewBadRequestError("invalid verified filter"))
+			return
+		}
+		verified = &parsed
+	}
+
+	users, total, err := ec.accountService.ListAccounts(query, verified, offset, limit)
+	if err != nil {
+		_ = c.Error(errors.NewInternalServerError("Failed to list accounts."))
+		return
+	}
+
+	response := dtos.UsersListResponseDTO{
+		Users:      make([]dtos.UserSummaryResponseDTO, len(users)),
+		TotalCount: total,
+	}
+	for i, user := range users {
+		response.Users[i] = dtos.UserSummaryResponseDTO{
+			ID:        user.Id.String(),
+			Email:     user.Email,
+			Verified:  user.Verified,
+			IsAdmin:   user.IsAdmin,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+		}
+	}
+
+	common_handlers.HandleSuccessResponse(c, http.StatusOK, response)
+}
+
+// @Summary      Update admin status
+// @Description  Updates the admin flag for a user. Admin only.
+// @Tags         authentication-service
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id      path      string                          true  "User UUID"
+// @Param        request body      dtos.UpdateAdminStatusRequestDTO true  "Admin status"
+// @Success      204      {string}  string "No Content"
+// @Failure      400      {object}  dtos.ErrorResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
+// @Router       /auth/users/{id}/admin [put]
+func (ec *accountController) UpdateAdminStatus(c *gin.Context) {
+	if err := common_handlers.IsAdminSession(c); err != nil {
+		_ = c.Error(errors.NewUnauthorizedError(err.Error()))
+		return
+	}
+
+	req := dtos.UpdateAdminStatusRequestDTO{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		_ = c.Error(errors.NewBadRequestError("invalid request body"))
+		return
+	}
+
+	if err := ec.accountService.UpdateAdminStatus(c.Param("id"), req.IsAdmin); err != nil {
+		_ = c.Error(errors.NewInternalServerError("Failed to update admin status."))
+		return
+	}
+
+	common_handlers.HandleBodilessResponse(c, http.StatusNoContent)
 }

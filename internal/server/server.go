@@ -45,6 +45,11 @@ func (s *Server) Start() error {
 	}
 
 	r := gin.Default()
+	multipartMemoryBytes := int64(8 << 20)
+	if s.conf.Assets != nil && s.conf.Assets.MultipartMemoryBytes > 0 {
+		multipartMemoryBytes = s.conf.Assets.MultipartMemoryBytes
+	}
+	r.MaxMultipartMemory = multipartMemoryBytes
 	if err := router.SetupRouter(r, s.conf, s.db); err != nil {
 		return err
 	}
@@ -68,9 +73,16 @@ func (s *Server) Shutdown() {
 	ctx, cancel := context.WithTimeout(context.Background(), s.conf.Server.ShutdownTimeout)
 	defer cancel()
 
+	if err := s.db.Close(); err != nil {
+		logger.Logger.Errorf("Error closing database connection: %v", err)
+	} else {
+		logger.Logger.Info("Database connection closed")
+	}
+
 	if err := s.srv.Shutdown(ctx); err != nil {
 		logger.Logger.Errorf("Server forced to shutdown: %v", err)
 	} else {
 		logger.Logger.Info("Server exited properly")
 	}
+
 }

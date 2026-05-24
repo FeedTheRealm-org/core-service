@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -38,12 +39,18 @@ type DatabaseConfig struct {
 	SSLCertPath       string
 	ConnectionRetries int
 	ShouldMigrate     bool
+
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime time.Duration
+	ConnMaxIdleTime time.Duration
 }
 
 type AssetsConfig struct {
-	MaxUploadSizeBytes  int64
-	CosmeticsBucketName string
-	WorldsBucketName    string
+	MaxUploadSizeBytes   int64
+	MultipartMemoryBytes int64
+	CosmeticsBucketName  string
+	WorldsBucketName     string
 }
 
 type StripeItem struct {
@@ -90,9 +97,11 @@ type Config struct {
 	SessionRefreshTokenSecretKey string
 	SessionAccessTokenDuration   time.Duration
 	SessionRefreshTokenDuration  time.Duration
+	CORSAllowedOrigins           []string
 	BrevoAPIKey                  string
 	EmailSenderAddress           string
 	EmailLogoURL                 string
+	SupportEmail                 string
 	ServerFixedToken             string
 	NomadAddr                    string
 	NomadToken                   string
@@ -128,12 +137,18 @@ func CreateConfig() *Config {
 		SSLCertPath:       os.Getenv("DATABASE_SSL_CERT_PATH"),
 		ConnectionRetries: getEnvOrDefaultInt("DB_CONNECTION_RETRIES", 10),
 		ShouldMigrate:     getEnvOrDefaultString("DB_SHOULD_MIGRATE", "false") == "true",
+
+		MaxOpenConns:    getEnvOrDefaultInt("DB_MAX_OPEN_CONNS", 10),
+		MaxIdleConns:    getEnvOrDefaultInt("DB_MAX_IDLE_CONNS", 5),
+		ConnMaxLifetime: getEnvOrDefaultDuration("DB_CONN_MAX_LIFETIME", time.Minute*30),
+		ConnMaxIdleTime: getEnvOrDefaultDuration("DB_CONN_MAX_IDLE_TIME", time.Minute*5),
 	}
 
 	assetsConf := &AssetsConfig{
-		MaxUploadSizeBytes:  int64(getEnvOrDefaultInt("ASSETS_MAX_UPLOAD_SIZE_BYTES", 20*1024*1024)),
-		CosmeticsBucketName: getEnvOrDefaultString("ASSETS_COSMETICS_BUCKET_NAME", "cosmetics"),
-		WorldsBucketName:    getEnvOrDefaultString("ASSETS_WORLDS_BUCKET_NAME", "worlds"),
+		MaxUploadSizeBytes:   int64(getEnvOrDefaultInt("ASSETS_MAX_UPLOAD_SIZE_BYTES", 20*1024*1024)),
+		MultipartMemoryBytes: int64(getEnvOrDefaultInt("ASSETS_MULTIPART_MEMORY_BYTES", 8*1024*1024)),
+		CosmeticsBucketName:  getEnvOrDefaultString("ASSETS_COSMETICS_BUCKET_NAME", "cosmetics"),
+		WorldsBucketName:     getEnvOrDefaultString("ASSETS_WORLDS_BUCKET_NAME", "worlds"),
 	}
 
 	serverConf := &ServerConfig{
@@ -177,6 +192,8 @@ func CreateConfig() *Config {
 		GithubRepoURLWebhook:  getEnvOrDefaultString("GITHUB_REPO_URL_WEBHOOK", "FeedTheRealm-org/game"),
 	}
 
+	commaSeparatedAllowedOrigins := getEnvOrDefaultString("CORS_ALLOWED_ORIGINS", "*")
+
 	return &Config{
 		Server:                       serverConf,
 		DB:                           dbc,
@@ -187,9 +204,11 @@ func CreateConfig() *Config {
 		SessionRefreshTokenSecretKey: os.Getenv("SESSION_REFRESH_TOKEN_SECRET_KEY"),
 		SessionAccessTokenDuration:   getEnvOrDefaultDuration("SESSION_ACCESS_TOKEN_DURATION", time.Hour*24),
 		SessionRefreshTokenDuration:  getEnvOrDefaultDuration("SESSION_REFRESH_TOKEN_DURATION", time.Hour*24*30),
+		CORSAllowedOrigins:           strings.Split(commaSeparatedAllowedOrigins, ","),
 		BrevoAPIKey:                  os.Getenv("BREVO_API_KEY"),
 		EmailSenderAddress:           os.Getenv("EMAIL_SENDER_ADDRESS"),
 		EmailLogoURL:                 getEnvOrDefaultString("EMAIL_LOGO_URL", "https://avatars.githubusercontent.com/u/231922724?s=400&u=5f4eb45fb6dc7cfa42333bfe1dc64a376122e3d0&v=4"),
+		SupportEmail:                 getEnvOrDefaultString("SUPPORT_EMAIL", "atusgames.official@gmail.com"),
 		ServerFixedToken:             os.Getenv("SERVER_FIXED_TOKEN"),
 		NomadAddr:                    os.Getenv("NOMAD_ADDR"),
 		NomadToken:                   os.Getenv("NOMAD_TOKEN"),

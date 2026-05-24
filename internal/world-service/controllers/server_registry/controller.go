@@ -18,4 +18,13 @@ type ServerRegistryController interface {
 
 	// UpdateStatus is a webhook endpoint for updating server status.
 	UpdateStatus(c *gin.Context)
+
+	// UpdatePlayerCount is a webhook endpoint for player count updates.
+	UpdatePlayerCount(c *gin.Context)
+
+	// GetWorldPlayerCounts returns the current player counts for a world.
+	GetWorldPlayerCounts(c *gin.Context)
+
+	// GetAllWorldPlayerCounts returns the player counts for all worlds.
+	GetAllWorldPlayerCounts(c *gin.Context)
 }

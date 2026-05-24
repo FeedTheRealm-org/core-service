@@ -5,16 +5,20 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/middleware"
 	creator_balances_controller "github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/creator-balances"
 	gem_balances_controller "github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/gem-balances"
+	gem_metrics_controller "github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/gem-metrics"
 	gem_packs_controller "github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/gem-packs"
 	zones_subscriptions_controller "github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/zones-subscriptions"
 	creator_balances_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/creator-balances"
 	gem_balances_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-balances"
+	gem_metrics_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-metrics"
 	gem_packs_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/gem-packs"
 	zones_subscriptions_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/zones-subscriptions"
 	creator_balances_service "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/creator-balances"
 	gem_balances_service "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/gem-balances"
+	gem_metrics_service "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/gem-metrics"
 	gem_packs_service "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/gem-packs"
 	zones_subscriptions_service "github.com/FeedTheRealm-org/core-service/internal/payment-service/services/zones-subscriptions"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/email_sender"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,16 +38,22 @@ func SetupGemPacksServiceRouter(conf *config.Config, db *config.DB, g *gin.Route
 
 func SetupBalancesServiceRouter(conf *config.Config, db *config.DB, paymentGroup *gin.RouterGroup, gemsGroup *gin.RouterGroup) {
 	gemBalancesRepo := gem_balances_repo.NewGemBalancesRepository(conf, db)
+	gemMetricsRepo := gem_metrics_repo.NewGemMetricsRepository(conf, db)
 	creatorBalanceRepo := creator_balances_repo.NewCreatorBalancesRepository(conf, db)
 	packsRepo := gem_packs_repo.NewGemPacksRepository(conf, db)
 
-	gemBalancesService := gem_balances_service.NewGemBalancesService(conf, gemBalancesRepo, packsRepo, creatorBalanceRepo)
+	emailSender := email_sender.NewEmailSenderService(conf)
+
+	gemBalancesService := gem_balances_service.NewGemBalancesService(
+		conf, gemBalancesRepo, gemMetricsRepo, packsRepo, creatorBalanceRepo, emailSender,
+	)
 
 	gemBalancesController := gem_balances_controller.NewGemBalancesController(conf, gemBalancesService)
 
 	/* Balances Endpoints */
 	balancesGroup := gemsGroup.Group("/balances")
 	balancesGroup.GET("", gemBalancesController.GetGemBalanceByUserId)
+	balancesGroup.GET("/all", middleware.AdminCheckMiddleware(), gemBalancesController.GetAllGemBalances)
 	balancesGroup.PUT("/:id", middleware.AdminCheckMiddleware(), gemBalancesController.UpdateGemBalance)
 
 	/* Purchase Endpoints */
@@ -56,7 +66,8 @@ func SetupBalancesServiceRouter(conf *config.Config, db *config.DB, paymentGroup
 
 func SetupSubscriptionsServiceRouter(conf *config.Config, db *config.DB, subscriptionGroup *gin.RouterGroup) {
 	zonesSubscriptionsRepo := zones_subscriptions_repo.NewSubscriptionRepository(conf, db)
-	zonesSubscriptionsService := zones_subscriptions_service.NewSubscriptionService(conf, zonesSubscriptionsRepo)
+	emailSender := email_sender.NewEmailSenderService(conf)
+	zonesSubscriptionsService := zones_subscriptions_service.NewSubscriptionService(conf, zonesSubscriptionsRepo, emailSender)
 	zonesSubscriptionsController := zones_subscriptions_controller.NewZonesSubscriptionsController(conf, zonesSubscriptionsService)
 
 	// External / user-facing subscription routes
@@ -82,6 +93,16 @@ func SetupCreatorBalancesRouter(conf *config.Config, db *config.DB, paymentGroup
 
 	/* Creator Balances Endpoints */
 	paymentGroup.GET("/balances/creators", creatorBalancesController.GetBalance)
+	paymentGroup.GET("/balances/creators/all", middleware.AdminCheckMiddleware(), creatorBalancesController.GetAllBalances)
+}
+
+func SetupGemsMetricsRouter(conf *config.Config, db *config.DB, gemsGroup *gin.RouterGroup) {
+	gemMetricsRepo := gem_metrics_repo.NewGemMetricsRepository(conf, db)
+	gemMetricsService := gem_metrics_service.NewGemMetricsService(gemMetricsRepo)
+	gemMetricsController := gem_metrics_controller.NewGemMetricsController(gemMetricsService)
+
+	/* Gem Metrics Endpoints */
+	gemsGroup.GET("/metrics", middleware.AdminCheckMiddleware(), gemMetricsController.GetMetrics)
 }
 
 func SetupPaymentServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB) error {
@@ -93,6 +114,7 @@ func SetupPaymentServiceRouter(r *gin.Engine, conf *config.Config, db *config.DB
 	SetupBalancesServiceRouter(conf, db, paymentGroup, gemsGroup)
 	SetupSubscriptionsServiceRouter(conf, db, subscriptionGroup)
 	SetupCreatorBalancesRouter(conf, db, paymentGroup)
+	SetupGemsMetricsRouter(conf, db, gemsGroup)
 
 	return nil
 }

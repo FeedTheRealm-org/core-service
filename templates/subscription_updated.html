@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Subscription Updated</title>
+    <style>
+      body,
+      table,
+      td {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+      img {
+        border: 0;
+        display: block;
+        outline: none;
+        text-decoration: none;
+        -ms-interpolation-mode: bicubic;
+      }
+      body {
+        width: 100% !important;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        background: #ffffff;
+        color: #222;
+      }
+      .ExternalClass {
+        width: 100%;
+      }
+      @media only screen and (max-width: 600px) {
+        .container {
+          width: 100% !important;
+        }
+        .content {
+          padding: 20px !important;
+        }
+        .footer-box {
+          padding: 18px !important;
+        }
+        .headline {
+          font-size: 22px !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      <tr>
+        <td align="center" style="padding: 28px 12px">
+          <table
+            class="container"
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            role="presentation"
+            style="max-width: 600px"
+          >
+            <tr>
+              <td align="center" style="padding: 10px 18px">
+                <h1
+                  class="headline"
+                  style="
+                    margin: 0;
+                    font-weight: 600;
+                    font-size: 28px;
+                    color: #111827;
+                  "
+                >
+                  Feed The Realm
+                </h1>
+                <img
+                  src="{{.LogoURL}}"
+                  alt="Feed The Realm Logo"
+                  style="
+                    max-width: 150px;
+                    border-radius: 12%;
+                    margin: 20px auto;
+                    display: block;
+                  "
+                />
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                class="content"
+                style="
+                  padding: 18px 28px 28px 28px;
+                  text-align: center;
+                  color: #374151;
+                "
+              >
+                <h2 style="margin: 0 0 12px 0; font-size: 22px; color: #111827">
+                  Your subscription has been updated
+                </h2>
+
+                <p
+                  style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5"
+                >
+                  His, your subscription has been successfully updated. Here's a
+                  summary of the changes:
+                </p>
+
+                <!-- Before / After comparison -->
+                <table
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  role="presentation"
+                  style="margin-top: 24px"
+                >
+                  <tr>
+                    <!-- Before -->
+                    <td
+                      width="48%"
+                      valign="top"
+                      style="
+                        padding: 16px;
+                        background: #f9fafb;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 8px;
+                        text-align: center;
+                      "
+                    >
+                      <div
+                        style="
+                          font-size: 11px;
+                          color: #9ca3af;
+                          text-transform: uppercase;
+                          letter-spacing: 0.5px;
+                          margin-bottom: 8px;
+                        "
+                      >
+                        Before
+                      </div>
+                      <div
+                        style="
+                          font-size: 28px;
+                          font-weight: 700;
+                          color: #6b7280;
+                        "
+                      >
+                        {{.OldZoneCount}}
+                      </div>
+                      <div
+                        style="font-size: 13px; color: #9ca3af; margin-top: 6px"
+                      >
+                        {{.OldAmount}}
+                      </div>
+                    </td>
+
+                    <!-- Arrow -->
+                    <td
+                      width="4%"
+                      valign="middle"
+                      style="
+                        text-align: center;
+                        font-size: 20px;
+                        color: #9ca3af;
+                      "
+                    >
+                      →
+                    </td>
+
+                    <!-- After -->
+                    <td
+                      width="48%"
+                      valign="top"
+                      style="
+                        padding: 16px;
+                        background: #f0fdf4;
+                        border: 1px solid #bbf7d0;
+                        border-radius: 8px;
+                        text-align: center;
+                      "
+                    >
+                      <div
+                        style="
+                          font-size: 11px;
+                          color: #166534;
+                          text-transform: uppercase;
+                          letter-spacing: 0.5px;
+                          margin-bottom: 8px;
+                        "
+                      >
+                        Now
+                      </div>
+                      <div
+                        style="
+                          font-size: 28px;
+                          font-weight: 700;
+                          color: #14532d;
+                        "
+                      >
+                        {{.NewZoneCount}}
+                      </div>
+                      <div
+                        style="font-size: 13px; color: #166534; margin-top: 6px"
+                      >
+                        {{.NewAmount}}
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Next billing -->
+                <table
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  role="presentation"
+                  style="
+                    margin-top: 20px;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    border: 1px solid #e5e7eb;
+                  "
+                >
+                  <tr style="background: #f9fafb">
+                    <td
+                      style="
+                        padding: 10px 16px;
+                        font-size: 13px;
+                        color: #6b7280;
+                      "
+                    >
+                      Next billing date
+                    </td>
+                    <td
+                      style="
+                        padding: 10px 16px;
+                        font-size: 13px;
+                        font-weight: 600;
+                        color: #0f172a;
+                        text-align: right;
+                      "
+                    >
+                      {{.NextBillingDate}} · {{.NewAmount}}
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin: 20px 0 0 0; font-size: 13px; color: #6b7280">
+                  You can manage or cancel your subscription at any time from
+                  your account settings.
+                </p>
+
+                <p style="margin: 12px 0 0 0; font-size: 13px; color: #6b7280">
+                  If this wasn't you, please contact the Feed The Realm team
+                  immediately at
+                  <a href="mailto:{{.SupportEmail}}" style="color: #6b7280"
+                    >{{.SupportEmail}}</a
+                  >.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding: 0 28px 28px 28px">
+                <table
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  role="presentation"
+                  style="
+                    background: #f3f6f9;
+                    border-radius: 6px;
+                    overflow: hidden;
+                  "
+                >
+                  <tr>
+                    <td
+                      class="footer-box"
+                      style="padding: 22px; text-align: center"
+                    >
+                      <strong style="font-size: 16px; color: #0f172a"
+                        >Feed the Realm</strong
+                      ><br /><br />
+                      <div
+                        style="
+                          font-size: 13px;
+                          color: #6b7280;
+                          line-height: 1.5;
+                        "
+                      >
+                        Ciudad Autónoma de Buenos Aires, Argentina<br />
+                        This email was sent automatically.<br />
+                        You received this email because your subscription was
+                        updated.
+                      </div>
+                      <div style="padding-top: 12px">
+                        This email was sent to {{.ToEmail}}
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style="
+                  text-align: center;
+                  font-size: 12px;
+                  color: #9ca3af;
+                  padding: 8px 0 28px 0;
+                "
+              >
+                &copy; Feed the Realm. All rights reserved.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

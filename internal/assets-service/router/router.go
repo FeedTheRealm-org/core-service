@@ -26,6 +26,7 @@ func SetupEndpointsForCosmeticsService(conf *config.Config, db *config.DB, g *gi
 
 	/* Cosmetics Endpoints */
 	cosmeticsGroup := g.Group("/cosmetics")
+	cosmeticsGroup.GET("/economy-summary", cosmeticsController.GetEconomySummary)
 	cosmeticsGroup.GET("/categories", cosmeticsController.GetCategoriesList)
 	cosmeticsGroup.GET("/categories/:id", cosmeticsController.GetCosmeticsListByCategory)
 	cosmeticsGroup.GET(":id", cosmeticsController.GetCosmeticById)
