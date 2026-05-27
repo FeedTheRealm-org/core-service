@@ -35,7 +35,6 @@ func TestMain(m *testing.M) {
 }
 
 func clearCreatorBalancesTables() {
-	_ = creatorBalancesDB.Conn.Exec("TRUNCATE TABLE creator_balances RESTART IDENTITY CASCADE;")
 }
 
 func TestCreatorBalances_GetBalance(t *testing.T) {

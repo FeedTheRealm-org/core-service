@@ -34,7 +34,8 @@ func CreateStartEmailSenderService() {
 }
 
 func clearDatabase(db *config.DB) {
-	db.Conn.Exec("TRUNCATE TABLE users, account_verifications CASCADE;")
+	_ = db.Conn.Exec("DELETE FROM account_verifications WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@example.com');")
+	_ = db.Conn.Exec("DELETE FROM users WHERE email LIKE '%@example.com';")
 }
 
 func TestMain(m *testing.M) {

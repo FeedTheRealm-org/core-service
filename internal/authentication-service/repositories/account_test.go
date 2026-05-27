@@ -8,8 +8,13 @@ import (
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/models"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
+
+func repoTestEmail(prefix string) string {
+	return prefix + "+" + uuid.NewString() + "@repo.local"
+}
 
 func TestAccountRepository_CreateAccount(t *testing.T) {
 	logger.InitLogger(false)
@@ -19,7 +24,7 @@ func TestAccountRepository_CreateAccount(t *testing.T) {
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
-	email := "john.doe@example.com"
+	email := repoTestEmail("john.doe")
 	passwordHash := "hashed_password"
 
 	user := &models.User{
@@ -43,7 +48,7 @@ func TestAccountRepository_GetAccountByEmail_NotFound(t *testing.T) {
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
-	email := "notfound@example.com"
+	email := repoTestEmail("notfound")
 	user, err := repo.GetAccountByEmail(email)
 	assert.NotNil(t, err, "expected error on getting non-existing user")
 	assert.Error(t, err, "Account not found")
@@ -56,7 +61,7 @@ func TestAccountRepository_IsAccountVerified(t *testing.T) {
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
-	email := "johndoe@example.com"
+	email := repoTestEmail("johndoe")
 	passwordHash := "hashed_password"
 
 	user := &models.User{
@@ -78,7 +83,7 @@ func TestAccountRepository_VerifyAccount(t *testing.T) {
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
-	email := "johndoe_verify_success@example.com"
+	email := repoTestEmail("johndoe_verify_success")
 	code := "verification_code"
 
 	user := &models.User{
@@ -104,7 +109,7 @@ func TestAccountRepository_VerifyAccount_Expired(t *testing.T) {
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
-	email := "johndoe_verify_expired@example.com"
+	email := repoTestEmail("johndoe_verify_expired")
 	code := "verification_code"
 
 	user := &models.User{
