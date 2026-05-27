@@ -34,6 +34,7 @@ github.com/FeedTheRealm-org/core-service/internal/players-service/dtos
 github.com/FeedTheRealm-org/core-service/internal/players-service/router
 github.com/FeedTheRealm-org/core-service/internal/players-service/errors
 github.com/FeedTheRealm-org/core-service/internal/players-service/models
+github.com/FeedTheRealm-org/core-service/internal/utils/email_sender
 github.com/FeedTheRealm-org/core-service/internal/world-service/errors
 github.com/FeedTheRealm-org/core-service/internal/world-service/models
 github.com/FeedTheRealm-org/core-service/internal/world-service/controllers/server_registry

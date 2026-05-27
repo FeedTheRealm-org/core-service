@@ -12,6 +12,7 @@ import (
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/payment-service/models"
 	zones_subscriptions_repo "github.com/FeedTheRealm-org/core-service/internal/payment-service/repositories/zones-subscriptions"
+	email_sender "github.com/FeedTheRealm-org/core-service/internal/utils/email_sender"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -23,6 +24,7 @@ var testConf *config.Config
 var testDB *config.DB
 var testSvc *zoneSubscriptionService
 var testRepo zones_subscriptions_repo.ZonesSubscriptionsRepository
+var testEmailServer email_sender.EmailSenderService
 
 func TestMain(m *testing.M) {
 	testConf = config.CreateConfig()
@@ -33,7 +35,8 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	testRepo = zones_subscriptions_repo.NewSubscriptionRepository(testConf, testDB)
-	testSvc = NewSubscriptionService(testConf, testRepo).(*zoneSubscriptionService)
+	testEmailServer = email_sender.NewEmailSenderService(testConf)
+	testSvc = NewSubscriptionService(testConf, testRepo, testEmailServer).(*zoneSubscriptionService)
 
 	clearZonesTables()
 	code := m.Run()
