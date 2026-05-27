@@ -12,6 +12,7 @@ github.com/FeedTheRealm-org/core-service/internal/authentication-service/models
 github.com/FeedTheRealm-org/core-service/internal/authentication-service/controllers
 github.com/FeedTheRealm-org/core-service/internal/authentication-service/router
 github.com/FeedTheRealm-org/core-service/internal/authentication-service/dtos
+github.com/FeedTheRealm-org/core-service/internal/exports-service
 github.com/FeedTheRealm-org/core-service/internal/errors
 github.com/FeedTheRealm-org/core-service/internal/assets-service/errors
 github.com/FeedTheRealm-org/core-service/internal/assets-service/models
@@ -26,6 +27,9 @@ github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/cr
 github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/gem-balances
 github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/gem-packs
 github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/zones-subscriptions
+github.com/FeedTheRealm-org/core-service/internal/payment-service/controllers/gem-metrics
+github.com/FeedTheRealm-org/core-service/internal/payment-service/errors
+github.com/FeedTheRealm-org/core-service/internal/payment-service/models
 github.com/FeedTheRealm-org/core-service/internal/payment-service/dtos
 github.com/FeedTheRealm-org/core-service/internal/payment-service/router
 github.com/FeedTheRealm-org/core-service/internal/players-service/controllers/character
