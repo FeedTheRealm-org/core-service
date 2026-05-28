@@ -112,3 +112,42 @@ func TestIsValidateAccessToken_InvalidExpClaim(t *testing.T) {
 	_, isInvalid := err.(*JWTInvalidTokenError)
 	assert.True(t, isInvalid)
 }
+
+func TestIsValidateAccessToken_ExpiredFromParser(t *testing.T) {
+	secret := "my-secret-access-key"
+	manager := NewJWTManager(secret, "my-secret-refresh-key", time.Minute, time.Hour)
+
+	expiredToken := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.MapClaims{
+		"userID": "user-id",
+		"email":  "user@example.com",
+		"exp":    time.Now().Add(-time.Minute).Unix(),
+		"iss":    time.Now().Unix(),
+	})
+
+	tokenString, err := expiredToken.SignedString([]byte(secret))
+	require.NoError(t, err)
+
+	_, err = manager.IsValidateAccessToken(tokenString, time.Now())
+	require.Error(t, err)
+	_, isExpired := err.(*JWTExpiredTokenError)
+	assert.True(t, isExpired)
+}
+
+func TestIsValidateAccessToken_InvalidSigningMethod(t *testing.T) {
+	manager := NewJWTManager("my-secret-access-key", "my-secret-refresh-key", time.Minute, time.Hour)
+
+	noneToken := jwt.NewWithClaims(jwt.SigningMethodNone, &jwt.MapClaims{
+		"userID": "user-id",
+		"email":  "user@example.com",
+		"exp":    time.Now().Add(time.Minute).Unix(),
+		"iss":    time.Now().Unix(),
+	})
+
+	tokenString, err := noneToken.SignedString(jwt.UnsafeAllowNoneSignatureType)
+	require.NoError(t, err)
+
+	_, err = manager.IsValidateAccessToken(tokenString, time.Now())
+	require.Error(t, err)
+	_, isInvalid := err.(*JWTInvalidTokenError)
+	assert.True(t, isInvalid)
+}
