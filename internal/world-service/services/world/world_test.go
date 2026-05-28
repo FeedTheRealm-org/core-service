@@ -160,10 +160,10 @@ func TestWorldService_PublishWorld_DefaultCreateableData(t *testing.T) {
 	svc := NewWorldService(conf, repo, registry)
 
 	data := &models.WorldData{
-		ID:      uuid.New(),
-		UserId:  uuid.New(),
-		Name:    "world-" + uuid.NewString(),
-		Data:    datatypes.JSON([]byte(`{"k":1}`)),
+		ID:          uuid.New(),
+		UserId:      uuid.New(),
+		Name:        "world-" + uuid.NewString(),
+		Data:        datatypes.JSON([]byte(`{"k":1}`)),
 		CreatedAt:   time.Now().UTC(),
 		UpdatedAt:   time.Now().UTC(),
 		Description: "desc",
@@ -194,7 +194,7 @@ func TestWorldService_DeleteWorld_StopsActiveZones(t *testing.T) {
 	worldID := uuid.New()
 	repo := &fakeWorldRepo{
 		getWorld: &models.WorldData{ID: worldID, UserId: ownerID},
-		zones: []*models.WorldZone{{ID: 1, WorldID: worldID, IsActive: true}, {ID: 2, WorldID: worldID, IsActive: false}},
+		zones:    []*models.WorldZone{{ID: 1, WorldID: worldID, IsActive: true}, {ID: 2, WorldID: worldID, IsActive: false}},
 	}
 	registry := &fakeServerRegistry{}
 	conf := config.CreateConfig()

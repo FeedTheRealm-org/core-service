@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/FeedTheRealm-org/core-service/config"
+	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	world_errors "github.com/FeedTheRealm-org/core-service/internal/world-service/errors"
 	"github.com/FeedTheRealm-org/core-service/internal/world-service/models"
-	"github.com/FeedTheRealm-org/core-service/internal/utils/logger"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

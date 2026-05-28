@@ -17,16 +17,16 @@ import (
 )
 
 type fakeZonesRepo struct {
-	worlds        map[uuid.UUID]*models.WorldData
-	zones         map[uuid.UUID][]*models.WorldZone
-	active        map[string]bool
-	online        map[string]bool
-	userByWorld   map[uuid.UUID]uuid.UUID
-	setActiveErr  error
-	setOnlineErr  error
+	worlds         map[uuid.UUID]*models.WorldData
+	zones          map[uuid.UUID][]*models.WorldZone
+	active         map[string]bool
+	online         map[string]bool
+	userByWorld    map[uuid.UUID]uuid.UUID
+	setActiveErr   error
+	setOnlineErr   error
 	updateCountErr error
-	playerCounts  map[uuid.UUID][2]int
-	allCounts     [2]int
+	playerCounts   map[uuid.UUID][2]int
+	allCounts      [2]int
 }
 
 func newFakeZonesRepo() *fakeZonesRepo {
