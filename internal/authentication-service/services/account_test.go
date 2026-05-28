@@ -12,6 +12,7 @@ import (
 	repoerrs "github.com/FeedTheRealm-org/core-service/internal/authentication-service/repositories"
 	"github.com/FeedTheRealm-org/core-service/internal/authentication-service/utils/hashing"
 	"github.com/FeedTheRealm-org/core-service/internal/utils/session"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -223,6 +224,24 @@ func TestAccountService_LoginAccount_InvalidPassword(t *testing.T) {
 	assert.True(t, notFound)
 }
 
+func TestAccountService_LoginAccount_NotVerified(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	jwtManager := session.NewJWTManager("access", "refresh", time.Minute, time.Hour)
+
+	hashed, err := hashing.HashPassword("Password1")
+	require.NoError(t, err)
+	user := &models.User{Id: uuid.New(), Email: "user@example.com", Password: string(hashed), Verified: false}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+
+	svc := &accountService{conf: conf, repo: repo, jwt: jwtManager}
+	_, _, _, err = svc.LoginAccount("user@example.com", "Password1", false)
+	assert.Error(t, err)
+	_, notVerified := err.(*AccountNotVerifiedError)
+	assert.True(t, notVerified)
+}
+
 func TestAccountService_UpdateAdminStatus_InvalidID(t *testing.T) {
 	repo := newFakeAccountRepo()
 	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
@@ -258,6 +277,37 @@ func TestAccountService_ValidateAccessToken_InvalidUser(t *testing.T) {
 	require.NoError(t, err)
 
 	err = svc.ValidateAccessToken(token)
+	assert.Error(t, err)
+	_, invalid := err.(*AccountSessionInvalid)
+	assert.True(t, invalid)
+}
+
+func TestAccountService_ValidateAccessToken_FixedToken(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	conf.ServerFixedToken = "fixed-token"
+	jwtManager := session.NewJWTManager("access", "refresh", time.Minute, time.Hour)
+	svc := &accountService{conf: conf, repo: repo, jwt: jwtManager}
+
+	err := svc.ValidateAccessToken("fixed-token")
+	assert.NoError(t, err)
+}
+
+func TestAccountService_ValidateAccessToken_MissingUserID(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	jwtManager := session.NewJWTManager("access", "refresh", time.Minute, time.Hour)
+	svc := &accountService{conf: conf, repo: repo, jwt: jwtManager}
+
+	claims := jwt.MapClaims{
+		"email": "user@example.com",
+		"exp":   time.Now().Add(time.Minute).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString([]byte("access"))
+	require.NoError(t, err)
+
+	err = svc.ValidateAccessToken(signed)
 	assert.Error(t, err)
 	_, invalid := err.(*AccountSessionInvalid)
 	assert.True(t, invalid)
@@ -476,6 +526,18 @@ func TestAccountService_CreateAccount_AlreadyExists(t *testing.T) {
 	assert.True(t, exists)
 }
 
+func TestAccountService_CreateAccount_RepoError(t *testing.T) {
+	repo := newFakeAccountRepo()
+	repo.createErr = errors.New("db")
+	conf := config.CreateConfig()
+	svc := &accountService{conf: conf, repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+
+	_, _, err := svc.CreateAccount("user@example.com", "Password1", false)
+	assert.Error(t, err)
+	_, failed := err.(*AccountFailedToCreateError)
+	assert.True(t, failed)
+}
+
 func TestAccountService_RefreshToken_NotVerified(t *testing.T) {
 	repo := newFakeAccountRepo()
 	conf := config.CreateConfig()
@@ -517,6 +579,21 @@ func TestAccountService_VerifyAccount_ErrorMapping(t *testing.T) {
 	assert.Error(t, err)
 	_, expired := err.(*VerificationCodeExpiredError)
 	assert.True(t, expired)
+}
+
+func TestAccountService_VerifyAccount_InvalidCode(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	user := &models.User{Id: uuid.New(), Email: "user@example.com"}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+	repo.verifyErr = &repoerrs.AccountNotVerifiedError{}
+
+	svc := &accountService{conf: conf, repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	_, err := svc.VerifyAccount(user.Email, "bad")
+	assert.Error(t, err)
+	_, invalid := err.(*InvalidVerificationCodeError)
+	assert.True(t, invalid)
 }
 
 func TestAccountService_ListAccounts(t *testing.T) {

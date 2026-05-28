@@ -217,6 +217,34 @@ func TestGemBalancesService_GetAllGemBalances_Error(t *testing.T) {
 	assert.Nil(t, list)
 }
 
+func TestGemBalancesService_GetGemBalanceByUserId_Error(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeGemBalancesRepo{getErr: errors.New("boom")}
+	service := &gemBalancesService{conf: conf, gemBalancesRepo: repo}
+
+	bal, err := service.GetGemBalanceByUserId(uuid.New())
+	assert.Error(t, err)
+	assert.Nil(t, bal)
+}
+
+func TestGemBalancesService_CreateGemBalance_Error(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeGemBalancesRepo{createErr: errors.New("boom")}
+	service := &gemBalancesService{conf: conf, gemBalancesRepo: repo}
+
+	err := service.CreateGemBalance(uuid.New())
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_UpdateGemBalance_Error(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeGemBalancesRepo{upsertErr: errors.New("boom")}
+	service := &gemBalancesService{conf: conf, gemBalancesRepo: repo}
+
+	err := service.UpdateGemBalance(uuid.New(), 10)
+	assert.Error(t, err)
+}
+
 func TestGemBalancesService_PurchaseCosmetic_Success(t *testing.T) {
 	userID := uuid.New()
 	cosmeticID := uuid.New()
@@ -268,6 +296,29 @@ func TestGemBalancesService_PurchaseCosmetic_Success(t *testing.T) {
 	assert.True(t, metricsRepo.spentCalled)
 }
 
+func TestGemBalancesService_PurchaseCosmetic_CosmeticNotFound(t *testing.T) {
+	userID := uuid.New()
+	cosmeticID := uuid.New()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	gemRepo := &fakeGemBalancesRepo{balances: map[uuid.UUID]*models.GemBalance{userID: {UserId: userID, Gems: 10}}}
+	service := &gemBalancesService{conf: conf, gemBalancesRepo: gemRepo}
+
+	err := service.PurchaseCosmetic(userID, cosmeticID)
+	assert.Error(t, err)
+	_, notFound := err.(*gem_balances_errors.CosmeticNotFound)
+	assert.True(t, notFound)
+}
+
 func TestGemBalancesService_PurchaseCosmetic_InsufficientBalance(t *testing.T) {
 	userID := uuid.New()
 	cosmeticID := uuid.New()
@@ -298,6 +349,96 @@ func TestGemBalancesService_PurchaseCosmetic_InsufficientBalance(t *testing.T) {
 	assert.True(t, insufficient)
 }
 
+func TestGemBalancesService_PurchaseCosmetic_AlreadyPurchased(t *testing.T) {
+	userID := uuid.New()
+	cosmeticID := uuid.New()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/assets/internal/cosmetics/") {
+			payload := map[string]any{
+				"data": map[string]any{
+					"cosmetic_id":    cosmeticID,
+					"cosmetic_price": int64(1),
+					"created_by":     uuid.Nil,
+				},
+			}
+			_ = json.NewEncoder(w).Encode(payload)
+			return
+		}
+		if strings.Contains(r.URL.Path, "/assets/internal/users/") {
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	gemRepo := &fakeGemBalancesRepo{balances: map[uuid.UUID]*models.GemBalance{userID: {UserId: userID, Gems: 10}}}
+	service := &gemBalancesService{conf: conf, gemBalancesRepo: gemRepo}
+
+	err := service.PurchaseCosmetic(userID, cosmeticID)
+	assert.Error(t, err)
+	_, conflict := err.(*gem_balances_errors.CosmeticAlreadyPurchased)
+	assert.True(t, conflict)
+}
+
+func TestGemBalancesService_PurchaseCosmetic_AddBalanceError(t *testing.T) {
+	userID := uuid.New()
+	cosmeticID := uuid.New()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/assets/internal/cosmetics/") {
+			payload := map[string]any{
+				"data": map[string]any{
+					"cosmetic_id":    cosmeticID,
+					"cosmetic_price": int64(1),
+					"created_by":     uuid.Nil,
+				},
+			}
+			_ = json.NewEncoder(w).Encode(payload)
+			return
+		}
+		if strings.Contains(r.URL.Path, "/assets/internal/users/") {
+			w.WriteHeader(http.StatusCreated)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	gemRepo := &fakeGemBalancesRepo{addErr: errors.New("boom"), balances: map[uuid.UUID]*models.GemBalance{userID: {UserId: userID, Gems: 10}}}
+	service := &gemBalancesService{conf: conf, gemBalancesRepo: gemRepo}
+
+	err := service.PurchaseCosmetic(userID, cosmeticID)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_FetchCosmeticPrice_BadJSON(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("not-json"))
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	service := &gemBalancesService{conf: conf}
+	_, _, err := service.fetchCosmeticPrice(uuid.New())
+	assert.Error(t, err)
+}
+
 func TestGemBalancesService_CreateCheckoutSession_PackError(t *testing.T) {
 	conf := config.CreateConfig()
 	service := &gemBalancesService{
@@ -316,4 +457,13 @@ func TestGemBalancesService_HandleWebhook_InvalidSignature(t *testing.T) {
 
 	err := service.HandleWebhook([]byte("{}"), "invalid")
 	assert.Error(t, err)
+}
+
+func TestGemBalancesService_GetTodayDate_InvalidTimezone(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Stripe.StripeBillingTimezone = "Invalid/Zone"
+	service := &gemBalancesService{conf: conf}
+
+	date := service.getTodayDate()
+	assert.NotEmpty(t, date)
 }

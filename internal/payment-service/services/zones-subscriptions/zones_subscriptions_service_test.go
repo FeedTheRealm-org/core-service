@@ -2,6 +2,10 @@ package zones_subscriptions
 
 import (
 	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -148,4 +152,121 @@ func TestSubscriptionService_GetPricingInfo(t *testing.T) {
 	price, next := service.GetPricingInfo()
 	assert.True(t, price > 0)
 	assert.True(t, next.After(time.Now().Add(-time.Minute)))
+}
+
+func TestSubscriptionService_UpdateUsedSlots_ExceedsTotal(t *testing.T) {
+	conf := config.CreateConfig()
+	userID := uuid.New()
+	repo := &fakeZonesRepo{getByUserID: &models.ZonesSubscriptions{
+		UserID:     userID,
+		TotalSlots: 2,
+		UsedSlots:  1,
+		Status:     stripe.SubscriptionStatusActive,
+	}}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	err := service.UpdateUsedSlots(userID, 2, true)
+	assert.Error(t, err)
+	_, exceeded := err.(*CannotExceedTotalSlotsError)
+	assert.True(t, exceeded)
+}
+
+func TestSubscriptionService_UpdateUsedSlots_UpdateError(t *testing.T) {
+	conf := config.CreateConfig()
+	userID := uuid.New()
+	repo := &fakeZonesRepo{
+		getByUserID: &models.ZonesSubscriptions{UserID: userID, TotalSlots: 5, UsedSlots: 1, Status: stripe.SubscriptionStatusActive},
+		updateErr:   errors.New("boom"),
+	}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	err := service.UpdateUsedSlots(userID, 1, true)
+	assert.Error(t, err)
+}
+
+func TestSubscriptionService_CheckAvailability_Active(t *testing.T) {
+	conf := config.CreateConfig()
+	userID := uuid.New()
+	repo := &fakeZonesRepo{getByUserID: &models.ZonesSubscriptions{UserID: userID, TotalSlots: 5, UsedSlots: 2, Status: stripe.SubscriptionStatusActive}}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	allowed, freeSlots, err := service.CheckAvalibility(userID)
+	assert.NoError(t, err)
+	assert.True(t, allowed)
+	assert.Equal(t, 3, freeSlots)
+}
+
+func TestSubscriptionService_CheckAvailability_Inactive(t *testing.T) {
+	conf := config.CreateConfig()
+	userID := uuid.New()
+	repo := &fakeZonesRepo{getByUserID: &models.ZonesSubscriptions{UserID: userID, TotalSlots: 5, UsedSlots: 0, Status: stripe.SubscriptionStatusPastDue}}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	allowed, freeSlots, err := service.CheckAvalibility(userID)
+	assert.NoError(t, err)
+	assert.False(t, allowed)
+	assert.Equal(t, 0, freeSlots)
+}
+
+func TestSubscriptionService_GetByUserID_UpdateError(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = true
+	conf.Server.Environment = config.Development
+	userID := uuid.New()
+	repo := &fakeZonesRepo{
+		getByUserID: &models.ZonesSubscriptions{
+			UserID:               userID,
+			StripeCustomerID:     "cust_123",
+			StripeSubscriptionID: "",
+			TotalSlots:           3,
+			Status:               "pending",
+			AmountDue:            decimal.Zero,
+		},
+		updateErr: errors.New("boom"),
+	}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	_, err := service.GetByUserID(userID)
+	assert.Error(t, err)
+}
+
+func TestSubscriptionService_StopAllJobs_HTTPError(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeZonesRepo{}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{}).(*zoneSubscriptionService)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	sub := &models.ZonesSubscriptions{UserID: uuid.New(), UsedSlots: 1}
+	err := service.stopAllJobs(sub)
+	assert.Error(t, err)
+}
+
+func TestSubscriptionService_StopAllJobs_ResetsSlots(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeZonesRepo{}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{}).(*zoneSubscriptionService)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	sub := &models.ZonesSubscriptions{UserID: uuid.New(), UsedSlots: 2}
+	repo.updateErr = nil
+	err := service.stopAllJobs(sub)
+	assert.NoError(t, err)
+	assert.True(t, repo.updateCalled)
+	assert.Equal(t, 0, sub.UsedSlots)
 }

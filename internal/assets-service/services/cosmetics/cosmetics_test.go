@@ -20,6 +20,7 @@ func TestMain(m *testing.M) {
 }
 
 type fakeCosmeticsRepo struct {
+	getCategoriesListFn             func() ([]*models.CosmeticCategory, error)
 	getCategoryByIdFn               func(uuid.UUID) (*models.CosmeticCategory, error)
 	getCosmeticsListByCategoryFn    func(uuid.UUID, *uuid.UUID, *uuid.UUID, int, int) ([]*models.Cosmetic, int64, error)
 	getEconomySummaryFn             func() (*models.CosmeticsEconomySummary, error)
@@ -34,7 +35,10 @@ type fakeCosmeticsRepo struct {
 }
 
 func (f *fakeCosmeticsRepo) GetCategoriesList() ([]*models.CosmeticCategory, error) {
-	return nil, nil
+	if f.getCategoriesListFn == nil {
+		return nil, nil
+	}
+	return f.getCategoriesListFn()
 }
 
 func (f *fakeCosmeticsRepo) GetCosmeticsListByCategory(category uuid.UUID, worldId *uuid.UUID, playerId *uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
@@ -318,6 +322,103 @@ func TestCosmeticsService_GetCategoriesAndCosmeticById(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), total)
 	assert.Len(t, list, 1)
+}
+
+func TestCosmeticsService_GetCategoriesListAndEconomySummary(t *testing.T) {
+	repo := &fakeCosmeticsRepo{
+		getCategoriesListFn: func() ([]*models.CosmeticCategory, error) {
+			return []*models.CosmeticCategory{{Id: uuid.New(), Name: "hats"}}, nil
+		},
+		getEconomySummaryFn: func() (*models.CosmeticsEconomySummary, error) {
+			return &models.CosmeticsEconomySummary{DefaultCosmetics: 1, UserCreatedCosmetics: 2, AveragePrice: 3.5}, nil
+		},
+	}
+	bucket := &fakeCosmeticsBucketRepo{}
+	service := cosmeticservice.NewCosmeticsService(nil, repo, bucket)
+
+	categories, err := service.GetCategoriesList()
+	assert.NoError(t, err)
+	assert.Len(t, categories, 1)
+
+	summary, err := service.GetEconomySummary()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), summary.DefaultCosmetics)
+}
+
+func TestCosmeticsService_GetCosmeticsListByCategory_Success(t *testing.T) {
+	categoryID := uuid.New()
+	repo := &fakeCosmeticsRepo{
+		getCategoryByIdFn: func(id uuid.UUID) (*models.CosmeticCategory, error) {
+			return &models.CosmeticCategory{Id: categoryID}, nil
+		},
+		getCosmeticsListByCategoryFn: func(category uuid.UUID, worldId *uuid.UUID, playerId *uuid.UUID, offset int, limit int) ([]*models.Cosmetic, int64, error) {
+			return []*models.Cosmetic{{Id: uuid.New(), Url: "/hats/one.png"}}, 1, nil
+		},
+	}
+	bucket := &fakeCosmeticsBucketRepo{}
+	service := cosmeticservice.NewCosmeticsService(nil, repo, bucket)
+
+	list, total, err := service.GetCosmeticsListByCategory(categoryID, nil, nil, 0, 10)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Len(t, list, 1)
+}
+
+func TestCosmeticsService_UploadCosmeticByID_InvalidPrice(t *testing.T) {
+	repo := &fakeCosmeticsRepo{}
+	bucket := &fakeCosmeticsBucketRepo{}
+	service := cosmeticservice.NewCosmeticsService(nil, repo, bucket)
+
+	cosmetic, err := service.UploadCosmeticByID(uuid.New(), uuid.New(), 0, uuid.New(), uuid.New(), nil, ".png")
+	assert.Error(t, err)
+	assert.Nil(t, cosmetic)
+}
+
+func TestCosmeticsService_UploadCosmeticByID_BucketError(t *testing.T) {
+	categoryID := uuid.New()
+	spriteID := uuid.New()
+
+	repo := &fakeCosmeticsRepo{
+		getCategoryByIdFn: func(id uuid.UUID) (*models.CosmeticCategory, error) {
+			return &models.CosmeticCategory{Id: categoryID}, nil
+		},
+		getCosmeticByIdFn: func(id uuid.UUID) (*models.Cosmetic, error) {
+			return &models.Cosmetic{Id: spriteID, Url: "/hats/one.png"}, nil
+		},
+		getCosmeticByUrlCategoryWorldFn: func(url string, category uuid.UUID, world uuid.UUID) (*models.Cosmetic, error) {
+			return nil, assets_errors.NewCosmeticNotFound("missing")
+		},
+	}
+	bucket := &fakeCosmeticsBucketRepo{
+		uploadFn: func(fileName, mimeType string, file multipart.File) error {
+			return assert.AnError
+		},
+	}
+	service := cosmeticservice.NewCosmeticsService(nil, repo, bucket)
+
+	file := createCosmeticFileHeader(t, "cosmetic.png", []byte("data"))
+	defer func() { _ = file.Close() }()
+	cosmetic, err := service.UploadCosmeticByID(categoryID, uuid.New(), 10, spriteID, uuid.New(), file, ".png")
+	assert.Error(t, err)
+	assert.Nil(t, cosmetic)
+}
+
+func TestCosmeticsService_DeleteCosmetic_RepoError(t *testing.T) {
+	cosmeticId := uuid.New()
+
+	repo := &fakeCosmeticsRepo{
+		getCosmeticByIdFn: func(id uuid.UUID) (*models.Cosmetic, error) {
+			return &models.Cosmetic{Id: cosmeticId, Url: "/path/file.png"}, nil
+		},
+		deleteCosmeticFn: func(id uuid.UUID) error {
+			return assert.AnError
+		},
+	}
+	bucket := &fakeCosmeticsBucketRepo{}
+	service := cosmeticservice.NewCosmeticsService(nil, repo, bucket)
+
+	err := service.DeleteCosmetic(cosmeticId)
+	assert.Error(t, err)
 }
 
 func TestCosmeticsService_UploadCosmeticData_CategoryError(t *testing.T) {

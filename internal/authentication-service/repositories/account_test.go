@@ -226,3 +226,74 @@ func TestAccountRepository_PasswordResetFlow(t *testing.T) {
 	assert.NoError(t, repo.UpdatePassword(user.Id, "newhash"))
 	assert.NoError(t, repo.InvalidateAllPasswordResets(user.Id))
 }
+
+func TestAccountRepository_VerifyAccount_InvalidCodeAttempts(t *testing.T) {
+	conf := config.CreateConfig()
+	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
+	repo, err := repositories.NewAccountRepository(conf, db)
+	assert.NoError(t, err)
+
+	user := &models.User{Email: repoTestEmail("attempts"), Password: "hashed"}
+	assert.NoError(t, repo.CreateAccount(user, "correct"))
+
+	for i := 0; i < 3; i++ {
+		err = repo.VerifyAccount(user, "wrong", time.Now())
+		assert.Error(t, err)
+		_, notVerified := err.(*repositories.AccountNotVerifiedError)
+		assert.True(t, notVerified)
+	}
+
+	var record models.AccountVerification
+	err = db.Conn.Where("user_id = ?", user.Id).First(&record).Error
+	assert.Error(t, err)
+}
+
+func TestAccountRepository_RefreshVerificationCode_UpdateExisting(t *testing.T) {
+	conf := config.CreateConfig()
+	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
+	repo, err := repositories.NewAccountRepository(conf, db)
+	assert.NoError(t, err)
+
+	user := &models.User{Email: repoTestEmail("refresh-update"), Password: "hashed"}
+	assert.NoError(t, repo.CreateAccount(user, "old"))
+
+	assert.NoError(t, repo.RefreshVerificationCode(user, "newcode", time.Now().Add(time.Minute)))
+
+	var record models.AccountVerification
+	err = db.Conn.Where("user_id = ?", user.Id).First(&record).Error
+	assert.NoError(t, err)
+	assert.Equal(t, "newcode", record.VerificationCode)
+}
+
+func TestAccountRepository_GetActivePasswordResetByUserID_NotFound(t *testing.T) {
+	conf := config.CreateConfig()
+	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
+	repo, err := repositories.NewAccountRepository(conf, db)
+	assert.NoError(t, err)
+
+	user := &models.User{Email: repoTestEmail("missing-reset"), Password: "hashed"}
+	assert.NoError(t, repo.CreateAccount(user, "code"))
+
+	reset, err := repo.GetActivePasswordResetByUserID(user.Id)
+	assert.Error(t, err)
+	assert.Nil(t, reset)
+	_, notFound := err.(*repositories.AccountNotFoundError)
+	assert.True(t, notFound)
+}
+
+func TestAccountRepository_GetPasswordResetByTokenHash_NotFound(t *testing.T) {
+	conf := config.CreateConfig()
+	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
+	repo, err := repositories.NewAccountRepository(conf, db)
+	assert.NoError(t, err)
+
+	reset, err := repo.GetPasswordResetByTokenHash("missing")
+	assert.Error(t, err)
+	assert.Nil(t, reset)
+	_, notFound := err.(*repositories.AccountNotFoundError)
+	assert.True(t, notFound)
+}

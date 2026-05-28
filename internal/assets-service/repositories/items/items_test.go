@@ -115,3 +115,12 @@ func TestItemRepository_UpsertItem_UpdatesExisting(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "/v2.png", stored.Url)
 }
+
+func TestItemRepository_UpsertItem_DefaultValues(t *testing.T) {
+	clearItemsTable()
+
+	item := &models.Item{}
+	err := itemsRepo.UpsertItem(item)
+	assert.NoError(t, err)
+	assert.NotEqual(t, uuid.Nil, item.Id)
+}

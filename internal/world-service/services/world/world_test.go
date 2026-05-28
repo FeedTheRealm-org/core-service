@@ -249,3 +249,77 @@ func TestWorldService_UpdateUsedSlots_HTTPError(t *testing.T) {
 	err := svc.UpdateUsedSlots(userID, 1, false)
 	assert.Error(t, err)
 }
+
+func TestWorldService_UpdateWorld_RepoError(t *testing.T) {
+	repo := &fakeWorldRepo{updateWorldErr: errors.New("boom")}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	updated, err := svc.UpdateWorld(uuid.New(), uuid.New(), []byte(`{"a":1}`), "desc")
+	assert.Error(t, err)
+	assert.Nil(t, updated)
+}
+
+func TestWorldService_UpdateCreateableData_RepoError(t *testing.T) {
+	repo := &fakeWorldRepo{updateCreateableErr: errors.New("boom")}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	updated, err := svc.UpdateCreateableData(uuid.New(), uuid.New(), []byte(`{"a":1}`))
+	assert.Error(t, err)
+	assert.Nil(t, updated)
+}
+
+func TestWorldService_DeleteWorld_ZonesError(t *testing.T) {
+	ownerID := uuid.New()
+	repo := &fakeWorldRepo{
+		getWorld: &models.WorldData{ID: uuid.New(), UserId: ownerID},
+		zonesErr: errors.New("boom"),
+	}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	err := svc.DeleteWorld(repo.getWorld.ID, ownerID)
+	assert.Error(t, err)
+	assert.False(t, repo.deleteCalled)
+}
+
+func TestWorldService_DeleteWorld_StopJobError(t *testing.T) {
+	ownerID := uuid.New()
+	worldID := uuid.New()
+	repo := &fakeWorldRepo{
+		getWorld: &models.WorldData{ID: worldID, UserId: ownerID},
+		zones:    []*models.WorldZone{{ID: 1, WorldID: worldID, IsActive: true}},
+	}
+	registry := &fakeServerRegistry{stopErr: errors.New("boom")}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = false
+	svc := NewWorldService(conf, repo, registry)
+
+	err := svc.DeleteWorld(worldID, ownerID)
+	assert.Error(t, err)
+}
+
+func TestWorldService_DeleteWorld_UpdateUsedSlotsError(t *testing.T) {
+	ownerID := uuid.New()
+	worldID := uuid.New()
+	repo := &fakeWorldRepo{
+		getWorld: &models.WorldData{ID: worldID, UserId: ownerID},
+		zones:    []*models.WorldZone{{ID: 1, WorldID: worldID, IsActive: true}},
+	}
+	registry := &fakeServerRegistry{}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = true
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	svc := NewWorldService(conf, repo, registry)
+	err := svc.DeleteWorld(worldID, ownerID)
+	assert.Error(t, err)
+}
