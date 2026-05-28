@@ -277,7 +277,6 @@ func (c *serverRegistryController) UpdatePlayerCount(ctx *gin.Context) {
 // @Summary      Get world player counts
 // @Description  Returns player counts per zone for a world.
 // @Tags         world-service
-// @Security     BearerAuth
 // @Produce      json
 // @Param        id path string true "World UUID"
 // @Success      200  {object}  dtos.PlayerCountsResponse
@@ -310,7 +309,6 @@ func (c *serverRegistryController) GetWorldPlayerCounts(ctx *gin.Context) {
 // @Summary      Get all world player counts
 // @Description  Returns player counts for all worlds.
 // @Tags         world-service
-// @Security     BearerAuth
 // @Produce      json
 // @Success      200  {array}  dtos.PlayerCountsResponse
 // @Failure      500  {object} dtos.ErrorResponse
