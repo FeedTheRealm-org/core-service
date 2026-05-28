@@ -104,6 +104,14 @@ func TestWorldRepository_UpdateCreateableData_Success(t *testing.T) {
 	assert.Contains(t, string(updated.CreateableData), "\"x\"")
 }
 
+func TestWorldRepository_UpdateCreateableData_Unauthorized(t *testing.T) {
+	userID := uuid.New()
+	created := createWorld(t, userID)
+
+	_, err := worldRepo.UpdateCreateableData(created.ID, uuid.New(), []byte(`{"x":9}`))
+	assert.Error(t, err)
+}
+
 func TestWorldRepository_UpsertWorldZone_CreateAndUpdate(t *testing.T) {
 	userID := uuid.New()
 	created := createWorld(t, userID)
@@ -222,4 +230,12 @@ func TestWorldRepository_DeleteWorldData_NotFound(t *testing.T) {
 	assert.Error(t, err)
 	var notFound *world_errors.WorldInfoNotFound
 	assert.True(t, errors.As(err, &notFound))
+}
+
+func TestWorldRepository_DeleteWorldData_Success(t *testing.T) {
+	userID := uuid.New()
+	created := createWorld(t, userID)
+
+	err := worldRepo.DeleteWorldData(created.ID)
+	assert.NoError(t, err)
 }

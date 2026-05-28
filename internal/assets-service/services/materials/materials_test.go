@@ -196,3 +196,50 @@ func TestMaterialsService_DeleteMaterial_BucketDeleteError(t *testing.T) {
 	_, err = repo.GetMaterialByID(materialID)
 	assert.Error(t, err)
 }
+
+func TestMaterialsService_UploadMaterial_BucketUploadError(t *testing.T) {
+	worldID := uuid.New()
+	materialID := uuid.New()
+	userID := uuid.New()
+
+	repo := &fakeMaterialsRepo{items: map[uuid.UUID]*models.Material{}}
+	bucket := &fakeMaterialsBucketRepo{
+		uploadFn: func(fileName, mimeType string, file multipart.File) error {
+			return assert.AnError
+		},
+	}
+	service := materialservice.NewMaterialsService(nil, repo, bucket)
+
+	fileHeader := createMaterialFileHeader(t, "material.png", "image/png", []byte("data"))
+	material, err := service.UploadMaterial(worldID, materialID, "name", fileHeader, userID)
+	assert.Error(t, err)
+	assert.Nil(t, material)
+}
+
+func TestMaterialsService_UploadMaterial_UpsertError(t *testing.T) {
+	worldID := uuid.New()
+	materialID := uuid.New()
+	userID := uuid.New()
+
+	repo := &fakeMaterialsRepo{items: map[uuid.UUID]*models.Material{}, upsertErr: assert.AnError}
+	bucket := &fakeMaterialsBucketRepo{}
+	service := materialservice.NewMaterialsService(nil, repo, bucket)
+
+	fileHeader := createMaterialFileHeader(t, "material.png", "image/png", []byte("data"))
+	material, err := service.UploadMaterial(worldID, materialID, "name", fileHeader, userID)
+	assert.Error(t, err)
+	assert.Nil(t, material)
+}
+
+func TestMaterialsService_DeleteMaterial_RepoDeleteError(t *testing.T) {
+	materialID := uuid.New()
+	worldID := uuid.New()
+
+	repo := &fakeMaterialsRepo{items: map[uuid.UUID]*models.Material{}, deleteErr: assert.AnError}
+	repo.items[materialID] = &models.Material{ID: materialID, WorldID: worldID, URL: "/worlds/x/materials/y.png"}
+	bucket := &fakeMaterialsBucketRepo{}
+	service := materialservice.NewMaterialsService(nil, repo, bucket)
+
+	err := service.DeleteMaterial(materialID)
+	assert.Error(t, err)
+}

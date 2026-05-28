@@ -169,3 +169,66 @@ func TestCosmeticsRepository_UpdateAndDelete(t *testing.T) {
 
 	assert.NoError(t, cosmeticsRepo.DeleteCosmetic(cosmetic.Id))
 }
+
+func TestCosmeticsRepository_GetCategoriesAndEconomySummary(t *testing.T) {
+	clearCosmeticsTables()
+
+	cat1, err := cosmeticsRepo.AddCategory("hats")
+	assert.NoError(t, err)
+	cat2, err := cosmeticsRepo.AddCategory("shoes")
+	assert.NoError(t, err)
+
+	list, err := cosmeticsRepo.GetCategoriesList()
+	assert.NoError(t, err)
+	assert.Len(t, list, 2)
+
+	defaultCosmetic := &models.Cosmetic{Url: "/hats/default.png"}
+	worldCosmetic := &models.Cosmetic{Url: "/shoes/world.png"}
+	assert.NoError(t, cosmeticsRepo.CreateCosmetic(cat1.Id, uuid.Nil, 5, defaultCosmetic, uuid.New()))
+	assert.NoError(t, cosmeticsRepo.CreateCosmetic(cat2.Id, uuid.New(), 10, worldCosmetic, uuid.New()))
+
+	summary, err := cosmeticsRepo.GetEconomySummary()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), summary.DefaultCosmetics)
+	assert.Equal(t, int64(1), summary.UserCreatedCosmetics)
+}
+
+func TestCosmeticsRepository_GetCosmeticsListByWorld(t *testing.T) {
+	clearCosmeticsTables()
+
+	category, err := cosmeticsRepo.AddCategory("hats")
+	assert.NoError(t, err)
+
+	worldId := uuid.New()
+	assert.NoError(t, cosmeticsRepo.CreateCosmetic(category.Id, worldId, 10, &models.Cosmetic{Url: "/hats/world.png"}, uuid.New()))
+	assert.NoError(t, cosmeticsRepo.CreateCosmetic(category.Id, uuid.New(), 10, &models.Cosmetic{Url: "/hats/other.png"}, uuid.New()))
+
+	list, total, err := cosmeticsRepo.GetCosmeticsListByWorld(worldId, 0, 10)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Len(t, list, 1)
+}
+
+func TestCosmeticsRepository_GetCosmeticByUrlCategoryAndWorld_NotFound(t *testing.T) {
+	clearCosmeticsTables()
+
+	category, err := cosmeticsRepo.AddCategory("hats")
+	assert.NoError(t, err)
+
+	cosmetic, err := cosmeticsRepo.GetCosmeticByUrlCategoryAndWorld("/missing.png", category.Id, uuid.New())
+	assert.Error(t, err)
+	assert.Nil(t, cosmetic)
+
+	var notFound *assets_errors.CosmeticNotFound
+	assert.True(t, errors.As(err, &notFound))
+}
+
+func TestCosmeticsRepository_CreateCosmetic_CategoryNotFound(t *testing.T) {
+	clearCosmeticsTables()
+
+	err := cosmeticsRepo.CreateCosmetic(uuid.New(), uuid.New(), 10, &models.Cosmetic{Url: "/missing.png"}, uuid.New())
+	assert.Error(t, err)
+
+	var notFound *assets_errors.CategoryNotFound
+	assert.True(t, errors.As(err, &notFound))
+}

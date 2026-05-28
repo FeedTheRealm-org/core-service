@@ -16,11 +16,18 @@ func repoTestEmail(prefix string) string {
 	return prefix + "+" + uuid.NewString() + "@repo.local"
 }
 
+func cleanupRepoUsers(db *config.DB) {
+	_ = db.Conn.Exec("DELETE FROM password_resets WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@repo.local');")
+	_ = db.Conn.Exec("DELETE FROM account_verifications WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@repo.local');")
+	_ = db.Conn.Exec("DELETE FROM users WHERE email LIKE '%@repo.local';")
+}
+
 func TestAccountRepository_CreateAccount(t *testing.T) {
 	logger.InitLogger(false)
 
 	conf := config.CreateConfig()
 	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
@@ -45,6 +52,7 @@ func TestAccountRepository_CreateAccount(t *testing.T) {
 func TestAccountRepository_GetAccountByEmail_NotFound(t *testing.T) {
 	conf := config.CreateConfig()
 	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
@@ -58,6 +66,7 @@ func TestAccountRepository_GetAccountByEmail_NotFound(t *testing.T) {
 func TestAccountRepository_IsAccountVerified(t *testing.T) {
 	conf := config.CreateConfig()
 	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
@@ -80,6 +89,7 @@ func TestAccountRepository_IsAccountVerified(t *testing.T) {
 func TestAccountRepository_VerifyAccount(t *testing.T) {
 	conf := config.CreateConfig()
 	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
@@ -106,6 +116,7 @@ func TestAccountRepository_VerifyAccount(t *testing.T) {
 func TestAccountRepository_VerifyAccount_Expired(t *testing.T) {
 	conf := config.CreateConfig()
 	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
 	repo, err := repositories.NewAccountRepository(conf, db)
 	assert.Nil(t, err, "failed to connect to database")
 
@@ -123,4 +134,95 @@ func TestAccountRepository_VerifyAccount_Expired(t *testing.T) {
 
 	err = repo.VerifyAccount(user, code, time.Now().Add(time.Hour))
 	assert.Error(t, err, "expected error on verifying expired account")
+}
+
+func TestAccountRepository_RefreshVerificationCode_NewRecord(t *testing.T) {
+	conf := config.CreateConfig()
+	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
+	repo, err := repositories.NewAccountRepository(conf, db)
+	assert.NoError(t, err)
+
+	user := &models.User{Email: repoTestEmail("refresh"), Password: "hashed"}
+	assert.NoError(t, db.Conn.Create(user).Error)
+
+	expiresAt := time.Now().Add(time.Minute)
+	err = repo.RefreshVerificationCode(user, "code123", expiresAt)
+	assert.NoError(t, err)
+
+	var record models.AccountVerification
+	err = db.Conn.Where("user_id = ?", user.Id).First(&record).Error
+	assert.NoError(t, err)
+	assert.Equal(t, "code123", record.VerificationCode)
+}
+
+func TestAccountRepository_UpdateRefreshTokenUpdatedAtAndAdminStatus(t *testing.T) {
+	conf := config.CreateConfig()
+	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
+	repo, err := repositories.NewAccountRepository(conf, db)
+	assert.NoError(t, err)
+
+	user := &models.User{Email: repoTestEmail("admin"), Password: "hashed"}
+	assert.NoError(t, repo.CreateAccount(user, "code"))
+
+	now := time.Now().UTC()
+	assert.NoError(t, repo.UpdateRefreshTokenUpdatedAt(user.Id, now))
+	assert.NoError(t, repo.UpdateAdminStatus(user.Id, true))
+
+	stored, err := repo.GetAccountById(user.Id)
+	assert.NoError(t, err)
+	assert.True(t, stored.IsAdmin)
+	assert.True(t, stored.RefreshTokenUpdatedAt.After(now.Add(-time.Second)))
+}
+
+func TestAccountRepository_ListAccounts_FilterAndVerified(t *testing.T) {
+	conf := config.CreateConfig()
+	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
+	repo, err := repositories.NewAccountRepository(conf, db)
+	assert.NoError(t, err)
+
+	userA := &models.User{Email: repoTestEmail("alpha"), Password: "hashed"}
+	userB := &models.User{Email: repoTestEmail("beta"), Password: "hashed"}
+	assert.NoError(t, repo.CreateAccount(userA, "code"))
+	assert.NoError(t, repo.CreateAccount(userB, "code"))
+
+	_ = db.Conn.Model(&models.User{}).Where("id = ?", userA.Id).Update("verified", true).Error
+
+	verified := true
+	users, total, err := repo.ListAccounts("alpha", &verified, 0, 10)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Len(t, users, 1)
+	assert.Equal(t, userA.Email, users[0].Email)
+}
+
+func TestAccountRepository_PasswordResetFlow(t *testing.T) {
+	conf := config.CreateConfig()
+	db, _ := config.NewDB(conf)
+	cleanupRepoUsers(db)
+	repo, err := repositories.NewAccountRepository(conf, db)
+	assert.NoError(t, err)
+
+	user := &models.User{Email: repoTestEmail("reset"), Password: "hashed"}
+	assert.NoError(t, repo.CreateAccount(user, "code"))
+
+	reset, err := repo.CreatePasswordReset(user.Id, "otphash", time.Now().Add(time.Minute))
+	assert.NoError(t, err)
+	assert.NotEqual(t, uuid.Nil, reset.Id)
+
+	active, err := repo.GetActivePasswordResetByUserID(user.Id)
+	assert.NoError(t, err)
+	assert.Equal(t, reset.Id, active.Id)
+
+	assert.NoError(t, repo.IncrementPasswordResetAttempts(reset.Id))
+	assert.NoError(t, repo.MarkPasswordResetOTPVerified(reset.Id, "tokenhash", time.Now().Add(time.Minute)))
+
+	byToken, err := repo.GetPasswordResetByTokenHash("tokenhash")
+	assert.NoError(t, err)
+	assert.Equal(t, reset.Id, byToken.Id)
+
+	assert.NoError(t, repo.UpdatePassword(user.Id, "newhash"))
+	assert.NoError(t, repo.InvalidateAllPasswordResets(user.Id))
 }

@@ -52,3 +52,16 @@ func TestCreatorBalances_GetBalance(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, balance.Equal(decimal.NewFromFloat(12.5)))
 }
+
+func TestCreatorBalances_GetAllBalances(t *testing.T) {
+	clearCreatorBalancesTables()
+
+	userA := uuid.New()
+	userB := uuid.New()
+	assert.NoError(t, creatorBalancesRepo.AddBalance(userA, decimal.NewFromFloat(2.5)))
+	assert.NoError(t, creatorBalancesRepo.AddBalance(userB, decimal.NewFromFloat(3.5)))
+
+	balances, err := creatorBalancesSvc.GetAllBalances()
+	assert.NoError(t, err)
+	assert.True(t, len(balances) >= 2)
+}

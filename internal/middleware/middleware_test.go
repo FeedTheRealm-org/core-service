@@ -54,6 +54,26 @@ func TestCORSMiddleware_OptionsShortCircuit(t *testing.T) {
 	assert.Equal(t, "*", w.Header().Get("Access-Control-Allow-Origin"))
 }
 
+func TestCORSMiddleware_OriginNotAllowed(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	conf := config.CreateConfig()
+	conf.CORSAllowedOrigins = []string{"https://allowed.example"}
+
+	r := gin.New()
+	r.Use(middleware.CORSMiddleware(conf))
+	r.GET("/test", func(c *gin.Context) {
+		c.String(http.StatusOK, "ok")
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Origin", "https://blocked.example")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "", w.Header().Get("Access-Control-Allow-Origin"))
+}
+
 func TestErrorHandlerMiddleware_WritesHttpError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -71,6 +91,21 @@ func TestErrorHandlerMiddleware_WritesHttpError(t *testing.T) {
 	assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &payload))
 	assert.Equal(t, http.StatusBadRequest, payload.Status)
 	assert.Equal(t, "bad", payload.Detail)
+}
+
+func TestErrorHandlerMiddleware_WritesInternalError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(middleware.ErrorHandlerMiddleware())
+	r.GET("/test", func(c *gin.Context) {
+		_ = c.Error(assert.AnError)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
 func TestAdminCheckMiddleware_AllowsAdmin(t *testing.T) {

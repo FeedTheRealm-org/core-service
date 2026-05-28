@@ -83,3 +83,15 @@ func TestMaterialsRepository_GetMaterialsListByWorldAndDelete(t *testing.T) {
 
 	assert.NoError(t, materialsRepo.DeleteMaterial(materials[0]))
 }
+
+func TestMaterialsRepository_GetMaterialsListByWorldAndType(t *testing.T) {
+	clearMaterialsTable()
+
+	worldID := uuid.New()
+	assert.NoError(t, materialsRepo.UpsertMaterial(&models.Material{ID: uuid.New(), WorldID: worldID, Name: "stone", URL: "/a.png", CreatedBy: uuid.New()}))
+	assert.NoError(t, materialsRepo.UpsertMaterial(&models.Material{ID: uuid.New(), WorldID: uuid.New(), Name: "wood", URL: "/b.png", CreatedBy: uuid.New()}))
+
+	materials, err := materialsRepo.GetMaterialsListByWorldAndType(worldID, 0, 10)
+	assert.NoError(t, err)
+	assert.Len(t, materials, 1)
+}

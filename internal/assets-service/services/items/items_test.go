@@ -200,3 +200,50 @@ func TestItemService_DeleteItem_BucketDeleteError(t *testing.T) {
 	_, err = repo.GetItemById(itemID)
 	assert.Error(t, err)
 }
+
+func TestItemService_UploadSprite_BucketUploadError(t *testing.T) {
+	worldID := uuid.New()
+	itemID := uuid.New()
+	userID := uuid.New()
+
+	repo := &fakeItemRepo{items: map[uuid.UUID]*models.Item{}}
+	bucket := &fakeBucketRepo{
+		uploadFn: func(fileName, mimeType string, file multipart.File) error {
+			return assert.AnError
+		},
+	}
+	service := itemservice.NewItemService(nil, repo, bucket)
+
+	fileHeader := createFileHeader(t, "sprite.png", "image/png", []byte("data"))
+	item, err := service.UploadSprite(worldID, itemID, fileHeader, userID)
+	assert.Error(t, err)
+	assert.Nil(t, item)
+}
+
+func TestItemService_UploadSprite_UpsertError(t *testing.T) {
+	worldID := uuid.New()
+	itemID := uuid.New()
+	userID := uuid.New()
+
+	repo := &fakeItemRepo{items: map[uuid.UUID]*models.Item{}, upsertErr: assert.AnError}
+	bucket := &fakeBucketRepo{}
+	service := itemservice.NewItemService(nil, repo, bucket)
+
+	fileHeader := createFileHeader(t, "sprite.png", "image/png", []byte("data"))
+	item, err := service.UploadSprite(worldID, itemID, fileHeader, userID)
+	assert.Error(t, err)
+	assert.Nil(t, item)
+}
+
+func TestItemService_DeleteItem_RepoDeleteError(t *testing.T) {
+	itemID := uuid.New()
+	worldID := uuid.New()
+
+	repo := &fakeItemRepo{items: map[uuid.UUID]*models.Item{}, deleteErr: assert.AnError}
+	repo.items[itemID] = &models.Item{Id: itemID, WorldID: worldID, Url: "/worlds/x/items/y.png"}
+	bucket := &fakeBucketRepo{}
+	service := itemservice.NewItemService(nil, repo, bucket)
+
+	err := service.DeleteItem(itemID)
+	assert.Error(t, err)
+}

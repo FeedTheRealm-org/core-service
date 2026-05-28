@@ -102,3 +102,16 @@ func TestItemRepository_GetItemsListByWorld(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, items, 1)
 }
+
+func TestItemRepository_UpsertItem_UpdatesExisting(t *testing.T) {
+	clearItemsTable()
+
+	itemID := uuid.New()
+	worldID := uuid.New()
+	assert.NoError(t, itemsRepo.UpsertItem(&models.Item{Id: itemID, WorldID: worldID, Url: "/v1.png", CreatedBy: uuid.New()}))
+
+	assert.NoError(t, itemsRepo.UpsertItem(&models.Item{Id: itemID, WorldID: worldID, Url: "/v2.png", CreatedBy: uuid.New()}))
+	stored, err := itemsRepo.GetItemById(itemID)
+	assert.NoError(t, err)
+	assert.Equal(t, "/v2.png", stored.Url)
+}
