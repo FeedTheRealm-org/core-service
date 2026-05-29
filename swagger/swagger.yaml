@@ -98,6 +98,8 @@ definitions:
         type: string
       cosmetic_url:
         type: string
+      updated_at:
+        type: string
     type: object
   dtos.CosmeticsEconomySummaryResponse:
     properties:
