@@ -5135,6 +5135,9 @@ const docTemplate = `{
                 "model_id": {
                     "type": "string"
                 },
+                "updated_at": {
+                    "type": "string"
+                },
                 "url": {
                     "type": "string"
                 }
