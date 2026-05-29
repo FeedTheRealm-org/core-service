@@ -56,5 +56,9 @@ Swagger docs are automatically generated.
 
 ## Useful Scripts
 
-- `scripts/seed_items.sh`: Script to seed items with sprites and categories.
-- `scripts/reset_items_data.sh`: Erase all items/categories from the DB.
+Scripts live under the `scripts/` directory and are invoked via `make seed` or `make seed-prod`.
+
+- `scripts/seed_initial_cosmetics.py`: Seeds cosmetic assets.
+- `scripts/seed_default_models.py`: Seeds default 3D models.
+- `scripts/seed_default_materials.py`: Seeds default materials.
+- `scripts/seed_bot_accounts.py`: Seeds bot player accounts.

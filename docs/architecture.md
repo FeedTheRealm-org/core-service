@@ -15,6 +15,8 @@ The Feed the Realm core-service is currently designed as a **modular monolith** 
 ├── internal                    # Private application code
 │   ├── assets-service          # Domain logic for game assets
 │   ├── authentication-service  # Domain logic for auth and users
+│   ├── exports-service         # Domain logic for data exports
+│   ├── payment-service         # Domain logic for payments and subscriptions (Stripe)
 │   ├── players-service         # Domain logic for players and characters
 │   ├── world-service           # Domain logic for game worlds and Nomad orchestration
 │   ├── common_handlers         # Shared HTTP handlers
@@ -28,7 +30,7 @@ The Feed the Realm core-service is currently designed as a **modular monolith** 
 
 ## Services Division
 
-The `internal` directory isolates each domain into its own "service" package (`assets-service`, `authentication-service`, `players-service`, `world-service`).
+The `internal` directory isolates each domain into its own "service" package (`assets-service`, `authentication-service`, `exports-service`, `payment-service`, `players-service`, `world-service`).
 
 Each service independently contains its own:
 
