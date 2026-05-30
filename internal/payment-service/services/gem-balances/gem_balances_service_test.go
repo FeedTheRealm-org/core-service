@@ -493,10 +493,11 @@ type checkoutSessionObj struct {
 }
 
 type stripeEventPayload struct {
-	ID     string `json:"id"`
-	Object string `json:"object"`
-	Type   string `json:"type"`
-	Data   struct {
+	ID         string `json:"id"`
+	Object     string `json:"object"`
+	APIVersion string `json:"api_version"`
+	Type       string `json:"type"`
+	Data       struct {
 		Object json.RawMessage `json:"object"`
 	} `json:"data"`
 }
@@ -513,9 +514,10 @@ func generateStripeSignature(secret string, payload []byte) string {
 func buildStripeEventPayload(eventType string, obj interface{}) []byte {
 	objBytes, _ := json.Marshal(obj)
 	payload := stripeEventPayload{
-		ID:     "evt_test",
-		Object: "event",
-		Type:   eventType,
+		ID:         "evt_test",
+		Object:     "event",
+		Type:       eventType,
+		APIVersion: "2026-04-22.dahlia",
 	}
 	payload.Data.Object = objBytes
 	bytes, _ := json.Marshal(payload)
