@@ -3373,8 +3373,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      security:
-      - BearerAuth: []
       summary: Get world player counts
       tags:
       - world-service
@@ -3587,8 +3585,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dtos.ErrorResponse'
-      security:
-      - BearerAuth: []
       summary: Get all world player counts
       tags:
       - world-service
