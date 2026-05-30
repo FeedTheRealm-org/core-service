@@ -280,7 +280,7 @@ func (bs *gemBalancesService) getTodayDate() string {
 }
 
 func (bs *gemBalancesService) HandleWebhook(payload []byte, signature string) error {
-	event, err := webhook.ConstructEvent(payload, signature, bs.conf.Stripe.StripeGemsWebhookSecret)
+	event, err := webhook.ConstructEventWithOptions(payload, signature, bs.conf.Stripe.StripeGemsWebhookSecret, webhook.ConstructEventOptions{IgnoreAPIVersionMismatch: true})
 	if err != nil {
 		logger.Logger.Error("Failed to verify Stripe webhook signature: " + err.Error())
 		return err

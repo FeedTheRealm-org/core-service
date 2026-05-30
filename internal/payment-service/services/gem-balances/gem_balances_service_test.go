@@ -1,13 +1,18 @@
 package gem_balances
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	gem_balances_errors "github.com/FeedTheRealm-org/core-service/internal/payment-service/errors"
@@ -102,6 +107,8 @@ func (f *fakeGemBalancesRepo) UpsertGemBalance(userId uuid.UUID, gems int64) err
 type fakeGemMetricsRepo struct {
 	spentCalled  bool
 	boughtCalled bool
+	spentErr     error
+	boughtErr    error
 }
 
 func (f *fakeGemMetricsRepo) GetMetrics() (*models.GemMetrics, error) {
@@ -110,12 +117,12 @@ func (f *fakeGemMetricsRepo) GetMetrics() (*models.GemMetrics, error) {
 
 func (f *fakeGemMetricsRepo) AddGemsBoughtAndRevenue(gems int64, revenue float64) error {
 	f.boughtCalled = true
-	return nil
+	return f.boughtErr
 }
 
 func (f *fakeGemMetricsRepo) AddGemsSpent(gems int64) error {
 	f.spentCalled = true
-	return nil
+	return f.spentErr
 }
 
 type fakeGemPacksRepo struct {
@@ -165,6 +172,10 @@ func (f *fakeCreatorBalancesRepo) GetAllBalances() ([]models.CreatorBalance, err
 }
 
 type fakeEmailSender struct {
+	sendGemPurchaseErr          error
+	sendGemPurchaseFailedErr    error
+	sendGemPurchaseCalled       bool
+	sendGemPurchaseFailedCalled bool
 }
 
 func (f *fakeEmailSender) CreateBaseEmailData(toEmail string) email_sender.BaseEmailData {
@@ -180,11 +191,13 @@ func (f *fakeEmailSender) SendVerificationEmail(data email_sender.VerificationEm
 }
 
 func (f *fakeEmailSender) SendGemPurchaseEmail(data email_sender.GemPurchaseEmailData) error {
-	return nil
+	f.sendGemPurchaseCalled = true
+	return f.sendGemPurchaseErr
 }
 
 func (f *fakeEmailSender) SendGemPurchaseFailedEmail(data email_sender.GemPurchaseFailedEmailData) error {
-	return nil
+	f.sendGemPurchaseFailedCalled = true
+	return f.sendGemPurchaseFailedErr
 }
 
 func (f *fakeEmailSender) SendSubscriptionStartedEmail(data email_sender.SubscriptionStartedData) error {
@@ -466,4 +479,822 @@ func TestGemBalancesService_GetTodayDate_InvalidTimezone(t *testing.T) {
 
 	date := service.getTodayDate()
 	assert.NotEmpty(t, date)
+}
+
+type paymentIntentObj struct {
+	ID       string            `json:"id"`
+	Object   string            `json:"object"`
+	Metadata map[string]string `json:"metadata"`
+}
+
+type checkoutSessionObj struct {
+	ID     string `json:"id"`
+	Object string `json:"object"`
+}
+
+type stripeEventPayload struct {
+	ID     string `json:"id"`
+	Object string `json:"object"`
+	Type   string `json:"type"`
+	Data   struct {
+		Object json.RawMessage `json:"object"`
+	} `json:"data"`
+}
+
+func generateStripeSignature(secret string, payload []byte) string {
+	timestamp := time.Now().Unix()
+	signedPayload := fmt.Sprintf("%d.%s", timestamp, string(payload))
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(signedPayload))
+	sig := hex.EncodeToString(mac.Sum(nil))
+	return fmt.Sprintf("t=%d,v1=%s", timestamp, sig)
+}
+
+func buildStripeEventPayload(eventType string, obj interface{}) []byte {
+	objBytes, _ := json.Marshal(obj)
+	payload := stripeEventPayload{
+		ID:     "evt_test",
+		Object: "event",
+		Type:   eventType,
+	}
+	payload.Data.Object = objBytes
+	bytes, _ := json.Marshal(payload)
+	return bytes
+}
+
+func webhookConf(secret string) *config.Config {
+	conf := config.CreateConfig()
+	conf.Stripe.StripeGemsWebhookSecret = secret
+	return conf
+}
+
+func TestGemBalancesService_EnsureSufficientBalance_RepoError(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeGemBalancesRepo{getErr: errors.New("boom")}
+	service := &gemBalancesService{conf: conf, gemBalancesRepo: repo}
+
+	err := service.ensureSufficientBalance(uuid.New(), 10)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_EnsureSufficientBalance_Sufficient(t *testing.T) {
+	userID := uuid.New()
+	conf := config.CreateConfig()
+	repo := &fakeGemBalancesRepo{balances: map[uuid.UUID]*models.GemBalance{userID: {UserId: userID, Gems: 100}}}
+	service := &gemBalancesService{conf: conf, gemBalancesRepo: repo}
+
+	err := service.ensureSufficientBalance(userID, 50)
+	assert.NoError(t, err)
+}
+
+func TestGemBalancesService_GetTodayDate_ValidTimezone(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Stripe.StripeBillingTimezone = "UTC"
+	service := &gemBalancesService{conf: conf}
+
+	date := service.getTodayDate()
+	assert.NotEmpty(t, date)
+	assert.Regexp(t, `\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}`, date)
+}
+
+func TestGemBalancesService_FetchCosmeticPrice_HTTPError(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Server.Port = 1
+	service := &gemBalancesService{conf: conf}
+
+	_, _, err := service.fetchCosmeticPrice(uuid.New())
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_FetchCosmeticPrice_NonOKNon404(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+	service := &gemBalancesService{conf: conf}
+
+	_, _, err := service.fetchCosmeticPrice(uuid.New())
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_IssueCosmeticPurchase_HTTPError(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Server.Port = 1
+	service := &gemBalancesService{conf: conf}
+
+	err := service.issueCosmeticPurchase(uuid.New(), uuid.New())
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_IssueCosmeticPurchase_BadStatus(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+	service := &gemBalancesService{conf: conf}
+
+	err := service.issueCosmeticPurchase(uuid.New(), uuid.New())
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_PurchaseCosmetic_NoCreator(t *testing.T) {
+	userID := uuid.New()
+	cosmeticID := uuid.New()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/assets/internal/cosmetics/") {
+			payload := map[string]any{
+				"data": map[string]any{
+					"cosmetic_id":    cosmeticID,
+					"cosmetic_price": int64(10),
+					"created_by":     uuid.Nil,
+				},
+			}
+			_ = json.NewEncoder(w).Encode(payload)
+			return
+		}
+		if strings.Contains(r.URL.Path, "/assets/internal/users/") {
+			w.WriteHeader(http.StatusCreated)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+	conf.Server.CreatorRevenuePercent = 1.0
+	conf.Server.DollarsGemsRatio = 1.0
+
+	gemRepo := &fakeGemBalancesRepo{balances: map[uuid.UUID]*models.GemBalance{userID: {UserId: userID, Gems: 20}}}
+	metricsRepo := &fakeGemMetricsRepo{}
+	creatorRepo := &fakeCreatorBalancesRepo{}
+	service := &gemBalancesService{
+		conf:                conf,
+		gemBalancesRepo:     gemRepo,
+		gemMetricsRepo:      metricsRepo,
+		creatorBalancesRepo: creatorRepo,
+		emailSender:         &fakeEmailSender{},
+	}
+
+	err := service.PurchaseCosmetic(userID, cosmeticID)
+	assert.NoError(t, err)
+	assert.False(t, creatorRepo.addCalled)
+	assert.True(t, gemRepo.addCalled)
+}
+
+func TestGemBalancesService_PurchaseCosmetic_ZeroPrice(t *testing.T) {
+	userID := uuid.New()
+	cosmeticID := uuid.New()
+	creatorID := uuid.New()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/assets/internal/cosmetics/") {
+			payload := map[string]any{
+				"data": map[string]any{
+					"cosmetic_id":    cosmeticID,
+					"cosmetic_price": int64(0),
+					"created_by":     creatorID,
+				},
+			}
+			_ = json.NewEncoder(w).Encode(payload)
+			return
+		}
+		if strings.Contains(r.URL.Path, "/assets/internal/users/") {
+			w.WriteHeader(http.StatusCreated)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	gemRepo := &fakeGemBalancesRepo{balances: map[uuid.UUID]*models.GemBalance{userID: {UserId: userID, Gems: 20}}}
+	creatorRepo := &fakeCreatorBalancesRepo{}
+	service := &gemBalancesService{
+		conf:                conf,
+		gemBalancesRepo:     gemRepo,
+		creatorBalancesRepo: creatorRepo,
+	}
+
+	err := service.PurchaseCosmetic(userID, cosmeticID)
+	assert.NoError(t, err)
+	assert.False(t, creatorRepo.addCalled)
+}
+
+func TestGemBalancesService_PurchaseCosmetic_CreatorBalanceError(t *testing.T) {
+	userID := uuid.New()
+	cosmeticID := uuid.New()
+	creatorID := uuid.New()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/assets/internal/cosmetics/") {
+			payload := map[string]any{
+				"data": map[string]any{
+					"cosmetic_id":    cosmeticID,
+					"cosmetic_price": int64(10),
+					"created_by":     creatorID,
+				},
+			}
+			_ = json.NewEncoder(w).Encode(payload)
+			return
+		}
+		if strings.Contains(r.URL.Path, "/assets/internal/users/") {
+			w.WriteHeader(http.StatusCreated)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+	conf.Server.CreatorRevenuePercent = 1.0
+	conf.Server.DollarsGemsRatio = 1.0
+
+	gemRepo := &fakeGemBalancesRepo{balances: map[uuid.UUID]*models.GemBalance{userID: {UserId: userID, Gems: 20}}}
+	creatorRepo := &fakeCreatorBalancesRepo{addErr: errors.New("boom")}
+	service := &gemBalancesService{
+		conf:                conf,
+		gemBalancesRepo:     gemRepo,
+		creatorBalancesRepo: creatorRepo,
+	}
+
+	err := service.PurchaseCosmetic(userID, cosmeticID)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_PurchaseCosmetic_MetricsError(t *testing.T) {
+	userID := uuid.New()
+	cosmeticID := uuid.New()
+	creatorID := uuid.New()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/assets/internal/cosmetics/") {
+			payload := map[string]any{
+				"data": map[string]any{
+					"cosmetic_id":    cosmeticID,
+					"cosmetic_price": int64(10),
+					"created_by":     creatorID,
+				},
+			}
+			_ = json.NewEncoder(w).Encode(payload)
+			return
+		}
+		if strings.Contains(r.URL.Path, "/assets/internal/users/") {
+			w.WriteHeader(http.StatusCreated)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+	conf.Server.CreatorRevenuePercent = 1.0
+	conf.Server.DollarsGemsRatio = 1.0
+
+	gemRepo := &fakeGemBalancesRepo{balances: map[uuid.UUID]*models.GemBalance{userID: {UserId: userID, Gems: 20}}}
+	metricsRepo := &fakeGemMetricsRepo{spentErr: errors.New("metrics error")}
+	service := &gemBalancesService{
+		conf:                conf,
+		gemBalancesRepo:     gemRepo,
+		gemMetricsRepo:      metricsRepo,
+		creatorBalancesRepo: &fakeCreatorBalancesRepo{},
+		emailSender:         &fakeEmailSender{},
+	}
+
+	err := service.PurchaseCosmetic(userID, cosmeticID)
+	assert.NoError(t, err)
+	assert.True(t, metricsRepo.spentCalled)
+}
+
+func TestGemBalancesService_HandleWebhook_Succeeded_UnmarshalError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := &gemBalancesService{conf: conf}
+
+	obj := map[string]interface{}{
+		"id":     "pi_test",
+		"object": "payment_intent",
+		"amount": "not-a-number",
+	}
+	payload := buildStripeEventPayload("payment_intent.succeeded", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_Succeeded_ParseUserIdError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := &gemBalancesService{conf: conf}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": "invalid-uuid",
+			"pack_id": uuid.New().String(),
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.succeeded", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_Succeeded_ParsePackIdError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := &gemBalancesService{conf: conf}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": uuid.New().String(),
+			"pack_id": "invalid-uuid",
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.succeeded", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_Succeeded_EmailEmpty(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := &gemBalancesService{conf: conf}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": uuid.New().String(),
+			"pack_id": uuid.New().String(),
+			"email":   "",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.succeeded", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "email not found")
+}
+
+func TestGemBalancesService_HandleWebhook_Succeeded_PackError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := &gemBalancesService{
+		conf:      conf,
+		packsRepo: &fakeGemPacksRepo{getErr: errors.New("not found")},
+	}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": uuid.New().String(),
+			"pack_id": uuid.New().String(),
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.succeeded", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_Succeeded_ApplyCreditError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	packID := uuid.New()
+	pack := &models.GemPack{Id: packID, Name: "Test", Gems: 100, Price: decimal.NewFromInt(10)}
+
+	service := &gemBalancesService{
+		conf:            conf,
+		packsRepo:       &fakeGemPacksRepo{pack: pack},
+		gemBalancesRepo: &fakeGemBalancesRepo{applyErr: errors.New("apply error")},
+	}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": uuid.New().String(),
+			"pack_id": packID.String(),
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.succeeded", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_Succeeded_DuplicateEvent(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	packID := uuid.New()
+	pack := &models.GemPack{Id: packID, Name: "Test", Gems: 100, Price: decimal.NewFromInt(10)}
+
+	service := &gemBalancesService{
+		conf:            conf,
+		packsRepo:       &fakeGemPacksRepo{pack: pack},
+		gemBalancesRepo: &fakeGemBalancesRepo{applyResponse: false},
+	}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": uuid.New().String(),
+			"pack_id": packID.String(),
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.succeeded", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.NoError(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_Succeeded_MetricsError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	packID := uuid.New()
+	pack := &models.GemPack{Id: packID, Name: "Test", Gems: 100, Price: decimal.NewFromInt(10)}
+	userID := uuid.New()
+
+	service := &gemBalancesService{
+		conf:            conf,
+		packsRepo:       &fakeGemPacksRepo{pack: pack},
+		gemBalancesRepo: &fakeGemBalancesRepo{balances: map[uuid.UUID]*models.GemBalance{userID: {UserId: userID, Gems: 100}}, applyResponse: true},
+		gemMetricsRepo:  &fakeGemMetricsRepo{boughtErr: errors.New("metrics error")},
+		emailSender:     &fakeEmailSender{},
+	}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": userID.String(),
+			"pack_id": packID.String(),
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.succeeded", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.NoError(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_Succeeded_GetBalanceError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	packID := uuid.New()
+	pack := &models.GemPack{Id: packID, Name: "Test", Gems: 100, Price: decimal.NewFromInt(10)}
+	userID := uuid.New()
+
+	service := &gemBalancesService{
+		conf:            conf,
+		packsRepo:       &fakeGemPacksRepo{pack: pack},
+		gemBalancesRepo: &fakeGemBalancesRepo{getErr: errors.New("get error"), applyResponse: true},
+		gemMetricsRepo:  &fakeGemMetricsRepo{},
+		emailSender:     &fakeEmailSender{},
+	}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": userID.String(),
+			"pack_id": packID.String(),
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.succeeded", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_Succeeded_EmailError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	packID := uuid.New()
+	pack := &models.GemPack{Id: packID, Name: "Test", Gems: 100, Price: decimal.NewFromInt(10)}
+	userID := uuid.New()
+
+	emailSender := &fakeEmailSender{sendGemPurchaseErr: errors.New("email error")}
+
+	service := &gemBalancesService{
+		conf:            conf,
+		packsRepo:       &fakeGemPacksRepo{pack: pack},
+		gemBalancesRepo: &fakeGemBalancesRepo{balances: map[uuid.UUID]*models.GemBalance{userID: {UserId: userID, Gems: 100}}, applyResponse: true},
+		gemMetricsRepo:  &fakeGemMetricsRepo{},
+		emailSender:     emailSender,
+	}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": userID.String(),
+			"pack_id": packID.String(),
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.succeeded", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.NoError(t, err)
+	assert.True(t, emailSender.sendGemPurchaseCalled)
+}
+
+func TestGemBalancesService_HandleWebhook_Succeeded_Success(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	packID := uuid.New()
+	pack := &models.GemPack{Id: packID, Name: "Test", Gems: 100, Price: decimal.NewFromInt(10)}
+	userID := uuid.New()
+
+	emailSender := &fakeEmailSender{}
+
+	service := &gemBalancesService{
+		conf:            conf,
+		packsRepo:       &fakeGemPacksRepo{pack: pack},
+		gemBalancesRepo: &fakeGemBalancesRepo{balances: map[uuid.UUID]*models.GemBalance{userID: {UserId: userID, Gems: 100}}, applyResponse: true},
+		gemMetricsRepo:  &fakeGemMetricsRepo{},
+		emailSender:     emailSender,
+	}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": userID.String(),
+			"pack_id": packID.String(),
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.succeeded", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.NoError(t, err)
+	assert.True(t, emailSender.sendGemPurchaseCalled)
+}
+
+func TestGemBalancesService_HandleWebhook_PaymentFailed_UnmarshalError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := &gemBalancesService{conf: conf}
+
+	obj := map[string]interface{}{
+		"id":     "pi_test",
+		"object": "payment_intent",
+		"amount": "not-a-number",
+	}
+	payload := buildStripeEventPayload("payment_intent.payment_failed", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_PaymentFailed_ParseUserIdError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := &gemBalancesService{conf: conf}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": "invalid-uuid",
+			"pack_id": uuid.New().String(),
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.payment_failed", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_PaymentFailed_ParsePackIdError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := &gemBalancesService{conf: conf}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": uuid.New().String(),
+			"pack_id": "invalid-uuid",
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.payment_failed", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_PaymentFailed_PackError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := &gemBalancesService{
+		conf:      conf,
+		packsRepo: &fakeGemPacksRepo{getErr: errors.New("not found")},
+	}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": uuid.New().String(),
+			"pack_id": uuid.New().String(),
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.payment_failed", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_PaymentFailed_EmailEmpty(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	packID := uuid.New()
+	pack := &models.GemPack{Id: packID, Name: "Test", Gems: 100, Price: decimal.NewFromInt(10)}
+
+	service := &gemBalancesService{
+		conf:      conf,
+		packsRepo: &fakeGemPacksRepo{pack: pack},
+	}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": uuid.New().String(),
+			"pack_id": packID.String(),
+			"email":   "",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.payment_failed", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "email not found")
+}
+
+func TestGemBalancesService_HandleWebhook_PaymentFailed_EmailError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	packID := uuid.New()
+	pack := &models.GemPack{Id: packID, Name: "Test", Gems: 100, Price: decimal.NewFromInt(10)}
+
+	emailSender := &fakeEmailSender{sendGemPurchaseFailedErr: errors.New("email error")}
+
+	service := &gemBalancesService{
+		conf:        conf,
+		packsRepo:   &fakeGemPacksRepo{pack: pack},
+		emailSender: emailSender,
+	}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": uuid.New().String(),
+			"pack_id": packID.String(),
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.payment_failed", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+	assert.True(t, emailSender.sendGemPurchaseFailedCalled)
+}
+
+func TestGemBalancesService_HandleWebhook_PaymentFailed_Success(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	packID := uuid.New()
+	pack := &models.GemPack{Id: packID, Name: "Test", Gems: 100, Price: decimal.NewFromInt(10)}
+
+	emailSender := &fakeEmailSender{}
+
+	service := &gemBalancesService{
+		conf:        conf,
+		packsRepo:   &fakeGemPacksRepo{pack: pack},
+		emailSender: emailSender,
+	}
+
+	obj := paymentIntentObj{
+		ID:     "pi_test",
+		Object: "payment_intent",
+		Metadata: map[string]string{
+			"user_id": uuid.New().String(),
+			"pack_id": packID.String(),
+			"email":   "test@example.com",
+		},
+	}
+	payload := buildStripeEventPayload("payment_intent.payment_failed", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.NoError(t, err)
+	assert.True(t, emailSender.sendGemPurchaseFailedCalled)
+}
+
+func TestGemBalancesService_HandleWebhook_SessionExpired_UnmarshalError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := &gemBalancesService{conf: conf}
+
+	obj := map[string]interface{}{
+		"id":           "cs_test",
+		"object":       "checkout.session",
+		"amount_total": "not-a-number",
+	}
+	payload := buildStripeEventPayload("checkout.session.expired", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_SessionExpired_Success(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := &gemBalancesService{conf: conf}
+
+	obj := checkoutSessionObj{
+		ID:     "cs_test",
+		Object: "checkout.session",
+	}
+	payload := buildStripeEventPayload("checkout.session.expired", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.NoError(t, err)
+}
+
+func TestGemBalancesService_HandleWebhook_DefaultEvent(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := &gemBalancesService{conf: conf}
+
+	obj := map[string]string{"id": "in_test"}
+	payload := buildStripeEventPayload("invoice.payment_succeeded", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.NoError(t, err)
 }

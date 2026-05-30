@@ -40,7 +40,7 @@ func TestIsValidateToken_InvalidSigningMethod(t *testing.T) {
 	token, err := manager.GenerateAccessToken(email, email, false)
 	require.NoError(t, err, "Token generation failed")
 
-	invalidToken := token[:len(token)-1] + "X"
+	invalidToken := token + "invalid"
 	_, err = manager.IsValidateAccessToken(invalidToken, time.Now())
 
 	require.Error(t, err, "Expected error for invalid token")
