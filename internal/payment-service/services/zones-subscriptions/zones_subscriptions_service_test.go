@@ -1,7 +1,12 @@
 package zones_subscriptions
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -269,4 +274,294 @@ func TestSubscriptionService_StopAllJobs_ResetsSlots(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, repo.updateCalled)
 	assert.Equal(t, 0, sub.UsedSlots)
+}
+
+func TestSubscriptionService_UpdateSlots_Validations(t *testing.T) {
+	conf := config.CreateConfig()
+	userID := uuid.New()
+
+	tests := []struct {
+		name        string
+		sub         *models.ZonesSubscriptions
+		repoErr     error
+		newSlots    int
+		expectedErr string
+	}{
+		{
+			name:        "Error: Subscription not found in DB",
+			repoErr:     errors.New("db error"),
+			expectedErr: "db error",
+		},
+		{
+			name: "Error: Missing StripeSubscriptionID",
+			sub: &models.ZonesSubscriptions{
+				Status: stripe.SubscriptionStatusActive,
+			},
+			expectedErr: "subscription not found for user",
+		},
+		{
+			name: "Error: Subscription not active",
+			sub: &models.ZonesSubscriptions{
+				StripeSubscriptionID: "sub_123",
+				Status:               stripe.SubscriptionStatusCanceled,
+			},
+			expectedErr: "subscription is not active",
+		},
+		{
+			name: "Error: New slots less than used slots",
+			sub: &models.ZonesSubscriptions{
+				StripeSubscriptionID: "sub_123",
+				Status:               stripe.SubscriptionStatusActive,
+				UsedSlots:            5,
+			},
+			newSlots:    4,
+			expectedErr: "used slots cannot exceed total slots",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &fakeZonesRepo{getByUserID: tt.sub, getByUserErr: tt.repoErr}
+			service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+			_, err := service.UpdateSlots(userID, tt.newSlots)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), tt.expectedErr)
+		})
+	}
+}
+
+func TestSubscriptionService_CancelSubscription_Validations(t *testing.T) {
+	conf := config.CreateConfig()
+	userID := uuid.New()
+
+	tests := []struct {
+		name        string
+		sub         *models.ZonesSubscriptions
+		repoErr     error
+		expectedErr string
+	}{
+		{
+			name:        "Error: Subscription not found in DB",
+			repoErr:     errors.New("db error"),
+			expectedErr: "db error",
+		},
+		{
+			name: "Error: Missing StripeSubscriptionID",
+			sub: &models.ZonesSubscriptions{
+				Status: stripe.SubscriptionStatusActive,
+			},
+			expectedErr: "subscription not found for user",
+		},
+		{
+			name: "Error: Subscription not active",
+			sub: &models.ZonesSubscriptions{
+				StripeSubscriptionID: "sub_123",
+				Status:               stripe.SubscriptionStatusCanceled,
+			},
+			expectedErr: "subscription is not active",
+		},
+		{
+			name: "Error: Cannot cancel with used slots",
+			sub: &models.ZonesSubscriptions{
+				StripeSubscriptionID: "sub_123",
+				Status:               stripe.SubscriptionStatusActive,
+				UsedSlots:            1,
+			},
+			expectedErr: "cannot cancel subscription because 1 slots are currently in use",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &fakeZonesRepo{getByUserID: tt.sub, getByUserErr: tt.repoErr}
+			service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+			_, err := service.CancelSubscription(userID)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), tt.expectedErr)
+		})
+	}
+}
+
+func TestSubscriptionService_HandleWebhook_InvalidSignature(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Stripe.StripeSubscriptionsWebhookSecret = "whsec_test"
+	service := NewSubscriptionService(conf, &fakeZonesRepo{}, &fakeZonesEmailSender{})
+
+	payload := []byte(`{"id":"evt_test","type":"customer.subscription.created"}`)
+	signature := "t=123,v1=invalid_signature"
+
+	err := service.HandleWebhook(payload, signature)
+
+	assert.Error(t, err)
+}
+
+func generateStripeSignature(secret string, payload []byte) string {
+	timestamp := time.Now().Unix()
+
+	signedPayload := fmt.Sprintf("%d.%s", timestamp, string(payload))
+
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(signedPayload))
+	sig := hex.EncodeToString(mac.Sum(nil))
+
+	return fmt.Sprintf("t=%d,v1=%s", timestamp, sig)
+}
+
+func buildStripeEventPayload(eventType string, dataObject interface{}) []byte {
+	event := map[string]interface{}{
+		"id":          "evt_test_12345",
+		"object":      "event",
+		"api_version": stripe.APIVersion,
+		"type":        eventType,
+		"created":     time.Now().Unix(),
+		"data": map[string]interface{}{
+			"object": dataObject,
+		},
+	}
+	payload, _ := json.Marshal(event)
+	return payload
+}
+
+func webhookConf(secret string) *config.Config {
+	conf := config.CreateConfig()
+	conf.Stripe.StripeSubscriptionsWebhookSecret = secret
+	return conf
+}
+
+func TestSubscriptionService_HandleWebhook_SignatureError(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := NewSubscriptionService(conf, &fakeZonesRepo{}, &fakeZonesEmailSender{})
+
+	payload := []byte(`{"id":"evt_test","type":"customer.subscription.updated"}`)
+	sig := "t=123,v1=firma_invalida_totalmente"
+
+	err := service.HandleWebhook(payload, sig)
+
+	assert.Error(t, err)
+}
+
+func TestSubscriptionService_HandleWebhook_UnhandledEvent(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := NewSubscriptionService(conf, &fakeZonesRepo{}, &fakeZonesEmailSender{})
+
+	obj := map[string]interface{}{
+		"id": "sub_test",
+	}
+	payload := buildStripeEventPayload("evento.random.no.soportado", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+
+	assert.NoError(t, err)
+}
+
+func TestSubscriptionService_HandleWebhook_SubscriptionUpdated(t *testing.T) {
+	stripeServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte(`{"id":"in_test", "amount_due": 0}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+	}))
+	defer stripeServer.Close()
+
+	originalBackend := stripe.GetBackend(stripe.APIBackend)
+	defer stripe.SetBackend(stripe.APIBackend, originalBackend)
+
+	mockBackend := stripe.GetBackendWithConfig(stripe.APIBackend, &stripe.BackendConfig{
+		URL: stripe.String(stripeServer.URL),
+	})
+	stripe.SetBackend(stripe.APIBackend, mockBackend)
+	stripe.Key = "sk_test_dummy"
+
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+
+	userID := uuid.New()
+	sub := &models.ZonesSubscriptions{
+		UserID:               userID,
+		StripeSubscriptionID: "sub_123",
+		TotalSlots:           5,
+	}
+
+	repo := &fakeZonesRepo{
+		getByUserID:      sub,
+		getByStripeSubID: sub,
+	}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	obj := map[string]interface{}{
+		"id":     "sub_123",
+		"object": "subscription",
+		"status": "active",
+		"metadata": map[string]interface{}{
+			"user_id": userID.String(),
+		},
+		"items": map[string]interface{}{
+			"data": []map[string]interface{}{
+				{
+					"quantity": 10,
+				},
+			},
+		},
+	}
+	payload := buildStripeEventPayload("customer.subscription.updated", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+
+	assert.NoError(t, err)
+	assert.True(t, repo.updateCalled)
+}
+
+func TestSubscriptionService_HandleWebhook_SubscriptionDeleted(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+
+	userID := uuid.New()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	sub := &models.ZonesSubscriptions{
+		UserID:               userID,
+		StripeSubscriptionID: "sub_123",
+		Status:               "active",
+	}
+
+	repo := &fakeZonesRepo{
+		getByUserID:      sub,
+		getByStripeSubID: sub,
+	}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	obj := map[string]interface{}{
+		"id":     "sub_123",
+		"object": "subscription",
+		"status": "canceled",
+		"metadata": map[string]interface{}{
+			"user_id": userID.String(),
+		},
+		"items": map[string]interface{}{
+			"data": []map[string]interface{}{
+				{
+					"quantity": 5,
+				},
+			},
+		},
+	}
+	payload := buildStripeEventPayload("customer.subscription.deleted", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+
+	assert.NoError(t, err)
+	assert.True(t, repo.updateCalled)
 }
