@@ -188,6 +188,7 @@ func (cc *cosmeticsController) GetCosmeticsListByCategory(c *gin.Context) {
 		res.CosmeticsList[idx] = dtos.CosmeticResponse{
 			CosmeticId:  cosmetic.Id,
 			CosmeticUrl: cosmetic.Url,
+			UpdatedAt:   cosmetic.UpdatedAt,
 		}
 	}
 
@@ -233,6 +234,7 @@ func (cc *cosmeticsController) GetCosmeticById(c *gin.Context) {
 	res := &dtos.CosmeticResponse{
 		CosmeticId:  cosmetic.Id,
 		CosmeticUrl: cosmetic.Url,
+		UpdatedAt:   cosmetic.UpdatedAt,
 	}
 
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
@@ -295,6 +297,7 @@ func (cc *cosmeticsController) GetCosmeticsListByWorld(c *gin.Context) {
 		res.CosmeticsList[idx] = dtos.CosmeticResponse{
 			CosmeticId:  cosmetic.Id,
 			CosmeticUrl: cosmetic.Url,
+			UpdatedAt:   cosmetic.UpdatedAt,
 		}
 	}
 
@@ -429,6 +432,7 @@ func (cc *cosmeticsController) UploadCosmeticData(c *gin.Context) {
 	res := &dtos.CosmeticResponse{
 		CosmeticId:  cosmetic.Id,
 		CosmeticUrl: cosmetic.Url,
+		UpdatedAt:   cosmetic.UpdatedAt,
 	}
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }
@@ -536,6 +540,7 @@ func (cc *cosmeticsController) UploadCosmeticByID(c *gin.Context) {
 	res := &dtos.CosmeticResponse{
 		CosmeticId:  cosmetic.Id,
 		CosmeticUrl: cosmetic.Url,
+		UpdatedAt:   cosmetic.UpdatedAt,
 	}
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, res)
 }

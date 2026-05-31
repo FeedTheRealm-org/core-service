@@ -4719,6 +4719,9 @@ const docTemplate = `{
                 },
                 "cosmetic_url": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -5120,6 +5123,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "model_id": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 },
                 "url": {

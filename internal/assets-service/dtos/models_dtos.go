@@ -2,6 +2,7 @@ package dtos
 
 import (
 	"mime/multipart"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -15,8 +16,9 @@ type ModelRequest struct {
 }
 
 type ModelResponse struct {
-	ModelID uuid.UUID `json:"model_id"`
-	Url     string    `json:"url"`
+	ModelID   uuid.UUID `json:"model_id"`
+	Url       string    `json:"url"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type ModelsListResponse struct {
