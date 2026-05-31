@@ -574,7 +574,6 @@ func TestSubscriptionService_HandleWebhook_SubscriptionDeleted(t *testing.T) {
 }
 
 func TestSubscriptionService_HandleWebhook_SubscriptionCreated(t *testing.T) {
-	// 1. Servidor Stripe para interceptar facturas y creación del portal
 	stripeServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		if strings.Contains(r.URL.Path, "/invoices/upcoming") {
@@ -626,8 +625,8 @@ func TestSubscriptionService_HandleWebhook_SubscriptionCreated(t *testing.T) {
 	err := service.HandleWebhook(payload, sig)
 
 	assert.NoError(t, err)
-	assert.True(t, repo.updateCalled)             // Verifica que se guardó en DB
-	assert.True(t, emailSender.sendStartedCalled) // Verifica que se envió el email
+	assert.True(t, repo.updateCalled)
+	assert.True(t, emailSender.sendStartedCalled)
 }
 
 func TestSubscriptionService_HandleWebhook_InvoicePaid(t *testing.T) {
@@ -655,11 +654,10 @@ func TestSubscriptionService_HandleWebhook_InvoicePaid(t *testing.T) {
 	err := service.HandleWebhook(payload, sig)
 
 	assert.NoError(t, err)
-	assert.True(t, emailSender.sendPaidCalled) // Verifica el email de pago exitoso
+	assert.True(t, emailSender.sendPaidCalled)
 }
 
 func TestSubscriptionService_HandleWebhook_InvoicePaymentFailed(t *testing.T) {
-	// 1. Mock de Stripe para interceptar la cancelación de la suscripción (DELETE)
 	stripeServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"id":"sub_fail_123", "status":"canceled"}`))
@@ -673,7 +671,6 @@ func TestSubscriptionService_HandleWebhook_InvoicePaymentFailed(t *testing.T) {
 	}))
 	stripe.Key = "sk_test_dummy"
 
-	// 2. Mock del servidor HTTP interno de tu app para "stopAllJobs"
 	internalServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -695,7 +692,6 @@ func TestSubscriptionService_HandleWebhook_InvoicePaymentFailed(t *testing.T) {
 	emailSender := &fakeZonesEmailSender{}
 	service := NewSubscriptionService(conf, repo, emailSender)
 
-	// Estructura anidada para imitar invoice.Parent.SubscriptionDetails.Subscription.ID
 	obj := map[string]interface{}{
 		"id":             "in_fail_123",
 		"object":         "invoice",
@@ -716,5 +712,5 @@ func TestSubscriptionService_HandleWebhook_InvoicePaymentFailed(t *testing.T) {
 	err := service.HandleWebhook(payload, sig)
 
 	assert.NoError(t, err)
-	assert.True(t, emailSender.sendRejectedCalled) // Verifica que se envió el aviso de error
+	assert.True(t, emailSender.sendRejectedCalled)
 }
