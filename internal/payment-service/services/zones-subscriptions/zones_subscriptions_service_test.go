@@ -64,7 +64,11 @@ func (f *fakeZonesRepo) GetByStripeSubscriptionID(subID string) (*models.ZonesSu
 	return f.getByStripeSubID, nil
 }
 
-type fakeZonesEmailSender struct{}
+type fakeZonesEmailSender struct {
+	sendStartedCalled  bool
+	sendPaidCalled     bool
+	sendRejectedCalled bool
+}
 
 func (f *fakeZonesEmailSender) CreateBaseEmailData(toEmail string) email_sender.BaseEmailData {
 	return email_sender.BaseEmailData{ToEmail: toEmail}
@@ -87,6 +91,7 @@ func (f *fakeZonesEmailSender) SendGemPurchaseFailedEmail(data email_sender.GemP
 }
 
 func (f *fakeZonesEmailSender) SendSubscriptionStartedEmail(data email_sender.SubscriptionStartedData) error {
+	f.sendStartedCalled = true
 	return nil
 }
 
@@ -95,10 +100,12 @@ func (f *fakeZonesEmailSender) SendSubscriptionUpdatedEmail(data email_sender.Su
 }
 
 func (f *fakeZonesEmailSender) SendPaymentRejectedEmail(data email_sender.SubscriptionPaymentRejectedData) error {
+	f.sendRejectedCalled = true
 	return nil
 }
 
 func (f *fakeZonesEmailSender) SendPaymentSuccessfulEmail(data email_sender.SubscriptionPaymentSuccessfulData) error {
+	f.sendPaidCalled = true
 	return nil
 }
 
@@ -564,4 +571,150 @@ func TestSubscriptionService_HandleWebhook_SubscriptionDeleted(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.True(t, repo.updateCalled)
+}
+
+func TestSubscriptionService_HandleWebhook_SubscriptionCreated(t *testing.T) {
+	// 1. Servidor Stripe para interceptar facturas y creación del portal
+	stripeServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if strings.Contains(r.URL.Path, "/invoices/upcoming") {
+			_, _ = w.Write([]byte(`{"id":"in_test", "amount_due": 1500}`))
+		} else if strings.Contains(r.URL.Path, "/billing_portal/sessions") {
+			_, _ = w.Write([]byte(`{"id":"bps_test", "url":"http://portal.fake"}`))
+		} else {
+			_, _ = w.Write([]byte(`{}`))
+		}
+	}))
+	defer stripeServer.Close()
+
+	originalBackend := stripe.GetBackend(stripe.APIBackend)
+	defer stripe.SetBackend(stripe.APIBackend, originalBackend)
+	stripe.SetBackend(stripe.APIBackend, stripe.GetBackendWithConfig(stripe.APIBackend, &stripe.BackendConfig{
+		URL: stripe.String(stripeServer.URL),
+	}))
+	stripe.Key = "sk_test_dummy"
+
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+
+	userID := uuid.New()
+	repo := &fakeZonesRepo{
+		getByUserID: &models.ZonesSubscriptions{
+			UserID:           userID,
+			StripeCustomerID: "cus_123",
+		},
+	}
+	emailSender := &fakeZonesEmailSender{}
+	service := NewSubscriptionService(conf, repo, emailSender)
+
+	obj := map[string]interface{}{
+		"id":     "sub_new_123",
+		"object": "subscription",
+		"metadata": map[string]interface{}{
+			"user_id": userID.String(),
+			"email":   "test@example.com",
+		},
+		"items": map[string]interface{}{
+			"data": []map[string]interface{}{
+				{"quantity": 3},
+			},
+		},
+	}
+	payload := buildStripeEventPayload("customer.subscription.created", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+
+	assert.NoError(t, err)
+	assert.True(t, repo.updateCalled)             // Verifica que se guardó en DB
+	assert.True(t, emailSender.sendStartedCalled) // Verifica que se envió el email
+}
+
+func TestSubscriptionService_HandleWebhook_InvoicePaid(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+
+	emailSender := &fakeZonesEmailSender{}
+	service := NewSubscriptionService(conf, &fakeZonesRepo{}, emailSender)
+
+	obj := map[string]interface{}{
+		"id":             "in_paid_123",
+		"object":         "invoice",
+		"customer_email": "success@example.com",
+		"amount_paid":    2000,
+		"created":        time.Now().Unix(),
+		"lines": map[string]interface{}{
+			"data": []map[string]interface{}{
+				{"quantity": 2},
+			},
+		},
+	}
+	payload := buildStripeEventPayload("invoice.paid", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+
+	assert.NoError(t, err)
+	assert.True(t, emailSender.sendPaidCalled) // Verifica el email de pago exitoso
+}
+
+func TestSubscriptionService_HandleWebhook_InvoicePaymentFailed(t *testing.T) {
+	// 1. Mock de Stripe para interceptar la cancelación de la suscripción (DELETE)
+	stripeServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"id":"sub_fail_123", "status":"canceled"}`))
+	}))
+	defer stripeServer.Close()
+
+	originalBackend := stripe.GetBackend(stripe.APIBackend)
+	defer stripe.SetBackend(stripe.APIBackend, originalBackend)
+	stripe.SetBackend(stripe.APIBackend, stripe.GetBackendWithConfig(stripe.APIBackend, &stripe.BackendConfig{
+		URL: stripe.String(stripeServer.URL),
+	}))
+	stripe.Key = "sk_test_dummy"
+
+	// 2. Mock del servidor HTTP interno de tu app para "stopAllJobs"
+	internalServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer internalServer.Close()
+
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	portStr := strings.TrimPrefix(internalServer.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	repo := &fakeZonesRepo{
+		getByStripeSubID: &models.ZonesSubscriptions{
+			UserID:               uuid.New(),
+			TotalSlots:           5,
+			StripeSubscriptionID: "sub_fail_123",
+		},
+	}
+	emailSender := &fakeZonesEmailSender{}
+	service := NewSubscriptionService(conf, repo, emailSender)
+
+	// Estructura anidada para imitar invoice.Parent.SubscriptionDetails.Subscription.ID
+	obj := map[string]interface{}{
+		"id":             "in_fail_123",
+		"object":         "invoice",
+		"customer_email": "failed@example.com",
+		"amount_due":     1500,
+		"attempt_count":  1,
+		"parent": map[string]interface{}{
+			"subscription_details": map[string]interface{}{
+				"subscription": map[string]interface{}{
+					"id": "sub_fail_123",
+				},
+			},
+		},
+	}
+	payload := buildStripeEventPayload("invoice.payment_failed", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+
+	assert.NoError(t, err)
+	assert.True(t, emailSender.sendRejectedCalled) // Verifica que se envió el aviso de error
 }
