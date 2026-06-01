@@ -205,11 +205,11 @@ func (zs *zonesService) UpdateZonePlayerCount(worldID uuid.UUID, zoneID int, act
 	return zs.worldRepository.UpdateWorldZonePlayerCount(worldID, zoneID, activePlayers, averagePlayerTime)
 }
 
-func (zs *zonesService) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, error) {
+func (zs *zonesService) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, int, int, error) {
 	return zs.worldRepository.GetWorldZonePlayerCounts(worldID)
 }
 
-func (zs *zonesService) GetAllWorldZonePlayerCounts() (int, int, error) {
+func (zs *zonesService) GetAllWorldZonePlayerCounts() (int, int, int, int, error) {
 	return zs.worldRepository.GetAllWorldZonePlayerCounts()
 }
 

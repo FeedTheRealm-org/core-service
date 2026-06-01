@@ -291,15 +291,17 @@ func (c *serverRegistryController) GetWorldPlayerCounts(ctx *gin.Context) {
 		return
 	}
 
-	activePlayers, averagePlayerTime, err := c.zoneService.GetWorldZonePlayerCounts(worldId)
+	activePlayers, averagePlayerTime, maxActivePlayers, maxAveragePlayerTime, err := c.zoneService.GetWorldZonePlayerCounts(worldId)
 	if err != nil {
 		_ = ctx.Error(errors.NewInternalServerError("Failed to get world player count."))
 		return
 	}
 
 	response := &dtos.PlayerCountsResponse{
-		ActivePlayers:     activePlayers,
-		AveragePlayerTime: averagePlayerTime,
+		ActivePlayers:        activePlayers,
+		AveragePlayerTime:    averagePlayerTime,
+		MaxActivePlayers:     maxActivePlayers,
+		MaxAveragePlayerTime: maxAveragePlayerTime,
 	}
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, response)
@@ -314,15 +316,17 @@ func (c *serverRegistryController) GetWorldPlayerCounts(ctx *gin.Context) {
 // @Failure      500  {object} dtos.ErrorResponse
 // @Router       /world/orchestrator/players [get]
 func (c *serverRegistryController) GetAllWorldPlayerCounts(ctx *gin.Context) {
-	activePlayers, averagePlayerTime, err := c.zoneService.GetAllWorldZonePlayerCounts()
+	activePlayers, averagePlayerTime, maxActivePlayers, maxAveragePlayerTime, err := c.zoneService.GetAllWorldZonePlayerCounts()
 	if err != nil {
 		_ = ctx.Error(errors.NewInternalServerError("Failed to get all world player counts."))
 		return
 	}
 
 	responses := &dtos.PlayerCountsResponse{
-		ActivePlayers:     activePlayers,
-		AveragePlayerTime: averagePlayerTime,
+		ActivePlayers:        activePlayers,
+		AveragePlayerTime:    averagePlayerTime,
+		MaxActivePlayers:     maxActivePlayers,
+		MaxAveragePlayerTime: maxAveragePlayerTime,
 	}
 
 	common_handlers.HandleSuccessResponse(ctx, http.StatusOK, responses)
