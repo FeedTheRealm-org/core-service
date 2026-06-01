@@ -43,13 +43,14 @@ func (o OSName) Valid() bool {
 }
 
 type ExportZipResponse struct {
-	AppName   string    `json:"app_name"`
-	Version   string    `json:"version"`
-	OS        string    `json:"os"`
-	Path      string    `json:"path"`
-	IsLatest  bool      `json:"is_latest"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	AppName     string    `json:"app_name"`
+	Version     string    `json:"version"`
+	OS          string    `json:"os"`
+	Path        string    `json:"path"`
+	ReleaseNote string    `json:"release_note"`
+	IsLatest    bool      `json:"is_latest"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type ExportZipPathResponse struct {

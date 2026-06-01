@@ -10,4 +10,14 @@ To run all tests including acceptance tests inside an isolated docker environmen
 make test
 ```
 
-## TODO: Comprehensive Testing Strategy
+To run only Go unit tests:
+
+```bash
+make test-unit
+```
+
+To run only Python/behave acceptance tests:
+
+```bash
+make test-acceptance
+```

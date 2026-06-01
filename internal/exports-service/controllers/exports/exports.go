@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/FeedTheRealm-org/core-service/config"
 	"github.com/FeedTheRealm-org/core-service/internal/common_handlers"
@@ -42,6 +43,7 @@ func NewExportsController(conf *config.Config, service exports_service.ExportsSe
 // @Param        version formData string true "Version (vX.Y.Z)"
 // @Param        os formData string true "OS name"
 // @Param        file formData file true "Zip file"
+// @Param        release_note formData string false "Release notes"
 // @Success      201  {object}  dtos.ExportZipResponse
 // @Failure      400  {object}  dtos.ErrorResponse
 // @Failure      401  {object}  dtos.ErrorResponse
@@ -57,6 +59,7 @@ func (ec *exportsController) UploadZip(c *gin.Context) {
 	appNameStr := firstNonEmpty(c.PostForm("app"), c.PostForm("app_name"))
 	version := firstNonEmpty(c.PostForm("version"), c.PostForm("versiion"))
 	osNameStr := c.PostForm("os")
+	releaseNote := strings.TrimSpace(c.PostForm("release_note"))
 
 	// Validate inputs
 	appName := exports_dtos.AppName(appNameStr)
@@ -87,6 +90,10 @@ func (ec *exportsController) UploadZip(c *gin.Context) {
 		return
 	}
 
+	if releaseNote == "" {
+		releaseNote = "no release note provided."
+	}
+
 	zipFile, err := openMultipartFile(fileHeader)
 	if err != nil {
 		_ = c.Error(errors.NewBadRequestError("failed to open zip file"))
@@ -96,7 +103,7 @@ func (ec *exportsController) UploadZip(c *gin.Context) {
 		_ = zipFile.Close()
 	}()
 
-	exportZip, err := ec.service.UploadZip(appNameStr, version, osNameStr, zipFile)
+	exportZip, err := ec.service.UploadZip(appNameStr, version, osNameStr, releaseNote, zipFile)
 	if err != nil {
 		switch err.(type) {
 		case *exports_errors.ExportVersionConflict:
@@ -356,13 +363,14 @@ func validateVersionOptional(version string) error {
 
 func buildExportZipResponse(exportZip *models.ExportZip) exports_dtos.ExportZipResponse {
 	return exports_dtos.ExportZipResponse{
-		AppName:   exportZip.AppName,
-		Version:   exportZip.Version,
-		OS:        exportZip.OS,
-		Path:      exportZip.Path,
-		IsLatest:  exportZip.IsLatest,
-		CreatedAt: exportZip.CreatedAt,
-		UpdatedAt: exportZip.UpdatedAt,
+		AppName:     exportZip.AppName,
+		Version:     exportZip.Version,
+		OS:          exportZip.OS,
+		Path:        exportZip.Path,
+		IsLatest:    exportZip.IsLatest,
+		ReleaseNote: exportZip.ReleaseNote,
+		CreatedAt:   exportZip.CreatedAt,
+		UpdatedAt:   exportZip.UpdatedAt,
 	}
 }
 
