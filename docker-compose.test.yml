@@ -12,6 +12,8 @@ services:
       - DB_SHOULD_MIGRATE=true
       - SESSION_TOKEN_SECRET_KEY=test_secret_key
       - SESSION_TOKEN_DURATION=1h
+      - SERVER_ADMIN_EMAIL=admin@example.com
+      - SERVER_ADMIN_PASSWORD=AdminPass123!
     depends_on:
       test_db:
         condition: service_healthy
@@ -32,6 +34,8 @@ services:
       dockerfile: Dockerfile
     environment:
       - APP_BASE_URL=http://app:8000
+      - ADMIN_EMAIL=admin@example.com
+      - ADMIN_PASSWORD=AdminPass123!
     depends_on:
       - app
     networks:
