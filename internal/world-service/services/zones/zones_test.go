@@ -26,7 +26,9 @@ type fakeZonesRepo struct {
 	setOnlineErr   error
 	updateCountErr error
 	playerCounts   map[uuid.UUID][2]int
+	playerMaxes    map[uuid.UUID][2]int
 	allCounts      [2]int
+	allMaxes       [2]int
 }
 
 func newFakeZonesRepo() *fakeZonesRepo {
@@ -37,6 +39,7 @@ func newFakeZonesRepo() *fakeZonesRepo {
 		online:       make(map[string]bool),
 		userByWorld:  make(map[uuid.UUID]uuid.UUID),
 		playerCounts: make(map[uuid.UUID][2]int),
+		playerMaxes:  make(map[uuid.UUID][2]int),
 	}
 }
 
@@ -142,9 +145,10 @@ func (f *fakeZonesRepo) UpdateWorldZonePlayerCount(worldID uuid.UUID, zoneID int
 	return nil
 }
 
-func (f *fakeZonesRepo) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, error) {
+func (f *fakeZonesRepo) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, int, int, error) {
 	if counts, ok := f.playerCounts[worldID]; ok {
-		return counts[0], counts[1], nil
+		maxes := f.playerMaxes[worldID]
+		return counts[0], counts[1], maxes[0], maxes[1], nil
 	}
 	total := 0
 	avgSum := 0
@@ -160,12 +164,12 @@ func (f *fakeZonesRepo) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, e
 	if onlineCount > 0 {
 		avg = avgSum / onlineCount
 	}
-	return total, avg, nil
+	return total, avg, total, avg, nil
 }
 
-func (f *fakeZonesRepo) GetAllWorldZonePlayerCounts() (int, int, error) {
+func (f *fakeZonesRepo) GetAllWorldZonePlayerCounts() (int, int, int, int, error) {
 	if f.allCounts[0] != 0 || f.allCounts[1] != 0 {
-		return f.allCounts[0], f.allCounts[1], nil
+		return f.allCounts[0], f.allCounts[1], f.allMaxes[0], f.allMaxes[1], nil
 	}
 	total := 0
 	avgSum := 0
@@ -183,7 +187,7 @@ func (f *fakeZonesRepo) GetAllWorldZonePlayerCounts() (int, int, error) {
 	if onlineCount > 0 {
 		avg = avgSum / onlineCount
 	}
-	return total, avg, nil
+	return total, avg, total, avg, nil
 }
 
 func (f *fakeZonesRepo) GetUserIdByWorldId(worldID uuid.UUID) (uuid.UUID, error) {
@@ -342,15 +346,19 @@ func TestZonesService_PlayerCounts(t *testing.T) {
 	conf := config.CreateConfig()
 	svc := NewZonesService(conf, repo, registry)
 
-	total, avg, err := svc.GetWorldZonePlayerCounts(worldID)
+	total, avg, maxTotal, maxAvg, err := svc.GetWorldZonePlayerCounts(worldID)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, total)
 	assert.Equal(t, 10, avg)
+	assert.Equal(t, 3, maxTotal)
+	assert.Equal(t, 10, maxAvg)
 
-	totalAll, avgAll, err := svc.GetAllWorldZonePlayerCounts()
+	totalAll, avgAll, maxAllTotal, maxAllAvg, err := svc.GetAllWorldZonePlayerCounts()
 	assert.NoError(t, err)
 	assert.Equal(t, 3, totalAll)
 	assert.Equal(t, 10, avgAll)
+	assert.Equal(t, 3, maxAllTotal)
+	assert.Equal(t, 10, maxAllAvg)
 }
 
 func TestZonesService_CheckAvailableZones(t *testing.T) {

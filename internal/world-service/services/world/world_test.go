@@ -32,6 +32,8 @@ type fakeWorldRepo struct {
 	deleteErr             error
 	deleteCalled          bool
 	getWorldDataCallCount int
+	worldPlayerCounts     [4]int
+	allPlayerCounts       [4]int
 }
 
 func (f *fakeWorldRepo) StoreWorldData(newWorldData *models.WorldData) (*models.WorldData, error) {
@@ -108,12 +110,12 @@ func (f *fakeWorldRepo) UpdateWorldZonePlayerCount(worldID uuid.UUID, zoneID int
 	return nil
 }
 
-func (f *fakeWorldRepo) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, error) {
-	return 0, 0, nil
+func (f *fakeWorldRepo) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, int, int, error) {
+	return f.worldPlayerCounts[0], f.worldPlayerCounts[1], f.worldPlayerCounts[2], f.worldPlayerCounts[3], nil
 }
 
-func (f *fakeWorldRepo) GetAllWorldZonePlayerCounts() (int, int, error) {
-	return 0, 0, nil
+func (f *fakeWorldRepo) GetAllWorldZonePlayerCounts() (int, int, int, int, error) {
+	return f.allPlayerCounts[0], f.allPlayerCounts[1], f.allPlayerCounts[2], f.allPlayerCounts[3], nil
 }
 
 func (f *fakeWorldRepo) GetUserIdByWorldId(worldID uuid.UUID) (uuid.UUID, error) {

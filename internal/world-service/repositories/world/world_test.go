@@ -195,15 +195,19 @@ func TestWorldRepository_ActiveZonesAndCounts(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, active)
 
-	totalPlayers, avgTime, err := worldRepo.GetWorldZonePlayerCounts(created.ID)
+	totalPlayers, avgTime, maxPlayers, maxAvgTime, err := worldRepo.GetWorldZonePlayerCounts(created.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, 8, totalPlayers)
 	assert.Equal(t, 15, avgTime)
+	assert.GreaterOrEqual(t, maxPlayers, 8)
+	assert.GreaterOrEqual(t, maxAvgTime, 15)
 
-	totalAll, avgAll, err := worldRepo.GetAllWorldZonePlayerCounts()
+	totalAll, avgAll, maxAllPlayers, maxAllAvgTime, err := worldRepo.GetAllWorldZonePlayerCounts()
 	assert.NoError(t, err)
 	assert.True(t, totalAll >= 8)
 	assert.True(t, avgAll >= 10)
+	assert.GreaterOrEqual(t, maxAllPlayers, 8)
+	assert.GreaterOrEqual(t, maxAllAvgTime, 10)
 }
 
 func TestWorldRepository_UserAndZonesSummary(t *testing.T) {
