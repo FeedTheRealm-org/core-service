@@ -1,6 +1,10 @@
 package dtos
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type AddCosmeticCategoryRequest struct {
 	CategoryName string `json:"category_name" binding:"required"`
@@ -14,6 +18,7 @@ type CosmeticCategoryResponse struct {
 type CosmeticResponse struct {
 	CosmeticId  uuid.UUID `json:"cosmetic_id"`
 	CosmeticUrl string    `json:"cosmetic_url"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type InternalCosmeticResponse struct {

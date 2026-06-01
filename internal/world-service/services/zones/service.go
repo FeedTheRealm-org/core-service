@@ -31,11 +31,11 @@ type ZonesService interface {
 	// UpdateZonePlayerCount updates active player count and average player time for a zone.
 	UpdateZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int, averagePlayerTime int) error
 
-	// GetWorldZonePlayerCounts returns zones with player counts for a world.
-	GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, error)
+	// GetWorldZonePlayerCounts returns player counts for a world with historic max values.
+	GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, int, int, error)
 
-	// GetAllWorldZonePlayerCounts returns zones with player counts for all worlds.
-	GetAllWorldZonePlayerCounts() (int, int, error)
+	// GetAllWorldZonePlayerCounts returns player counts for all worlds with historic max values.
+	GetAllWorldZonePlayerCounts() (int, int, int, int, error)
 
 	// StopAllZonesForUser stops all active zones for a specific user.
 	StopAllZonesForUser(userID uuid.UUID) error

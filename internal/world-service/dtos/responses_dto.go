@@ -61,6 +61,8 @@ type WorldZoneResponse struct {
 }
 
 type PlayerCountsResponse struct {
-	ActivePlayers     int `json:"active_players"`
-	AveragePlayerTime int `json:"average_player_time"`
+	ActivePlayers        int `json:"active_players"`
+	AveragePlayerTime    int `json:"average_player_time"`
+	MaxActivePlayers     int `json:"max_active_players"`
+	MaxAveragePlayerTime int `json:"max_average_player_time"`
 }

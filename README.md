@@ -1,6 +1,5 @@
 # Feed the Realm Core-service
 
-
 [![codecov](https://codecov.io/gh/FeedTheRealm-org/core-service/graph/badge.svg?token=S7NI26WBRL)](https://codecov.io/gh/FeedTheRealm-org/core-service)
 
 Monolithic backend for all adjacent services to the game.
@@ -24,13 +23,14 @@ For detailed information, please refer to the specific documentation files in th
 - [Docker](https://docs.docker.com/)
 - [Swaggo](https://github.com/swaggo/swag)
 - [Nomad (via hashicorp)](https://developer.hashicorp.com/nomad)
+- [golang-migrate](https://github.com/golang-migrate/migrate)
 
 ## Quick Start
 
 ### Dependencies
 
 - Install [golang](https://go.dev/doc/install)
-- Intall [Docker & Docker Compose](https://docs.docker.com/get-docker/)
+- Install [Docker & Docker Compose](https://docs.docker.com/get-docker/)
 - Install `make`
 
 ### Development
@@ -48,14 +48,11 @@ make dev
 How to use docker to build and run server.
 
 ```bash
-# Build docker image
-docker build -t core-service .
+# Setup environment variables
+cp .env.example .env
 
-# Run dockerized container
-docker run --rm -p <any_port>:8080 core-service:latest
-
-# Cleanup image
-docker rmi join-travel-back:latest
+# Run production environment
+make up-build
 ```
 
 ## How to test
@@ -80,9 +77,22 @@ make dev          # Starts detached containers and an interactive shell
 make up-build     # Builds & starts production profile containers, or just: make up
 make build        # Builds production profile containers
 make down         # Stops all running containers
+make logs         # Tail logs from all containers
+make logs-<svc>   # Tail logs from a specific service (e.g. make logs-db)
+make db           # Open a psql shell in the Postgres container
+make clean        # Remove all containers, images, and local bucket data
 
 # Testing commands
-make test         # Build, run, and execute tests in a clean Docker environment
+make test             # Build, run, and execute tests in a clean Docker environment
+make test-unit        # Run Go unit tests only
+make test-acceptance  # Run Python/behave acceptance tests only
+
+# Database migrations
+make migration service=<name> name=<migration_name>  # Create a new migration file
+
+# Data seeding
+make seed ASSETS_BASE_PATH=<path>                          # Seed local environment
+make seed-prod ASSETS_BASE_PATH=<path> JWT_TOKEN=<token>   # Seed production
 
 # Documentation
 make swagger      # Generate Swagger documentation
@@ -106,4 +116,4 @@ http://localhost:8000/swagger/index.html
 
 ## Maintenance Scripts
 
-Check the [Development Guide](docs/development.md) for full descriptions of maintenance scripts like `seed_items.sh` and `reset_items_data.sh`.
+Check the [Development Guide](docs/development.md) for full descriptions of maintenance scripts like `seed_initial_cosmetics.py`.

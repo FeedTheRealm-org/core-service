@@ -3612,11 +3612,6 @@ const docTemplate = `{
         },
         "/world/orchestrator/players": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Returns player counts for all worlds.",
                 "produces": [
                     "application/json"
@@ -3684,11 +3679,6 @@ const docTemplate = `{
         },
         "/world/orchestrator/{id}/players": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Returns player counts per zone for a world.",
                 "produces": [
                     "application/json"
@@ -4729,6 +4719,9 @@ const docTemplate = `{
                 },
                 "cosmetic_url": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -5130,6 +5123,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "model_id": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 },
                 "url": {

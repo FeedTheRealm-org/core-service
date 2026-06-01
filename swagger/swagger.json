@@ -3605,11 +3605,6 @@
         },
         "/world/orchestrator/players": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Returns player counts for all worlds.",
                 "produces": [
                     "application/json"
@@ -3677,11 +3672,6 @@
         },
         "/world/orchestrator/{id}/players": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Returns player counts per zone for a world.",
                 "produces": [
                     "application/json"
@@ -4722,6 +4712,9 @@
                 },
                 "cosmetic_url": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -5123,6 +5116,9 @@
             "type": "object",
             "properties": {
                 "model_id": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 },
                 "url": {

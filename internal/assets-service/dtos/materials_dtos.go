@@ -2,6 +2,7 @@ package dtos
 
 import (
 	"mime/multipart"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -18,6 +19,6 @@ type MaterialResponse struct {
 	Name         string    `json:"name,omitempty"`
 	WorldID      uuid.UUID `json:"world_id,omitempty"`
 	URL          string    `json:"url,omitempty"`
-	CreatedAt    string    `json:"created_at,omitempty"`
-	UpdatedAt    string    `json:"updated_at,omitempty"`
+	CreatedAt    time.Time `json:"created_at,omitempty"`
+	UpdatedAt    time.Time `json:"updated_at,omitempty"`
 }

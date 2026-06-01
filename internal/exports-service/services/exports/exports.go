@@ -26,7 +26,7 @@ func NewExportsService(conf *config.Config, repository exports_repo.ExportReposi
 	}
 }
 
-func (es *exportsService) UploadZip(appName, version, osName string, zipFile multipart.File) (*models.ExportZip, error) {
+func (es *exportsService) UploadZip(appName, version, osName, releaseNote string, zipFile multipart.File) (*models.ExportZip, error) {
 	filePath := buildExportFilePath(appName, version, osName)
 
 	if err := es.bucketRepo.UploadFile(filePath, "application/zip", zipFile); err != nil {
@@ -35,11 +35,12 @@ func (es *exportsService) UploadZip(appName, version, osName string, zipFile mul
 	}
 
 	exportZip := &models.ExportZip{
-		AppName:  appName,
-		Version:  version,
-		OS:       osName,
-		Path:     fmt.Sprintf("/%s", filePath),
-		IsLatest: false,
+		AppName:     appName,
+		Version:     version,
+		OS:          osName,
+		Path:        fmt.Sprintf("/%s", filePath),
+		ReleaseNote: releaseNote,
+		IsLatest:    false,
 	}
 
 	if err := es.repository.CreateExportVersion(exportZip); err != nil {

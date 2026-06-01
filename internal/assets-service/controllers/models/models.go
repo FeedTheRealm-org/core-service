@@ -58,8 +58,9 @@ func (mc *modelsController) GetModelsList(c *gin.Context) {
 	modelResponseList := make([]dtos.ModelResponse, len(modelsList))
 	for i, model := range modelsList {
 		modelResponseList[i] = dtos.ModelResponse{
-			ModelID: model.Id,
-			Url:     model.Url,
+			ModelID:   model.Id,
+			Url:       model.Url,
+			UpdatedAt: model.UpdatedAt,
 		}
 	}
 
@@ -135,8 +136,9 @@ func (mc *modelsController) UploadModel(c *gin.Context) {
 	}
 
 	common_handlers.HandleSuccessResponse(c, http.StatusCreated, dtos.ModelResponse{
-		ModelID: savedModel.Id,
-		Url:     savedModel.Url,
+		ModelID:   savedModel.Id,
+		Url:       savedModel.Url,
+		UpdatedAt: savedModel.UpdatedAt,
 	})
 }
 

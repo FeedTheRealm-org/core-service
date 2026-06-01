@@ -90,8 +90,8 @@ func (mc *materialsController) GetMaterialsList(c *gin.Context) {
 			Name:      material.Name,
 			URL:       material.URL,
 			WorldID:   material.WorldID,
-			CreatedAt: material.CreatedAt.String(),
-			UpdatedAt: material.UpdatedAt.String(),
+			CreatedAt: material.CreatedAt,
+			UpdatedAt: material.UpdatedAt,
 		}
 	}
 
@@ -139,8 +139,8 @@ func (mc *materialsController) GetMaterialByID(c *gin.Context) {
 		Name:      material.Name,
 		URL:       material.URL,
 		WorldID:   material.WorldID,
-		CreatedAt: material.CreatedAt.String(),
-		UpdatedAt: material.UpdatedAt.String(),
+		CreatedAt: material.CreatedAt,
+		UpdatedAt: material.UpdatedAt,
 	}
 
 	common_handlers.HandleSuccessResponse(c, http.StatusOK, res)
@@ -221,8 +221,8 @@ func (mc *materialsController) UploadMaterials(c *gin.Context) {
 			Name:      material.Name,
 			URL:       material.URL,
 			WorldID:   material.WorldID,
-			CreatedAt: material.CreatedAt.String(),
-			UpdatedAt: material.UpdatedAt.String(),
+			CreatedAt: material.CreatedAt,
+			UpdatedAt: material.UpdatedAt,
 		})
 
 		i++
