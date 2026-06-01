@@ -226,56 +226,126 @@ func (r *worldRepository) GetActiveWorldZones() ([]*models.WorldZone, error) {
 }
 
 func (r *worldRepository) UpdateWorldZonePlayerCount(worldID uuid.UUID, zoneID int, activePlayers int, averagePlayerTime int) error {
-	result := r.db.Conn.Model(&models.WorldZone{}).
-		Where("world_id = ? AND id = ?", worldID, zoneID).
-		Updates(map[string]any{
-			"active_players":          activePlayers,
-			"average_player_time":     averagePlayerTime,
-			"player_count_updated_at": time.Now().UTC(),
-		})
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
-	}
-	return nil
+	return r.db.Conn.Transaction(func(tx *gorm.DB) error {
+		result := tx.Model(&models.WorldZone{}).
+			Where("world_id = ? AND id = ?", worldID, zoneID).
+			Updates(map[string]any{
+				"active_players":          activePlayers,
+				"average_player_time":     averagePlayerTime,
+				"player_count_updated_at": time.Now().UTC(),
+			})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+
+		worldTotal, worldAvg, err := r.getWorldPlayerTotals(tx, worldID)
+		if err != nil {
+			return err
+		}
+		if err := r.updateWorldMaxMetrics(tx, worldID, worldTotal, worldAvg); err != nil {
+			return err
+		}
+
+		globalTotal, globalAvg, err := r.getGlobalPlayerTotals(tx)
+		if err != nil {
+			return err
+		}
+		return r.updateGlobalMaxMetrics(tx, globalTotal, globalAvg)
+	})
 }
 
-func (r *worldRepository) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, error) {
+func (r *worldRepository) GetWorldZonePlayerCounts(worldID uuid.UUID) (int, int, int, int, error) {
+	activePlayers, avgPlayerTime, err := r.getWorldPlayerTotals(r.db.Conn, worldID)
+	if err != nil {
+		return 0, 0, 0, 0, err
+	}
+
+	var maxMetrics struct {
+		MaxActivePlayers     int
+		MaxAveragePlayerTime int
+	}
+	maxErr := r.db.Conn.Model(&models.WorldData{}).
+		Select("max_active_players, max_average_player_time").
+		Where("id = ?", worldID).
+		First(&maxMetrics).Error
+	if maxErr != nil && !errors.Is(maxErr, gorm.ErrRecordNotFound) {
+		return 0, 0, 0, 0, maxErr
+	}
+
+	return activePlayers, avgPlayerTime, maxMetrics.MaxActivePlayers, maxMetrics.MaxAveragePlayerTime, nil
+}
+
+func (r *worldRepository) GetAllWorldZonePlayerCounts() (int, int, int, int, error) {
+	activePlayers, avgPlayerTime, err := r.getGlobalPlayerTotals(r.db.Conn)
+	if err != nil {
+		return 0, 0, 0, 0, err
+	}
+
+	var maxMetrics struct {
+		MaxActivePlayers     int
+		MaxAveragePlayerTime int
+	}
+	maxErr := r.db.Conn.Table("global_player_metrics").
+		Select("max_active_players, max_average_player_time").
+		Where("id = 1").
+		First(&maxMetrics).Error
+	if maxErr != nil && !errors.Is(maxErr, gorm.ErrRecordNotFound) {
+		return 0, 0, 0, 0, maxErr
+	}
+
+	return activePlayers, avgPlayerTime, maxMetrics.MaxActivePlayers, maxMetrics.MaxAveragePlayerTime, nil
+}
+
+func (r *worldRepository) getWorldPlayerTotals(tx *gorm.DB, worldID uuid.UUID) (int, int, error) {
 	var result struct {
 		TotalActivePlayers int
 		AvgPlayerTime      float64
 	}
-
-	err := r.db.Conn.Model(&models.WorldZone{}).
+	if err := tx.Model(&models.WorldZone{}).
 		Select("COALESCE(SUM(active_players), 0) as total_active_players, COALESCE(AVG(average_player_time), 0) as avg_player_time").
 		Where("world_id = ? AND is_online = ?", worldID, true).
-		Scan(&result).Error
-
-	if err != nil {
+		Scan(&result).Error; err != nil {
 		return 0, 0, err
 	}
-
 	return result.TotalActivePlayers, int(result.AvgPlayerTime), nil
 }
 
-func (r *worldRepository) GetAllWorldZonePlayerCounts() (int, int, error) {
+func (r *worldRepository) getGlobalPlayerTotals(tx *gorm.DB) (int, int, error) {
 	var result struct {
 		TotalActivePlayers int
 		AvgPlayerTime      float64
 	}
-
-	err := r.db.Conn.Model(&models.WorldZone{}).
+	if err := tx.Model(&models.WorldZone{}).
 		Select("COALESCE(SUM(active_players), 0) as total_active_players, COALESCE(AVG(average_player_time), 0) as avg_player_time").
 		Where("is_online = ?", true).
-		Scan(&result).Error
-
-	if err != nil {
+		Scan(&result).Error; err != nil {
 		return 0, 0, err
 	}
-
 	return result.TotalActivePlayers, int(result.AvgPlayerTime), nil
+}
+
+func (r *worldRepository) updateWorldMaxMetrics(tx *gorm.DB, worldID uuid.UUID, currentActive int, currentAvg int) error {
+	return tx.Model(&models.WorldData{}).
+		Where("id = ?", worldID).
+		UpdateColumns(map[string]any{
+			"max_active_players":      gorm.Expr("GREATEST(max_active_players, ?)", currentActive),
+			"max_average_player_time": gorm.Expr("GREATEST(max_average_player_time, ?)", currentAvg),
+		}).Error
+}
+
+func (r *worldRepository) updateGlobalMaxMetrics(tx *gorm.DB, currentActive int, currentAvg int) error {
+	return tx.Exec(
+		"INSERT INTO global_player_metrics (id, max_active_players, max_average_player_time, updated_at) VALUES (1, ?, ?, ?) "+
+			"ON CONFLICT (id) DO UPDATE SET max_active_players = GREATEST(global_player_metrics.max_active_players, EXCLUDED.max_active_players), "+
+			"max_average_player_time = GREATEST(global_player_metrics.max_average_player_time, EXCLUDED.max_average_player_time), "+
+			"updated_at = EXCLUDED.updated_at",
+		currentActive,
+		currentAvg,
+		time.Now().UTC(),
+	).Error
 }
 
 func (wr *worldRepository) GetWorldIdsByUserId(userId uuid.UUID) ([]uuid.UUID, error) {

@@ -8,12 +8,14 @@ import (
 )
 
 type WorldData struct {
-	ID             uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	UserId         uuid.UUID      `gorm:"not null"`
-	Name           string         `gorm:"unique;not null"`
-	Description    string         `gorm:"type:text"`
-	Data           datatypes.JSON `gorm:"type:jsonb;not null"`
-	CreateableData datatypes.JSON `gorm:"type:jsonb;not null;default:'{}'"`
-	CreatedAt      time.Time      `gorm:"autoCreateTime"`
-	UpdatedAt      time.Time      `gorm:"autoUpdateTime"`
+	ID                   uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserId               uuid.UUID      `gorm:"not null"`
+	Name                 string         `gorm:"unique;not null"`
+	Description          string         `gorm:"type:text"`
+	Data                 datatypes.JSON `gorm:"type:jsonb;not null"`
+	CreateableData       datatypes.JSON `gorm:"type:jsonb;not null;default:'{}'"`
+	MaxActivePlayers     int            `gorm:"not null;default:0"`
+	MaxAveragePlayerTime int            `gorm:"not null;default:0"`
+	CreatedAt            time.Time      `gorm:"autoCreateTime"`
+	UpdatedAt            time.Time      `gorm:"autoUpdateTime"`
 }
