@@ -211,3 +211,41 @@ func TestItemRepository_GetAllItems_Multiple(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, items, 5)
 }
+
+func TestItemRepository_Errors_Coverage(t *testing.T) {
+	badDB := &config.DB{
+		Conn: itemsDB.Conn.Table("non_existent_table_forced_error"),
+	}
+	badRepo := itemsrepo.NewItemRepository(itemsConf, badDB)
+	id := uuid.New()
+
+	t.Run("UpsertItem_DB_Error", func(t *testing.T) {
+		item := &models.Item{Id: id}
+		err := badRepo.UpsertItem(item)
+		assert.Error(t, err)
+	})
+
+	t.Run("GetItemById_DB_Error", func(t *testing.T) {
+		_, err := badRepo.GetItemById(id)
+		assert.Error(t, err)
+		var notFound *assets_errors.ItemSpriteNotFound
+		assert.False(t, errors.As(err, &notFound))
+	})
+
+	t.Run("GetAllItems_DB_Error", func(t *testing.T) {
+		_, err := badRepo.GetAllItems()
+		assert.Error(t, err)
+	})
+
+	t.Run("GetItemsListByWorld_DB_Error", func(t *testing.T) {
+		_, err := badRepo.GetItemsListByWorld(id)
+		assert.Error(t, err)
+		var worldNotFound *assets_errors.WorldNotFound
+		assert.False(t, errors.As(err, &worldNotFound))
+	})
+
+	t.Run("DeleteSprite_DB_Error", func(t *testing.T) {
+		err := badRepo.DeleteSprite(id)
+		assert.Error(t, err)
+	})
+}
