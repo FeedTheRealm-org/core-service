@@ -37,7 +37,10 @@ func TestMain(m *testing.M) {
 	if testDB != nil && testDB.Conn != nil {
 		sqlDB, _ := testDB.Conn.DB()
 		if sqlDB != nil {
-			sqlDB.Close()
+			err = sqlDB.Close()
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 
