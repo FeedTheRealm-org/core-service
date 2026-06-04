@@ -13,10 +13,41 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	testDB   *config.DB
+	testRepo exports.ExportRepository
+)
+
 func TestMain(m *testing.M) {
 	logger.InitLogger(false)
+
+	conf := config.CreateConfig()
+	var err error
+	testDB, err = config.NewDB(conf)
+	if err != nil {
+		panic(err)
+	}
+
+	cleanupRepoExports(testDB)
+
+	testRepo = exports.NewExportRepository(conf, testDB)
+
 	code := m.Run()
+
+	if testDB != nil && testDB.Conn != nil {
+		sqlDB, _ := testDB.Conn.DB()
+		if sqlDB != nil {
+			sqlDB.Close()
+		}
+	}
+
 	os.Exit(code)
+}
+
+func newExportsRepo(t *testing.T) exports.ExportRepository {
+	t.Helper()
+	cleanupRepoExports(testDB)
+	return testRepo
 }
 
 func repoTestAppName(prefix string) string {
@@ -160,17 +191,6 @@ func TestExportRepository_SetLatestExportVersion(t *testing.T) {
 	oldLatest, err := repo.GetExportVersion(appName, "1.0.0", "linux")
 	assert.NoError(t, err)
 	assert.False(t, oldLatest.IsLatest, "expected old version to lose latest status")
-}
-
-func newExportsRepo(t *testing.T) exports.ExportRepository {
-	t.Helper()
-	conf := config.CreateConfig()
-	db, err := config.NewDB(conf)
-	if err != nil {
-		t.Fatalf("failed to connect DB: %v", err)
-	}
-	cleanupRepoExports(db)
-	return exports.NewExportRepository(conf, db)
 }
 
 func TestExportRepository_CreateExportVersion_Duplicate(t *testing.T) {
