@@ -53,3 +53,5 @@ github.com/FeedTheRealm-org/core-service/internal/world-service/dtos
 github.com/FeedTheRealm-org/core-service/internal/world-service/repositories/server_registry
 github.com/FeedTheRealm-org/core-service/internal/world-service/services/server_registry
 github.com/FeedTheRealm-org/core-service/internal/world-service/router
+github.com/FeedTheRealm-org/core-service/internal/middleware/github_oidc_check.go
+github.com/FeedTheRealm-org/core-service/internal/middleware/multipart_cleanup.go
