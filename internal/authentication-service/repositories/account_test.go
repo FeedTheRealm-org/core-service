@@ -274,3 +274,165 @@ func TestAccountRepository_GetPasswordResetByTokenHash_NotFound(t *testing.T) {
 	_, notFound := err.(*repositories.AccountNotFoundError)
 	assert.True(t, notFound)
 }
+
+func TestAccountRepository_GetAccountByEmail_Found(t *testing.T) {
+	_, repo := setupTest(t)
+
+	email := repoTestEmail("found")
+	user := &models.User{Email: email, Password: "hashed"}
+	assert.NoError(t, repo.CreateAccount(user, "code"))
+
+	found, err := repo.GetAccountByEmail(email)
+	assert.NoError(t, err)
+	assert.NotNil(t, found)
+	assert.Equal(t, email, found.Email)
+}
+
+func TestAccountRepository_GetAccountById_NotFound(t *testing.T) {
+	_, repo := setupTest(t)
+
+	result, err := repo.GetAccountById(uuid.New())
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestAccountRepository_ListAccounts_NoFilter(t *testing.T) {
+	db, repo := setupTest(t)
+	_ = db
+
+	for i := 0; i < 3; i++ {
+		u := &models.User{Email: repoTestEmail("list-nofilter"), Password: "hashed"}
+		assert.NoError(t, repo.CreateAccount(u, "code"))
+	}
+
+	users, total, err := repo.ListAccounts("", nil, 0, 100)
+	assert.NoError(t, err)
+	assert.GreaterOrEqual(t, total, int64(3))
+	assert.GreaterOrEqual(t, len(users), 3)
+}
+
+func TestAccountRepository_ListAccounts_VerifiedFalse(t *testing.T) {
+	db, repo := setupTest(t)
+	_ = db
+
+	u := &models.User{Email: repoTestEmail("unverified"), Password: "hashed"}
+	assert.NoError(t, repo.CreateAccount(u, "code"))
+
+	unverified := false
+	users, total, err := repo.ListAccounts("", &unverified, 0, 100)
+	assert.NoError(t, err)
+	assert.GreaterOrEqual(t, total, int64(1))
+	for _, usr := range users {
+		assert.False(t, usr.Verified)
+	}
+}
+
+func TestAccountRepository_ListAccounts_Pagination(t *testing.T) {
+	db, repo := setupTest(t)
+	_ = db
+
+	for i := 0; i < 5; i++ {
+		u := &models.User{Email: repoTestEmail("paginate"), Password: "hashed"}
+		assert.NoError(t, repo.CreateAccount(u, "code"))
+	}
+
+	page1, total, err := repo.ListAccounts("paginate", nil, 0, 2)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(5), total)
+	assert.Len(t, page1, 2)
+
+	page2, _, err := repo.ListAccounts("paginate", nil, 2, 2)
+	assert.NoError(t, err)
+	assert.Len(t, page2, 2)
+}
+
+func TestAccountRepository_UpdateAdminStatus_Toggle(t *testing.T) {
+	_, repo := setupTest(t)
+
+	user := &models.User{Email: repoTestEmail("toggle-admin"), Password: "hashed"}
+	assert.NoError(t, repo.CreateAccount(user, "code"))
+
+	assert.NoError(t, repo.UpdateAdminStatus(user.Id, true))
+	stored, err := repo.GetAccountById(user.Id)
+	assert.NoError(t, err)
+	assert.True(t, stored.IsAdmin)
+
+	assert.NoError(t, repo.UpdateAdminStatus(user.Id, false))
+	stored, err = repo.GetAccountById(user.Id)
+	assert.NoError(t, err)
+	assert.False(t, stored.IsAdmin)
+}
+
+func TestAccountRepository_IncrementPasswordResetAttempts_Multiple(t *testing.T) {
+	_, repo := setupTest(t)
+
+	user := &models.User{Email: repoTestEmail("inc-attempts"), Password: "hashed"}
+	assert.NoError(t, repo.CreateAccount(user, "code"))
+
+	reset, err := repo.CreatePasswordReset(user.Id, "hash", time.Now().Add(time.Minute))
+	assert.NoError(t, err)
+
+	for i := 0; i < 3; i++ {
+		assert.NoError(t, repo.IncrementPasswordResetAttempts(reset.Id))
+	}
+
+	active, err := repo.GetActivePasswordResetByUserID(user.Id)
+	assert.NoError(t, err)
+	assert.Equal(t, 3, active.Attempts)
+}
+
+func TestAccountRepository_UpdatePassword_ChangesHash(t *testing.T) {
+	_, repo := setupTest(t)
+
+	user := &models.User{Email: repoTestEmail("update-pwd"), Password: "original_hash"}
+	assert.NoError(t, repo.CreateAccount(user, "code"))
+
+	assert.NoError(t, repo.UpdatePassword(user.Id, "new_hash"))
+
+	stored, err := repo.GetAccountById(user.Id)
+	assert.NoError(t, err)
+	assert.Equal(t, "new_hash", stored.Password)
+}
+
+func TestAccountRepository_VerifyAccount_WrongCode_ThenCorrect(t *testing.T) {
+	_, repo := setupTest(t)
+
+	email := repoTestEmail("wrong-then-correct")
+	code := "rightcode"
+	user := &models.User{Email: email, Password: "hashed"}
+	assert.NoError(t, repo.CreateAccount(user, code))
+
+	// Un intento fallido
+	err := repo.VerifyAccount(user, "wrongcode", time.Now())
+	assert.Error(t, err)
+
+	// El código correcto debe funcionar aun así
+	userFromDb, err := repo.GetAccountByEmail(email)
+	assert.NoError(t, err)
+	err = repo.VerifyAccount(userFromDb, code, time.Now())
+	assert.NoError(t, err)
+	assert.True(t, userFromDb.Verified)
+}
+
+func TestAccountRepository_CreatePasswordReset_MultipleInvalidated(t *testing.T) {
+	_, repo := setupTest(t)
+
+	user := &models.User{Email: repoTestEmail("multi-reset"), Password: "hashed"}
+	assert.NoError(t, repo.CreateAccount(user, "code"))
+
+	reset1, err := repo.CreatePasswordReset(user.Id, "hash1", time.Now().Add(time.Minute))
+	assert.NoError(t, err)
+	assert.NotNil(t, reset1)
+
+	reset2, err := repo.CreatePasswordReset(user.Id, "hash2", time.Now().Add(time.Minute))
+	assert.NoError(t, err)
+	assert.NotNil(t, reset2)
+
+	// Invalidar todos
+	assert.NoError(t, repo.InvalidateAllPasswordResets(user.Id))
+
+	// Ninguno debe ser activo
+	active, err := repo.GetActivePasswordResetByUserID(user.Id)
+	assert.Error(t, err)
+	assert.Nil(t, active)
+}

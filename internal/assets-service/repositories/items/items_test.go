@@ -124,3 +124,90 @@ func TestItemRepository_UpsertItem_DefaultValues(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEqual(t, uuid.Nil, item.Id)
 }
+
+func TestItemRepository_GetItemsListByWorld_Empty(t *testing.T) {
+	clearItemsTable()
+	items, err := itemsRepo.GetItemsListByWorld(uuid.New())
+	assert.NoError(t, err)
+	assert.Empty(t, items)
+}
+
+func TestItemRepository_GetAllItems_Empty(t *testing.T) {
+	clearItemsTable()
+	items, err := itemsRepo.GetAllItems()
+	assert.NoError(t, err)
+	assert.Empty(t, items)
+}
+
+func TestItemRepository_DeleteSprite_Nonexistent(t *testing.T) {
+	clearItemsTable()
+	err := itemsRepo.DeleteSprite(uuid.New())
+	assert.NoError(t, err)
+}
+
+func TestItemRepository_GetItemsListByWorld_MultipleWorlds(t *testing.T) {
+	clearItemsTable()
+
+	worldA := uuid.New()
+	worldB := uuid.New()
+	creator := uuid.New()
+
+	for i := 0; i < 3; i++ {
+		assert.NoError(t, itemsRepo.UpsertItem(&models.Item{
+			Id:        uuid.New(),
+			WorldID:   worldA,
+			Url:       "/a/" + uuid.NewString() + ".png",
+			CreatedBy: creator,
+		}))
+	}
+	assert.NoError(t, itemsRepo.UpsertItem(&models.Item{
+		Id:        uuid.New(),
+		WorldID:   worldB,
+		Url:       "/b/x.png",
+		CreatedBy: creator,
+	}))
+
+	itemsA, err := itemsRepo.GetItemsListByWorld(worldA)
+	assert.NoError(t, err)
+	assert.Len(t, itemsA, 3)
+
+	itemsB, err := itemsRepo.GetItemsListByWorld(worldB)
+	assert.NoError(t, err)
+	assert.Len(t, itemsB, 1)
+}
+
+func TestItemRepository_UpsertItem_PreservesWorldID(t *testing.T) {
+	clearItemsTable()
+
+	itemID := uuid.New()
+	worldID := uuid.New()
+	creator := uuid.New()
+
+	assert.NoError(t, itemsRepo.UpsertItem(&models.Item{Id: itemID, WorldID: worldID, Url: "/original.png", CreatedBy: creator}))
+	assert.NoError(t, itemsRepo.UpsertItem(&models.Item{Id: itemID, WorldID: worldID, Url: "/updated.png", CreatedBy: creator}))
+
+	stored, err := itemsRepo.GetItemById(itemID)
+	assert.NoError(t, err)
+	assert.Equal(t, worldID, stored.WorldID)
+	assert.Equal(t, "/updated.png", stored.Url)
+}
+
+func TestItemRepository_GetAllItems_Multiple(t *testing.T) {
+	clearItemsTable()
+
+	creator := uuid.New()
+	worldID := uuid.New()
+
+	for i := 0; i < 5; i++ {
+		assert.NoError(t, itemsRepo.UpsertItem(&models.Item{
+			Id:        uuid.New(),
+			WorldID:   worldID,
+			Url:       "/item-" + uuid.NewString() + ".png",
+			CreatedBy: creator,
+		}))
+	}
+
+	items, err := itemsRepo.GetAllItems()
+	assert.NoError(t, err)
+	assert.Len(t, items, 5)
+}

@@ -746,3 +746,244 @@ func TestAccountService_ValidateRefreshToken_NotFound(t *testing.T) {
 	_, notFound := err.(*AccountNotFoundError)
 	assert.True(t, notFound)
 }
+
+func TestAccountService_LoginAccount_Success(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	jwtManager := session.NewJWTManager("access", "refresh", time.Minute, time.Hour)
+
+	hashed, err := hashing.HashPassword("Password1")
+	require.NoError(t, err)
+	user := &models.User{Id: uuid.New(), Email: "ok@example.com", Password: string(hashed), Verified: true}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+
+	svc := &accountService{conf: conf, repo: repo, jwt: jwtManager}
+	gotUser, access, refresh, err := svc.LoginAccount("ok@example.com", "Password1", false)
+	assert.NoError(t, err)
+	assert.NotNil(t, gotUser)
+	assert.NotEmpty(t, access)
+	assert.NotEmpty(t, refresh)
+}
+
+func TestAccountService_LoginAccount_UserNotFound(t *testing.T) {
+	repo := newFakeAccountRepo()
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+
+	_, _, _, err := svc.LoginAccount("missing@example.com", "Password1", false)
+	assert.Error(t, err)
+	_, notFound := err.(*AccountNotFoundError)
+	assert.True(t, notFound)
+}
+
+func TestAccountService_LoginAccount_UpdateRefreshError(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	jwtManager := session.NewJWTManager("access", "refresh", time.Minute, time.Hour)
+
+	hashed, err := hashing.HashPassword("Password1")
+	require.NoError(t, err)
+	user := &models.User{Id: uuid.New(), Email: "u@example.com", Password: string(hashed), Verified: true}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+	repo.updateRefreshErr = errors.New("db error")
+
+	svc := &accountService{conf: conf, repo: repo, jwt: jwtManager}
+	_, _, _, err = svc.LoginAccount("u@example.com", "Password1", false)
+	assert.Error(t, err)
+	_, failed := err.(*AccountFailedToCreateTokenError)
+	assert.True(t, failed)
+}
+
+// ─── GetUserByEmail ──────────────────────────────────────────────────────────
+
+func TestAccountService_GetUserByEmail_Found(t *testing.T) {
+	repo := newFakeAccountRepo()
+	user := &models.User{Id: uuid.New(), Email: "found@example.com"}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	got, err := svc.GetUserByEmail("found@example.com")
+	assert.NoError(t, err)
+	assert.Equal(t, user.Email, got.Email)
+}
+
+func TestAccountService_GetUserByEmail_NotFound(t *testing.T) {
+	repo := newFakeAccountRepo()
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+
+	got, err := svc.GetUserByEmail("missing@example.com")
+	assert.Error(t, err)
+	assert.Nil(t, got)
+	_, notFound := err.(*AccountNotFoundError)
+	assert.True(t, notFound)
+}
+
+// ─── ValidateRefreshToken ────────────────────────────────────────────────────
+
+func TestAccountService_ValidateRefreshToken_InvalidClaims(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	jwtManager := session.NewJWTManager("access", "refresh", time.Minute, time.Hour)
+
+	user := &models.User{Id: uuid.New(), Email: "u@example.com", Verified: true}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+
+	// Token firmado con clave distinta → inválido
+	token, err := session.NewJWTManager("other", "other", time.Minute, time.Hour).GenerateRefreshToken(user.Id.String(), user.Email, false)
+	require.NoError(t, err)
+
+	svc := &accountService{conf: conf, repo: repo, jwt: jwtManager}
+	err = svc.ValidateRefreshToken(token, user.Email)
+	assert.Error(t, err)
+	_, invalid := err.(*AccountSessionInvalid)
+	assert.True(t, invalid)
+}
+
+func TestAccountService_ValidateRefreshToken_UserNotInDB(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	jwtManager := session.NewJWTManager("access", "refresh", time.Minute, time.Hour)
+
+	knownID := uuid.New()
+	user := &models.User{Id: knownID, Email: "u@example.com"}
+	repo.usersByEmail[user.Email] = user
+	// No lo añadimos a usersByID → GetAccountById fallará
+
+	token, err := jwtManager.GenerateRefreshToken(knownID.String(), user.Email, false)
+	require.NoError(t, err)
+
+	svc := &accountService{conf: conf, repo: repo, jwt: jwtManager}
+	err = svc.ValidateRefreshToken(token, user.Email)
+	assert.Error(t, err)
+	_, invalid := err.(*AccountSessionInvalid)
+	assert.True(t, invalid)
+}
+
+// ─── VerifyAccount ────────────────────────────────────────────────────────────
+
+func TestAccountService_VerifyAccount_Success(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	user := &models.User{Id: uuid.New(), Email: "u@example.com"}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+
+	svc := &accountService{conf: conf, repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	verified, err := svc.VerifyAccount(user.Email, "code")
+	assert.NoError(t, err)
+	assert.True(t, verified)
+}
+
+func TestAccountService_VerifyAccount_NotFound(t *testing.T) {
+	repo := newFakeAccountRepo()
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+
+	_, err := svc.VerifyAccount("missing@example.com", "code")
+	assert.Error(t, err)
+	_, notFound := err.(*AccountNotFoundError)
+	assert.True(t, notFound)
+}
+
+// ─── UpdateAdminStatus ───────────────────────────────────────────────────────
+
+func TestAccountService_UpdateAdminStatus_RepoError(t *testing.T) {
+	repo := newFakeAccountRepo()
+	repo.updateAdminErr = errors.New("db error")
+	user := &models.User{Id: uuid.New(), Email: "u@example.com"}
+	repo.usersByID[user.Id] = user
+
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	err := svc.UpdateAdminStatus(user.Id.String(), true)
+	assert.Error(t, err)
+}
+
+// ─── RefreshToken ─────────────────────────────────────────────────────────────
+
+func TestAccountService_RefreshToken_UpdateRefreshError(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	user := &models.User{Id: uuid.New(), Email: "u@example.com", Verified: true}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+	repo.updateRefreshErr = errors.New("boom")
+
+	svc := &accountService{conf: conf, repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	_, _, err := svc.RefreshToken(user.Email)
+	assert.Error(t, err)
+	_, failed := err.(*AccountFailedToCreateTokenError)
+	assert.True(t, failed)
+}
+
+func TestAccountService_RefreshToken_UserNotFound(t *testing.T) {
+	repo := newFakeAccountRepo()
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+
+	_, _, err := svc.RefreshToken("missing@example.com")
+	assert.Error(t, err)
+	_, notFound := err.(*AccountNotFoundError)
+	assert.True(t, notFound)
+}
+
+// ─── CreateAccount (extra paths) ─────────────────────────────────────────────
+
+func TestAccountService_CreateAccount_Success(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	svc := &accountService{conf: conf, repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+
+	user, code, err := svc.CreateAccount("new@example.com", "Password1", false)
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+	assert.NotEmpty(t, code)
+}
+
+// ─── ForgotPassword (extra paths) ────────────────────────────────────────────
+
+func TestAccountService_ForgotPassword_InvalidateError_Continues(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	user := &models.User{Id: uuid.New(), Email: "u@example.com", Verified: true}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+	repo.invalidateErr = errors.New("warning-only")
+
+	svc := &accountService{conf: conf, repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	otp, err := svc.ForgotPassword(user.Email)
+	assert.NoError(t, err)
+	assert.Len(t, otp, 6)
+}
+
+// ─── VerifyPasswordResetCode (extra paths) ────────────────────────────────────
+
+func TestAccountService_VerifyPasswordResetCode_NotFound(t *testing.T) {
+	repo := newFakeAccountRepo()
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+
+	_, err := svc.VerifyPasswordResetCode("missing@example.com", "123456")
+	assert.Error(t, err)
+	_, notFound := err.(*PasswordResetNotFoundError)
+	assert.True(t, notFound)
+}
+
+func TestAccountService_VerifyPasswordResetCode_AlreadyVerified(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	user := &models.User{Id: uuid.New(), Email: "u@example.com"}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+	repo.activeReset = &models.PasswordReset{
+		Id:           uuid.New(),
+		UserId:       user.Id,
+		OTPVerified:  true,
+		OTPExpiresAt: time.Now().Add(time.Minute),
+	}
+
+	svc := &accountService{conf: conf, repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	_, err := svc.VerifyPasswordResetCode(user.Email, "123456")
+	assert.Error(t, err)
+	_, notFound := err.(*PasswordResetNotFoundError)
+	assert.True(t, notFound)
+}

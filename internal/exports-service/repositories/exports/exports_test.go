@@ -161,3 +161,118 @@ func TestExportRepository_SetLatestExportVersion(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, oldLatest.IsLatest, "expected old version to lose latest status")
 }
+
+func newExportsRepo(t *testing.T) exports.ExportRepository {
+	t.Helper()
+	conf := config.CreateConfig()
+	db, err := config.NewDB(conf)
+	if err != nil {
+		t.Fatalf("failed to connect DB: %v", err)
+	}
+	cleanupRepoExports(db)
+	return exports.NewExportRepository(conf, db)
+}
+
+func TestExportRepository_CreateExportVersion_Duplicate(t *testing.T) {
+	repo := newExportsRepo(t)
+	appName := repoTestAppName("dup")
+
+	v1 := &models.ExportZip{AppName: appName, Version: "1.0.0", OS: "linux"}
+	assert.NoError(t, repo.CreateExportVersion(v1))
+
+	// Intentar crear la misma combinación (app+version+os) debe retornar conflict
+	v1dup := &models.ExportZip{AppName: appName, Version: "1.0.0", OS: "linux"}
+	err := repo.CreateExportVersion(v1dup)
+	assert.Error(t, err)
+}
+
+func TestExportRepository_DeleteExportVersion_NotLatest(t *testing.T) {
+	repo := newExportsRepo(t)
+	appName := repoTestAppName("del-notlatest")
+	now := time.Now().UTC()
+
+	v1 := &models.ExportZip{AppName: appName, Version: "1.0.0", OS: "linux", IsLatest: false, CreatedAt: now.Add(-time.Hour)}
+	v2 := &models.ExportZip{AppName: appName, Version: "2.0.0", OS: "linux", IsLatest: true, CreatedAt: now}
+	assert.NoError(t, repo.CreateExportVersion(v1))
+	assert.NoError(t, repo.CreateExportVersion(v2))
+
+	// Borrar v1 (no era IsLatest) → v2 debe quedar sin cambios
+	err := repo.DeleteExportVersion(appName, "1.0.0", "linux")
+	assert.NoError(t, err)
+
+	_, err = repo.GetExportVersion(appName, "1.0.0", "linux")
+	assert.Error(t, err)
+
+	v2stored, err := repo.GetExportVersion(appName, "2.0.0", "linux")
+	assert.NoError(t, err)
+	assert.True(t, v2stored.IsLatest)
+}
+
+func TestExportRepository_DeleteExportVersion_NotFound(t *testing.T) {
+	repo := newExportsRepo(t)
+	appName := repoTestAppName("del-notfound")
+
+	err := repo.DeleteExportVersion(appName, "9.9.9", "linux")
+	assert.Error(t, err)
+}
+
+func TestExportRepository_DeleteExportVersion_LastVersion(t *testing.T) {
+	repo := newExportsRepo(t)
+	appName := repoTestAppName("del-last")
+
+	v1 := &models.ExportZip{AppName: appName, Version: "1.0.0", OS: "linux", IsLatest: true}
+	assert.NoError(t, repo.CreateExportVersion(v1))
+
+	// Borrar la única versión (era IsLatest) → no hay reemplazo disponible
+	err := repo.DeleteExportVersion(appName, "1.0.0", "linux")
+	assert.NoError(t, err)
+
+	_, err = repo.GetExportVersion(appName, "1.0.0", "linux")
+	assert.Error(t, err)
+}
+
+func TestExportRepository_GetLatestExportVersion_FallbackToNewest(t *testing.T) {
+	repo := newExportsRepo(t)
+	appName := repoTestAppName("fallback-latest")
+	now := time.Now().UTC()
+
+	// Ninguna versión tiene IsLatest=true → debe retornar la más reciente por created_at
+	v1 := &models.ExportZip{AppName: appName, Version: "1.0.0", OS: "mac", IsLatest: false, CreatedAt: now.Add(-2 * time.Hour)}
+	v2 := &models.ExportZip{AppName: appName, Version: "2.0.0", OS: "mac", IsLatest: false, CreatedAt: now.Add(-time.Hour)}
+	assert.NoError(t, repo.CreateExportVersion(v1))
+	assert.NoError(t, repo.CreateExportVersion(v2))
+
+	latest, err := repo.GetLatestExportVersion(appName, "mac")
+	assert.NoError(t, err)
+	assert.NotNil(t, latest)
+	assert.Equal(t, "2.0.0", latest.Version)
+}
+
+func TestExportRepository_GetLatestExportVersion_NotFound(t *testing.T) {
+	repo := newExportsRepo(t)
+	appName := repoTestAppName("notfound-latest")
+
+	latest, err := repo.GetLatestExportVersion(appName, "linux")
+	assert.Error(t, err)
+	assert.Nil(t, latest)
+}
+
+func TestExportRepository_SetLatestExportVersion_NotFound(t *testing.T) {
+	repo := newExportsRepo(t)
+	appName := repoTestAppName("set-notfound")
+
+	_, err := repo.SetLatestExportVersion(appName, "9.9.9", "linux")
+	assert.Error(t, err)
+}
+
+func TestExportRepository_ListExportVersions_NoFilter(t *testing.T) {
+	repo := newExportsRepo(t)
+	appName := repoTestAppName("list-nofilter")
+
+	assert.NoError(t, repo.CreateExportVersion(&models.ExportZip{AppName: appName, Version: "1.0.0", OS: "linux"}))
+	assert.NoError(t, repo.CreateExportVersion(&models.ExportZip{AppName: appName, Version: "2.0.0", OS: "mac"}))
+
+	all, err := repo.ListExportVersions("", "")
+	assert.NoError(t, err)
+	assert.GreaterOrEqual(t, len(all), 2)
+}

@@ -714,3 +714,267 @@ func TestSubscriptionService_HandleWebhook_InvoicePaymentFailed(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, emailSender.sendRejectedCalled)
 }
+
+func TestSubscriptionService_GetByUserID_NotFound(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = true
+	conf.Server.Environment = config.Development
+
+	repo := &fakeZonesRepo{getByUserErr: errors.New("not found")}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	_, err := service.GetByUserID(uuid.New())
+	assert.Error(t, err)
+}
+
+func TestSubscriptionService_GetByUserID_CanceledUsesLocalCalc(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = true
+	conf.Server.Environment = config.Development
+
+	userID := uuid.New()
+	repo := &fakeZonesRepo{
+		getByUserID: &models.ZonesSubscriptions{
+			UserID:               userID,
+			StripeCustomerID:     "cust_x",
+			StripeSubscriptionID: "",
+			TotalSlots:           2,
+			Status:               stripe.SubscriptionStatusCanceled,
+			AmountDue:            decimal.Zero,
+		},
+	}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	sub, err := service.GetByUserID(userID)
+	assert.NoError(t, err)
+	assert.True(t, sub.AmountDue.GreaterThanOrEqual(decimal.Zero))
+}
+
+// ─── CheckAvailability edge cases ────────────────────────────────────────────
+
+func TestSubscriptionService_CheckAvailability_GetError(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeZonesRepo{getByUserErr: errors.New("db error")}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	allowed, slots, err := service.CheckAvalibility(uuid.New())
+	assert.Error(t, err)
+	assert.False(t, allowed)
+	assert.Equal(t, 0, slots)
+}
+
+func TestSubscriptionService_CheckAvailability_NoFreeSlots(t *testing.T) {
+	conf := config.CreateConfig()
+	userID := uuid.New()
+	repo := &fakeZonesRepo{getByUserID: &models.ZonesSubscriptions{
+		UserID:     userID,
+		TotalSlots: 3,
+		UsedSlots:  3,
+		Status:     stripe.SubscriptionStatusActive,
+	}}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	allowed, freeSlots, err := service.CheckAvalibility(userID)
+	assert.NoError(t, err)
+	assert.False(t, allowed)
+	assert.Equal(t, 0, freeSlots)
+}
+
+// ─── UpdateUsedSlots edge cases ───────────────────────────────────────────────
+
+func TestSubscriptionService_UpdateUsedSlots_DecreaseClamp(t *testing.T) {
+	conf := config.CreateConfig()
+	userID := uuid.New()
+	repo := &fakeZonesRepo{getByUserID: &models.ZonesSubscriptions{
+		UserID:     userID,
+		TotalSlots: 5,
+		UsedSlots:  1,
+		Status:     stripe.SubscriptionStatusActive,
+	}}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	err := service.UpdateUsedSlots(userID, 10, false)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, repo.getByUserID.UsedSlots)
+}
+
+func TestSubscriptionService_UpdateUsedSlots_GetError(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeZonesRepo{getByUserErr: errors.New("db error")}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	err := service.UpdateUsedSlots(uuid.New(), 1, true)
+	assert.Error(t, err)
+}
+
+// ─── CancelSubscription ───────────────────────────────────────────────────────
+
+func TestSubscriptionService_CancelSubscription_GetError(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeZonesRepo{getByUserErr: errors.New("db error")}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	_, err := service.CancelSubscription(uuid.New())
+	assert.Error(t, err)
+}
+
+// ─── GetPricingInfo ───────────────────────────────────────────────────────────
+
+func TestSubscriptionService_GetPricingInfo_NonZero(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Stripe.StripeZonePrice = 9.99
+	conf.Stripe.StripeBillingAnchorDay = 15
+	conf.Stripe.StripeBillingTimezone = "UTC"
+	service := NewSubscriptionService(conf, &fakeZonesRepo{}, &fakeZonesEmailSender{})
+
+	price, next := service.GetPricingInfo()
+	assert.Equal(t, 9.99, price)
+	assert.True(t, next.After(time.Now().Add(-time.Minute)))
+}
+
+// ─── nextBillingDate ─────────────────────────────────────────────────────────
+
+func TestSubscriptionService_NextBillingDate_PastAnchorRollsOver(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Stripe.StripeBillingTimezone = "UTC"
+	conf.Stripe.StripeBillingAnchorDay = 1
+	service := NewSubscriptionService(conf, &fakeZonesRepo{}, &fakeZonesEmailSender{}).(*zoneSubscriptionService)
+
+	next := service.nextBillingDate()
+	assert.True(t, next.After(time.Now().UTC()))
+	assert.Equal(t, 1, next.Day())
+}
+
+func TestSubscriptionService_NextBillingDate_InvalidTimezone(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Stripe.StripeBillingTimezone = "Invalid/Zone"
+	conf.Stripe.StripeBillingAnchorDay = 15
+	service := NewSubscriptionService(conf, &fakeZonesRepo{}, &fakeZonesEmailSender{}).(*zoneSubscriptionService)
+
+	next := service.nextBillingDate()
+	assert.True(t, next.After(time.Now().Add(-time.Minute)))
+}
+
+// ─── GetByUserID con SubscriptionOn=false en Production ──────────────────────
+
+func TestSubscriptionService_GetByUserID_SubscriptionOffProduction(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = false
+	conf.Server.Environment = config.Production
+
+	userID := uuid.New()
+	repo := &fakeZonesRepo{
+		getByUserID: &models.ZonesSubscriptions{
+			UserID:               userID,
+			StripeSubscriptionID: "",
+			TotalSlots:           1,
+			Status:               stripe.SubscriptionStatusCanceled,
+			AmountDue:            decimal.Zero,
+		},
+	}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	sub, err := service.GetByUserID(userID)
+	assert.NoError(t, err)
+	assert.Equal(t, userID, sub.UserID)
+}
+
+// ─── HandleWebhook — webhook con metadata faltante ───────────────────────────
+
+func TestSubscriptionService_HandleWebhook_SubscriptionUpdated_MissingUserID(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := NewSubscriptionService(conf, &fakeZonesRepo{}, &fakeZonesEmailSender{})
+
+	obj := map[string]interface{}{
+		"id":       "sub_123",
+		"object":   "subscription",
+		"status":   "active",
+		"metadata": map[string]interface{}{},
+		"items": map[string]interface{}{
+			"data": []map[string]interface{}{{"quantity": 1}},
+		},
+	}
+	payload := buildStripeEventPayload("customer.subscription.updated", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestSubscriptionService_HandleWebhook_SubscriptionCreated_MissingUserID(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := NewSubscriptionService(conf, &fakeZonesRepo{}, &fakeZonesEmailSender{})
+
+	obj := map[string]interface{}{
+		"id":       "sub_new",
+		"object":   "subscription",
+		"metadata": map[string]interface{}{},
+		"items": map[string]interface{}{
+			"data": []map[string]interface{}{{"quantity": 2}},
+		},
+	}
+	payload := buildStripeEventPayload("customer.subscription.created", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.Error(t, err)
+}
+
+func TestSubscriptionService_HandleWebhook_InvoicePaid_NoEmail(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	emailSender := &fakeZonesEmailSender{}
+	service := NewSubscriptionService(conf, &fakeZonesRepo{}, emailSender)
+
+	obj := map[string]interface{}{
+		"id":             "in_noemail",
+		"object":         "invoice",
+		"customer_email": "",
+		"amount_paid":    1000,
+		"created":        time.Now().Unix(),
+		"lines": map[string]interface{}{
+			"data": []map[string]interface{}{{"quantity": 1}},
+		},
+	}
+	payload := buildStripeEventPayload("invoice.paid", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.NoError(t, err)
+	assert.False(t, emailSender.sendPaidCalled)
+}
+
+func TestSubscriptionService_HandleWebhook_SubscriptionDeleted_NoEmail(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+
+	userID := uuid.New()
+	sub := &models.ZonesSubscriptions{
+		UserID:               userID,
+		StripeSubscriptionID: "sub_del_noemail",
+		Status:               "active",
+	}
+	repo := &fakeZonesRepo{
+		getByUserID:      sub,
+		getByStripeSubID: sub,
+	}
+	emailSender := &fakeZonesEmailSender{}
+	service := NewSubscriptionService(conf, repo, emailSender)
+
+	obj := map[string]interface{}{
+		"id":       "sub_del_noemail",
+		"object":   "subscription",
+		"status":   "canceled",
+		"metadata": map[string]interface{}{},
+		"items": map[string]interface{}{
+			"data": []map[string]interface{}{{"quantity": 1}},
+		},
+	}
+	payload := buildStripeEventPayload("customer.subscription.deleted", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.NoError(t, err)
+}
