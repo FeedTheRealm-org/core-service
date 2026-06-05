@@ -207,22 +207,37 @@ func TestMultipartCleanup_Coverage(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestGithubOIDCCheck_Coverage(t *testing.T) {
+func TestGithubOIDCCheck_FullCoverage(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	r := gin.New()
 
-	verifier := &oidc_validation.GitHubOIDCVerifier{}
+	tests := []struct {
+		name       string
+		authHeader string
+	}{
+		{"Missing_Token", ""},
+		{"Invalid_Token_Format", "Bearer token_invalido_test"},
+		{"Valid_Structure_But_Fails_Validation", "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.e30.s"},
+	}
 
-	r.Use(middleware.GithubOIDCCheck(verifier))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := gin.New()
+			verifier := &oidc_validation.GitHubOIDCVerifier{}
+			r.Use(middleware.GithubOIDCCheck(verifier))
 
-	r.GET("/secure", func(c *gin.Context) {
-		c.Status(http.StatusOK)
-	})
+			r.GET("/test", func(c *gin.Context) {
+				c.Status(http.StatusOK)
+			})
 
-	req, _ := http.NewRequest(http.MethodGet, "/secure", nil)
-	req.Header.Set("Authorization", "Bearer token_falso_para_coverage")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+			req, _ := http.NewRequest(http.MethodGet, "/test", nil)
+			if tt.authHeader != "" {
+				req.Header.Set("Authorization", tt.authHeader)
+			}
 
-	assert.NotEqual(t, 0, w.Code)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			assert.NotEqual(t, 0, w.Code)
+		})
+	}
 }

@@ -436,3 +436,105 @@ func TestAccountRepository_CreatePasswordReset_MultipleInvalidated(t *testing.T)
 	assert.Error(t, err)
 	assert.Nil(t, active)
 }
+
+func TestAccountRepository_DatabaseErrors_Coverage(t *testing.T) {
+	badDB := &config.DB{
+		Conn: sharedDB.Conn.Table("ghost_table_forced_db_error"),
+	}
+
+	conf := config.CreateConfig()
+	badRepo, err := repositories.NewAccountRepository(conf, badDB)
+	require.NoError(t, err)
+
+	id := uuid.New()
+	dummyUser := &models.User{Id: id, Email: "error@repo.local"}
+
+	t.Run("GetAccountById_DB_Error", func(t *testing.T) {
+		_, err := badRepo.GetAccountById(id)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("GetAccountByEmail_DB_Error", func(t *testing.T) {
+		_, err := badRepo.GetAccountByEmail("error@repo.local")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("CreateAccount_DB_Error", func(t *testing.T) {
+		err := badRepo.CreateAccount(dummyUser, "123456")
+		assert.Error(t, err)
+	})
+
+	t.Run("VerifyAccount_DB_Error", func(t *testing.T) {
+		err := badRepo.VerifyAccount(dummyUser, "123456", time.Now())
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("RefreshVerificationCode_DB_Error", func(t *testing.T) {
+		err := badRepo.RefreshVerificationCode(dummyUser, "123456", time.Now().Add(time.Hour))
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("UpdateRefreshTokenUpdatedAt_DB_Error", func(t *testing.T) {
+		err := badRepo.UpdateRefreshTokenUpdatedAt(id, time.Now())
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("ListAccounts_DB_Error", func(t *testing.T) {
+		_, _, err := badRepo.ListAccounts("", nil, 0, 10)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("UpdateAdminStatus_DB_Error", func(t *testing.T) {
+		err := badRepo.UpdateAdminStatus(id, true)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("CreatePasswordReset_DB_Error", func(t *testing.T) {
+		_, err := badRepo.CreatePasswordReset(id, "hash", time.Now())
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("GetActivePasswordResetByUserID_DB_Error", func(t *testing.T) {
+		_, err := badRepo.GetActivePasswordResetByUserID(id)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("IncrementPasswordResetAttempts_DB_Error", func(t *testing.T) {
+		err := badRepo.IncrementPasswordResetAttempts(id)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("MarkPasswordResetOTPVerified_DB_Error", func(t *testing.T) {
+		err := badRepo.MarkPasswordResetOTPVerified(id, "hash", time.Now())
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("GetPasswordResetByTokenHash_DB_Error", func(t *testing.T) {
+		_, err := badRepo.GetPasswordResetByTokenHash("hash")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("InvalidateAllPasswordResets_DB_Error", func(t *testing.T) {
+		err := badRepo.InvalidateAllPasswordResets(id)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+
+	t.Run("UpdatePassword_DB_Error", func(t *testing.T) {
+		err := badRepo.UpdatePassword(id, "hash")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "Database error occurred")
+	})
+}

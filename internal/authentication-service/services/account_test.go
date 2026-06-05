@@ -987,3 +987,108 @@ func TestAccountService_VerifyPasswordResetCode_AlreadyVerified(t *testing.T) {
 	_, notFound := err.(*PasswordResetNotFoundError)
 	assert.True(t, notFound)
 }
+
+func TestAccountService_VerifyAccount_GenericRepoError(t *testing.T) {
+	repo := newFakeAccountRepo()
+	conf := config.CreateConfig()
+	user := &models.User{Id: uuid.New(), Email: "u@example.com"}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+
+	// Forzamos un error genérico que no sea ni expirado ni inválido
+	repo.verifyErr = errors.New("unexpected database crash")
+
+	svc := &accountService{conf: conf, repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	_, err := svc.VerifyAccount(user.Email, "code")
+	assert.Error(t, err)
+	assert.EqualError(t, err, "unexpected database crash")
+}
+
+func TestAccountService_UpdateAdminStatus_Success(t *testing.T) {
+	repo := newFakeAccountRepo()
+	user := &models.User{Id: uuid.New(), Email: "admin@example.com", IsAdmin: false}
+	repo.usersByID[user.Id] = user
+
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	err := svc.UpdateAdminStatus(user.Id.String(), true)
+	assert.NoError(t, err)
+	assert.True(t, user.IsAdmin)
+}
+
+func TestAccountService_UpdateAdminStatus_UserNotFound(t *testing.T) {
+	repo := newFakeAccountRepo()
+	// UUID válido pero no existe en el fake → UpdateAdminStatus retorna nil (no verifica existencia)
+	validUUID := uuid.New().String()
+
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	err := svc.UpdateAdminStatus(validUUID, true)
+	assert.NoError(t, err)
+}
+
+func TestAccountService_VerifyPasswordResetCode_UserNotFound(t *testing.T) {
+	repo := newFakeAccountRepo()
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+
+	_, err := svc.VerifyPasswordResetCode("missing@example.com", "123456")
+	assert.Error(t, err)
+	_, notFound := err.(*PasswordResetNotFoundError)
+	assert.True(t, notFound)
+}
+
+func TestAccountService_VerifyPasswordResetCode_ActiveResetNotFound(t *testing.T) {
+	repo := newFakeAccountRepo()
+	user := &models.User{Id: uuid.New(), Email: "u@example.com"}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+	// No le seteamos repo.activeReset, simulando que no hay pedido de reset activo
+
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	_, err := svc.VerifyPasswordResetCode(user.Email, "123456")
+	assert.Error(t, err)
+	_, notFound := err.(*PasswordResetNotFoundError)
+	assert.True(t, notFound)
+}
+
+func TestAccountService_VerifyPasswordResetCode_RepoIncAttemptsError(t *testing.T) {
+	repo := newFakeAccountRepo()
+	user := &models.User{Id: uuid.New(), Email: "u@example.com"}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+	repo.activeReset = &models.PasswordReset{
+		Id:           uuid.New(),
+		UserId:       user.Id,
+		OTPHash:      "somehash",
+		OTPExpiresAt: time.Now().Add(time.Minute),
+	}
+	// Forzamos error al intentar incrementar intentos en la BD
+	repo.incAttemptsErr = errors.New("db error")
+
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	_, err := svc.VerifyPasswordResetCode(user.Email, "wrongcode")
+	assert.Error(t, err)
+	_, maxed := err.(*PasswordResetMaxAttemptsError)
+	assert.True(t, maxed)
+}
+
+func TestAccountService_VerifyPasswordResetCode_RepoMarkVerifiedError(t *testing.T) {
+	repo := newFakeAccountRepo()
+	user := &models.User{Id: uuid.New(), Email: "u@example.com"}
+	repo.usersByEmail[user.Email] = user
+	repo.usersByID[user.Id] = user
+
+	hash, _ := hashing.HashPassword("123456")
+	repo.activeReset = &models.PasswordReset{
+		Id:           uuid.New(),
+		UserId:       user.Id,
+		OTPHash:      string(hash),
+		OTPExpiresAt: time.Now().Add(time.Minute),
+	}
+	// El código es correcto, pero falla al guardar el estado verificado en BD
+	repo.markResetErr = errors.New("db error")
+
+	svc := &accountService{conf: config.CreateConfig(), repo: repo, jwt: session.NewJWTManager("a", "b", time.Minute, time.Hour)}
+	_, err := svc.VerifyPasswordResetCode(user.Email, "123456")
+	assert.Error(t, err)
+	_, failed := err.(*AccountFailedToCreateTokenError)
+	assert.True(t, failed)
+}
