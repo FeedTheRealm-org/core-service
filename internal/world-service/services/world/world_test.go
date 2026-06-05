@@ -325,3 +325,154 @@ func TestWorldService_DeleteWorld_UpdateUsedSlotsError(t *testing.T) {
 	err := svc.DeleteWorld(worldID, ownerID)
 	assert.Error(t, err)
 }
+
+func TestWorldService_PublishWorld_WithCreateableData(t *testing.T) {
+	repo := &fakeWorldRepo{}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	// CreateableData ya viene relleno → no debe sobreescribirse con "{}"
+	data := &models.WorldData{
+		ID:             uuid.New(),
+		UserId:         uuid.New(),
+		CreateableData: datatypes.JSON([]byte(`{"key":"value"}`)),
+	}
+	created, err := svc.PublishWorld(data)
+	assert.NoError(t, err)
+	assert.NotNil(t, created)
+	assert.Contains(t, string(repo.storeArg.CreateableData), "key")
+}
+
+func TestWorldService_PublishWorld_RepoError(t *testing.T) {
+	repo := &fakeWorldRepo{storeErr: errors.New("db error")}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	_, err := svc.PublishWorld(&models.WorldData{})
+	assert.Error(t, err)
+}
+
+func TestWorldService_GetWorld_Success(t *testing.T) {
+	worldID := uuid.New()
+	repo := &fakeWorldRepo{getWorld: &models.WorldData{ID: worldID}}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	w, err := svc.GetWorld(worldID)
+	assert.NoError(t, err)
+	assert.Equal(t, worldID, w.ID)
+}
+
+func TestWorldService_GetWorld_Error(t *testing.T) {
+	repo := &fakeWorldRepo{getErr: errors.New("not found")}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	w, err := svc.GetWorld(uuid.New())
+	assert.Error(t, err)
+	assert.Nil(t, w)
+}
+
+func TestWorldService_UpdateWorld_Success(t *testing.T) {
+	expected := &models.WorldData{ID: uuid.New()}
+	repo := &fakeWorldRepo{updateWorld: expected}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	w, err := svc.UpdateWorld(uuid.New(), uuid.New(), []byte(`{}`), "desc")
+	assert.NoError(t, err)
+	assert.Equal(t, expected, w)
+}
+
+func TestWorldService_UpdateCreateableData_Success(t *testing.T) {
+	expected := &models.WorldData{ID: uuid.New()}
+	repo := &fakeWorldRepo{updateCreateable: expected}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	w, err := svc.UpdateCreateableData(uuid.New(), uuid.New(), []byte(`{}`))
+	assert.NoError(t, err)
+	assert.Equal(t, expected, w)
+}
+
+func TestWorldService_GetWorldsList(t *testing.T) {
+	repo := &fakeWorldRepo{}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	list, err := svc.GetWorldsList(0, 10, "", uuid.New())
+	assert.NoError(t, err)
+	assert.Nil(t, list)
+}
+
+func TestWorldService_GetWorldZones(t *testing.T) {
+	worldID := uuid.New()
+	repo := &fakeWorldRepo{
+		zones: []*models.WorldZone{{ID: 1, WorldID: worldID}},
+	}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	zones, err := svc.GetWorldZones(worldID)
+	assert.NoError(t, err)
+	assert.Len(t, zones, 1)
+}
+
+func TestWorldService_GetActiveWorldZones(t *testing.T) {
+	repo := &fakeWorldRepo{}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	zones, err := svc.GetActiveWorldZones()
+	assert.NoError(t, err)
+	assert.Nil(t, zones)
+}
+
+func TestWorldService_ClearDatabase(t *testing.T) {
+	repo := &fakeWorldRepo{}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	assert.NoError(t, svc.ClearDatabase())
+}
+
+func TestWorldService_DeleteWorld_GetWorldError(t *testing.T) {
+	repo := &fakeWorldRepo{getErr: errors.New("not found")}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	err := svc.DeleteWorld(uuid.New(), uuid.New())
+	assert.Error(t, err)
+}
+
+func TestWorldService_DeleteWorld_DeleteRepoError(t *testing.T) {
+	ownerID := uuid.New()
+	worldID := uuid.New()
+	repo := &fakeWorldRepo{
+		getWorld:  &models.WorldData{ID: worldID, UserId: ownerID},
+		zones:     []*models.WorldZone{},
+		deleteErr: errors.New("delete failed"),
+	}
+	conf := config.CreateConfig()
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	err := svc.DeleteWorld(worldID, ownerID)
+	assert.Error(t, err)
+}
+
+func TestWorldService_DeleteWorld_NoActiveZones_SubscriptionOn(t *testing.T) {
+	ownerID := uuid.New()
+	worldID := uuid.New()
+	repo := &fakeWorldRepo{
+		getWorld: &models.WorldData{ID: worldID, UserId: ownerID},
+		zones:    []*models.WorldZone{{ID: 1, WorldID: worldID, IsActive: false}},
+	}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = true
+	svc := NewWorldService(conf, repo, &fakeServerRegistry{})
+
+	// Sin zonas activas, no llama UpdateUsedSlots aunque SubscriptionOn=true
+	err := svc.DeleteWorld(worldID, ownerID)
+	assert.NoError(t, err)
+	assert.True(t, repo.deleteCalled)
+}

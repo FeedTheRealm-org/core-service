@@ -17,18 +17,20 @@ import (
 )
 
 type fakeZonesRepo struct {
-	worlds         map[uuid.UUID]*models.WorldData
-	zones          map[uuid.UUID][]*models.WorldZone
-	active         map[string]bool
-	online         map[string]bool
-	userByWorld    map[uuid.UUID]uuid.UUID
-	setActiveErr   error
-	setOnlineErr   error
-	updateCountErr error
-	playerCounts   map[uuid.UUID][2]int
-	playerMaxes    map[uuid.UUID][2]int
-	allCounts      [2]int
-	allMaxes       [2]int
+	worlds            map[uuid.UUID]*models.WorldData
+	zones             map[uuid.UUID][]*models.WorldZone
+	active            map[string]bool
+	online            map[string]bool
+	userByWorld       map[uuid.UUID]uuid.UUID
+	getActiveStateErr error
+	setActiveErr      error
+	setOnlineErr      error
+	updateCountErr    error
+	getZonesErr       map[uuid.UUID]error
+	playerCounts      map[uuid.UUID][2]int
+	playerMaxes       map[uuid.UUID][2]int
+	allCounts         [2]int
+	allMaxes          [2]int
 }
 
 func newFakeZonesRepo() *fakeZonesRepo {
@@ -40,6 +42,7 @@ func newFakeZonesRepo() *fakeZonesRepo {
 		userByWorld:  make(map[uuid.UUID]uuid.UUID),
 		playerCounts: make(map[uuid.UUID][2]int),
 		playerMaxes:  make(map[uuid.UUID][2]int),
+		getZonesErr:  make(map[uuid.UUID]error),
 	}
 }
 
@@ -103,6 +106,9 @@ func (f *fakeZonesRepo) SetWorldZoneOnlineState(worldID uuid.UUID, zoneID int, i
 }
 
 func (f *fakeZonesRepo) GetWorldZoneActiveState(worldID uuid.UUID, zoneID int) (bool, error) {
+	if f.getActiveStateErr != nil {
+		return false, f.getActiveStateErr
+	}
 	return f.active[zoneKey(worldID, zoneID)], nil
 }
 
@@ -115,6 +121,9 @@ func (f *fakeZonesRepo) GetWorldsList(offset int, limit int, filter string, user
 }
 
 func (f *fakeZonesRepo) GetWorldZones(worldID uuid.UUID) ([]*models.WorldZone, error) {
+	if err, ok := f.getZonesErr[worldID]; ok {
+		return nil, err
+	}
 	return f.zones[worldID], nil
 }
 
@@ -243,6 +252,8 @@ func (f *fakeZonesRegistry) GetServerAddress(worldId uuid.UUID, zoneId int) (str
 	return "", 0, nil
 }
 
+// ─── ActivateZone ────────────────────────────────────────────────────────────
+
 func TestZonesService_ActivateZone_AlreadyActive(t *testing.T) {
 	repo := newFakeZonesRepo()
 	worldID := uuid.New()
@@ -255,6 +266,21 @@ func TestZonesService_ActivateZone_AlreadyActive(t *testing.T) {
 
 	err := svc.ActivateZone(worldID, 1)
 	assert.NoError(t, err)
+	assert.Empty(t, registry.startCalls)
+}
+
+func TestZonesService_ActivateZone_GetActiveStateError(t *testing.T) {
+	repo := newFakeZonesRepo()
+	worldID := uuid.New()
+	repo.getActiveStateErr = errors.New("db error")
+
+	registry := &fakeZonesRegistry{}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = false
+	svc := NewZonesService(conf, repo, registry)
+
+	err := svc.ActivateZone(worldID, 1)
+	assert.Error(t, err)
 	assert.Empty(t, registry.startCalls)
 }
 
@@ -274,6 +300,20 @@ func TestZonesService_ActivateZone_StartsAndSetsActive(t *testing.T) {
 	assert.True(t, repo.active[zoneKey(worldID, 1)])
 }
 
+func TestZonesService_ActivateZone_StartJobError(t *testing.T) {
+	repo := newFakeZonesRepo()
+	worldID := uuid.New()
+
+	registry := &fakeZonesRegistry{startErr: errors.New("start failed")}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = false
+	svc := NewZonesService(conf, repo, registry)
+
+	err := svc.ActivateZone(worldID, 1)
+	assert.Error(t, err)
+	assert.False(t, repo.active[zoneKey(worldID, 1)])
+}
+
 func TestZonesService_ActivateZone_SetActiveFails(t *testing.T) {
 	repo := newFakeZonesRepo()
 	worldID := uuid.New()
@@ -289,136 +329,10 @@ func TestZonesService_ActivateZone_SetActiveFails(t *testing.T) {
 	assert.Len(t, registry.stopCalls, 1)
 }
 
-func TestZonesService_DeactivateZone_HappyPath(t *testing.T) {
-	repo := newFakeZonesRepo()
-	worldID := uuid.New()
-	repo.active[zoneKey(worldID, 1)] = true
-
-	registry := &fakeZonesRegistry{}
-	conf := config.CreateConfig()
-	conf.Server.SubscriptionOn = false
-	svc := NewZonesService(conf, repo, registry)
-
-	err := svc.DeactivateZone(worldID, 1)
-	assert.NoError(t, err)
-	assert.Len(t, registry.stopCalls, 1)
-	assert.False(t, repo.active[zoneKey(worldID, 1)])
-}
-
-func TestZonesService_DeactivateZone_NotActive(t *testing.T) {
-	repo := newFakeZonesRepo()
-	worldID := uuid.New()
-
-	registry := &fakeZonesRegistry{}
-	conf := config.CreateConfig()
-	conf.Server.SubscriptionOn = false
-	svc := NewZonesService(conf, repo, registry)
-
-	err := svc.DeactivateZone(worldID, 1)
-	assert.NoError(t, err)
-	assert.Empty(t, registry.stopCalls)
-}
-
-func TestZonesService_StopAllZonesForUser(t *testing.T) {
-	repo := newFakeZonesRepo()
-	userID := uuid.New()
-	worldID := uuid.New()
-	repo.userByWorld[worldID] = userID
-	repo.zones[worldID] = []*models.WorldZone{{ID: 1, WorldID: worldID, IsActive: true}}
-	repo.active[zoneKey(worldID, 1)] = true
-
-	registry := &fakeZonesRegistry{}
-	conf := config.CreateConfig()
-	conf.Server.SubscriptionOn = false
-	svc := NewZonesService(conf, repo, registry)
-
-	err := svc.StopAllZonesForUser(userID)
-	assert.NoError(t, err)
-	assert.Len(t, registry.stopCalls, 1)
-}
-
-func TestZonesService_PlayerCounts(t *testing.T) {
-	repo := newFakeZonesRepo()
-	worldID := uuid.New()
-	repo.zones[worldID] = []*models.WorldZone{{ID: 1, WorldID: worldID, IsOnline: true, ActivePlayers: 3, AveragePlayerTime: 10}}
-
-	registry := &fakeZonesRegistry{}
-	conf := config.CreateConfig()
-	svc := NewZonesService(conf, repo, registry)
-
-	total, avg, maxTotal, maxAvg, err := svc.GetWorldZonePlayerCounts(worldID)
-	assert.NoError(t, err)
-	assert.Equal(t, 3, total)
-	assert.Equal(t, 10, avg)
-	assert.Equal(t, 3, maxTotal)
-	assert.Equal(t, 10, maxAvg)
-
-	totalAll, avgAll, maxAllTotal, maxAllAvg, err := svc.GetAllWorldZonePlayerCounts()
-	assert.NoError(t, err)
-	assert.Equal(t, 3, totalAll)
-	assert.Equal(t, 10, avgAll)
-	assert.Equal(t, 3, maxAllTotal)
-	assert.Equal(t, 10, maxAllAvg)
-}
-
-func TestZonesService_CheckAvailableZones(t *testing.T) {
-	userID := uuid.New()
-	worldID := uuid.New()
-	repo := newFakeZonesRepo()
-	repo.userByWorld[worldID] = userID
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.Contains(r.URL.Path, "/status") {
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`{"data":{"allowed":true,"free_slots":1}}`))
-			return
-		}
-		if r.Method == http.MethodPut {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	defer server.Close()
-
-	conf := config.CreateConfig()
-	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
-	port, _ := strconv.Atoi(portStr)
-	conf.Server.Port = port
-	conf.Server.SubscriptionOn = true
-
-	svc := NewZonesService(conf, repo, &fakeZonesRegistry{}).(*zonesService)
-	assert.NoError(t, svc.checkAvailableZonesForActivation(worldID))
-	assert.NoError(t, svc.updateUsedSlots(userID, 1, true))
-}
-
-func TestZonesService_CheckAvailableZones_Denied(t *testing.T) {
-	userID := uuid.New()
-	worldID := uuid.New()
-	repo := newFakeZonesRepo()
-	repo.userByWorld[worldID] = userID
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"data":{"allowed":false,"free_slots":0}}`))
-	}))
-	defer server.Close()
-
-	conf := config.CreateConfig()
-	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
-	port, _ := strconv.Atoi(portStr)
-	conf.Server.Port = port
-	conf.Server.SubscriptionOn = true
-
-	svc := NewZonesService(conf, repo, &fakeZonesRegistry{}).(*zonesService)
-	err := svc.checkAvailableZonesForActivation(worldID)
-	assert.Error(t, err)
-}
-
 func TestZonesService_ActivateZone_SubscriptionUserIdError(t *testing.T) {
 	repo := newFakeZonesRepo()
 	worldID := uuid.New()
-	repo.active[zoneKey(worldID, 1)] = false
+	// userByWorld vacío → GetUserIdByWorldId falla
 
 	registry := &fakeZonesRegistry{}
 	conf := config.CreateConfig()
@@ -475,10 +389,86 @@ func TestZonesService_ActivateZone_SubscriptionUpdateUsedSlotsError(t *testing.T
 	assert.False(t, repo.active[zoneKey(worldID, 1)])
 }
 
+// ─── DeactivateZone ──────────────────────────────────────────────────────────
+
+func TestZonesService_DeactivateZone_HappyPath(t *testing.T) {
+	repo := newFakeZonesRepo()
+	worldID := uuid.New()
+	repo.active[zoneKey(worldID, 1)] = true
+
+	registry := &fakeZonesRegistry{}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = false
+	svc := NewZonesService(conf, repo, registry)
+
+	err := svc.DeactivateZone(worldID, 1)
+	assert.NoError(t, err)
+	assert.Len(t, registry.stopCalls, 1)
+	assert.False(t, repo.active[zoneKey(worldID, 1)])
+}
+
+func TestZonesService_DeactivateZone_NotActive(t *testing.T) {
+	repo := newFakeZonesRepo()
+	worldID := uuid.New()
+
+	registry := &fakeZonesRegistry{}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = false
+	svc := NewZonesService(conf, repo, registry)
+
+	err := svc.DeactivateZone(worldID, 1)
+	assert.NoError(t, err)
+	assert.Empty(t, registry.stopCalls)
+}
+
+func TestZonesService_DeactivateZone_GetActiveStateError(t *testing.T) {
+	repo := newFakeZonesRepo()
+	worldID := uuid.New()
+	repo.getActiveStateErr = errors.New("db error")
+
+	registry := &fakeZonesRegistry{}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = false
+	svc := NewZonesService(conf, repo, registry)
+
+	err := svc.DeactivateZone(worldID, 1)
+	assert.Error(t, err)
+}
+
+func TestZonesService_DeactivateZone_StopJobError(t *testing.T) {
+	repo := newFakeZonesRepo()
+	worldID := uuid.New()
+	repo.active[zoneKey(worldID, 1)] = true
+
+	registry := &fakeZonesRegistry{stopErr: errors.New("stop failed")}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = false
+	svc := NewZonesService(conf, repo, registry)
+
+	err := svc.DeactivateZone(worldID, 1)
+	assert.Error(t, err)
+}
+
+func TestZonesService_DeactivateZone_SetActiveFails(t *testing.T) {
+	repo := newFakeZonesRepo()
+	worldID := uuid.New()
+	repo.active[zoneKey(worldID, 1)] = true
+	repo.setActiveErr = errors.New("fail")
+
+	registry := &fakeZonesRegistry{}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = false
+	svc := NewZonesService(conf, repo, registry)
+
+	err := svc.DeactivateZone(worldID, 1)
+	assert.Error(t, err)
+}
+
 func TestZonesService_DeactivateZone_SubscriptionUserIdError(t *testing.T) {
 	repo := newFakeZonesRepo()
 	worldID := uuid.New()
 	repo.active[zoneKey(worldID, 1)] = true
+	// userByWorld vacío → GetUserIdByWorldId falla
 
 	registry := &fakeZonesRegistry{}
 	conf := config.CreateConfig()
@@ -487,6 +477,267 @@ func TestZonesService_DeactivateZone_SubscriptionUserIdError(t *testing.T) {
 	svc := NewZonesService(conf, repo, registry)
 	err := svc.DeactivateZone(worldID, 1)
 	assert.Error(t, err)
+}
+
+func TestZonesService_DeactivateZone_SubscriptionUpdateUsedSlotsError(t *testing.T) {
+	repo := newFakeZonesRepo()
+	worldID := uuid.New()
+	userID := uuid.New()
+	repo.userByWorld[worldID] = userID
+	repo.active[zoneKey(worldID, 1)] = true
+
+	registry := &fakeZonesRegistry{}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = true
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	svc := NewZonesService(conf, repo, registry)
+	err := svc.DeactivateZone(worldID, 1)
+	assert.Error(t, err)
+}
+
+// ─── checkAvailableZonesForActivation ────────────────────────────────────────
+
+func TestZonesService_CheckAvailableZones_Success(t *testing.T) {
+	userID := uuid.New()
+	worldID := uuid.New()
+	repo := newFakeZonesRepo()
+	repo.userByWorld[worldID] = userID
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/status") {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"data":{"allowed":true,"free_slots":1}}`))
+			return
+		}
+		if r.Method == http.MethodPut {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+	conf.Server.SubscriptionOn = true
+
+	svc := NewZonesService(conf, repo, &fakeZonesRegistry{}).(*zonesService)
+	assert.NoError(t, svc.checkAvailableZonesForActivation(worldID))
+	assert.NoError(t, svc.updateUsedSlots(userID, 1, true))
+}
+
+func TestZonesService_CheckAvailableZones_Denied(t *testing.T) {
+	userID := uuid.New()
+	worldID := uuid.New()
+	repo := newFakeZonesRepo()
+	repo.userByWorld[worldID] = userID
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":{"allowed":false,"free_slots":0}}`))
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+	conf.Server.SubscriptionOn = true
+
+	svc := NewZonesService(conf, repo, &fakeZonesRegistry{}).(*zonesService)
+	err := svc.checkAvailableZonesForActivation(worldID)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "subscription required")
+}
+
+func TestZonesService_CheckAvailableZones_NoFreeSlots(t *testing.T) {
+	userID := uuid.New()
+	worldID := uuid.New()
+	repo := newFakeZonesRepo()
+	repo.userByWorld[worldID] = userID
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":{"allowed":true,"free_slots":0}}`))
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	svc := NewZonesService(conf, repo, &fakeZonesRegistry{}).(*zonesService)
+	err := svc.checkAvailableZonesForActivation(worldID)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "free zones available")
+}
+
+func TestZonesService_CheckAvailableZones_Unauthorized(t *testing.T) {
+	userID := uuid.New()
+	worldID := uuid.New()
+	repo := newFakeZonesRepo()
+	repo.userByWorld[worldID] = userID
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	svc := NewZonesService(conf, repo, &fakeZonesRegistry{}).(*zonesService)
+	err := svc.checkAvailableZonesForActivation(worldID)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "forbidden")
+}
+
+func TestZonesService_CheckAvailableZones_ServerError(t *testing.T) {
+	userID := uuid.New()
+	worldID := uuid.New()
+	repo := newFakeZonesRepo()
+	repo.userByWorld[worldID] = userID
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	svc := NewZonesService(conf, repo, &fakeZonesRegistry{}).(*zonesService)
+	err := svc.checkAvailableZonesForActivation(worldID)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to reach payment service")
+}
+
+func TestZonesService_CheckAvailableZones_DecodeError(t *testing.T) {
+	userID := uuid.New()
+	worldID := uuid.New()
+	repo := newFakeZonesRepo()
+	repo.userByWorld[worldID] = userID
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`not-valid-json`))
+	}))
+	defer server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	svc := NewZonesService(conf, repo, &fakeZonesRegistry{}).(*zonesService)
+	err := svc.checkAvailableZonesForActivation(worldID)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to decode")
+}
+
+func TestZonesService_CheckAvailableZones_UserIdError(t *testing.T) {
+	repo := newFakeZonesRepo()
+	worldID := uuid.New()
+	// Sin userByWorld → GetUserIdByWorldId falla
+
+	svc := NewZonesService(config.CreateConfig(), repo, &fakeZonesRegistry{}).(*zonesService)
+	err := svc.checkAvailableZonesForActivation(worldID)
+	assert.Error(t, err)
+}
+
+func TestZonesService_UpdateUsedSlots_ConnectionError(t *testing.T) {
+	userID := uuid.New()
+
+	// Servidor cerrado inmediatamente → error de conexión
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	server.Close()
+
+	conf := config.CreateConfig()
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	svc := NewZonesService(conf, newFakeZonesRepo(), &fakeZonesRegistry{}).(*zonesService)
+	err := svc.updateUsedSlots(userID, 1, true)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to reach payment service")
+}
+
+// ─── StopAllZonesForUser ─────────────────────────────────────────────────────
+
+func TestZonesService_StopAllZonesForUser(t *testing.T) {
+	repo := newFakeZonesRepo()
+	userID := uuid.New()
+	worldID := uuid.New()
+	repo.userByWorld[worldID] = userID
+	repo.zones[worldID] = []*models.WorldZone{{ID: 1, WorldID: worldID, IsActive: true}}
+	repo.active[zoneKey(worldID, 1)] = true
+
+	registry := &fakeZonesRegistry{}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = false
+	svc := NewZonesService(conf, repo, registry)
+
+	err := svc.StopAllZonesForUser(userID)
+	assert.NoError(t, err)
+	assert.Len(t, registry.stopCalls, 1)
+}
+
+func TestZonesService_StopAllZonesForUser_GetZonesError(t *testing.T) {
+	repo := newFakeZonesRepo()
+	userID := uuid.New()
+	worldID := uuid.New()
+	repo.userByWorld[worldID] = userID
+	repo.getZonesErr[worldID] = errors.New("db error")
+
+	registry := &fakeZonesRegistry{}
+	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = false
+	svc := NewZonesService(conf, repo, registry)
+
+	err := svc.StopAllZonesForUser(userID)
+	assert.Error(t, err)
+}
+
+// ─── Player counts / misc ────────────────────────────────────────────────────
+
+func TestZonesService_PlayerCounts(t *testing.T) {
+	repo := newFakeZonesRepo()
+	worldID := uuid.New()
+	repo.zones[worldID] = []*models.WorldZone{{ID: 1, WorldID: worldID, IsOnline: true, ActivePlayers: 3, AveragePlayerTime: 10}}
+
+	registry := &fakeZonesRegistry{}
+	conf := config.CreateConfig()
+	svc := NewZonesService(conf, repo, registry)
+
+	total, avg, maxTotal, maxAvg, err := svc.GetWorldZonePlayerCounts(worldID)
+	assert.NoError(t, err)
+	assert.Equal(t, 3, total)
+	assert.Equal(t, 10, avg)
+	assert.Equal(t, 3, maxTotal)
+	assert.Equal(t, 10, maxAvg)
+
+	totalAll, avgAll, maxAllTotal, maxAllAvg, err := svc.GetAllWorldZonePlayerCounts()
+	assert.NoError(t, err)
+	assert.Equal(t, 3, totalAll)
+	assert.Equal(t, 10, avgAll)
+	assert.Equal(t, 3, maxAllTotal)
+	assert.Equal(t, 10, maxAllAvg)
 }
 
 func TestZonesService_UpdateZoneStatusAndPlayerCount(t *testing.T) {
