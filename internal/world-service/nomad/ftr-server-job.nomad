@@ -25,6 +25,12 @@ job "{{ .JobName }}" {
     task "zone" {
       driver = "docker"
 
+      resources {
+        cpu        = 1200
+        memory     = 470
+        memory_max = 512
+      }
+
       config {
         image = "{{ .ImageName }}"
         ports = ["game", "health"]
