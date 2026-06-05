@@ -183,6 +183,8 @@ definitions:
         type: string
       path:
         type: string
+      release_note:
+        type: string
       updated_at:
         type: string
       version:
@@ -386,6 +388,10 @@ definitions:
       active_players:
         type: integer
       average_player_time:
+        type: integer
+      max_active_players:
+        type: integer
+      max_average_player_time:
         type: integer
     type: object
   dtos.PricingInfoResponse:
@@ -1977,6 +1983,10 @@ paths:
         name: file
         required: true
         type: file
+      - description: Release notes
+        in: formData
+        name: release_note
+        type: string
       produces:
       - application/json
       responses:
