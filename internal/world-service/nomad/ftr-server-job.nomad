@@ -26,7 +26,7 @@ job "{{ .JobName }}" {
       driver = "docker"
 
       resources {
-        cpu        = 1200
+        cpu        = 900
         memory     = 470
         memory_max = 512
       }
