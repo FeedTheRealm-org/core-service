@@ -1,6 +1,7 @@
 package middleware_test
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -60,6 +61,59 @@ func TestJWTAuth_ExpiredToken(t *testing.T) {
 	assert.Equal(t, "expired", w.Body.String())
 }
 
+func TestJWTAuth_CookieToken(t *testing.T) {
+	accessToken := "testsecret"
+	refreshToken := "testsecret"
+	token := createTestToken(accessToken, "cookie-user", time.Now().Add(time.Hour))
+	r := setupRouterJWT(accessToken, refreshToken, time.Minute, time.Hour, "")
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.AddCookie(&http.Cookie{Name: "jwt", Value: token})
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, "cookie-user", w.Body.String())
+}
+
+func TestJWTAuth_MissingUserIDClaim(t *testing.T) {
+	accessToken := "testsecret"
+	refreshToken := "testsecret"
+	claims := jwt.MapClaims{
+		"email": "user@example.com",
+		"exp":   time.Now().Add(time.Hour).Unix(),
+	}
+	token := createTokenWithClaims(accessToken, claims)
+	r := setupRouterJWT(accessToken, refreshToken, time.Minute, time.Hour, "")
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, 401, w.Code)
+	assert.Equal(t, "invalid", w.Body.String())
+}
+
+func TestJWTAuth_MissingEmailClaim(t *testing.T) {
+	accessToken := "testsecret"
+	refreshToken := "testsecret"
+	claims := jwt.MapClaims{
+		"userID": "missing-email",
+		"exp":    time.Now().Add(time.Hour).Unix(),
+	}
+	token := createTokenWithClaims(accessToken, claims)
+	r := setupRouterJWT(accessToken, refreshToken, time.Minute, time.Hour, "")
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, 401, w.Code)
+	assert.Equal(t, "invalid", w.Body.String())
+}
+
 /* UTILS */
 
 // createTestToken creates a JWT token with the given secret, userID, and expiration time.
@@ -69,6 +123,12 @@ func createTestToken(secret, userID string, expiration time.Time) string {
 		"email":  userID + "@example.com",
 		"exp":    expiration.Unix(),
 	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	ss, _ := token.SignedString([]byte(secret))
+	return ss
+}
+
+func createTokenWithClaims(secret string, claims jwt.MapClaims) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ss, _ := token.SignedString([]byte(secret))
 	return ss

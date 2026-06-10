@@ -64,12 +64,6 @@ func (isr *itemRepository) GetItemsListByWorld(worldid uuid.UUID) ([]*models.Ite
 		return nil, err
 	}
 
-	if err := isr.db.Conn.
-		Where("world_id = ?", worldid).
-		Find(&items).Error; err != nil {
-		return nil, err
-	}
-
 	return items, nil
 }
 
