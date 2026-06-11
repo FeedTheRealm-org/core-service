@@ -81,9 +81,9 @@ func (ec *accountController) CreateAccount(c *gin.Context) {
 			return
 		}
 
-		if _, ok := err.(*services.AccountInvalidFormat); ok {
+		if fmtErr, ok := err.(*services.AccountInvalidFormat); ok {
 			logger.Logger.Infof("CreateAccount: invalid account format for email=%s: %v", req.Email, err)
-			_ = c.Error(errors.NewBadRequestError("The email address is not valid."))
+			_ = c.Error(errors.NewBadRequestError(fmtErr.Msg))
 			return
 		}
 

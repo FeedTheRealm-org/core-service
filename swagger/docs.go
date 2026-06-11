@@ -1949,6 +1949,12 @@ const docTemplate = `{
                         "name": "file",
                         "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Release notes",
+                        "name": "release_note",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -4851,6 +4857,9 @@ const docTemplate = `{
                 "path": {
                     "type": "string"
                 },
+                "release_note": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -5166,6 +5175,12 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "average_player_time": {
+                    "type": "integer"
+                },
+                "max_active_players": {
+                    "type": "integer"
+                },
+                "max_average_player_time": {
                     "type": "integer"
                 }
             }

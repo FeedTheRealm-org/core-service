@@ -58,6 +58,7 @@ require (
 	github.com/hashicorp/serf v0.10.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	golang.org/x/exp v0.0.0-20250808145144-a408d31f581a // indirect
 	gorm.io/driver/mysql v1.5.6 // indirect
 )
