@@ -37,7 +37,18 @@ func (zs *zonesService) GetWorld(worldID uuid.UUID) (*models.WorldData, error) {
 }
 
 func (zs *zonesService) PublishZone(worldID uuid.UUID, zoneID int, zoneData []byte) (*models.WorldZone, error) {
-	return zs.worldRepository.UpsertWorldZone(worldID, zoneID, zoneData)
+	zone, err := zs.worldRepository.UpsertWorldZone(worldID, zoneID, zoneData)
+	if err != nil {
+		return nil, err
+	}
+
+	if zone.IsActive {
+		if err := zs.serverRegistryService.StartNewJob(worldID, zoneID, true); err != nil {
+			return nil, err
+		}
+	}
+
+	return zone, nil
 }
 
 func (zs *zonesService) ActivateZone(worldID uuid.UUID, zoneID int) error {
