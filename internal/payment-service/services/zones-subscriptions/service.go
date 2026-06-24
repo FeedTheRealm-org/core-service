@@ -15,5 +15,6 @@ type SubscriptionService interface {
 	CheckAvalibility(userID uuid.UUID) (bool, int, error)
 	CreateCheckoutSession(userID uuid.UUID, email string, slots int, successUrl string, cancelUrl string) (string, error)
 	CancelSubscription(userID uuid.UUID) (*models.ZonesSubscriptions, error)
+	ReactivateSubscription(userID uuid.UUID) (*models.ZonesSubscriptions, error)
 	HandleWebhook(payload []byte, signature string) error
 }

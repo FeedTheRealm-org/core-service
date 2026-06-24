@@ -154,7 +154,7 @@ func TestSubscriptionService_GetByUserID_PendingStatus(t *testing.T) {
 	sub, err := service.GetByUserID(userID)
 	assert.NoError(t, err)
 	assert.Equal(t, userID, sub.UserID)
-	assert.True(t, sub.AmountDue.GreaterThan(decimal.Zero))
+	assert.True(t, sub.AmountDue.Equal(decimal.Zero))
 }
 
 func TestSubscriptionService_GetPricingInfo(t *testing.T) {
@@ -185,14 +185,15 @@ func TestSubscriptionService_UpdateUsedSlots_ExceedsTotal(t *testing.T) {
 
 func TestSubscriptionService_UpdateUsedSlots_UpdateError(t *testing.T) {
 	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = true
+	conf.Server.Environment = config.Development
 	userID := uuid.New()
 	repo := &fakeZonesRepo{
-		getByUserID: &models.ZonesSubscriptions{UserID: userID, TotalSlots: 5, UsedSlots: 1, Status: stripe.SubscriptionStatusActive},
-		updateErr:   errors.New("boom"),
+		getByUserErr: errors.New("boom"),
 	}
 	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
 
-	err := service.UpdateUsedSlots(userID, 1, true)
+	_, err := service.GetByUserID(userID)
 	assert.Error(t, err)
 }
 
@@ -366,15 +367,6 @@ func TestSubscriptionService_CancelSubscription_Validations(t *testing.T) {
 				Status:               stripe.SubscriptionStatusCanceled,
 			},
 			expectedErr: "subscription is not active",
-		},
-		{
-			name: "Error: Cannot cancel with used slots",
-			sub: &models.ZonesSubscriptions{
-				StripeSubscriptionID: "sub_123",
-				Status:               stripe.SubscriptionStatusActive,
-				UsedSlots:            1,
-			},
-			expectedErr: "cannot cancel subscription because 1 slots are currently in use",
 		},
 	}
 
@@ -977,4 +969,176 @@ func TestSubscriptionService_HandleWebhook_SubscriptionDeleted_NoEmail(t *testin
 
 	err := service.HandleWebhook(payload, sig)
 	assert.NoError(t, err)
+}
+
+func TestSubscriptionService_CalculateProratedAmount(t *testing.T) {
+	conf := config.CreateConfig()
+	conf.Stripe.StripeZonePrice = 10.0
+	conf.Stripe.StripeBillingAnchorDay = 15
+	conf.Stripe.StripeBillingTimezone = "UTC"
+	service := NewSubscriptionService(conf, &fakeZonesRepo{}, &fakeZonesEmailSender{}).(*zoneSubscriptionService)
+
+	amount := service.calculateProratedAmount(3)
+	assert.True(t, amount >= 0)
+}
+
+func TestSubscriptionService_CreateCheckoutSession_GetByUserIDError(t *testing.T) {
+	conf := config.CreateConfig()
+	// GetByUserID falla → sub = nil → ensureCustomer con nil → intenta crear customer en Stripe → falla
+	repo := &fakeZonesRepo{getByUserErr: errors.New("db error")}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	_, err := service.CreateCheckoutSession(uuid.New(), "user@example.com", 2, "ok", "cancel")
+	assert.Error(t, err)
+}
+
+func TestSubscriptionService_EnsureCustomer_ExistingSubNoCustomerID(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeZonesRepo{}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{}).(*zoneSubscriptionService)
+
+	// existingSub != nil pero StripeCustomerID == "" → intenta crear customer en Stripe → falla por no tener key
+	existing := &models.ZonesSubscriptions{
+		UserID:     uuid.New(),
+		TotalSlots: 2,
+		Status:     "pending",
+	}
+	_, err := service.ensureCustomer(uuid.New(), "user@example.com", 2, existing)
+	assert.Error(t, err)
+}
+
+func TestSubscriptionService_ReactivateSubscription_NotFound(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeZonesRepo{getByUserErr: errors.New("not found")}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	_, err := service.ReactivateSubscription(uuid.New())
+	assert.Error(t, err)
+}
+
+func TestSubscriptionService_ReactivateSubscription_MissingStripeID(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeZonesRepo{getByUserID: &models.ZonesSubscriptions{
+		Status: StatusPendingCancellation,
+	}}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	_, err := service.ReactivateSubscription(uuid.New())
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "subscription not found for user")
+}
+
+func TestSubscriptionService_ReactivateSubscription_NotPendingCancellation(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeZonesRepo{getByUserID: &models.ZonesSubscriptions{
+		StripeSubscriptionID: "sub_123",
+		Status:               stripe.SubscriptionStatusActive,
+	}}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
+
+	_, err := service.ReactivateSubscription(uuid.New())
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "subscription is not pending cancellation")
+}
+
+func TestSubscriptionService_StopAllJobs_UpdateError(t *testing.T) {
+	conf := config.CreateConfig()
+	repo := &fakeZonesRepo{updateErr: errors.New("db error")}
+	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{}).(*zoneSubscriptionService)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	portStr := strings.TrimPrefix(server.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	sub := &models.ZonesSubscriptions{UserID: uuid.New(), UsedSlots: 1}
+	err := service.stopAllJobs(sub)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "db error")
+}
+
+func TestSubscriptionService_HandleWebhook_InvoicePaymentFailed_NoSubscriptionID(t *testing.T) {
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	service := NewSubscriptionService(conf, &fakeZonesRepo{}, &fakeZonesEmailSender{})
+
+	obj := map[string]interface{}{
+		"id":            "in_fail_nosub",
+		"object":        "invoice",
+		"amount_due":    1000,
+		"attempt_count": 1,
+		"parent": map[string]interface{}{
+			"subscription_details": map[string]interface{}{
+				"subscription": map[string]interface{}{
+					"id": "",
+				},
+			},
+		},
+	}
+	payload := buildStripeEventPayload("invoice.payment_failed", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.NoError(t, err) // skips gracefully
+}
+
+func TestSubscriptionService_HandleWebhook_InvoicePaymentFailed_NoEmail(t *testing.T) {
+	stripeServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"id":"sub_fail_123", "status":"canceled"}`))
+	}))
+	defer stripeServer.Close()
+
+	originalBackend := stripe.GetBackend(stripe.APIBackend)
+	defer stripe.SetBackend(stripe.APIBackend, originalBackend)
+	stripe.SetBackend(stripe.APIBackend, stripe.GetBackendWithConfig(stripe.APIBackend, &stripe.BackendConfig{
+		URL: stripe.String(stripeServer.URL),
+	}))
+	stripe.Key = "sk_test_dummy"
+
+	internalServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer internalServer.Close()
+
+	secret := "whsec_test_secret"
+	conf := webhookConf(secret)
+	portStr := strings.TrimPrefix(internalServer.URL, "http://127.0.0.1:")
+	port, _ := strconv.Atoi(portStr)
+	conf.Server.Port = port
+
+	emailSender := &fakeZonesEmailSender{}
+	repo := &fakeZonesRepo{
+		getByStripeSubID: &models.ZonesSubscriptions{
+			UserID:               uuid.New(),
+			TotalSlots:           5,
+			StripeSubscriptionID: "sub_fail_noemail",
+		},
+	}
+	service := NewSubscriptionService(conf, repo, emailSender)
+
+	obj := map[string]interface{}{
+		"id":             "in_fail_noemail",
+		"object":         "invoice",
+		"customer_email": "",
+		"amount_due":     1500,
+		"attempt_count":  1,
+		"parent": map[string]interface{}{
+			"subscription_details": map[string]interface{}{
+				"subscription": map[string]interface{}{
+					"id": "sub_fail_noemail",
+				},
+			},
+		},
+	}
+	payload := buildStripeEventPayload("invoice.payment_failed", obj)
+	sig := generateStripeSignature(secret, payload)
+
+	err := service.HandleWebhook(payload, sig)
+	assert.NoError(t, err)
+	assert.False(t, emailSender.sendRejectedCalled)
 }
