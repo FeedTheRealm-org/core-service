@@ -6,6 +6,7 @@ type ZonesSubscriptionsController interface {
 	CreateCheckoutSession(c *gin.Context)
 	UpdateSlots(c *gin.Context)
 	CancelSubscription(c *gin.Context)
+	ReactivateSubscription(c *gin.Context)
 	GetStatus(c *gin.Context)
 	GetPricingInfo(c *gin.Context)
 	CheckInternalAvailability(c *gin.Context)

@@ -163,15 +163,17 @@ func TestGetNextInvoiceAmount_PendingOrCanceled(t *testing.T) {
 	clearZonesTables()
 	userID := uuid.New()
 
-	createZoneSubscription(t, &models.ZonesSubscriptions{
+	sub := &models.ZonesSubscriptions{
 		UserID:           userID,
 		StripeCustomerID: "cust_pending",
 		TotalSlots:       4,
 		AmountDue:        decimal.Zero,
 		Status:           "pending",
-	})
+	}
 
-	amount, err := testSvc.getNextInvoiceAmount(userID)
+	createZoneSubscription(t, sub)
+
+	amount, err := testSvc.getNextInvoiceAmount(sub)
 	assert.NoError(t, err)
 	assert.True(t, amount.Equal(decimal.NewFromFloat(testConf.Stripe.StripeZonePrice*4)))
 
@@ -179,7 +181,7 @@ func TestGetNextInvoiceAmount_PendingOrCanceled(t *testing.T) {
 	updated.Status = stripe.SubscriptionStatusCanceled
 	_, _ = testRepo.Update(updated)
 
-	amount, err = testSvc.getNextInvoiceAmount(userID)
+	amount, err = testSvc.getNextInvoiceAmount(sub)
 	assert.NoError(t, err)
 	assert.True(t, amount.Equal(decimal.NewFromFloat(testConf.Stripe.StripeZonePrice*4)))
 }
