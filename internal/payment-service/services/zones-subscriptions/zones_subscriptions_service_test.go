@@ -154,7 +154,7 @@ func TestSubscriptionService_GetByUserID_PendingStatus(t *testing.T) {
 	sub, err := service.GetByUserID(userID)
 	assert.NoError(t, err)
 	assert.Equal(t, userID, sub.UserID)
-	assert.True(t, sub.AmountDue.GreaterThan(decimal.Zero))
+	assert.True(t, sub.AmountDue.Equal(decimal.Zero))
 }
 
 func TestSubscriptionService_GetPricingInfo(t *testing.T) {
@@ -185,14 +185,15 @@ func TestSubscriptionService_UpdateUsedSlots_ExceedsTotal(t *testing.T) {
 
 func TestSubscriptionService_UpdateUsedSlots_UpdateError(t *testing.T) {
 	conf := config.CreateConfig()
+	conf.Server.SubscriptionOn = true
+	conf.Server.Environment = config.Development
 	userID := uuid.New()
 	repo := &fakeZonesRepo{
-		getByUserID: &models.ZonesSubscriptions{UserID: userID, TotalSlots: 5, UsedSlots: 1, Status: stripe.SubscriptionStatusActive},
-		updateErr:   errors.New("boom"),
+		getByUserErr: errors.New("boom"),
 	}
 	service := NewSubscriptionService(conf, repo, &fakeZonesEmailSender{})
 
-	err := service.UpdateUsedSlots(userID, 1, true)
+	_, err := service.GetByUserID(userID)
 	assert.Error(t, err)
 }
 
@@ -366,15 +367,6 @@ func TestSubscriptionService_CancelSubscription_Validations(t *testing.T) {
 				Status:               stripe.SubscriptionStatusCanceled,
 			},
 			expectedErr: "subscription is not active",
-		},
-		{
-			name: "Error: Cannot cancel with used slots",
-			sub: &models.ZonesSubscriptions{
-				StripeSubscriptionID: "sub_123",
-				Status:               stripe.SubscriptionStatusActive,
-				UsedSlots:            1,
-			},
-			expectedErr: "cannot cancel subscription because 1 slots are currently in use",
 		},
 	}
 

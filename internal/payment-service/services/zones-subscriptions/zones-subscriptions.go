@@ -241,7 +241,13 @@ func (zs *zoneSubscriptionService) GetByUserID(userID uuid.UUID) (*models.ZonesS
 		logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s: %v", userID, err)
 		return nil, err
 	}
+
 	sub.AmountDue = amountDue
+
+	if _, err = zs.repo.Update(sub); err != nil {
+		logger.Logger.Errorf("Failed to persist amount due for user %s: %v", userID, err)
+		return nil, err
+	}
 
 	return sub, nil
 }

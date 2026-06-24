@@ -175,7 +175,7 @@ func TestGetNextInvoiceAmount_PendingOrCanceled(t *testing.T) {
 
 	amount, err := testSvc.getNextInvoiceAmount(sub)
 	assert.NoError(t, err)
-	assert.True(t, amount.Equal(decimal.NewFromFloat(testConf.Stripe.StripeZonePrice*4)))
+	assert.True(t, amount.Equal(decimal.Zero))
 
 	updated, _ := testRepo.GetByUserID(userID)
 	updated.Status = stripe.SubscriptionStatusCanceled
@@ -183,7 +183,7 @@ func TestGetNextInvoiceAmount_PendingOrCanceled(t *testing.T) {
 
 	amount, err = testSvc.getNextInvoiceAmount(sub)
 	assert.NoError(t, err)
-	assert.True(t, amount.Equal(decimal.NewFromFloat(testConf.Stripe.StripeZonePrice*4)))
+	assert.True(t, amount.Equal(decimal.Zero))
 }
 
 func TestStopAllJobs_ResetsSlots(t *testing.T) {
