@@ -2819,6 +2819,33 @@ paths:
       summary: Get price metrics and dates
       tags:
       - payment-service-subscriptions
+  /subscriptions/reactivate:
+    post:
+      description: Reactivates the user's cancelled subscription.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SubscriptionStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Reactivate subscription
+      tags:
+      - payment-service-subscriptions
   /subscriptions/slots:
     put:
       consumes:

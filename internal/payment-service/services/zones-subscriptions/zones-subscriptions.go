@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"time"
 
@@ -38,17 +39,37 @@ type zoneSubscriptionService struct {
 }
 
 const DATE_FORMAT = "2006-01-02 15:04:05 MST"
+const MIN_PRORATED_AMOUNT_CENTS = 60
+const StatusPendingCancellation = "pending_cancellation"
 
 func NewSubscriptionService(conf *config.Config, repo zones_subscriptions.ZonesSubscriptionsRepository, emailSender email_sender.EmailSenderService) SubscriptionService {
 	stripe.Key = conf.Stripe.StripeApiKey
 	return &zoneSubscriptionService{conf: conf, repo: repo, emailSender: emailSender}
 }
 
+func (zs *zoneSubscriptionService) calculateProratedAmount(slots int) int64 {
+	pricePerSlot := int64(zs.conf.Stripe.StripeZonePrice * 100)
+
+	now := time.Now().UTC()
+	cycleStart := zs.currentBillingDate()
+
+	nowUnix := now.Unix()
+	billingEnd := zs.nextBillingDate().Unix()
+	cycleStartUnix := cycleStart.Unix()
+
+	ratio := float64(billingEnd-nowUnix) / float64(billingEnd-cycleStartUnix)
+	totalAmount := pricePerSlot * int64(slots)
+
+	return int64(math.Floor(float64(totalAmount) * ratio))
+}
+
 func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, email string, slots int, successURL string, cancelURL string) (string, error) {
 	logger.Logger.Infof("Creating checkout session for user %s (%d slots)", userID, slots)
 
 	sub, err := zs.repo.GetByUserID(userID)
-	if err == nil && sub != nil && sub.Status == stripe.SubscriptionStatusActive {
+	if err != nil {
+		sub = nil
+	} else if sub.Status == stripe.SubscriptionStatusActive {
 		return "", fmt.Errorf("user %s already has an active subscription", userID)
 	}
 
@@ -56,6 +77,8 @@ func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, email
 	if err != nil {
 		return "", err
 	}
+
+	proratedAmount := zs.calculateProratedAmount(slots)
 
 	stripeParamsPriceData := &stripe.CheckoutSessionLineItemPriceDataParams{
 		Currency: stripe.String("usd"),
@@ -73,11 +96,30 @@ func (zs *zoneSubscriptionService) CreateCheckoutSession(userID uuid.UUID, email
 		Quantity:  stripe.Int64((int64)(slots)),
 	}
 
+	lineItems := []*stripe.CheckoutSessionLineItemParams{stripeParamsSession}
+
+	if proratedAmount < MIN_PRORATED_AMOUNT_CENTS {
+		adjustment := MIN_PRORATED_AMOUNT_CENTS - proratedAmount
+
+		proratedItem := &stripe.CheckoutSessionLineItemParams{
+			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+				Currency: stripe.String("usd"),
+				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+					Name: stripe.String("Minimum charge adjustment"),
+				},
+				UnitAmount: stripe.Int64(adjustment),
+			},
+			Quantity: stripe.Int64(1),
+		}
+
+		lineItems = append(lineItems, proratedItem)
+	}
+
 	params := &stripe.CheckoutSessionParams{
 		SuccessURL: stripe.String(successURL),
 		CancelURL:  stripe.String(cancelURL),
 		Mode:       stripe.String(string(stripe.CheckoutSessionModeSubscription)),
-		LineItems:  []*stripe.CheckoutSessionLineItemParams{stripeParamsSession},
+		LineItems:  lineItems,
 		Customer:   stripe.String(sub.StripeCustomerID),
 		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
 			BillingCycleAnchor: stripe.Int64(zs.nextBillingDate().Unix()),
@@ -113,6 +155,11 @@ func (zs *zoneSubscriptionService) UpdateSlots(userID uuid.UUID, newSlots int) (
 	if sub.StripeSubscriptionID == "" {
 		return nil, fmt.Errorf("subscription not found for user")
 	}
+
+	if sub.Status == StatusPendingCancellation {
+		return nil, fmt.Errorf("cannot update slots for subscription pending cancellation")
+	}
+
 	if sub.Status != stripe.SubscriptionStatusActive {
 		return nil, fmt.Errorf("subscription is not active")
 	}
@@ -189,14 +236,16 @@ func (zs *zoneSubscriptionService) GetByUserID(userID uuid.UUID) (*models.ZonesS
 		return nil, err
 	}
 
-	amountDue, err := zs.getNextInvoiceAmount(userID)
+	amountDue, err := zs.getNextInvoiceAmount(sub)
 	if err != nil {
-		logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s during subscription deletion: %v", userID, err)
+		logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s: %v", userID, err)
 		return nil, err
 	}
+
 	sub.AmountDue = amountDue
 
 	if _, err = zs.repo.Update(sub); err != nil {
+		logger.Logger.Errorf("Failed to persist amount due for user %s: %v", userID, err)
 		return nil, err
 	}
 
@@ -209,7 +258,7 @@ func (zs *zoneSubscriptionService) CheckAvalibility(userID uuid.UUID) (bool, int
 		return false, 0, err
 	}
 
-	if sub.Status != stripe.SubscriptionStatusActive {
+	if sub.Status != stripe.SubscriptionStatusActive && sub.Status != StatusPendingCancellation {
 		return false, 0, nil
 	}
 
@@ -217,7 +266,7 @@ func (zs *zoneSubscriptionService) CheckAvalibility(userID uuid.UUID) (bool, int
 }
 
 func (zs *zoneSubscriptionService) CancelSubscription(userID uuid.UUID) (*models.ZonesSubscriptions, error) {
-	logger.Logger.Infof("Cancelling subscription for user %s", userID)
+	logger.Logger.Infof("Scheduling cancellation at period end for user %s", userID)
 
 	sub, err := zs.repo.GetByUserID(userID)
 	if err != nil {
@@ -232,28 +281,52 @@ func (zs *zoneSubscriptionService) CancelSubscription(userID uuid.UUID) (*models
 		return nil, fmt.Errorf("subscription is not active")
 	}
 
-	if sub.UsedSlots > 0 {
-		return nil, fmt.Errorf("cannot cancel subscription because %d slots are currently in use. Please delete your zones first", sub.UsedSlots)
-	}
-
-	params := &stripe.SubscriptionCancelParams{
-		InvoiceNow: stripe.Bool(true),
-		Prorate:    stripe.Bool(true),
-	}
-
-	_, err = subscription.Cancel(sub.StripeSubscriptionID, params)
+	_, err = subscription.Update(sub.StripeSubscriptionID, &stripe.SubscriptionParams{
+		CancelAtPeriodEnd: stripe.Bool(true),
+	})
 	if err != nil {
-		logger.Logger.Errorf("Failed to cancel Stripe subscription %s for user %s: %v", sub.StripeSubscriptionID, userID, err)
+		logger.Logger.Errorf("Failed to schedule cancellation for Stripe subscription %s for user %s: %v", sub.StripeSubscriptionID, userID, err)
 		return nil, err
 	}
 
-	sub.Status = stripe.SubscriptionStatusCanceled
+	sub.Status = StatusPendingCancellation
 	if _, err = zs.repo.Update(sub); err != nil {
-		logger.Logger.Errorf("Failed to update DB status to canceled for user %s: %v", userID, err)
+		logger.Logger.Errorf("Failed to update DB status to %s for user %s: %v", StatusPendingCancellation, userID, err)
 		return nil, err
 	}
 
-	logger.Logger.Infof("Subscription for user %s cancelled", userID)
+	logger.Logger.Infof("Subscription for user %s scheduled to cancel at period end", userID)
+	return sub, nil
+}
+
+func (zs *zoneSubscriptionService) ReactivateSubscription(userID uuid.UUID) (*models.ZonesSubscriptions, error) {
+	sub, err := zs.repo.GetByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if sub.StripeSubscriptionID == "" {
+		return nil, fmt.Errorf("subscription not found for user")
+	}
+	if sub.Status != StatusPendingCancellation {
+		return nil, fmt.Errorf("subscription is not pending cancellation")
+	}
+
+	_, err = subscription.Update(sub.StripeSubscriptionID, &stripe.SubscriptionParams{
+		CancelAtPeriodEnd: stripe.Bool(false),
+	})
+	if err != nil {
+		logger.Logger.Errorf("Failed to undo cancellation for Stripe subscription %s for user %s: %v", sub.StripeSubscriptionID, userID, err)
+		return nil, err
+	}
+
+	sub.Status = stripe.SubscriptionStatusActive
+	if _, err = zs.repo.Update(sub); err != nil {
+		logger.Logger.Errorf("Failed to update DB status to active for user %s: %v", userID, err)
+		return nil, err
+	}
+
+	logger.Logger.Infof("Subscription for user %s reactivated (cancellation undone)", userID)
 	return sub, nil
 }
 
@@ -326,7 +399,7 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		dbSub.NextBillingDate = zs.nextBillingDate()
 		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
 
-		amountDue, err := zs.getNextInvoiceAmount(dbSub.UserID)
+		amountDue, err := zs.getNextInvoiceAmount(dbSub)
 		if err != nil {
 			logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s during subscription creation: %v", dbSub.UserID, err)
 			return err
@@ -385,7 +458,13 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		}
 
 		dbSub.StripeSubscriptionID = stripeSub.ID
-		dbSub.Status = stripeSub.Status
+
+		if stripeSub.Status == stripe.SubscriptionStatusActive && stripeSub.CancelAtPeriodEnd {
+			dbSub.Status = StatusPendingCancellation
+		} else {
+			dbSub.Status = stripeSub.Status
+		}
+
 		dbSub.NextBillingDate = zs.nextBillingDate()
 
 		oldAmountDue := dbSub.AmountDue
@@ -395,7 +474,7 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
 
 		if stripeSub.Status == stripe.SubscriptionStatusActive {
-			amountDue, err := zs.getNextInvoiceAmount(dbSub.UserID)
+			amountDue, err := zs.getNextInvoiceAmount(dbSub)
 			if err != nil {
 				logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s during subscription update: %v", dbSub.UserID, err)
 				return err
@@ -431,7 +510,7 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 			return err
 		}
 
-		logger.Logger.Infof("Handled subscription.updated for user %s, status: %s", userID, stripeSub.Status)
+		logger.Logger.Infof("Handled subscription.updated for user %s, status: %s", userID, dbSub.Status)
 		return nil
 	case "customer.subscription.deleted":
 		var stripeSub stripe.Subscription
@@ -452,6 +531,8 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 		email, emailOk := stripeSub.Metadata["email"]
 
 		dbSub.Status = stripeSub.Status
+		dbSub.StripeCustomerID = ""
+		dbSub.StripeSubscriptionID = ""
 		dbSub.TotalSlots = int(stripeSub.Items.Data[0].Quantity)
 		dbSub.AmountDue = decimal.Zero
 
@@ -579,14 +660,11 @@ func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature strin
 	}
 }
 
-func (zs *zoneSubscriptionService) getNextInvoiceAmount(userID uuid.UUID) (decimal.Decimal, error) {
-	sub, err := zs.repo.GetByUserID(userID)
-	if err != nil {
-		return decimal.Zero, err
-	}
-
-	if (sub.StripeSubscriptionID == "" && sub.Status == "pending") || sub.Status == stripe.SubscriptionStatusCanceled {
-		return decimal.NewFromFloat(zs.conf.Stripe.StripeZonePrice).Mul(decimal.NewFromInt(int64(sub.TotalSlots))), nil
+func (zs *zoneSubscriptionService) getNextInvoiceAmount(sub *models.ZonesSubscriptions) (decimal.Decimal, error) {
+	if (sub.StripeSubscriptionID == "" && sub.Status == "pending") ||
+		sub.Status == stripe.SubscriptionStatusCanceled ||
+		sub.Status == StatusPendingCancellation {
+		return decimal.Zero, nil
 	}
 
 	inv, err := stripe_invoice.CreatePreview(&stripe.InvoiceCreatePreviewParams{
@@ -620,6 +698,20 @@ func (zs *zoneSubscriptionService) ensureCustomer(
 		return nil, err
 	}
 
+	if existingSub != nil {
+		existingSub.StripeCustomerID = c.ID
+		existingSub.TotalSlots = slots
+		existingSub.AmountDue = decimal.NewFromFloat(zs.conf.Stripe.StripeZonePrice).Mul(decimal.NewFromInt(int64(slots)))
+		existingSub.Status = "pending"
+		existingSub.NextBillingDate = zs.nextBillingDate()
+		if existingSub, err = zs.repo.Update(existingSub); err != nil {
+			logger.Logger.Errorf("Failed to update subscription DB record for user %s: %v", userID, err)
+			return nil, err
+		}
+		logger.Logger.Infof("Re-created Stripe customer %s for user %s", c.ID, userID)
+		return existingSub, nil
+	}
+
 	sub = &models.ZonesSubscriptions{
 		UserID:           userID,
 		StripeCustomerID: c.ID,
@@ -635,6 +727,36 @@ func (zs *zoneSubscriptionService) ensureCustomer(
 
 	logger.Logger.Infof("Created Stripe customer %s for user %s", c.ID, userID)
 	return sub, nil
+}
+
+func (zs *zoneSubscriptionService) currentBillingDate() time.Time {
+	loc, err := time.LoadLocation(zs.conf.Stripe.StripeBillingTimezone)
+	if err != nil {
+		loc = time.UTC
+	}
+	anchorDay := zs.conf.Stripe.StripeBillingAnchorDay
+
+	now := time.Now().In(loc)
+
+	candidate := time.Date(
+		now.Year(),
+		now.Month(),
+		anchorDay,
+		12, 0, 0, 0,
+		loc,
+	)
+
+	if candidate.After(now) {
+		candidate = time.Date(
+			now.Year(),
+			now.Month()-1,
+			anchorDay,
+			12, 0, 0, 0,
+			loc,
+		)
+	}
+
+	return candidate.UTC()
 }
 
 func (zs *zoneSubscriptionService) nextBillingDate() time.Time {

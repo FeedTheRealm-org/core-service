@@ -155,6 +155,44 @@ func (zc *subscriptionController) CancelSubscription(c *gin.Context) {
 	common_handlers.HandleSuccessResponse(c, 200, res)
 }
 
+// ReactivateSubscription godoc
+// @Summary      Reactivate subscription
+// @Description  Reactivates the user's cancelled subscription.
+// @Tags         payment-service-subscriptions
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200      {object}  dtos.SubscriptionStatusResponse
+// @Failure      400      {object}  dtos.ErrorResponse
+// @Failure      401      {object}  dtos.ErrorResponse
+// @Failure      500      {object}  dtos.ErrorResponse
+// @Router       /subscriptions/reactivate [post]
+func (zc *subscriptionController) ReactivateSubscription(c *gin.Context) {
+	userID, err := common_handlers.GetUserIDFromSession(c)
+	if err != nil {
+		logger.Logger.Error("Failed to parse user_id from context: " + err.Error())
+		_ = c.Error(custom_errors.NewBadRequestError("Invalid user_id in context"))
+		return
+	}
+
+	sub, err := zc.zonesSubscriptionsService.ReactivateSubscription(userID)
+	if err != nil {
+		logger.Logger.Error("Failed to reactivate subscription for user " + userID.String() + ": " + err.Error())
+		_ = c.Error(custom_errors.NewBadRequestError("Failed to reactivate subscription: " + err.Error()))
+		return
+	}
+
+	amountDue, _ := sub.AmountDue.Float64()
+
+	res := &dtos.SubscriptionStatusResponse{
+		Slots:           sub.TotalSlots,
+		UsedSlots:       sub.UsedSlots,
+		Status:          string(sub.Status),
+		NextBillingDate: sub.NextBillingDate,
+		AmountDue:       amountDue,
+	}
+	common_handlers.HandleSuccessResponse(c, 200, res)
+}
+
 // GetStatus godoc
 // @Summary      Get subscription status
 // @Description  Retrieves the active subscription status for the user.
