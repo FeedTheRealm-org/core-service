@@ -72,6 +72,7 @@ func SetupSubscriptionsServiceRouter(conf *config.Config, db *config.DB, subscri
 
 	// External / user-facing subscription routes
 	subscriptionGroup.POST("/checkout", zonesSubscriptionsController.CreateCheckoutSession)
+	subscriptionGroup.POST("/reactivate", zonesSubscriptionsController.ReactivateSubscription)
 	subscriptionGroup.PUT("/slots", zonesSubscriptionsController.UpdateSlots)
 	subscriptionGroup.GET("/status", zonesSubscriptionsController.GetStatus)
 	subscriptionGroup.GET("/pricing", zonesSubscriptionsController.GetPricingInfo)
