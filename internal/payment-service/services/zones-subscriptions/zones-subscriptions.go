@@ -220,6 +220,23 @@ func (zs *zoneSubscriptionService) UpdateUsedSlots(userID uuid.UUID, slots int, 
 	return nil
 }
 
+func (zs *zoneSubscriptionService) GetAllSubscriptions(offset, limit int) ([]*models.ZonesSubscriptions, int64, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	subs, total, err := zs.repo.GetAll(offset, limit)
+	if err != nil {
+		logger.Logger.Errorf("Failed to list subscriptions (offset=%d, limit=%d): %v", offset, limit, err)
+		return nil, 0, err
+	}
+
+	return subs, total, nil
+}
+
 func (zs *zoneSubscriptionService) GetByUserID(userID uuid.UUID) (*models.ZonesSubscriptions, error) {
 	if !zs.conf.Server.SubscriptionOn && zs.conf.Server.Environment != config.Production {
 		logger.Logger.Infof("Subscription system is turned off, returning default subscription for user %s", userID)
@@ -359,6 +376,140 @@ func (zs *zoneSubscriptionService) stopAllJobs(sub *models.ZonesSubscriptions) e
 	}
 
 	return nil
+}
+
+func (zs *zoneSubscriptionService) AdminCreateSubscription(userID uuid.UUID, email string, slots int) (*models.ZonesSubscriptions, error) {
+	logger.Logger.Infof("Admin granting comp subscription to user %s (%d slots)", userID, slots)
+
+	if slots <= 0 {
+		return nil, fmt.Errorf("slots must be greater than 0")
+	}
+
+	existing, err := zs.repo.GetByUserID(userID)
+	if err == nil && existing != nil {
+		if existing.Status == stripe.SubscriptionStatusActive || existing.Status == StatusPendingCancellation {
+			return nil, fmt.Errorf("user %s already has an active subscription", userID)
+		}
+
+		existing.StripeCustomerID = ""
+		existing.StripeSubscriptionID = ""
+		existing.TotalSlots = slots
+		existing.UsedSlots = 0
+		existing.AmountDue = decimal.Zero
+		existing.Status = stripe.SubscriptionStatusActive
+		existing.IsAdminGranted = true
+		existing.NextBillingDate = time.Time{}
+
+		updated, err := zs.repo.Update(existing)
+		if err != nil {
+			logger.Logger.Errorf("Failed to update comp subscription for user %s: %v", userID, err)
+			return nil, err
+		}
+
+		logger.Logger.Infof("Admin comp subscription (re-used record) active for user %s", userID)
+		return updated, nil
+	}
+
+	sub := &models.ZonesSubscriptions{
+		UserID:           userID,
+		StripeCustomerID: "",
+		TotalSlots:       slots,
+		UsedSlots:        0,
+		AmountDue:        decimal.Zero,
+		Status:           stripe.SubscriptionStatusActive,
+		IsAdminGranted:   true,
+		NextBillingDate:  time.Time{},
+	}
+
+	created, err := zs.repo.Create(sub)
+	if err != nil {
+		logger.Logger.Errorf("Failed to create comp subscription for user %s: %v", userID, err)
+		return nil, err
+	}
+
+	logger.Logger.Infof("Admin comp subscription created for user %s", userID)
+	return created, nil
+}
+
+func (zs *zoneSubscriptionService) AdminUpdateSlots(userID uuid.UUID, newSlots int) (*models.ZonesSubscriptions, error) {
+	logger.Logger.Infof("Admin updating subscription slots for user %s to %d", userID, newSlots)
+
+	if newSlots <= 0 {
+		return nil, fmt.Errorf("slots must be greater than 0")
+	}
+
+	sub, err := zs.repo.GetByUserID(userID)
+	if err != nil {
+		logger.Logger.Errorf("Subscription not found for user %s: %v", userID, err)
+		return nil, err
+	}
+
+	if sub.Status != stripe.SubscriptionStatusActive && sub.Status != StatusPendingCancellation {
+		return nil, fmt.Errorf("subscription is not active")
+	}
+
+	if newSlots < sub.UsedSlots {
+		return nil, &CannotExceedTotalSlotsError{}
+	}
+
+	if !sub.IsAdminGranted {
+		return nil, fmt.Errorf("cannot update slots for non-admin granted subscription")
+	}
+
+	sub.TotalSlots = newSlots
+
+	updated, err := zs.repo.Update(sub)
+	if err != nil {
+		logger.Logger.Errorf("Failed to update comp subscription slots for user %s: %v", userID, err)
+		return nil, err
+	}
+
+	logger.Logger.Infof("Admin comp subscription slots updated to %d for user %s", newSlots, userID)
+	return updated, nil
+}
+
+func (zs *zoneSubscriptionService) AdminCancelSubscription(userID uuid.UUID) (*models.ZonesSubscriptions, error) {
+	logger.Logger.Infof("Admin cancelling subscription for user %s", userID)
+
+	sub, err := zs.repo.GetByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if sub.Status != stripe.SubscriptionStatusActive && sub.Status != StatusPendingCancellation {
+		return nil, fmt.Errorf("subscription is not active")
+	}
+
+	if err := zs.stopAllJobs(sub); err != nil {
+		logger.Logger.Errorf("Failed to run stopAllJobs for user %s: %v", userID, err)
+		return nil, err
+	}
+
+	if !sub.IsAdminGranted {
+		updated, err := zs.CancelSubscription(userID)
+		if err != nil {
+			logger.Logger.Errorf("Failed to schedule cancellation for user %s: %v", userID, err)
+			return nil, err
+		}
+		return updated, nil
+	}
+
+	sub.Status = stripe.SubscriptionStatusCanceled
+	sub.IsAdminGranted = false
+	sub.TotalSlots = 0
+	sub.UsedSlots = 0
+	sub.AmountDue = decimal.Zero
+	sub.StripeCustomerID = ""
+	sub.StripeSubscriptionID = ""
+
+	updated, err := zs.repo.Update(sub)
+	if err != nil {
+		logger.Logger.Errorf("Failed to cancel comp subscription for user %s: %v", userID, err)
+		return nil, err
+	}
+
+	logger.Logger.Infof("Admin comp subscription cancelled immediately for user %s", userID)
+	return updated, nil
 }
 
 func (zs *zoneSubscriptionService) HandleWebhook(payload []byte, signature string) error {

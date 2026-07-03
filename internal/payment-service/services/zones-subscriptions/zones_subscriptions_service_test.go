@@ -49,6 +49,10 @@ func (f *fakeZonesRepo) Update(subscription *models.ZonesSubscriptions) (*models
 	return subscription, nil
 }
 
+func (f *fakeZonesRepo) GetAll(offset, limit int) ([]*models.ZonesSubscriptions, int64, error) {
+	return nil, 0, errors.New("not implemented")
+}
+
 func (f *fakeZonesRepo) GetByUserID(userID uuid.UUID) (*models.ZonesSubscriptions, error) {
 	if f.getByUserErr != nil {
 		return nil, f.getByUserErr

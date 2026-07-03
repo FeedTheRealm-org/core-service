@@ -81,6 +81,12 @@ func SetupSubscriptionsServiceRouter(conf *config.Config, db *config.DB, subscri
 	// Webhook for Subscriptions
 	subscriptionGroup.POST("/webhook/stripe", zonesSubscriptionsController.HandleWebhook)
 
+	// Admin routes for subscription management
+	subscriptionGroup.GET("/admin/users", middleware.AdminCheckMiddleware(), zonesSubscriptionsController.AdminListSubscriptions)
+	subscriptionGroup.POST("/admin/users/:user_id", middleware.AdminCheckMiddleware(), zonesSubscriptionsController.AdminCreateSubscription)
+	subscriptionGroup.DELETE("/admin/users/:user_id", middleware.AdminCheckMiddleware(), zonesSubscriptionsController.AdminCancelSubscription)
+	subscriptionGroup.PUT("/admin/users/:user_id/slots", middleware.AdminCheckMiddleware(), zonesSubscriptionsController.AdminUpdateSlots)
+
 	// Internal routes bypassed by JWT
 	internalGroup := subscriptionGroup.Group("/internal")
 	internalGroup.GET("/users/:user_id/status", zonesSubscriptionsController.CheckInternalAvailability)
