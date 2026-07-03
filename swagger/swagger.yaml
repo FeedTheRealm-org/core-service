@@ -7,6 +7,42 @@ definitions:
     required:
     - category_name
     type: object
+  dtos.AdminCreateSubscriptionRequest:
+    properties:
+      email:
+        type: string
+      slots:
+        type: integer
+    required:
+    - email
+    - slots
+    type: object
+  dtos.AdminSubscriptionResponse:
+    properties:
+      amount_due:
+        type: number
+      is_admin_granted:
+        type: boolean
+      next_billing_date:
+        type: string
+      slots:
+        type: integer
+      status:
+        type: string
+      used_slots:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  dtos.AdminSubscriptionsListResponse:
+    properties:
+      subscriptions:
+        items:
+          $ref: '#/definitions/dtos.AdminSubscriptionResponse'
+        type: array
+      total_count:
+        type: integer
+    type: object
   dtos.CharacterInfoResponse:
     properties:
       category_sprites:
@@ -2692,6 +2728,160 @@ paths:
       security:
       - BearerAuth: []
       summary: Cancel subscription
+      tags:
+      - payment-service-subscriptions
+  /subscriptions/admin/users:
+    get:
+      description: Returns a paginated list of every subscription (comp and Stripe
+        alike), admin only.
+      parameters:
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - default: 50
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.AdminSubscriptionsListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Admin list all subscriptions
+      tags:
+      - payment-service-subscriptions
+  /subscriptions/admin/users/{user_id}:
+    delete:
+      description: Cancels a user's subscription
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SubscriptionStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Admin cancel subscription
+      tags:
+      - payment-service-subscriptions
+    post:
+      consumes:
+      - application/json
+      description: Grants a free/comp subscription to a user, bypassing Stripe.
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Admin create subscription payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AdminCreateSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SubscriptionStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Admin grant comp subscription
+      tags:
+      - payment-service-subscriptions
+  /subscriptions/admin/users/{user_id}/slots:
+    put:
+      consumes:
+      - application/json
+      description: Updates the total slots of a user's subscription, bypassing normal
+        user-flow restrictions (e.g. allowed even if pending cancellation).
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Update subscription slots payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SubscriptionStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Admin update subscription slots
       tags:
       - payment-service-subscriptions
   /subscriptions/checkout:
