@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stripe/stripe-go/v85"
 )
 
@@ -190,24 +191,7 @@ func TestStopAllJobs_ResetsSlots(t *testing.T) {
 	clearZonesTables()
 	userID := uuid.New()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expectedPath := "/world/internal/users/" + userID.String() + "/stop-jobs"
-		if r.URL.Path != expectedPath {
-			t.Fatalf("unexpected path: %s", r.URL.Path)
-		}
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
-
-	parsed, err := url.Parse(server.URL)
-	if err != nil {
-		t.Fatalf("failed to parse server url: %v", err)
-	}
-	port, err := strconv.Atoi(parsed.Port())
-	if err != nil {
-		t.Fatalf("failed to parse server port: %v", err)
-	}
-	testConf.Server.Port = port
+	setupStopJobsServer(t, userID)
 
 	createZoneSubscription(t, &models.ZonesSubscriptions{
 		UserID:           userID,
@@ -219,7 +203,7 @@ func TestStopAllJobs_ResetsSlots(t *testing.T) {
 	})
 
 	sub, _ := testRepo.GetByUserID(userID)
-	err = testSvc.stopAllJobs(sub)
+	err := testSvc.stopAllJobs(sub)
 	assert.NoError(t, err)
 	updated, _ := testRepo.GetByUserID(userID)
 	assert.Equal(t, 0, updated.UsedSlots)
@@ -238,6 +222,37 @@ func TestNextBillingDate_AnchorInFuture(t *testing.T) {
 
 	next := testSvc.nextBillingDate()
 	assert.True(t, next.After(time.Now().UTC()))
+}
+
+func setupStopJobsServer(t *testing.T, userID uuid.UUID) {
+	t.Helper()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		expectedPath := "/world/internal/users/" + userID.String() + "/stop-jobs"
+		if r.URL.Path != expectedPath {
+			t.Errorf("unexpected path: %s", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	parsed, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatalf("failed to parse server url: %v", err)
+	}
+	port, err := strconv.Atoi(parsed.Port())
+	if err != nil {
+		t.Fatalf("failed to parse server port: %v", err)
+	}
+
+	originalPort := testConf.Server.Port
+	testConf.Server.Port = port
+
+	t.Cleanup(func() {
+		server.Close()
+		testConf.Server.Port = originalPort
+	})
 }
 
 func TestAdminCreateSubscription_InvalidSlots(t *testing.T) {
@@ -470,6 +485,8 @@ func TestAdminCancelSubscription_AdminGranted_Immediate(t *testing.T) {
 	clearZonesTables()
 	userID := uuid.New()
 
+	setupStopJobsServer(t, userID)
+
 	createZoneSubscription(t, &models.ZonesSubscriptions{
 		UserID:           userID,
 		StripeCustomerID: "cust_admin_cancel",
@@ -481,8 +498,8 @@ func TestAdminCancelSubscription_AdminGranted_Immediate(t *testing.T) {
 	})
 
 	sub, err := testSvc.AdminCancelSubscription(userID)
-	assert.NoError(t, err)
-	assert.NotNil(t, sub)
+	require.NoError(t, err)
+	require.NotNil(t, sub)
 	assert.Equal(t, stripe.SubscriptionStatusCanceled, sub.Status)
 	assert.False(t, sub.IsAdminGranted)
 	assert.Equal(t, 0, sub.TotalSlots)
