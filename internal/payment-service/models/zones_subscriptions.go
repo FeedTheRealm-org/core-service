@@ -20,6 +20,7 @@ type ZonesSubscriptions struct {
 	NextBillingDate      time.Time                 `json:"next_billing_date"`
 	CreatedAt            time.Time                 `json:"created_at"`
 	UpdatedAt            time.Time                 `json:"updated_at"`
+	IsAdminGranted       bool                      `json:"is_admin_granted" gorm:"default:false"`
 }
 
 func (ZonesSubscriptions) TableName() string {

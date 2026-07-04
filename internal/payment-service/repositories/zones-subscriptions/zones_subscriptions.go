@@ -31,6 +31,26 @@ func (zsr *zonesSubscriptionsRepository) Update(subscription *models.ZonesSubscr
 	return subscription, err
 }
 
+func (zsr *zonesSubscriptionsRepository) GetAll(offset, limit int) ([]*models.ZonesSubscriptions, int64, error) {
+	var subs []*models.ZonesSubscriptions
+	var total int64
+
+	if err := zsr.db.Conn.Model(&models.ZonesSubscriptions{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := zsr.db.Conn.
+		Order("created_at asc").
+		Offset(offset).
+		Limit(limit).
+		Find(&subs).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return subs, total, nil
+}
+
 func (zsr *zonesSubscriptionsRepository) GetByUserID(userID uuid.UUID) (*models.ZonesSubscriptions, error) {
 	var sub models.ZonesSubscriptions
 	err := zsr.db.Conn.Where("user_id = ?", userID).First(&sub).Error
