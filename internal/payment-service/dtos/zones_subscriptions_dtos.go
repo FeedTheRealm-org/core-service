@@ -19,6 +19,26 @@ type UpdateSubscriptionRequest struct {
 	Slots int `json:"slots" validate:"required"`
 }
 
+type AdminSubscriptionResponse struct {
+	UserID          string    `json:"user_id"`
+	Slots           int       `json:"slots"`
+	UsedSlots       int       `json:"used_slots"`
+	Status          string    `json:"status"`
+	NextBillingDate time.Time `json:"next_billing_date"`
+	AmountDue       float64   `json:"amount_due"`
+	IsAdminGranted  bool      `json:"is_admin_granted"`
+}
+
+type AdminSubscriptionsListResponse struct {
+	Subscriptions []AdminSubscriptionResponse `json:"subscriptions"`
+	TotalCount    int64                       `json:"total_count"`
+}
+
+type AdminCreateSubscriptionRequest struct {
+	Email string `json:"email" binding:"required,email"`
+	Slots int    `json:"slots" binding:"required,gt=0"`
+}
+
 type SubscriptionStatusResponse struct {
 	Slots           int       `json:"slots"`
 	UsedSlots       int       `json:"used_slots"`
