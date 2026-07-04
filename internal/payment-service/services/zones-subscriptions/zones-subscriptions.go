@@ -253,6 +253,10 @@ func (zs *zoneSubscriptionService) GetByUserID(userID uuid.UUID) (*models.ZonesS
 		return nil, err
 	}
 
+	if sub.IsAdminGranted {
+		return sub, nil
+	}
+
 	amountDue, err := zs.getNextInvoiceAmount(sub)
 	if err != nil {
 		logger.Logger.Errorf("Failed to fetch upcoming invoice for user %s: %v", userID, err)
